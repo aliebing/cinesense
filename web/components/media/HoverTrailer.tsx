@@ -34,6 +34,7 @@ export default function HoverTrailer({ movie, children, className = "" }: { movi
 
   const onEnter = () => {
     if (reduced) return;
+    if (timer.current) clearTimeout(timer.current); // one pending start at a time
     timer.current = setTimeout(() => {
       setMuted(true);
       activate(id);

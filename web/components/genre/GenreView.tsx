@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { notFound, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import FogLight from "@/components/atmosphere/FogLight";
 import CinemaFrame from "@/components/cinema/CinemaFrame";
 import ChatDrawer from "@/components/genre/ChatDrawer";
@@ -43,6 +43,7 @@ export default function GenreView({ worldId, filmId }: { worldId: string; filmId
 
   const [profile, setProfile] = useState<ProfileSummary | null>(null);
   const [feedbackVersion, setFeedbackVersion] = useState(0);
+  const feedbackPending = useRef(false);
   const [stageReasons, setStageReasons] = useState<{ id: string; reasons: string[] } | null>(null);
 
   useEffect(() => {
@@ -117,8 +118,11 @@ export default function GenreView({ worldId, filmId }: { worldId: string; filmId
     profile?.liked.some((f) => f.id === id) ? 1 : profile?.disliked.some((f) => f.id === id) ? -1 : 0;
 
   const giveFeedback = async (value: -1 | 0 | 1) => {
-    if (state.kind !== "ready") return;
-    const r = await sendFeedback(state.movie.id, value);
+    if (state.kind !== "ready" || feedbackPending.current) return; // a double click counts once
+    feedbackPending.current = true;
+    const r = await sendFeedback(state.movie.id, value).finally(() => {
+      feedbackPending.current = false;
+    });
     if (!r.ok) return;
     setProfile(r.data);
     setFeedbackVersion((v) => v + 1); // the row re-ranks with the new profile

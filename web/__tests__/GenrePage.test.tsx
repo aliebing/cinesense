@@ -112,3 +112,16 @@ it("⚡ adds the action tag to the session's chips", async () => {
   await waitFor(() => expect(api.discover).toHaveBeenCalled());
   expect(api.discover.mock.calls[0][0].tags).toEqual([{ idx: 3, weight: 6, mode: "prefer" }]);
 });
+
+it("a quick double click on 👍 sends one request", async () => {
+  const userEvent = (await import("@testing-library/user-event")).default;
+  api.getMovie.mockResolvedValue({ ok: true, data: sampleMovies(3)[2] });
+  let resolve: (v: unknown) => void = () => {};
+  api.sendFeedback.mockImplementation(() => new Promise((r) => (resolve = r)));
+  render(<GenreView worldId="action" filmId="demo-03" />);
+  const like = await screen.findByRole("button", { name: "👍 More like this" });
+  await userEvent.click(like);
+  await userEvent.click(like);
+  expect(api.sendFeedback).toHaveBeenCalledTimes(1);
+  resolve({ ok: true, data: { liked: [], disliked: [], taste: [] } });
+});

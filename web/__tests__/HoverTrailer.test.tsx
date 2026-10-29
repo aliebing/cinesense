@@ -133,3 +133,15 @@ it("ignores messages from other origins", () => {
   });
   expect(document.querySelector("iframe")).not.toBeNull();
 });
+
+it("re-entering before the delay does not leave a stale timer behind", () => {
+  render(tile());
+  const box = screen.getByTestId("hover-trailer");
+  fireEvent.pointerEnter(box);
+  act(() => vi.advanceTimersByTime(300));
+  fireEvent.pointerEnter(box); // e.g. a child element re-fires enter
+  act(() => vi.advanceTimersByTime(250));
+  expect(document.querySelector("iframe")).toBeNull(); // the first timer must not fire at 500 ms
+  act(() => vi.advanceTimersByTime(300));
+  expect(document.querySelector("iframe")).not.toBeNull();
+});
