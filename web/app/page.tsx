@@ -53,6 +53,7 @@ export default function HomePage() {
     }
     return out;
   }, [worlds, data]);
+  const worldIds = useMemo(() => worlds.map((w) => w.id), [worlds]);
   const advance = useCallback(() => setActive((i) => (worlds.length ? (i + 1) % worlds.length : 0)), [worlds.length]);
   const world = worlds[active];
 
@@ -115,6 +116,7 @@ export default function HomePage() {
             rows={visibleWorlds(active, worlds, narrow ? 1 : 4).map((w) => ({ world: w, movies: data.rows[w.id] ?? [] }))}
             onSelect={openMovie}
             variedSpeed={variedSpeed}
+            worldOrder={worldIds}
           />
         </div>
       )}

@@ -24,7 +24,7 @@ export default function HoverTrailer({ movie, children, className = "" }: { movi
   const frame = useRef<HTMLIFrameElement | null>(null);
   const active = activeId === id;
   const candidate = movie.youtube_key && !isBadTrailer(movie.youtube_key) ? movie.youtube_key : null;
-  const { playing, failed } = useYouTubeState(active, candidate);
+  const { playing, failed } = useYouTubeState(active, candidate, frame, id);
   const key = failed ? null : candidate;
 
   useEffect(() => () => {

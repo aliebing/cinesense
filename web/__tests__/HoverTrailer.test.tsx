@@ -145,3 +145,23 @@ it("re-entering before the delay does not leave a stale timer behind", () => {
   act(() => vi.advanceTimersByTime(300));
   expect(document.querySelector("iframe")).not.toBeNull();
 });
+
+it("shows the player after 2.5 s even without a playback message (missed handshake)", () => {
+  render(tile({ ...a, youtube_key: "quietKey1" }));
+  fireEvent.pointerEnter(screen.getByTestId("hover-trailer"));
+  act(() => vi.advanceTimersByTime(550));
+  const player = document.querySelector(".hover-trailer__player")!;
+  expect(player.classList.contains("is-playing")).toBe(false);
+  act(() => vi.advanceTimersByTime(2600));
+  expect(player.classList.contains("is-playing")).toBe(true);
+});
+
+it("a transient player error falls back locally but is not reported", () => {
+  reportTrailer.mockReset();
+  render(tile({ ...a, youtube_key: "flakyKey1" }));
+  fireEvent.pointerEnter(screen.getByTestId("hover-trailer"));
+  act(() => vi.advanceTimersByTime(550));
+  playerMessage({ event: "onError", info: 5 });
+  expect(document.querySelector("iframe")).toBeNull();
+  expect(reportTrailer).not.toHaveBeenCalled();
+});

@@ -26,7 +26,7 @@ function Trailer({ movie }: { movie: Movie }) {
   const setPlaying = (on: boolean) => on && activate(stageId);
   const frame = useRef<HTMLIFrameElement | null>(null);
   const raw = movie.youtube_key && movie.youtube_key !== "placeholder" ? movie.youtube_key : null;
-  const { failed } = useYouTubeState(playing, raw);
+  const { failed } = useYouTubeState(playing, raw, frame, stageId);
   const key = movie.youtube_key;
   if (raw && playing && !failed) {
     return (

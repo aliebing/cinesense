@@ -6,7 +6,7 @@ import { useActiveTrailer } from "@/lib/useActiveTrailer";
 import { useReducedMotion } from "@/lib/useReducedMotion";
 import type { MoodWorld, Movie, TileRow } from "@/lib/types";
 
-type Props = { rows: TileRow[]; onSelect: (m: Movie) => void; variedSpeed: boolean };
+type Props = { rows: TileRow[]; onSelect: (m: Movie) => void; variedSpeed: boolean; worldOrder?: string[] };
 
 const EVEN_SPEED = 54; // px per second
 const VARIED_SPEEDS = [45, 72, 38, 60];
@@ -21,6 +21,12 @@ export function advance(offset: number, delta: number, period: number): number {
     while (next > 0) next -= period;
   }
   return next;
+}
+
+/** Neighbouring worlds run in opposite directions; fixed by the world's place in the full list. */
+export function rowDirection(id: string, order: string[], slot: number): number {
+  const i = order.indexOf(id);
+  return (i >= 0 ? i : slot) % 2 ? 1 : -1;
 }
 
 /** Exponential easing of the speed factor towards its target (frame-rate independent). */
@@ -49,7 +55,7 @@ function TileImage({ movie }: { movie: Movie }) {
 }
 
 /** One row per mood world; neighbouring rows run in opposite directions in seamless loops (spec §4). */
-export default function TileRows({ rows, onSelect, variedSpeed }: Props) {
+export default function TileRows({ rows, onSelect, variedSpeed, worldOrder = [] }: Props) {
   // state per world (not per row slot): rows reorder when the hero world changes and must not jump
   const rowEls = useRef(new Map<string, HTMLDivElement>());
   const offsets = useRef(new Map<string, number>());
@@ -65,12 +71,11 @@ export default function TileRows({ rows, onSelect, variedSpeed }: Props) {
   }, [variedSpeed, activeId]);
   useEffect(() => {
     orderRef.current = rows.map((r) => r.world.id);
-    for (const id of orderRef.current) {
-      // neighbouring worlds run in opposite directions; fixed per world, so it never flips mid-run
-      if (!directions.current.has(id)) directions.current.set(id, directions.current.size % 2 ? 1 : -1);
+    orderRef.current.forEach((id, slot) => {
+      if (!directions.current.has(id)) directions.current.set(id, rowDirection(id, worldOrder, slot));
       if (!offsets.current.has(id)) offsets.current.set(id, -37 * offsets.current.size);
-    }
-  }, [rows]);
+    });
+  }, [rows, worldOrder]);
 
   useEffect(() => {
     if (reduced) return;
@@ -85,8 +90,10 @@ export default function TileRows({ rows, onSelect, variedSpeed }: Props) {
         const el = rowEls.current.get(id);
         if (!el) return;
         const n = el.children.length / 2;
+        const first = el.children[0] as HTMLElement | undefined;
         const second = el.children[n] as HTMLElement | undefined;
-        const period = second ? second.offsetLeft : 0; // start of the duplicate set = exact loop length
+        // distance from the first tile to the first tile of the duplicate set = exact loop length
+        const period = first && second ? second.offsetLeft - first.offsetLeft : 0;
         const speed = variedRef.current ? VARIED_SPEEDS[i % VARIED_SPEEDS.length] : EVEN_SPEED;
         const next = advance(offsets.current.get(id) ?? 0, (directions.current.get(id) ?? -1) * speed * factor * (dt / 1000), period);
         offsets.current.set(id, next);
