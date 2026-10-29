@@ -22,6 +22,7 @@ def check_constraints(results: list[dict], e: Expect) -> Check:
             fails.append(f"{title}: year {m.get('year')} < {e.year_from}")
         if e.person:
             people = [p.lower() for p in m.get("directors", []) + m.get("cast_top", [])]
+            people += [x[5:].lower() for x in r.get("reasons", []) if x.startswith("with ")]  # full-cast match
             if e.person.lower() not in people:
                 fails.append(f"{title}: without {e.person} in the top-billed people")
         a = m.get("availability") or {}
@@ -41,8 +42,11 @@ def check_tools(called: list[str], e: Expect) -> Check:
     return not fails, fails
 
 
-def check_grounding(reply: str, results: list[dict], catalogue_titles: set[str], user_text: str) -> Check:
-    allowed = [r["movie"]["title"] for r in results] + mentioned_titles(user_text, catalogue_titles)
+def check_grounding(
+    reply: str, results: list[dict], catalogue_titles: set[str], user_text: str, tag_names: list[str] = ()
+) -> Check:
+    # mood tags ("creepy") may share a name with a film; naming a tag is not naming a film
+    allowed = [r["movie"]["title"] for r in results] + mentioned_titles(user_text, catalogue_titles) + list(tag_names)
     ok, bad = validate_titles(reply, allowed, catalogue_titles)
     return ok, [f"unlisted title: {t}" for t in bad]
 

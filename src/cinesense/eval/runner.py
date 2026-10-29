@@ -24,6 +24,7 @@ def run_scenarios(
     make_runner: Callable,
     catalogue_titles: set[str],
     model: str = "anthropic/claude-haiku-5.5",
+    tag_names: list[str] = (),
 ) -> list[dict]:
     out = []
     for s in scenarios:
@@ -61,7 +62,7 @@ def run_scenarios(
         checks = {
             "constraints": check_constraints(results, s.expect),
             "tools": check_tools(res["tools_called"], s.expect),
-            "grounding": check_grounding(reply, results, catalogue_titles, " ".join(s.turns)),
+            "grounding": check_grounding(reply, results, catalogue_titles, " ".join(s.turns), tag_names),
             "reply": check_reply(reply, s.expect),
         }
         res.update(

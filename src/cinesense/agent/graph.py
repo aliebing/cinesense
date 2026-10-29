@@ -157,7 +157,7 @@ def build_graph(llm, explain_llm, tools: list, service, provider, checkpointer):
         except Exception:  # noqa: BLE001 — the template is always a valid answer
             text = ""
         titles = catalogue_titles()
-        allowed = [r["movie"]["title"] for r in results] + mentioned_titles(wish, titles)
+        allowed = [r["movie"]["title"] for r in results] + mentioned_titles(wish, titles) + provider.list_tags()
         ok, bad = validate_titles(text, allowed, titles) if text else (False, ["(empty answer)"])
         if not ok:
             log.warning("grounding fallback, unlisted titles: %s", bad)

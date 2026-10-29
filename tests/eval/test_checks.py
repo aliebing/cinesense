@@ -67,3 +67,13 @@ def test_reply_contains_any_case_insensitive():
     assert check_reply("Directed by Ridley Scott in 1979.", Expect(reply_contains_any=["ridley scott"]))[0]
     assert not check_reply("", Expect(reply_contains_any=["1979"]))[0]
     assert check_reply("anything", Expect())[0]
+
+
+def test_person_found_via_search_reason_counts():
+    res = r(people=["Clint Eastwood"])
+    res["reasons"] = ["with Tom Hanks"]
+    assert check_constraints([res], Expect(person="Tom Hanks"))[0]
+
+
+def test_bold_tag_names_are_not_film_titles():
+    assert check_grounding("Shall I exclude **Creepy**?", [], {"Creepy"}, "", tag_names=["creepy"])[0]

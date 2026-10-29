@@ -93,7 +93,7 @@ def main() -> None:
     scenarios = load_scenarios()
     titles = {m.title for m in provider.list_movies()}
     print(f"Running {len(scenarios)} scenarios …", flush=True)
-    results = run_scenarios(scenarios, make_runner, titles, s.llm_model)
+    results = run_scenarios(scenarios, make_runner, titles, s.llm_model, provider.list_tags())
 
     judge_llm = UsageMeter(make_llm(dataclasses.replace(s, llm_model=JUDGE_MODEL), max_tokens=1200))
     for r in results:
