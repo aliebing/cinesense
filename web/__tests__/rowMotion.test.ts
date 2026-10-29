@@ -24,3 +24,11 @@ it("direction comes from the world's place in the full list, so neighbours alway
   expect(rowDirection("a", order, 0)).not.toBe(rowDirection("b", order, 1));
   expect(rowDirection("x", [], 3)).toBe(1); // unknown world: by slot
 });
+
+it("the target speed: full, slower while pointing, a crawl while a trailer plays", async () => {
+  const { targetFactor } = await import("@/components/home/TileRows");
+  expect(targetFactor(false, false)).toBe(1);
+  expect(targetFactor(true, false)).toBeLessThan(0.6);
+  expect(targetFactor(true, true)).toBeLessThan(0.1);
+  expect(targetFactor(false, true)).toBeGreaterThan(0); // never a hard stop
+});

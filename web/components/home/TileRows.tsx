@@ -10,7 +10,13 @@ type Props = { rows: TileRow[]; onSelect: (m: Movie) => void; variedSpeed: boole
 
 const EVEN_SPEED = 54; // px per second
 const VARIED_SPEEDS = [45, 72, 38, 60];
-const TRAILER_FACTOR = 0.3; // rows keep gliding slowly while a trailer plays
+const POINTING_FACTOR = 0.45; // pointer over the rows: slower, so a tile is easy to catch
+const TRAILER_FACTOR = 0.06; // a trailer plays: the rows crawl on, the tile stays under the pointer
+
+/** Speed factor the rows ease towards; never zero, the rows always keep moving. */
+export function targetFactor(pointing: boolean, trailer: boolean): number {
+  return trailer ? TRAILER_FACTOR : pointing ? POINTING_FACTOR : 1;
+}
 const EASE_MS = 600; // time constant for speed changes
 
 /** Moves an offset and wraps it into (-period, 0] — exactly one loop period, so the seam never jumps. */
@@ -63,6 +69,7 @@ export default function TileRows({ rows, onSelect, variedSpeed, worldOrder = [] 
   const reduced = useReducedMotion();
   const { activeId } = useActiveTrailer();
   const slowRef = useRef(false);
+  const pointingRef = useRef(false);
   const variedRef = useRef(variedSpeed);
   const orderRef = useRef<string[]>([]);
   useEffect(() => {
@@ -85,7 +92,7 @@ export default function TileRows({ rows, onSelect, variedSpeed, worldOrder = [] 
     const step = (now: number) => {
       const dt = Math.min(now - last, 64); // a background tab must not teleport the rows
       last = now;
-      factor = easeSpeed(factor, slowRef.current ? TRAILER_FACTOR : 1, dt);
+      factor = easeSpeed(factor, targetFactor(pointingRef.current, slowRef.current), dt);
       orderRef.current.forEach((id, i) => {
         const el = rowEls.current.get(id);
         if (!el) return;
@@ -106,7 +113,15 @@ export default function TileRows({ rows, onSelect, variedSpeed, worldOrder = [] 
   }, [reduced]);
 
   return (
-    <div className="tile-rows">
+    <div
+      className="tile-rows"
+      onPointerEnter={() => {
+        pointingRef.current = true;
+      }}
+      onPointerLeave={() => {
+        pointingRef.current = false;
+      }}
+    >
       {rows.map(({ world, movies }) => (
         <div key={world.id} className="tile-row-wrap" data-world={world.id}>
           <div className="tile-row-viewport">
