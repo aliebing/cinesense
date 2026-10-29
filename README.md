@@ -20,11 +20,12 @@ Cinema and streaming sites show long title lists and genre grids. Combining seve
 - **Search that finds films several ways:** semantic plot search (RAG over Wikipedia plots in pgvector), weighted mood tags (movieFinder's method, computed in Postgres), typo- and sound-alike-tolerant title and actor/director search, and an extended live search for newer films (Streaming Availability API, Wikidata filmographies).
 - **Where to watch:** streaming services in Germany (subscription vs. rent/buy) and recent German cinema releases.
 - **Trailers on hover:** hovering a tile plays its trailer muted after half a second; one click unmutes.
+- **It learns your taste:** 👍 / 👎 on a film's stage are remembered (anonymously, per browser). CineSense derives a taste profile from them (e.g. "dark · twist ending · space travel"), boosts films that fit ("fits your taste") and hides films you rejected. ⚡ More action and 😂 Funnier only steer the current session. The 👤 panel shows what was learned and resets it.
 - **Genre page:** the chosen film is on stage with its poster, official trailer, people, mood tags, IMDb and Wikipedia links, with matching films below.
 
 ## Status
 
-**Plans 1–3 are done:** the cinema UI runs on a real catalogue of about 20,600 films (≈19,800 from MovieLens incl. documentaries, plus ≈800 German releases since 2021). The chat agent works on the homepage and in the genre drawer. Personalisation (Plan 4) and the evaluation (Plan 5) follow; see `docs/superpowers/plans/2026-10-29-cinesense-roadmap.md`.
+**Plans 1–4 are done:** the cinema UI runs on a real catalogue of about 20,600 films (≈19,800 from MovieLens incl. documentaries, plus ≈800 German releases since 2021). The chat agent works on the homepage and in the genre drawer. Personalisation works on the genre page and in all rankings. The evaluation (Plan 5) follows; see `docs/superpowers/plans/2026-10-29-cinesense-roadmap.md`.
 
 ## Setup
 
@@ -79,6 +80,8 @@ The model decides **what** to look for; everything that must be reproducible is 
 | `check_streaming`, `film_facts` | grounding: the reply may only name returned films, else a template answer |
 | `propose_exclusions` — suggested, never applied silently | "No horror" also excludes the Horror genre |
 | `show_on_stage` — hand-off to the genre page | thread memory (one conversation per browser tab) |
+
+**Personalisation:** the profile is computed on demand from the feedback: the average Tag Genome vector of the liked films minus the catalogue average (disliked films count against), reduced to the 8 strongest tags. It enters the ranking as a fifth signal (weight 0.15, scaled against the best film not yet rated), so mood, plot and people still lead.
 
 The chat streams its progress (`POST /api/chat`, Server-Sent Events). A typical turn costs about 6,000 input and 800 output tokens; every turn's tokens are logged by the API.
 
