@@ -1,25 +1,39 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import HoverTrailer from "@/components/media/HoverTrailer";
-import ImageOrPlaceholder from "@/components/ui/ImageOrPlaceholder";
 import { useActiveTrailer } from "@/lib/useActiveTrailer";
 import { useReducedMotion } from "@/lib/useReducedMotion";
-import type { Movie } from "@/lib/types";
+import type { MoodWorld, Movie, TileRow } from "@/lib/types";
 
-type Props = { movies: Movie[]; rows: number; onSelect: (m: Movie) => void; variedSpeed: boolean };
+type Props = { rows: TileRow[]; onSelect: (m: Movie) => void; variedSpeed: boolean };
 
 const EVEN_SPEED = 0.9;
 const VARIED_SPEEDS = [0.75, 1.2, 0.63, 1.0];
 
-function splitIntoRows(movies: Movie[], rows: number): Movie[][] {
-  const out: Movie[][] = Array.from({ length: rows }, () => []);
-  movies.forEach((m, i) => out[i % rows].push(m));
-  return out;
+/** The worlds shown in the rows: the active (hero) world first, then the next ones, wrapping. */
+export function visibleWorlds(active: number, worlds: MoodWorld[], count = 4): MoodWorld[] {
+  if (worlds.length === 0) return [];
+  return Array.from({ length: Math.min(count, worlds.length) }, (_, i) => worlds[(active + i) % worlds.length]);
 }
 
-/** Flat tile rows; neighbouring rows run in opposite directions in seamless loops (spec §4). */
-export default function TileRows({ movies, rows, onSelect, variedSpeed }: Props) {
+function TileImage({ movie }: { movie: Movie }) {
+  const [failed, setFailed] = useState(false);
+  const src = movie.horizontal_poster_url ?? movie.backdrop_url;
+  if (!src || failed) {
+    return (
+      <span className="title-card" data-testid="title-card">
+        {movie.title}
+      </span>
+    );
+  }
+  // eslint-disable-next-line @next/next/no-img-element -- external poster CDN, sized by CSS
+  return <img className="img-cover" src={src} alt="" draggable={false} onError={() => setFailed(true)} />;
+}
+
+/** One row per mood world; neighbouring rows run in opposite directions in seamless loops (spec §4). */
+export default function TileRows({ rows, onSelect, variedSpeed }: Props) {
   const rowRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [paused, setPaused] = useState(false);
   const reduced = useReducedMotion();
@@ -53,33 +67,39 @@ export default function TileRows({ movies, rows, onSelect, variedSpeed }: Props)
     };
     frame = requestAnimationFrame(step);
     return () => cancelAnimationFrame(frame);
-  }, [reduced, rows]);
+  }, [reduced, rows.length]);
 
   return (
     <div className="tile-rows" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
-      {splitIntoRows(movies, rows).map((rowMovies, r) => (
-        <div
-          key={r}
-          className="tile-row"
-          data-testid="tile-row"
-          ref={(el) => {
-            rowRefs.current[r] = el;
-          }}
-        >
-          {[...rowMovies, ...rowMovies].map((m, i) => (
-            <HoverTrailer key={`${m.id}-${i}`} movie={m} className="tile-wrap">
-              <button
-                type="button"
-                className="tile"
-                aria-label={m.title}
-                tabIndex={i < rowMovies.length ? 0 : -1}
-                aria-hidden={i < rowMovies.length ? undefined : true}
-                onClick={() => onSelect(m)}
-              >
-                <ImageOrPlaceholder src={m.horizontal_poster_url ?? m.backdrop_url ?? m.poster_url} alt="" />
-              </button>
-            </HoverTrailer>
-          ))}
+      {rows.map(({ world, movies }, r) => (
+        <div key={world.id} className="tile-row-wrap">
+          <Link href={`/world/${world.id}`} className="tile-row-label" style={{ ["--tint" as string]: world.tint }}>
+            {world.title}
+          </Link>
+          <div className="tile-row-viewport">
+          <div
+            className="tile-row"
+            data-testid="tile-row"
+            ref={(el) => {
+              rowRefs.current[r] = el;
+            }}
+          >
+            {[...movies, ...movies].map((m, i) => (
+              <HoverTrailer key={`${m.id}-${i}`} movie={m} className="tile-wrap">
+                <button
+                  type="button"
+                  className="tile"
+                  aria-label={m.title}
+                  tabIndex={i < movies.length ? 0 : -1}
+                  aria-hidden={i < movies.length ? undefined : true}
+                  onClick={() => onSelect(m)}
+                >
+                  <TileImage movie={m} />
+                </button>
+              </HoverTrailer>
+            ))}
+          </div>
+          </div>
         </div>
       ))}
     </div>

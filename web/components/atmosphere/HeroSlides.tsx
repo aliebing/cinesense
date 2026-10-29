@@ -9,19 +9,20 @@ type Props = {
   images: Record<string, string | null>;
   activeIndex: number;
   onAdvance: () => void;
+  paused?: boolean;
 };
 
-const ADVANCE_MS = 7000;
+const ADVANCE_MS = 12000; // calm: the tile rows follow each change
 
 /** Full-stage mood world backgrounds with slow Ken Burns motion and cross-fades. */
-export default function HeroSlides({ worlds, images, activeIndex, onAdvance }: Props) {
+export default function HeroSlides({ worlds, images, activeIndex, onAdvance, paused = false }: Props) {
   const reduced = useReducedMotion();
 
   useEffect(() => {
-    if (reduced || worlds.length < 2) return;
+    if (reduced || paused || worlds.length < 2) return;
     const id = setInterval(onAdvance, ADVANCE_MS);
     return () => clearInterval(id);
-  }, [reduced, worlds.length, onAdvance]);
+  }, [reduced, paused, worlds.length, onAdvance]);
 
   return (
     <div className="hero" aria-hidden="true">

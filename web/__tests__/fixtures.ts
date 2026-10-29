@@ -42,9 +42,14 @@ export function sampleRanked(n: number): RankedMovie[] {
   return sampleMovies(n).map((movie, i) => ({ movie, score: 0.9 - i * 0.01, match_percent: 90 - i, reasons: [] }));
 }
 
+const movies12 = sampleMovies(12);
 export const sampleHome: HomeData = {
   worlds: sampleWorlds,
-  tiles: sampleMovies(12),
+  rows: {
+    suspense: movies12.filter((m) => m.world_ids.includes("suspense")),
+    action: movies12.filter((m) => m.world_ids.includes("action")),
+  },
+  tiles: movies12,
   titles: ["Demo-Film 01", "Demo-Film 02", "Demo-Film 03"],
 };
 

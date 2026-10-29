@@ -118,14 +118,14 @@ def create_app(load_env: bool = True) -> FastAPI:
         return [r for r in items if r.movie.id != movie_id][:limit]
 
     @app.get("/api/home")
-    def home(provider: Provider) -> dict:
+    def home(provider: Provider, streaming: Streaming) -> dict:
         movies = provider.list_movies()
         rows: dict[str, list[Movie]] = {}
         for w in WORLDS:
             in_world = [m for m in movies if w.id in m.world_ids]
             # popular films with a trailer first, so hovering a tile usually plays something
             in_world.sort(key=lambda m: (m.youtube_key is not None, m.ml_rating_count), reverse=True)
-            rows[w.id] = in_world[:ROW_SIZE]
+            rows[w.id] = [_with_images(m, provider, streaming) for m in in_world[:ROW_SIZE]]
         titles = []
         for w in WORLDS:
             titles += [m.title for m in rows[w.id][:2] if m.title not in titles]

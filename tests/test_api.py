@@ -135,3 +135,19 @@ def test_movie_detail_adds_streaming():
 def test_movie_detail_streaming_unknown_when_none():
     body = client(streaming=StubStreaming(None)).get("/api/movies/demo-01").json()
     assert body["availability"]["streaming_de"] is None
+
+
+def test_home_fills_title_art_from_streaming_images():
+    from cinesense.providers.streaming import ImageSet
+
+    class ImgStub(StubStreaming):
+        calls = 0
+
+        def images(self, imdb_id):
+            ImgStub.calls += 1
+            return ImageSet("v.jpg", "h.jpg", "b.jpg")
+
+    data = client(streaming=ImgStub(None)).get("/api/home").json()
+    first = next(iter(data["rows"].values()))[0]
+    assert first["horizontal_poster_url"] in ("h.jpg", first["horizontal_poster_url"])
+    assert ImgStub.calls <= 72

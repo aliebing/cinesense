@@ -58,6 +58,9 @@ export type RankedMovie = {
 
 export type HomeData = {
   worlds: MoodWorld[];
+  rows: Record<string, Movie[]>;
   tiles: Movie[];
   titles: string[];
 };
+
+export type TileRow = { world: MoodWorld; movies: Movie[] };

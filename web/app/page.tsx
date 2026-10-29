@@ -7,10 +7,11 @@ import HeroSlides from "@/components/atmosphere/HeroSlides";
 import CinemaFrame from "@/components/cinema/CinemaFrame";
 import ChatPanel from "@/components/chat/ChatPanel";
 import FilmTitles from "@/components/home/FilmTitles";
-import TileRows from "@/components/home/TileRows";
+import TileRows, { visibleWorlds } from "@/components/home/TileRows";
 import WorldLabel from "@/components/home/WorldLabel";
 import { getHome, type ApiResult } from "@/lib/api";
 import type { HomeData, Movie } from "@/lib/types";
+import { useActiveTrailer } from "@/lib/useActiveTrailer";
 import { useIsNarrow, useReducedMotion } from "@/lib/useReducedMotion";
 
 export default function HomePage() {
@@ -20,6 +21,7 @@ export default function HomePage() {
   const [result, setResult] = useState<ApiResult<HomeData> | null>(null);
   const [active, setActive] = useState(0);
   const [variedSpeed, setVariedSpeed] = useState(false);
+  const { activeId } = useActiveTrailer();
 
   useEffect(() => {
     let cancelled = false;
@@ -36,8 +38,9 @@ export default function HomePage() {
   const images = useMemo(() => {
     const out: Record<string, string | null> = {};
     for (const w of worlds) {
-      const m = data?.tiles.find((t) => t.world_ids.includes(w.id));
-      out[w.id] = m?.backdrop_url ?? m?.poster_url ?? null;
+      // text-free backdrops only: title art would clash with the claim and the chat
+      const m = (data?.rows[w.id] ?? []).find((t) => t.backdrop_url);
+      out[w.id] = m?.backdrop_url ?? null;
     }
     return out;
   }, [worlds, data]);
@@ -48,7 +51,7 @@ export default function HomePage() {
 
   return (
     <CinemaFrame>
-      <HeroSlides worlds={worlds} images={images} activeIndex={active} onAdvance={advance} />
+      <HeroSlides worlds={worlds} images={images} activeIndex={active} onAdvance={advance} paused={activeId !== null} />
       <FogLight tint={world?.tint ?? "#1b4a6b"} reduced={reduced || narrow} />
       <div className="home-shade" aria-hidden="true" />
 
@@ -75,7 +78,11 @@ export default function HomePage() {
       {data && !narrow && <FilmTitles titles={data.titles} />}
       {data && (
         <div className="home-rows">
-          <TileRows movies={data.tiles} rows={narrow ? 1 : 4} onSelect={openMovie} variedSpeed={variedSpeed} />
+          <TileRows
+            rows={visibleWorlds(active, worlds, narrow ? 1 : 4).map((w) => ({ world: w, movies: data.rows[w.id] ?? [] }))}
+            onSelect={openMovie}
+            variedSpeed={variedSpeed}
+          />
         </div>
       )}
       {world && <WorldLabel world={world} href={`/world/${world.id}`} />}
