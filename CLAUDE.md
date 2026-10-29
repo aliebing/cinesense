@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-CineSense ("Don't choose a movie. Choose a feeling.") is a Turing College AI Engineering capstone: mood-based movie discovery with a cinematic, animated UI and a LangGraph chat agent grounded in real TMDB data.
+CineSense ("Don't choose a movie. Choose a feeling.") is a Turing College AI Engineering capstone: mood-based movie discovery with a cinematic, animated UI and a LangGraph chat agent grounded in real catalogue data (MovieLens, Wikidata, Wikipedia).
 
 The approved design is in `docs/superpowers/specs/2026-10-29-cinesense-design.md`. Read it before changing behaviour or look. Implementation plans and the 4-week roadmap are in `docs/superpowers/plans/`. Approved mockups are in `docs/superpowers/specs/mockups/`.
 
@@ -22,7 +22,9 @@ The grading briefs are `turing-college-capstone.md` and `turing-college-sprint4.
 - `src/cinesense/`: Python backend (FastAPI)
   - `domain/`: models and the six mood worlds
   - `providers/`: data sources
-  - `recommend/`: filtering and ranking
+  - `recommend/`, `search/`: filtering and ranking (deterministic)
+  - `agent/`: LangGraph chat agent (tools write the shared criteria; grounding check on replies)
+  - `ingest/`: catalogue build
   - `api/`: HTTP layer
 - `tests/`: pytest
 - `web/`: Next.js frontend (App Router, TypeScript, Tailwind, Vitest)

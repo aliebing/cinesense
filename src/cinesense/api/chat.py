@@ -49,6 +49,8 @@ def chat(
                 out = runner(req.thread_id, req.message, req.criteria.model_dump(), lambda t: q.put(("status", t)))
                 for r in out.get("results", [])[:IMAGE_FILL]:
                     r["movie"] = with_images(Movie(**r["movie"]), provider, streaming).model_dump(mode="json")
+                u = out.get("usage") or {}
+                log.info("chat turn: %s input / %s output tokens", u.get("input_tokens"), u.get("output_tokens"))
                 q.put(("final", out))
             except Exception:  # noqa: BLE001 — any LLM/provider failure degrades to the chips
                 log.exception("chat turn failed")

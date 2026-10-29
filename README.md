@@ -15,7 +15,7 @@ Cinema and streaming sites show long title lists and genre grids. Combining seve
 ## How it works
 
 - **A cinematic interface:** a 16:9 cinema screen with letterbox bars and curtains. Mood worlds fade across the screen, fog and projector light move in the background, and rows of film tiles drift past.
-- **A chat agent (planned, Plan 3):** a LangGraph agent with real tools turns free-text wishes into structured preferences. It looks up **real** film data from TMDB and explains why each suggestion fits.
+- **A chat agent:** a LangGraph ReAct agent with real tools turns free-text wishes into the same chips you can edit by hand, then explains the results. It can only name films the search engine actually returned (see *Agent* below).
 - **One shared search state, shown as chips:** mood tags from the MovieLens Tag Genome, each weighted and set to *prefer*, *must* or *not* (e.g. 🚫 horror); plus person, title, plot and filter chips. Each result says why it matches ("dark 91% · plot: … · streaming on Netflix"), and excluded films are counted ("→ 214 films hidden").
 - **Search that finds films several ways:** semantic plot search (RAG over Wikipedia plots in pgvector), weighted mood tags (movieFinder's method, computed in Postgres), typo- and sound-alike-tolerant title and actor/director search, and an extended live search for newer films (Streaming Availability API, Wikidata filmographies).
 - **Where to watch:** streaming services in Germany (subscription vs. rent/buy) and recent German cinema releases.
@@ -24,7 +24,7 @@ Cinema and streaming sites show long title lists and genre grids. Combining seve
 
 ## Status
 
-**Plans 1–2 are done:** the cinema UI runs on a real catalogue of about 20,600 films (≈19,800 from MovieLens incl. documentaries, plus ≈800 German releases since 2021). The chat agent (Plan 3), personalisation (Plan 4) and the evaluation (Plan 5) follow; see `docs/superpowers/plans/2026-10-29-cinesense-roadmap.md`.
+**Plans 1–3 are done:** the cinema UI runs on a real catalogue of about 20,600 films (≈19,800 from MovieLens incl. documentaries, plus ≈800 German releases since 2021). The chat agent works on the homepage and in the genre drawer. Personalisation (Plan 4) and the evaluation (Plan 5) follow; see `docs/superpowers/plans/2026-10-29-cinesense-roadmap.md`.
 
 ## Setup
 
@@ -45,12 +45,42 @@ make test                     # backend (pytest) + frontend (Vitest) tests
 
 - **Backend:** Python, FastAPI and Pydantic, in `src/cinesense/`.
   - `domain`: the models and the six mood worlds
-  - `providers`: data sources behind one interface (placeholder fixtures now, TMDB next)
-  - `recommend`: deterministic filters and the baseline ranking
+  - `providers`: data sources behind one interface (Postgres catalogue, offline fixture, streaming, live search, YouTube)
+  - `recommend` / `search`: deterministic filters and the combined ranking
+  - `agent`: the LangGraph chat agent
   - `api`: the HTTP layer
 - **Frontend:** Next.js (App Router), TypeScript and Tailwind, in `web/`.
 - **Data:** Supabase Postgres in its own `cinesense` schema — films, people, Tag Genome vectors (pgvector 1,128 dims), plot chunks with OpenRouter embeddings (pgvector 1,536 dims, HNSW), caches for streaming, images and trailers. The ingest lives in `src/cinesense/ingest/`.
-- **Planned:** LangGraph + OpenRouter for the agent, LangSmith for tracing.
+- **Agent:** LangGraph + OpenRouter (default model `anthropic/claude-haiku-5.5`, set `CINESENSE_LLM_MODEL` to change it), traced in LangSmith when `LANGSMITH_TRACING=true`.
+
+### Agent
+
+```mermaid
+flowchart LR
+    U([User message + current chips]) --> A[agent<br/>LLM with tools]
+    A -- tool calls, max 6 rounds --> T[tools<br/>run one after another]
+    T --> A
+    A -- criteria changed / films asked for --> P[present<br/>deterministic search]
+    A -- clarifying question --> E1([reply])
+    P --> X[explain<br/>LLM without tools]
+    X --> G{grounding check}
+    G -- only listed titles --> R([reply + chips + picks])
+    G -- unknown title or cut off --> F[template answer] --> R
+```
+
+The model decides **what** to look for; everything that must be reproducible is deterministic.
+
+| The model decides (tools) | Deterministic code |
+|---|---|
+| `set_mood_tags` — Tag Genome tags with weight and prefer/must/not | ranking: weighted tag relevance, plot similarity, people, Bayesian rating |
+| `set_filters` — cinema/streaming, runtime, kind, years, language, genres | hard filters and the "→ n films hidden" count |
+| `search_plot` — RAG over Wikipedia plots | the final search run (`present`) and its top 8 |
+| `find_person`, `similar_to` | API budgets (streaming 900/month, max 3 streaming checks per turn) |
+| `check_streaming`, `film_facts` | grounding: the reply may only name returned films, else a template answer |
+| `propose_exclusions` — suggested, never applied silently | "No horror" also excludes the Horror genre |
+| `show_on_stage` — hand-off to the genre page | thread memory (one conversation per browser tab) |
+
+The chat streams its progress (`POST /api/chat`, Server-Sent Events). A typical turn costs about 6,000 input and 800 output tokens; every turn's tokens are logged by the API.
 
 The full design is in `docs/superpowers/specs/2026-10-29-cinesense-design.md`.
 
