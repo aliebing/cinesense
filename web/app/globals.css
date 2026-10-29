@@ -9,8 +9,8 @@
   --muted: #a29f99;
   --bar: 6vh;
   --stage-ratio: 2.25; /* wide cinema screen */
-  --curtain-overlap: 0.02; /* share of the stage width each curtain covers */
-  --stage-max: 87.5vw; /* leaves room for the curtains at the sides */
+  --curtain-overlap: 0.03; /* share of the stage width each curtain covers */
+  --stage-max: 91vw; /* leaves room for the curtains at the sides */
   --stage-w: min(var(--stage-max), calc((100vh - 2 * var(--bar)) * var(--stage-ratio)));
 }
 
@@ -76,45 +76,27 @@ body {
   z-index: 50;
   pointer-events: none;
   width: calc((100vw - var(--stage-w)) / 2 + var(--stage-w) * var(--curtain-overlap));
-  /* solid, saturated velvet folds in the foreground — no fade */
-  background: repeating-linear-gradient(
-    90deg,
-    #3c0610 0px,
-    #74101e 11px,
-    #b01d31 19px,
-    #8a1324 28px,
-    #4a0812 38px,
-    #3c0610 42px
-  );
+  filter: drop-shadow(0 0 18px #000);
 }
-/* gathered towards the outer edge and tied back near the bottom */
-.cinema-curtain--left {
-  left: 0;
-  clip-path: polygon(0 0, 100% 0, 99% 18%, 94% 36%, 84% 54%, 68% 70%, 52% 80%, 58% 88%, 70% 100%, 0 100%);
-}
-.cinema-curtain--right {
-  right: 0;
-  clip-path: polygon(100% 0, 0 0, 1% 18%, 6% 36%, 16% 54%, 32% 70%, 48% 80%, 42% 88%, 30% 100%, 100% 100%);
-}
-.cinema-tie {
-  position: absolute;
-  top: calc(80% - 1.6vw);
-  width: 3.2vw;
-  min-width: 34px;
-  height: auto;
-  filter: drop-shadow(0 2px 4px #000c);
-}
-.cinema-curtain--left .cinema-tie { left: calc(52% - 2.6vw); }
-.cinema-curtain--right .cinema-tie { right: calc(52% - 2.6vw); }
-/* top and bottom shading plus a warm projector sheen on the folds */
-.cinema-curtain::after {
-  content: "";
+.cinema-curtain--left { left: 0; }
+.cinema-curtain--right { right: 0; }
+.curtain-fabric {
   position: absolute;
   inset: 0;
-  background:
-    linear-gradient(to bottom, #0009 0%, transparent 18%, transparent 82%, #000a 100%),
-    radial-gradient(ellipse 120% 40% at 50% 22%, #ffcf8a26, transparent 70%);
+  width: 100%;
+  height: 100%;
 }
+/* the tie-back sits where the folds gather (32% of the curtain width, 76% of the height) */
+.curtain-tie {
+  position: absolute;
+  top: 74.5%;
+  width: 46%;
+  min-width: 40px;
+  height: auto;
+  filter: drop-shadow(0 3px 5px #000c);
+}
+.cinema-curtain--left .curtain-tie { left: 0; }
+.cinema-curtain--right .curtain-tie { right: 0; }
 
 @media (prefers-reduced-motion: reduce) {
   *,
