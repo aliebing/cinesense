@@ -17,13 +17,13 @@ import sys
 from PIL import Image, ImageEnhance
 
 src_path, out_path = sys.argv[1:3]
-x0, x1, colour, brightness = (float(v) for v in (sys.argv[3:7] or (0.34, 0.88, 1.25, 1.12)))
-out_width = int(sys.argv[7]) if len(sys.argv) > 7 else 690  # ~1.5 folds on screen
+x0, x1, colour, brightness = (float(v) for v in (sys.argv[3:7] or (0.0, 1.0, 1.0, 1.0)))
+out_width = int(sys.argv[7]) if len(sys.argv) > 7 else None  # natural proportions
 OUT_HEIGHT = 2200
 
 photo = Image.open(src_path).convert("RGB")
 w, h = photo.size
-# about two and a half folds of the photo, very slightly squeezed (a touch zoomed out)
+# the whole photo, unaltered and uniformly scaled, exactly as in the preview
 panel = photo.crop((int(w * x0), 0, int(w * x1), h))
 panel = panel.resize((out_width or round(panel.width * OUT_HEIGHT / panel.height), OUT_HEIGHT), Image.LANCZOS)
 panel = ImageEnhance.Color(panel).enhance(colour)
