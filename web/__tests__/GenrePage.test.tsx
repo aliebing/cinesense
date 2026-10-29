@@ -13,6 +13,8 @@ const api = {
   getMovie: vi.fn(),
   getRelated: vi.fn(),
   discover: vi.fn(),
+  getProfile: vi.fn(),
+  sendFeedback: vi.fn(),
 };
 vi.mock("@/lib/api", () => ({
   getWorlds: () => api.getWorlds(),
@@ -20,7 +22,9 @@ vi.mock("@/lib/api", () => ({
   getMovie: (id: string) => api.getMovie(id),
   getRelated: (id: string, worldId?: string) => api.getRelated(id, worldId),
   discover: (...a: unknown[]) => api.discover(...a),
-  getTags: () => Promise.resolve({ ok: true, data: [{ idx: 0, tag: "dark" }] }),
+  getTags: () => Promise.resolve({ ok: true, data: [{ idx: 0, tag: "dark" }, { idx: 3, tag: "action" }] }),
+  getProfile: () => api.getProfile(),
+  sendFeedback: (...a: unknown[]) => api.sendFeedback(...a),
 }));
 
 import GenreView from "@/components/genre/GenreView";
@@ -32,6 +36,8 @@ beforeEach(() => {
   api.getWorlds.mockResolvedValue({ ok: true, data: sampleWorlds });
   api.getWorldMovies.mockResolvedValue({ ok: true, data: sampleRanked(4) });
   api.getRelated.mockResolvedValue({ ok: true, data: sampleRanked(4).slice(1) });
+  api.getProfile.mockResolvedValue({ ok: true, data: { liked: [], disliked: [], taste: [] } });
+  api.sendFeedback.mockResolvedValue({ ok: true, data: { liked: [{ id: "demo-03", title: "x", year: null }], disliked: [], taste: [] } });
 });
 
 it("puts the requested film on stage", async () => {
@@ -81,4 +87,28 @@ it("re-ranks the related row with the chip criteria inside the world", async () 
   await waitFor(() => expect(api.discover).toHaveBeenCalled());
   expect(api.discover.mock.calls[0][0]).toMatchObject({ world_id: "action", tags: [{ idx: 0, weight: 6, mode: "prefer" }] });
   setSearchState(emptyCriteria());
+});
+
+it("👍 stores feedback, marks the button and re-ranks the row", async () => {
+  const userEvent = (await import("@testing-library/user-event")).default;
+  api.getMovie.mockResolvedValue({ ok: true, data: sampleMovies(3)[2] });
+  render(<GenreView worldId="action" filmId="demo-03" />);
+  const like = await screen.findByRole("button", { name: "👍 More like this" });
+  await waitFor(() => expect(api.getRelated).toHaveBeenCalledTimes(1));
+  await userEvent.click(like);
+  expect(api.sendFeedback).toHaveBeenCalledWith("demo-03", 1);
+  await waitFor(() => expect(screen.getByRole("button", { name: "👍 More like this" })).toHaveAttribute("aria-pressed", "true"));
+  await waitFor(() => expect(api.getRelated).toHaveBeenCalledTimes(2));
+});
+
+it("⚡ adds the action tag to the session's chips", async () => {
+  const userEvent = (await import("@testing-library/user-event")).default;
+  const { emptyCriteria, setSearchState } = await import("@/lib/searchState");
+  setSearchState(emptyCriteria());
+  api.getMovie.mockResolvedValue({ ok: true, data: sampleMovies(3)[2] });
+  api.discover.mockResolvedValue({ ok: true, data: { items: sampleRanked(2), total: 2, hidden_by_exclusion: 0, extended_used: false } });
+  render(<GenreView worldId="action" filmId="demo-03" />);
+  await userEvent.click(await screen.findByRole("button", { name: "⚡ More action" }));
+  await waitFor(() => expect(api.discover).toHaveBeenCalled());
+  expect(api.discover.mock.calls[0][0].tags).toEqual([{ idx: 3, weight: 6, mode: "prefer" }]);
 });

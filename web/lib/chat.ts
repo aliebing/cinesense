@@ -3,6 +3,7 @@
 import { useSyncExternalStore } from "react";
 import type { Criteria } from "@/lib/searchState";
 import type { RankedMovie } from "@/lib/types";
+import { USER_HEADER, userId } from "@/lib/user";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const UNAVAILABLE = "The assistant is unavailable right now — you can still use the chips and search.";
@@ -47,7 +48,7 @@ export async function streamChat(
   try {
     res = await fetch(`${BASE_URL}/api/chat`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", [USER_HEADER]: userId() },
       body: JSON.stringify({ thread_id: req.threadId, message: req.message, criteria: req.criteria }),
     });
   } catch {

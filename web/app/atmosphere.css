@@ -420,3 +420,25 @@
 .credits-licence { font-size: .85em; color: var(--muted); margin: .2em 0 0; }
 .home-nav a { color: #fff; text-decoration: none; }
 .home-nav a:hover, .home-nav a:focus-visible { color: var(--gold); }
+
+/* --- personalisation --------------------------------------------------------- */
+.home-nav button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+.home-nav button:hover, .home-nav button:focus-visible { color: var(--gold); }
+.stage-feedback button:not(:disabled) { cursor: pointer; }
+.stage-feedback button:not(:disabled):hover { border-color: #ffffff40; }
+.stage-feedback button.is-on { border-color: var(--gold); background: #f3c76b26; color: var(--gold); }
+.stage-feedback button.is-off { border-color: #ff6b6b80; background: #ff6b6b1a; color: #ffb3b3; }
+.profile-panel {
+  position: absolute; z-index: 40; top: 3.4cqw; left: var(--safe-x); width: min(26em, 40cqw); max-height: 70%; overflow-y: auto;
+  font-size: var(--ui); background: #0d0d14e6; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border: 1px solid #ffffff26; border-radius: 16px; padding: 1.1em 1.3em; box-shadow: 0 20px 60px #000a;
+}
+.profile-panel header { display: flex; justify-content: space-between; align-items: center; margin-bottom: .6em; }
+.profile-panel header button { font: inherit; font-size: 1.4em; line-height: 1; background: none; border: 0; color: #fff; cursor: pointer; }
+.profile-panel h3 { margin: .8em 0 .3em; font-size: .8em; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.profile-panel ul { margin: 0; padding-left: 1.1em; }
+.profile-taste { margin: 0; color: var(--gold); }
+.profile-empty, .profile-note { color: var(--muted); font-size: .88em; }
+.profile-reset { margin-top: 1em; font: inherit; font-size: .9em; padding: .4em 1em; border-radius: 999px; border: 1px solid #ff6b6b80;
+  background: #ff6b6b1a; color: #ffb3b3; cursor: pointer; }
+@media (max-width: 759px) { .profile-panel { position: fixed; inset: 16px; width: auto; max-height: none; } }

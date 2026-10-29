@@ -7,6 +7,7 @@ import FogLight from "@/components/atmosphere/FogLight";
 import HeroSlides from "@/components/atmosphere/HeroSlides";
 import CinemaFrame from "@/components/cinema/CinemaFrame";
 import ChatPanel from "@/components/chat/ChatPanel";
+import ProfilePanel from "@/components/profile/ProfilePanel";
 import FilmTitles from "@/components/home/FilmTitles";
 import TileRows, { visibleWorlds } from "@/components/home/TileRows";
 import WorldLabel from "@/components/home/WorldLabel";
@@ -55,6 +56,11 @@ export default function HomePage() {
   const advance = useCallback(() => setActive((i) => (worlds.length ? (i + 1) % worlds.length : 0)), [worlds.length]);
   const world = worlds[active];
 
+  const [showProfile, setShowProfile] = useState(false);
+  const browse = (availability: "cinema" | "stream") => {
+    setCriteria({ ...criteria, availability });
+    router.push("/results");
+  };
   const openMovie = (m: Movie) => router.push(`/world/${m.world_ids[0]}?film=${m.id}`);
 
   return (
@@ -66,8 +72,18 @@ export default function HomePage() {
       <header className="home-top">
         <span className="home-logo">CineSense</span>
         <nav aria-label="Main navigation" className="home-nav">
-          <Link href="/results">🔍 Search</Link> · <span>🎬 In cinemas</span> · <span>📺 Streaming</span> ·{" "}
-          <Link href="/credits">Credits</Link> · <span aria-label="Profile">👤</span>
+          <Link href="/results">🔍 Search</Link> ·{" "}
+          <button type="button" onClick={() => browse("cinema")}>
+            🎬 In cinemas
+          </button>{" "}
+          ·{" "}
+          <button type="button" onClick={() => browse("stream")}>
+            📺 Streaming
+          </button>{" "}
+          · <Link href="/credits">Credits</Link> ·{" "}
+          <button type="button" aria-label="Profile" aria-expanded={showProfile} onClick={() => setShowProfile((v) => !v)}>
+            👤
+          </button>
         </nav>
       </header>
       <button type="button" className="tempo-toggle" onClick={() => setVariedSpeed((v) => !v)}>
@@ -103,6 +119,7 @@ export default function HomePage() {
         </div>
       )}
       {world && <WorldLabel world={world} href={`/world/${world.id}`} />}
+      {showProfile && <ProfilePanel onClose={() => setShowProfile(false)} />}
     </CinemaFrame>
   );
 }

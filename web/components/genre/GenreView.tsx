@@ -9,8 +9,19 @@ import ChatDrawer from "@/components/genre/ChatDrawer";
 import RelatedRow from "@/components/genre/RelatedRow";
 import StagePanel from "@/components/genre/StagePanel";
 import SearchChips from "@/components/search/SearchChips";
-import { discover, getMovie, getRelated, getTags, getWorldMovies, getWorlds, type Tag } from "@/lib/api";
-import { hasAnyCriteria, useSearchState } from "@/lib/searchState";
+import {
+  discover,
+  getMovie,
+  getProfile,
+  getRelated,
+  getTags,
+  getWorldMovies,
+  getWorlds,
+  type ProfileSummary,
+  sendFeedback,
+  type Tag,
+} from "@/lib/api";
+import { hasAnyCriteria, steer, useSearchState } from "@/lib/searchState";
 import type { MoodWorld, Movie, RankedMovie } from "@/lib/types";
 import { useReducedMotion } from "@/lib/useReducedMotion";
 
@@ -30,8 +41,13 @@ export default function GenreView({ worldId, filmId }: { worldId: string; filmId
   const [hidden, setHidden] = useState(0);
   const criteriaKey = JSON.stringify(criteria);
 
+  const [profile, setProfile] = useState<ProfileSummary | null>(null);
+  const [feedbackVersion, setFeedbackVersion] = useState(0);
+  const [stageReasons, setStageReasons] = useState<{ id: string; reasons: string[] } | null>(null);
+
   useEffect(() => {
     getTags().then((r) => r.ok && setTags(r.data));
+    getProfile().then((r) => r.ok && setProfile(r.data));
   }, []);
 
   useEffect(() => {
@@ -83,7 +99,7 @@ export default function GenreView({ worldId, filmId }: { worldId: string; filmId
       cancelled = true;
       clearTimeout(t);
     };
-  }, [stageId, worldId, criteriaKey]);
+  }, [stageId, worldId, criteriaKey, feedbackVersion]);
 
   if (state.kind === "not_found") {
     notFound();
@@ -92,8 +108,30 @@ export default function GenreView({ worldId, filmId }: { worldId: string; filmId
 
   const select = (m: Movie) => {
     if (state.kind !== "ready") return;
+    setStageReasons({ id: m.id, reasons: related.find((r) => r.movie.id === m.id)?.reasons ?? [] });
     setState({ ...state, movie: m });
     router.replace(`/world/${worldId}?film=${m.id}`, { scroll: false });
+  };
+
+  const feedbackFor = (id: string) =>
+    profile?.liked.some((f) => f.id === id) ? 1 : profile?.disliked.some((f) => f.id === id) ? -1 : 0;
+
+  const giveFeedback = async (value: -1 | 0 | 1) => {
+    if (state.kind !== "ready") return;
+    const r = await sendFeedback(state.movie.id, value);
+    if (!r.ok) return;
+    setProfile(r.data);
+    setFeedbackVersion((v) => v + 1); // the row re-ranks with the new profile
+  };
+
+  const steerSession = (kind: "action" | "funny") => {
+    const idx = tags.find((t) => t.tag === kind)?.idx;
+    if (idx !== undefined) setCriteria(steer(criteria, idx));
+  };
+
+  const stageWhy = (m: Movie, w: MoodWorld) => {
+    const reasons = stageReasons?.id === m.id ? stageReasons.reasons : [];
+    return reasons.length ? reasons.join(" · ") : `Highly rated in the “${w.title}” world`;
   };
 
   const world = state.kind === "ready" ? state.world : null;
@@ -115,7 +153,14 @@ export default function GenreView({ worldId, filmId }: { worldId: string; filmId
       {state.kind === "loading" && <p className="genre-loading">Loading …</p>}
       {movie && world && (
         <>
-          <StagePanel movie={movie} world={world} why={`Highly rated in the “${world.title}” world`} />
+          <StagePanel
+            movie={movie}
+            world={world}
+            why={stageWhy(movie, world)}
+            feedback={feedbackFor(movie.id)}
+            onFeedback={giveFeedback}
+            onSteer={steerSession}
+          />
           <div className="genre-chips">
             <SearchChips tags={tags} criteria={criteria} onChange={setCriteria} hiddenCount={hidden} />
           </div>

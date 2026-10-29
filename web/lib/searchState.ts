@@ -98,3 +98,10 @@ export function hasAnyCriteria(c: Criteria): boolean {
   const e = emptyCriteria();
   return JSON.stringify({ ...c, world_id: null }) !== JSON.stringify({ ...e, world_id: null });
 }
+
+/** Session steering (⚡ More action, 😂 Funnier): add the tag as prefer, or strengthen it by 2 (max 10). */
+export function steer(c: Criteria, idx: number): Criteria {
+  const current = c.tags.find((t) => t.idx === idx && t.mode !== "not");
+  const weight = current ? Math.min(10, current.weight + 2) : 6;
+  return { ...c, tags: [...c.tags.filter((t) => t.idx !== idx), { idx, weight, mode: "prefer" }] };
+}

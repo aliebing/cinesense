@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, it, vi } from "vitest";
 import { mockMatchMedia, sampleHome } from "./fixtures";
@@ -6,7 +6,11 @@ import { mockMatchMedia, sampleHome } from "./fixtures";
 const push = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push, replace: vi.fn() }) }));
 const getHome = vi.fn();
-vi.mock("@/lib/api", () => ({ getHome: () => getHome(), getTags: () => Promise.resolve({ ok: true, data: [] }) }));
+vi.mock("@/lib/api", () => ({
+  getHome: () => getHome(),
+  getTags: () => Promise.resolve({ ok: true, data: [] }),
+  getProfile: () => Promise.resolve({ ok: true, data: { liked: [], disliked: [], taste: [] } }),
+}));
 
 import HomePage from "@/app/page";
 
@@ -62,4 +66,15 @@ it("top tile row follows the hero world and advances after 12 s", async () => {
   });
   expect(screen.getAllByTestId("tile-row")[0].closest(".tile-row-wrap")!.textContent).toContain("Action & Adrenaline");
   vi.useRealTimers();
+});
+
+it("nav shortcuts open the results pre-filtered and 👤 opens the profile", async () => {
+  getHome.mockResolvedValue({ ok: true, data: sampleHome });
+  render(<HomePage />);
+  const nav = screen.getByRole("navigation", { name: "Main navigation" });
+  await userEvent.click(within(nav).getByRole("button", { name: "📺 Streaming" }));
+  expect(push).toHaveBeenCalledWith("/results");
+  expect(JSON.parse(window.sessionStorage.getItem("cinesense.search") ?? "{}").availability).toBe("stream");
+  await userEvent.click(within(nav).getByRole("button", { name: "Profile" }));
+  expect(await screen.findByRole("dialog", { name: "Your profile" })).toBeInTheDocument();
 });

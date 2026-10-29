@@ -4,7 +4,6 @@ import ImageOrPlaceholder from "@/components/ui/ImageOrPlaceholder";
 import { useActiveTrailer } from "@/lib/useActiveTrailer";
 import type { MoodWorld, Movie } from "@/lib/types";
 
-const FEEDBACK = ["👍 More like this", "⚡ More action", "😂 Funnier", "👎 Not for me"];
 const rating = new Intl.NumberFormat("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 const count = new Intl.NumberFormat("en-US");
 
@@ -67,7 +66,17 @@ function Streaming({ movie }: { movie: Movie }) {
 }
 
 /** Cinema stage: poster, trailer, info and feedback (spec §5, layout B). */
-export default function StagePanel({ movie, world, why }: { movie: Movie; world: MoodWorld; why: string }) {
+type Props = {
+  movie: Movie;
+  world: MoodWorld;
+  why: string;
+  /** current 👍/👎 for this film: 1, -1 or 0 */
+  feedback?: number;
+  onFeedback?: (value: -1 | 0 | 1) => void;
+  onSteer?: (kind: "action" | "funny") => void;
+};
+
+export default function StagePanel({ movie, world, why, feedback = 0, onFeedback, onSteer }: Props) {
   const people = [
     movie.directors.length ? `Directed by ${movie.directors.slice(0, 2).join(", ")}` : null,
     movie.cast_top.length ? `with ${movie.cast_top.slice(0, 3).join(", ")}` : null,
@@ -120,11 +129,30 @@ export default function StagePanel({ movie, world, why }: { movie: Movie; world:
           <b>Why it fits you:</b> <span>{why}</span>
         </div>
         <div className="stage-feedback">
-          {FEEDBACK.map((f) => (
-            <button key={f} type="button" disabled title="Coming with personalisation">
-              {f}
-            </button>
-          ))}
+          <button
+            type="button"
+            aria-pressed={feedback === 1}
+            className={feedback === 1 ? "is-on" : ""}
+            disabled={!onFeedback}
+            onClick={() => onFeedback?.(feedback === 1 ? 0 : 1)}
+          >
+            👍 More like this
+          </button>
+          <button type="button" disabled={!onSteer} title="Only for this session" onClick={() => onSteer?.("action")}>
+            ⚡ More action
+          </button>
+          <button type="button" disabled={!onSteer} title="Only for this session" onClick={() => onSteer?.("funny")}>
+            😂 Funnier
+          </button>
+          <button
+            type="button"
+            aria-pressed={feedback === -1}
+            className={feedback === -1 ? "is-on is-off" : ""}
+            disabled={!onFeedback}
+            onClick={() => onFeedback?.(feedback === -1 ? 0 : -1)}
+          >
+            👎 Not for me
+          </button>
         </div>
       </div>
     </section>

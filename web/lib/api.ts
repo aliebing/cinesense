@@ -1,5 +1,6 @@
 import type { Criteria } from "@/lib/searchState";
 import type { HomeData, MoodWorld, Movie, RankedMovie } from "@/lib/types";
+import { USER_HEADER, userId } from "@/lib/user";
 
 export type ApiError = "network" | "not_found" | "server";
 export type ApiResult<T> = { ok: true; data: T } | { ok: false; error: ApiError };
@@ -9,7 +10,8 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 async function request<T>(path: string, init?: RequestInit): Promise<ApiResult<T>> {
   let res: Response;
   try {
-    res = await fetch(`${BASE_URL}${path}`, { cache: "no-store", ...init });
+    const headers = { ...(init?.headers as Record<string, string> | undefined), [USER_HEADER]: userId() };
+    res = await fetch(`${BASE_URL}${path}`, { cache: "no-store", ...init, headers });
   } catch {
     return { ok: false, error: "network" };
   }
@@ -48,3 +50,10 @@ export const getRelated = (id: string, worldId?: string) =>
   apiGet<RankedMovie[]>(
     `/api/movies/${encodeURIComponent(id)}/related${worldId ? `?world_id=${encodeURIComponent(worldId)}` : ""}`,
   );
+
+export type FilmRef = { id: string; title: string; year: number | null };
+export type ProfileSummary = { liked: FilmRef[]; disliked: FilmRef[]; taste: string[] };
+export const sendFeedback = (filmId: string, value: -1 | 0 | 1) =>
+  apiPost<ProfileSummary>("/api/feedback", { film_id: filmId, value });
+export const getProfile = () => apiGet<ProfileSummary>("/api/profile");
+export const resetProfile = () => request<ProfileSummary>("/api/profile", { method: "DELETE" });
