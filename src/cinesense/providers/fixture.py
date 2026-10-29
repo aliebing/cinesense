@@ -92,3 +92,9 @@ class FixtureProvider:
                 if s >= 0.75 and s > scores.get(film_id, 0):
                     scores[film_id], names[film_id] = s, name
         return scores, names
+
+    def upsert_live(self, movies: list[Movie]) -> None:
+        for m in movies:
+            if m.id not in self._by_id:
+                self._movies.append(m)
+                self._by_id[m.id] = m

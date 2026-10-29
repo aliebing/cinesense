@@ -270,3 +270,14 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
+def enrich_new_films(ids: list[str]) -> None:
+    """Background task for lazily imported films: plots, chunks and embeddings."""
+    load_env_file()
+    s = get_settings()
+    if not s.database_url or not ids:
+        return
+    embedder = EmbeddingClient(s.openrouter_api_key) if s.openrouter_api_key else None
+    with connect(s.database_url) as conn:
+        asyncio.run(ingest_plots(conn, embedder, None, ids=ids))

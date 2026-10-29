@@ -1,10 +1,10 @@
 from typing import Annotated
 
-from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from cinesense.api.deps import get_embedder, get_provider, get_streaming
+from cinesense.api.deps import get_embedder, get_live, get_provider, get_streaming
 from cinesense.config import load_env_file
 from cinesense.domain.criteria import SearchCriteria
 from cinesense.domain.models import MoodWorld, Movie, RankedMovie
@@ -14,6 +14,7 @@ from cinesense.search.service import SearchService
 Provider = Annotated[object, Depends(get_provider)]
 Streaming = Annotated[object, Depends(get_streaming)]
 Embedder = Annotated[object, Depends(get_embedder)]
+Live = Annotated[object, Depends(get_live)]
 
 ROW_SIZE = 12
 
@@ -68,9 +69,21 @@ def create_app(load_env: bool = True) -> FastAPI:
     def tags(provider: Provider) -> list[dict]:
         return [{"idx": i, "tag": t} for i, t in enumerate(provider.list_tags())]
 
-    def _discover(req: DiscoverRequest, provider, streaming, embedder) -> DiscoverResponse:
-        res = SearchService(provider, streaming, embedder).run(req.criteria, req.offset, req.limit)
-        return DiscoverResponse(items=res.items, total=res.total, hidden_by_exclusion=res.hidden_by_exclusion)
+    def _discover(
+        req: DiscoverRequest, provider, streaming, embedder, live=None, tasks=None
+    ) -> DiscoverResponse:
+        res = SearchService(provider, streaming, embedder, live).run(req.criteria, req.offset, req.limit)
+        if res.extended_used and tasks is not None:
+            from cinesense.ingest.pipeline import enrich_new_films
+
+            new_ids = [r.movie.id for r in res.items if r.movie.id.startswith(("wd-", "imdb-"))]
+            tasks.add_task(enrich_new_films, new_ids)
+        return DiscoverResponse(
+            items=res.items,
+            total=res.total,
+            hidden_by_exclusion=res.hidden_by_exclusion,
+            extended_used=res.extended_used,
+        )
 
     @app.post("/api/discover")
     def discover(
@@ -80,9 +93,14 @@ def create_app(load_env: bool = True) -> FastAPI:
 
     @app.post("/api/search")
     def search(
-        req: DiscoverRequest, provider: Provider, streaming: Streaming, embedder: Embedder
+        req: DiscoverRequest,
+        provider: Provider,
+        streaming: Streaming,
+        embedder: Embedder,
+        live: Live,
+        tasks: BackgroundTasks,
     ) -> DiscoverResponse:
-        return _discover(req, provider, streaming, embedder)
+        return _discover(req, provider, streaming, embedder, live, tasks)
 
     @app.get("/api/worlds/{world_id}/movies")
     def world_movies(

@@ -40,3 +40,10 @@ def get_embedder():
     from cinesense.ingest.embeddings import EmbeddingClient
 
     return EmbeddingClient(s.openrouter_api_key)
+
+
+@lru_cache
+def get_live():
+    from cinesense.providers.live_search import LiveSearch
+
+    return LiveSearch(get_streaming())

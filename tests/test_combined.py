@@ -48,3 +48,65 @@ def test_paging_offset_limit(make_movie):
     movies = [make_movie(id=f"m{i}", ml_rating=3 + i / 100, ml_rating_count=1000) for i in range(30)]
     page = combined_rank(movies, SearchCriteria(), Signals(), offset=10, limit=5)
     assert page.total == 30 and len(page.items) == 5
+
+
+class FakeProvider:
+    def __init__(self, movies):
+        self.movies = movies
+        self.inserted = []
+
+    def list_tags(self):
+        return []
+
+    def list_movies(self):
+        return list(self.movies)
+
+    def search_title(self, q, limit=200):
+        return {}
+
+    def search_person(self, q, role="any", limit=400):
+        return {}, {}
+
+    def tag_vectors(self, ids):
+        import numpy as np
+
+        return np.zeros((len(ids), 1128))
+
+    def upsert_live(self, movies):
+        self.inserted += movies
+        self.movies += [m for m in movies if m.id not in {x.id for x in self.movies}]
+
+
+class FakeLive:
+    def __init__(self, movie):
+        self.movie = movie
+        self.calls = 0
+
+    def search_title(self, q):
+        self.calls += 1
+        return [self.movie]
+
+    def search_person(self, q):
+        self.calls += 1
+        return q, [self.movie]
+
+
+def test_extended_runs_when_local_below_5_and_inserts_lazily(make_movie):
+    from cinesense.search.service import SearchService
+
+    new = make_movie(id="imdb-tt1", title="Brand New Film")
+    prov, live = FakeProvider([make_movie(id="a")]), FakeLive(new)
+    res = SearchService(prov, live=live).run(SearchCriteria(title="brand new"), 0, 20)
+    assert live.calls == 1 and res.extended_used
+    assert [m.id for m in prov.inserted] == ["imdb-tt1"]
+    assert any(r.movie.id == "imdb-tt1" for r in res.items)
+
+
+def test_extended_not_used_without_title_or_person(make_movie):
+    from cinesense.search.service import SearchService
+
+    live = FakeLive(make_movie(id="x"))
+    res = SearchService(FakeProvider([make_movie(id="a")]), live=live).run(
+        SearchCriteria(extended=True), 0, 20
+    )
+    assert live.calls == 0 and not res.extended_used

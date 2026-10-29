@@ -25,6 +25,7 @@ class CombinedResult:
     items: list[RankedMovie]
     total: int
     hidden_by_exclusion: int
+    extended_used: bool = False
 
 
 def _normalised(values: dict[str, float]) -> dict[str, float]:

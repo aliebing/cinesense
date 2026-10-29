@@ -11,10 +11,11 @@ STREAM_CHECK_LIMIT = 30  # streaming lookups per search (free plan budget)
 
 
 class SearchService:
-    def __init__(self, provider, streaming=None, embedder=None) -> None:
+    def __init__(self, provider, streaming=None, embedder=None, live=None) -> None:
         self.provider = provider
         self.streaming = streaming
         self.embedder = embedder
+        self.live = live
 
     def _embed(self, text: str) -> list[float] | None:
         if self.embedder is None:
@@ -54,6 +55,17 @@ class SearchService:
         movies = p.list_movies()
         if restrict is not None:
             movies = [m for m in movies if m.id in restrict]
+        extended_used = False
+        if self.live is not None and (c.title or c.person) and (c.extended or len(movies) < 5):
+            live_hits = self._live(c, sig)
+            if live_hits:
+                extended_used = True
+                known = {m.id for m in movies}
+                imdb_known = {m.imdb_id for m in p.list_movies() if m.imdb_id}
+                fresh = [m for m in live_hits if m.id not in known and m.imdb_id not in imdb_known]
+                if fresh and hasattr(p, "upsert_live"):
+                    p.upsert_live(fresh)  # lazy import; plots/embeddings follow in the background
+                movies += fresh
         result = combined_rank(movies, c, sig, hidden_by_tags=hidden, offset=0, limit=len(movies) or 1)
 
         if c.has_tags():
@@ -67,9 +79,23 @@ class SearchService:
             [r.movie for r in result.items], c, sig, hidden_by_tags=0, offset=offset, limit=limit
         )
         page.hidden_by_exclusion = result.hidden_by_exclusion
+        page.extended_used = extended_used
         if c.availability == "stream":
             page = self._resolve_streaming(page)
         return page
+
+    def _live(self, c: SearchCriteria, sig: Signals) -> list:
+        hits = []
+        if c.title:
+            found = self.live.search_title(c.title)
+            sig.title = {**(sig.title or {}), **{m.id: 0.8 for m in found}}
+            hits += found
+        if c.person:
+            name, found = self.live.search_person(c.person)
+            sig.person = {**(sig.person or {}), **{m.id: 0.9 for m in found}}
+            sig.person_names = {**sig.person_names, **{m.id: name for m in found if name}}
+            hits += found
+        return hits
 
     def _resolve_streaming(self, page: CombinedResult) -> CombinedResult:
         if self.streaming is None:

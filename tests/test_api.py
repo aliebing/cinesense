@@ -1,7 +1,7 @@
 from fastapi.testclient import TestClient
 
 from cinesense.api.app import create_app
-from cinesense.api.deps import get_embedder, get_provider, get_streaming
+from cinesense.api.deps import get_embedder, get_live, get_provider, get_streaming
 from cinesense.providers.fixture import FixtureProvider
 
 
@@ -10,6 +10,7 @@ def make_app(provider=None, streaming=None):
     app.dependency_overrides[get_provider] = lambda: provider or FixtureProvider()
     app.dependency_overrides[get_streaming] = lambda: streaming
     app.dependency_overrides[get_embedder] = lambda: None
+    app.dependency_overrides[get_live] = lambda: None
     return app
 
 

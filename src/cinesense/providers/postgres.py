@@ -171,3 +171,40 @@ class PostgresProvider:
                 scores[film_id] = float(s)
                 names[film_id] = name
         return scores, names
+
+    # --- lazy import of live search hits ----------------------------------
+    def upsert_live(self, movies: list[Movie]) -> None:
+        rows = [
+            (
+                m.id,
+                m.wikidata_id,
+                m.imdb_id,
+                m.kind,
+                m.title,
+                m.year,
+                m.runtime_min,
+                m.genres,
+                m.directors,
+                m.cast_top,
+                m.world_ids,
+                m.youtube_key,
+                m.wikipedia_title,
+                m.overview,
+                m.poster_url,
+                m.horizontal_poster_url,
+                m.backdrop_url,
+            )
+            for m in movies
+        ]
+        with self._conn() as c:
+            with c.cursor() as cur:
+                cur.executemany(
+                    "insert into films (id, wikidata_id, imdb_id, kind, title, year, runtime_min, genres, "
+                    "directors, cast_top, world_ids, youtube_key, wikipedia_title, overview, poster_url, "
+                    "horizontal_poster_url, backdrop_url) values "
+                    "(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) "
+                    "on conflict do nothing",
+                    rows,
+                )
+            c.commit()
+        self._movies = None
