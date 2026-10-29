@@ -1,11 +1,59 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import ChatResults from "@/components/chat/ChatResults";
+import { ChatError, type ChatEntry, type Proposal, streamChat, threadId, useChatLog } from "@/lib/chat";
 import { useSearchState, withNoHorror } from "@/lib/searchState";
+import type { Movie } from "@/lib/types";
 
-/** Chat window. The quick filters write the shared search state; Plan 3 switches mode to "live". */
+/** Chat window. Live mode talks to the agent; its criteria land in the shared search state (the chips),
+ *  and the conversation follows the visitor from the homepage into the genre drawer. */
 export default function ChatPanel({ mode, horrorIdx = null }: { mode: "static" | "live"; horrorIdx?: number | null }) {
-  const disabled = mode === "static";
+  const live = mode === "live";
+  const router = useRouter();
   const [criteria, setCriteria] = useSearchState();
+  const [entries, setEntries] = useChatLog();
+  const [draft, setDraft] = useState("");
+  const [status, setStatus] = useState<string | null>(null);
+  const logRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    logRef.current?.scrollTo?.({ top: logRef.current.scrollHeight });
+  }, [entries, status]);
+
+  const send = async () => {
+    const text = draft.trim();
+    if (!text || status !== null) return;
+    setDraft("");
+    const withUser: ChatEntry[] = [...entries, { role: "user", text }];
+    setEntries(withUser);
+    setStatus("Thinking…");
+    try {
+      const out = await streamChat({ threadId: threadId(), message: text, criteria }, setStatus);
+      setCriteria(out.criteria);
+      setEntries([
+        ...withUser,
+        { role: "bot", text: out.reply, results: out.results, proposals: out.proposals, handoff: out.handoff },
+      ]);
+    } catch (e) {
+      setEntries([...withUser, { role: "bot", text: e instanceof ChatError ? e.message : String(e), error: true }]);
+    } finally {
+      setStatus(null);
+    }
+  };
+
+  const applyProposal = (entryIndex: number, p: Proposal) => {
+    setCriteria({ ...criteria, tags: [...criteria.tags.filter((t) => t.idx !== p.idx), { idx: p.idx, weight: 5, mode: "not" }] });
+    setEntries(
+      entries.map((e, i) =>
+        i === entryIndex && e.role === "bot" ? { ...e, proposals: (e.proposals ?? []).filter((x) => x.idx !== p.idx) } : e,
+      ),
+    );
+  };
+
+  const openMovie = (m: Movie) => router.push(`/world/${m.world_ids[0] ?? "suspense"}?film=${m.id}`);
+  const lastBot = entries.map((e) => e.role).lastIndexOf("bot");
   const noHorror = criteria.exclude_genres.includes("Horror");
   const quick = [
     {
@@ -35,22 +83,71 @@ export default function ChatPanel({ mode, horrorIdx = null }: { mode: "static" |
   ];
   return (
     <div className="chat-panel">
-      <div className="chat-msg chat-msg--user">Something funny or action, Marvel is welcome, but no horror.</div>
-      <div className="chat-msg chat-msg--bot">
-        Example: this is where the agent will reply and suggest matching films with reasons.
-      </div>
-      <form className="chat-input" onSubmit={(e) => e.preventDefault()}>
+      {!live && (
+        <>
+          <div className="chat-msg chat-msg--user">Something funny or action, Marvel is welcome, but no horror.</div>
+          <div className="chat-msg chat-msg--bot">
+            Example: this is where the agent will reply and suggest matching films with reasons.
+          </div>
+        </>
+      )}
+      {live && (entries.length > 0 || status) && (
+        <div className="chat-log" ref={logRef} aria-live="polite">
+          {entries.map((e, i) =>
+            e.role === "user" ? (
+              <div key={i} className="chat-msg chat-msg--user">
+                {e.text}
+              </div>
+            ) : (
+              <div key={i} className={`chat-msg chat-msg--bot${e.error ? " chat-msg--error" : ""}`}>
+                <Reply text={e.text} />
+                {i === lastBot && e.results && e.results.length > 0 && <ChatResults results={e.results} onOpen={openMovie} />}
+                {i === lastBot && (e.proposals ?? []).length > 0 && (
+                  <div className="chat-proposals">
+                    Also exclude:{" "}
+                    {e.proposals!.map((p) => (
+                      <button key={p.idx} type="button" aria-label={`Also exclude ${p.tag}`} onClick={() => applyProposal(i, p)}>
+                        🚫 {p.tag} +
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {i === lastBot && e.handoff && (
+                  <button
+                    type="button"
+                    className="chat-handoff"
+                    onClick={() => router.push(`/world/${e.handoff!.world_id}?film=${e.handoff!.film_id}`)}
+                  >
+                    Show on stage →
+                  </button>
+                )}
+              </div>
+            ),
+          )}
+          {status && <p className="chat-status">{status}</p>}
+        </div>
+      )}
+      <form
+        className="chat-input"
+        onSubmit={(e) => {
+          e.preventDefault();
+          void send();
+        }}
+      >
         <input
           id="chat-input"
           aria-label="Message CineSense"
           placeholder="e.g. “like Interstellar, but shorter”"
-          disabled={disabled}
+          disabled={!live}
+          maxLength={1000}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
         />
-        <button type="submit" aria-label="Send" disabled={disabled}>
+        <button type="submit" aria-label="Send" disabled={!live || status !== null}>
           ➤
         </button>
       </form>
-      {disabled && <p className="chat-hint">The chat agent is coming soon</p>}
+      {!live && <p className="chat-hint">The chat agent is coming soon</p>}
       <div className="chat-chips">
         {quick.map((q) => (
           <button key={q.label} type="button" aria-pressed={q.on} className={q.on ? "is-on" : ""} onClick={q.toggle}>
@@ -59,5 +156,24 @@ export default function ChatPanel({ mode, horrorIdx = null }: { mode: "static" |
         ))}
       </div>
     </div>
+  );
+}
+
+/** Minimal formatting for agent replies: paragraphs, line breaks and **bold** titles; no HTML injection. */
+function Reply({ text }: { text: string }) {
+  return (
+    <>
+      {text.split(/\n{2,}/).map((para, i) => (
+        <p key={i}>
+          {para.split("\n").map((line, j) => (
+            <span key={j} className="chat-line">
+              {line.split(/(\*\*[^*]+\*\*)/).map((part, k) =>
+                part.startsWith("**") && part.endsWith("**") ? <strong key={k}>{part.slice(2, -2)}</strong> : part,
+              )}
+            </span>
+          ))}
+        </p>
+      ))}
+    </>
   );
 }

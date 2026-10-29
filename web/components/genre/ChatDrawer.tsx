@@ -3,7 +3,7 @@
 import { useState } from "react";
 import ChatPanel from "@/components/chat/ChatPanel";
 
-/** Collapsible glass chat at the right edge of the genre page; same conversation in Plan 3. */
+/** Collapsible glass chat at the right edge of the genre page; same conversation as on the homepage. */
 export default function ChatDrawer() {
   const [open, setOpen] = useState(false);
   if (!open) {
@@ -21,7 +21,7 @@ export default function ChatDrawer() {
           ×
         </button>
       </header>
-      <ChatPanel mode="static" />
+      <ChatPanel mode="live" />
     </aside>
   );
 }

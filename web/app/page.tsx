@@ -80,7 +80,7 @@ export default function HomePage() {
           <em>Choose a feeling.</em>
         </h1>
         <p className="home-sub">Tell me what you’re in the mood for tonight.</p>
-        <ChatPanel mode="static" horrorIdx={tags.find((t) => t.tag === "horror")?.idx ?? null} />
+        <ChatPanel mode="live" horrorIdx={tags.find((t) => t.tag === "horror")?.idx ?? null} />
         {hasAnyCriteria(criteria) && (
           <div className="home-chips">
             <SearchChips tags={tags} criteria={criteria} onChange={setCriteria} />
