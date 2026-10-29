@@ -92,20 +92,9 @@ body {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: left center;
+  object-position: 47% center; /* the bright crests in the middle of the photo */
 }
 .cinema-curtain--left .curtain-photo { transform: scaleX(-1); }
-/* inner edge rolls away from the light; darker towards the top and the floor */
-.cinema-curtain-inner::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(var(--edge-dir), #000c 0, #0006 1.2vw, transparent 3vw),
-    linear-gradient(to bottom, #000b 0%, transparent 14%, transparent 86%, #000c 100%);
-}
-.cinema-curtain--right .cinema-curtain-inner { --edge-dir: 90deg; }
-.cinema-curtain--left .cinema-curtain-inner { --edge-dir: 270deg; }
 
 @media (prefers-reduced-motion: reduce) {
   *,
