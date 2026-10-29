@@ -4,7 +4,7 @@ from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from cinesense.api.deps import get_embedder, get_live, get_provider, get_streaming
+from cinesense.api.deps import get_embedder, get_live, get_provider, get_streaming, get_trailers
 from cinesense.config import load_env_file
 from cinesense.domain.criteria import SearchCriteria
 from cinesense.domain.models import MoodWorld, Movie, RankedMovie
@@ -15,6 +15,7 @@ Provider = Annotated[object, Depends(get_provider)]
 Streaming = Annotated[object, Depends(get_streaming)]
 Embedder = Annotated[object, Depends(get_embedder)]
 Live = Annotated[object, Depends(get_live)]
+Trailers = Annotated[object, Depends(get_trailers)]
 
 ROW_SIZE = 12
 
@@ -111,10 +112,12 @@ def create_app(load_env: bool = True) -> FastAPI:
         return SearchService(provider).run(SearchCriteria(world_id=world_id), 0, limit).items
 
     @app.get("/api/movies/{movie_id}")
-    def movie(movie_id: str, provider: Provider, streaming: Streaming) -> Movie:
+    def movie(movie_id: str, provider: Provider, streaming: Streaming, trailers: Trailers) -> Movie:
         found = provider.get_movie(movie_id)
         if found is None:
             raise HTTPException(status_code=404, detail="movie_not_found")
+        if found.youtube_key is None and trailers is not None:  # Wikidata trailer ids always win
+            found.youtube_key = trailers.find_trailer(found.id, found.title, found.year)
         if streaming is not None and found.imdb_id:
             found.availability.streaming_de = streaming.get_de(found.imdb_id)
         return _with_images(found, provider, streaming)

@@ -47,3 +47,17 @@ def get_live():
     from cinesense.providers.live_search import LiveSearch
 
     return LiveSearch(get_streaming())
+
+
+@lru_cache
+def get_trailers():
+    s = get_settings()
+    from cinesense.providers.youtube import MemoryTrailerStore, PostgresTrailerStore, YouTubeTrailerClient
+
+    if s.database_url:
+        from cinesense.db import connect
+
+        store = PostgresTrailerStore(lambda: connect(s.database_url))
+    else:
+        store = MemoryTrailerStore()
+    return YouTubeTrailerClient(s.youtube_api_key, store, daily_limit=s.youtube_daily_limit)

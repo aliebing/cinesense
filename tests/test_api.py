@@ -1,16 +1,17 @@
 from fastapi.testclient import TestClient
 
 from cinesense.api.app import create_app
-from cinesense.api.deps import get_embedder, get_live, get_provider, get_streaming
+from cinesense.api.deps import get_embedder, get_live, get_provider, get_streaming, get_trailers
 from cinesense.providers.fixture import FixtureProvider
 
 
-def make_app(provider=None, streaming=None):
+def make_app(provider=None, streaming=None, trailers=None):
     app = create_app(load_env=False)
     app.dependency_overrides[get_provider] = lambda: provider or FixtureProvider()
     app.dependency_overrides[get_streaming] = lambda: streaming
     app.dependency_overrides[get_embedder] = lambda: None
     app.dependency_overrides[get_live] = lambda: None
+    app.dependency_overrides[get_trailers] = lambda: trailers
     return app
 
 
@@ -152,3 +153,18 @@ def test_home_fills_title_art_from_streaming_images():
     first = next(iter(data["rows"].values()))[0]
     assert first["horizontal_poster_url"] in ("h.jpg", first["horizontal_poster_url"])
     assert ImgStub.calls <= 72
+
+
+def test_wikidata_key_skips_youtube_api():
+    class Spy:
+        calls = 0
+
+        def find_trailer(self, film_id, title, year):
+            Spy.calls += 1
+            return "yt-fallback"
+
+    c = client(trailers=Spy())
+    assert c.get("/api/movies/demo-01").json()["youtube_key"] == "placeholder"  # has a key already
+    no_key = next(m for m in FixtureProvider().list_movies() if m.youtube_key is None)
+    assert c.get(f"/api/movies/{no_key.id}").json()["youtube_key"] == "yt-fallback"
+    assert Spy.calls == 1
