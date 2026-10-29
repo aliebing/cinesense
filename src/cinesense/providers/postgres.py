@@ -50,7 +50,7 @@ class PostgresProvider:
                     {m.id: m for m in movies},
                     time.monotonic(),
                 )
-        return [m.model_copy(deep=True) for m in movies]
+        return list(movies)  # shared, read-only objects; SearchService copies the page it returns
 
     def get_movie(self, movie_id: str) -> Movie | None:
         with self._conn() as c:

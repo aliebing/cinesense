@@ -3,7 +3,8 @@ explanation (explain). Ranking, filters, budgets and grounding are deterministic
 the criteria."""
 
 import logging
-import re
+import threading
+from collections import defaultdict
 from collections.abc import Callable
 
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
@@ -16,9 +17,11 @@ from cinesense.agent.state import AgentState
 from cinesense.domain.criteria import SearchCriteria
 
 MAX_ROUNDS = 6
+FALLBACK_REPLY = "Sorry, I didn’t get that — could you say it differently?"
+_thread_locks: defaultdict[str, threading.Lock] = defaultdict(threading.Lock)
+_locks_guard = threading.Lock()
 log = logging.getLogger(__name__)
 RESULTS = 8
-_ASKS_FOR_FILMS = re.compile(r"\b(show|recommend|suggest|list|more|films?|movies?|docs?|documentar\w*)\b", re.I)
 
 
 def criteria_summary(criteria: dict, tags: list[str]) -> str:
@@ -53,6 +56,10 @@ def _add_usage(usage: dict, msg) -> dict:
     }
 
 
+def _profile_kw(state: dict) -> dict:
+    return {}
+
+
 def _last_human(messages: list) -> str:
     return next((m.content for m in reversed(messages) if isinstance(m, HumanMessage)), "")
 
@@ -63,7 +70,9 @@ def build_graph(llm, explain_llm, tools: list, service, provider, checkpointer):
 
     def catalogue_titles() -> set[str]:
         if not catalogue:  # loaded once per process; lazily imported films are only missing from grounding
-            catalogue.update(m.title for m in provider.list_movies())
+            titles = {m.title for m in provider.list_movies()}
+            catalogue.update(titles)  # one atomic update; readers get the full set or build their own
+            return titles
         return catalogue
 
     def agent(state: AgentState) -> dict:
@@ -103,23 +112,24 @@ def build_graph(llm, explain_llm, tools: list, service, provider, checkpointer):
 
     def route(state: AgentState) -> str:
         last = state["messages"][-1]
-        if getattr(last, "tool_calls", None) and state.get("rounds", 0) < MAX_ROUNDS:
-            return "tick"
-        if state.get("criteria_changed"):
-            return "present"
-        if _ASKS_FOR_FILMS.search(_last_human(state["messages"])) and not str(last.content).strip().endswith("?"):
-            return "present"
-        return END
+        if getattr(last, "tool_calls", None):
+            # round limit reached: present with the current criteria (it also answers the open calls)
+            return "tick" if state.get("rounds", 0) < MAX_ROUNDS else "present"
+        return "present" if state.get("criteria_changed") else END
 
     def present(state: AgentState) -> dict:
-        update: dict = {}
+        update: dict = {"messages": []}
         last = state["messages"][-1]
-        if getattr(last, "tool_calls", None):  # round limit: every tool call still needs an answer in history
+        if getattr(last, "tool_calls", None):  # every tool call needs an answer, or the next turn is rejected
             update["messages"] = [
                 ToolMessage("Not run: tool limit reached.", tool_call_id=c["id"]) for c in last.tool_calls
             ]
-        result = service.run(SearchCriteria(**(state.get("criteria") or {})), 0, RESULTS)
-        update["results"] = [r.model_dump(mode="json") for r in result.items]
+        try:
+            result = service.run(SearchCriteria(**(state.get("criteria") or {})), 0, RESULTS, **_profile_kw(state))
+            update["results"] = [r.model_dump(mode="json") for r in result.items]
+        except Exception:  # noqa: BLE001 — keep the history valid; explain answers with "no films"
+            log.exception("present: search failed")
+            update["results"] = []
         return update
 
     def explain(state: AgentState) -> dict:
@@ -197,6 +207,13 @@ def run_turn(
         "usage": {},
         "grounding_fallback": False,
     }
+    with _locks_guard:
+        lock = _thread_locks[thread_id]
+    with lock:  # one turn at a time per conversation (two tabs, page change mid-turn)
+        return _run_locked(graph, config, inputs, on_status)
+
+
+def _run_locked(graph, config: dict, inputs: dict, on_status) -> dict:
     for update in graph.stream(inputs, config, stream_mode="updates"):
         if on_status and "agent" in update:
             for call in getattr(update["agent"]["messages"][-1], "tool_calls", None) or []:
@@ -205,7 +222,7 @@ def run_turn(
             on_status("Ranking films…")
     s = graph.get_state(config).values
     return {
-        "reply": str(s["messages"][-1].content),
+        "reply": str(s["messages"][-1].content).strip() or FALLBACK_REPLY,
         "criteria": s.get("criteria"),
         "results": s.get("results", []),
         "proposals": s.get("proposals", []),

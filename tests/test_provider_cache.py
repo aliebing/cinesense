@@ -82,3 +82,15 @@ def test_image_update_patches_cache_without_reloading():
     m = next(m for m in p.list_movies() if m.id == "ml-3")
     assert m.horizontal_poster_url == "h.jpg" and m.images_checked
     assert sum(1 for s in log if s.startswith("select") and "from films" in s and "where" not in s) == loads
+
+
+def test_list_movies_shares_cached_objects_and_search_results_are_copies():
+    from cinesense.domain.criteria import SearchCriteria
+    from cinesense.search.service import SearchService
+
+    p = provider([])
+    a, b = p.list_movies(), p.list_movies()
+    assert a[0] is b[0]  # no per-call deep copy of ~20k films
+    page = SearchService(p).run(SearchCriteria(), 0, 5)
+    page.items[0].movie.title = "mutated"
+    assert all(m.title != "mutated" for m in p.list_movies())

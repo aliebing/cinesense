@@ -74,6 +74,8 @@ class SearchService:
             sig.tag_relevance = {fid: {i: float(vectors[row][i]) for i in idxs} for row, fid in enumerate(top_ids)}
         page = combined_rank([r.movie for r in result.items], c, sig, hidden_by_tags=0, offset=offset, limit=limit)
         page.hidden_by_exclusion = result.hidden_by_exclusion
+        for r in page.items:  # callers fill images/streaming on the page; never mutate the shared catalogue
+            r.movie = r.movie.model_copy(deep=True)
         page.extended_used = extended_used
         if c.availability == "stream":
             page = self._resolve_streaming(page)

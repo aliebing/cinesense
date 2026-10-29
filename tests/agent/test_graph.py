@@ -57,3 +57,50 @@ def test_failing_tool_reports_error_to_model(make_agent):
     g = make_agent([ai(calls=[("set_mood_tags", {"tags": "not-a-list"})]), ai("Sorry.")])
     out = run_turn(g, "t7", "x", empty())
     assert out["reply"] == "Sorry."
+
+
+def _all_calls_answered(g, thread):
+    from langchain_core.messages import AIMessage, ToolMessage
+
+    msgs = g.get_state({"configurable": {"thread_id": thread}}).values["messages"]
+    calls = {c["id"] for m in msgs if isinstance(m, AIMessage) for c in m.tool_calls}
+    answered = {m.tool_call_id for m in msgs if isinstance(m, ToolMessage)}
+    return calls <= answered
+
+
+def test_round_limit_with_read_only_tools_closes_all_calls(make_agent):
+    looping = [ai(calls=[("film_facts", {"title": f"Alien {i}"})]) for i in range(10)]
+    g = make_agent(looping)
+    out = run_turn(g, "t8", "tell me about Alien and where I can watch it", empty())
+    assert out["rounds"] == 6 and out["reply"].strip()
+    assert _all_calls_answered(g, "t8")
+
+
+def test_factual_answer_is_not_replaced_by_results(make_agent):
+    g = make_agent([ai(calls=[("film_facts", {"title": "The Matrix"})]), ai("The Matrix is from 1999.")])
+    out = run_turn(g, "t9", "Tell me more about the movie The Matrix", empty())
+    assert out["reply"] == "The Matrix is from 1999." and out["results"] == []
+
+
+def test_empty_model_reply_gets_a_default(make_agent):
+    g = make_agent([ai("")])
+    out = run_turn(g, "t10", "hm", empty())
+    assert out["reply"].strip()
+
+
+def test_concurrent_turns_on_one_thread_are_serialised(make_agent):
+    import threading
+
+    g = make_agent([ai("first"), ai("second")])
+    outs = {}
+
+    def turn(name):
+        outs[name] = run_turn(g, "t11", name, empty())
+
+    ts = [threading.Thread(target=turn, args=(n,)) for n in ("a", "b")]
+    for t in ts:
+        t.start()
+    for t in ts:
+        t.join()
+    assert {outs["a"]["reply"], outs["b"]["reply"]} == {"first", "second"}
+    assert outs["a"]["history_len"] != outs["b"]["history_len"]
