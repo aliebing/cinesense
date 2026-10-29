@@ -47,9 +47,15 @@ edges_in = edges + 4  # pull the cut slightly into the fabric
 alpha = np.clip((xs_full - edges_in[:, None]) / 6.0 + 0.5, 0, 1)
 # near the edge, drop pixels that aren't red velvet (blue rim light, the white dress)
 near = xs_full < (edges_in[:, None] + 18)
-reddish = (R > 1.4 * np.maximum(G, B))
+reddish = R > 1.4 * np.maximum(G, B)
 alpha = np.where(near & ~reddish, 0, alpha)
-alpha = np.asarray(Image.fromarray((alpha * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(1.5)), dtype=np.float32) / 255
+alpha = (
+    np.asarray(
+        Image.fromarray((alpha * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(1.5)),
+        dtype=np.float32,
+    )
+    / 255
+)
 
 # --- colour grade towards photo B (warmer, more saturated red) ---
 ref = np.asarray(Image.open(ref_path).convert("RGB"), dtype=np.float32)
@@ -65,10 +71,12 @@ graded = np.clip((graded - 128) * 1.08 + 128, 0, 255)
 
 rgba = np.dstack([graded, alpha * 255]).astype(np.uint8)
 
+
 # --- taper: compress each row towards the outer (right) edge, more towards the bottom ---
 def smoothstep(e0, e1, x):
     t = np.clip((x - e0) / (e1 - e0), 0, 1)
     return t * t * (3 - 2 * t)
+
 
 out = np.zeros_like(rgba)
 xs = np.arange(w, dtype=np.float32)
