@@ -25,11 +25,7 @@ async def test_fetch_plot_none_for_disambiguation_and_missing():
             httpx.Response(
                 200,
                 json={
-                    "query": {
-                        "pages": {
-                            "1": {"title": "X", "pageprops": {"disambiguation": ""}, "extract": EXTRACT}
-                        }
-                    }
+                    "query": {"pages": {"1": {"title": "X", "pageprops": {"disambiguation": ""}, "extract": EXTRACT}}}
                 },
             ),
             httpx.Response(200, json={"query": {"pages": {"-1": {"title": "Y", "missing": ""}}}}),

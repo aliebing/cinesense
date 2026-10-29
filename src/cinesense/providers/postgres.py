@@ -65,9 +65,7 @@ class PostgresProvider:
         by_id = {r[0]: row_to_movie(r) for r in rows}
         return [by_id[i] for i in ids if i in by_id]
 
-    def update_images(
-        self, movie_id: str, poster: str | None, horizontal: str | None, backdrop: str | None
-    ) -> None:
+    def update_images(self, movie_id: str, poster: str | None, horizontal: str | None, backdrop: str | None) -> None:
         """Store looked-up images (or just 'checked' if none were found)."""
         with self._conn() as c:
             c.execute(
@@ -169,9 +167,7 @@ class PostgresProvider:
             rows = c.execute(sql, {"q": q, "limit": limit}).fetchall()
         return {r[0]: max(float(r[1]), 0.5) for r in rows}
 
-    def search_person(
-        self, q: str, role: str = "any", limit: int = 400
-    ) -> tuple[dict[str, float], dict[str, str]]:
+    def search_person(self, q: str, role: str = "any", limit: int = 400) -> tuple[dict[str, float], dict[str, str]]:
         role_sql = "" if role == "any" else "and role = %(role)s"
         sounds = "metaphone(cs_norm(name), 24) = metaphone(cs_norm(%(q)s), 24)"
         sql = (

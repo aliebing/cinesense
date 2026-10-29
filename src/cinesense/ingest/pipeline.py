@@ -112,8 +112,7 @@ async def ingest_catalogue(conn, ml_path, limit: int | None, with_extras: bool) 
     tags = read_genome_tags(ml_path)
     with conn.cursor() as cur:
         cur.executemany(
-            "insert into genome_tags (idx, tag) values (%s, %s) "
-            "on conflict (idx) do update set tag = excluded.tag",
+            "insert into genome_tags (idx, tag) values (%s, %s) on conflict (idx) do update set tag = excluded.tag",
             list(enumerate(tags)),
         )
     conn.commit()
@@ -128,9 +127,7 @@ async def ingest_catalogue(conn, ml_path, limit: int | None, with_extras: bool) 
         log.info("Wikidata matches: %d", len(wd))
         rows, people = [], []
         # one row per Wikidata item: MovieLens has a few duplicates; films are ordered most-rated first
-        taken = dict(
-            conn.execute("select wikidata_id, id from films where wikidata_id is not null").fetchall()
-        )
+        taken = dict(conn.execute("select wikidata_id, id from films where wikidata_id is not null").fetchall())
         for f in films:
             if f.movielens_id not in wd:
                 continue
@@ -148,9 +145,7 @@ async def ingest_catalogue(conn, ml_path, limit: int | None, with_extras: bool) 
         log.info("Upserted %d MovieLens films, %d people rows", len(rows), len(people))
         if with_extras:
             recent = await fetch_recent_de_releases(date(2021, 1, 1), client)
-            existing = {
-                r[0] for r in conn.execute("select wikidata_id from films where wikidata_id is not null")
-            }
+            existing = {r[0] for r in conn.execute("select wikidata_id from films where wikidata_id is not null")}
             recent = [r for r in recent if r["wikidata_id"] not in existing and r["title"]]
             people = [
                 p
@@ -243,18 +238,12 @@ async def ingest_plots(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
-    )
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--init-schema", action="store_true")
     parser.add_argument("--no-films", action="store_true", help="skip the catalogue step")
-    parser.add_argument(
-        "--no-extras", action="store_true", help="skip documentaries and recent German releases"
-    )
+    parser.add_argument("--no-extras", action="store_true", help="skip documentaries and recent German releases")
     parser.add_argument("--no-plots", action="store_true")
-    parser.add_argument(
-        "--limit", type=int, default=None, help="only the N most-rated genome films (test runs)"
-    )
+    parser.add_argument("--limit", type=int, default=None, help="only the N most-rated genome films (test runs)")
     parser.add_argument("--plots", type=int, default=None, help="only N plots this run")
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")

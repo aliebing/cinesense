@@ -63,9 +63,7 @@ def test_fold_rows_picks_earliest_de_date_first_trailer_and_dedupes():
 
 @respx.mock
 async def test_fetch_wikidata_batches():
-    route = respx.post(SPARQL_URL).mock(
-        return_value=httpx.Response(200, json={"results": {"bindings": ROWS}})
-    )
+    route = respx.post(SPARQL_URL).mock(return_value=httpx.Response(200, json={"results": {"bindings": ROWS}}))
     async with httpx.AsyncClient() as client:
         out = await fetch_wikidata(list(range(1, 302)), client, batch=150)
     assert route.call_count == 6  # 3 batches x (scalars + people)

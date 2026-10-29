@@ -130,17 +130,13 @@ class StreamingClient:
             return None
         try:
             self.store.add_call()
-            r = self.http.get(
-                f"{BASE_URL}{path}", params=params, headers={"X-API-Key": self.api_key}, timeout=5
-            )
+            r = self.http.get(f"{BASE_URL}{path}", params=params, headers={"X-API-Key": self.api_key}, timeout=5)
         except httpx.HTTPError as exc:
             log.warning("streaming API error: %s", type(exc).__name__)
             self._down_until = time.monotonic() + BREAKER_SECONDS
             return None
         if r.status_code == 429 or r.status_code >= 500:
-            log.warning(
-                "streaming API status %s — pausing calls for %d min", r.status_code, BREAKER_SECONDS // 60
-            )
+            log.warning("streaming API status %s — pausing calls for %d min", r.status_code, BREAKER_SECONDS // 60)
             self._down_until = time.monotonic() + BREAKER_SECONDS
             return None
         return r

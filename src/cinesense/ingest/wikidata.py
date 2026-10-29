@@ -81,9 +81,7 @@ def fold_bindings(rows: list[dict], key: str = "ml") -> dict:
         k = int(k) if key == "ml" else k
         f = films.get(k)
         if f is None:
-            f = films[k] = WikidataFilm(
-                movielens_id=k if key == "ml" else None, wikidata_id=_qid(_v(row, "film"))
-            )
+            f = films[k] = WikidataFilm(movielens_id=k if key == "ml" else None, wikidata_id=_qid(_v(row, "film")))
         f.imdb_id = f.imdb_id or _v(row, "imdb")
         if (rt := _v(row, "runtime")) and f.runtime_min is None:
             try:

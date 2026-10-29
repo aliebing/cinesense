@@ -50,9 +50,7 @@ class PostgresTrailerStore:
 
     def get(self, film_id):
         with self._conn() as c:
-            row = c.execute(
-                "select video_id, checked_at from trailer_cache where film_id = %s", (film_id,)
-            ).fetchone()
+            row = c.execute("select video_id, checked_at from trailer_cache where film_id = %s", (film_id,)).fetchone()
         return (row[0], row[1]) if row else None
 
     def put(self, film_id, video_id, checked_at=None):

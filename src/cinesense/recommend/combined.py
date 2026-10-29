@@ -101,9 +101,7 @@ def combined_rank(
             )
         )
     ranked.sort(key=lambda r: (r.score, r.movie.ml_rating_count), reverse=True)
-    return CombinedResult(
-        items=ranked[offset : offset + limit], total=len(ranked), hidden_by_exclusion=hidden
-    )
+    return CombinedResult(items=ranked[offset : offset + limit], total=len(ranked), hidden_by_exclusion=hidden)
 
 
 def _reasons(m: Movie, c: SearchCriteria, s: Signals) -> list[str]:

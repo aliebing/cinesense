@@ -26,15 +26,11 @@ def main() -> None:
     s = get_settings()
     cf = lambda: connect(s.database_url)  # noqa: E731
     provider = PostgresProvider(cf)
-    streaming = (
-        StreamingClient(s.streaming_api_key, PostgresStreamingStore(cf)) if s.streaming_api_key else None
-    )
+    streaming = StreamingClient(s.streaming_api_key, PostgresStreamingStore(cf)) if s.streaming_api_key else None
     movies = provider.list_movies()
     picked: dict[str, object] = {}
     for w in WORLDS:
-        in_world = sorted(
-            (m for m in movies if w.id in m.world_ids), key=lambda m: m.ml_rating_count, reverse=True
-        )
+        in_world = sorted((m for m in movies if w.id in m.world_ids), key=lambda m: m.ml_rating_count, reverse=True)
         with_trailer = [m for m in in_world if m.youtube_key and m.id not in picked][:8]
         without = [m for m in in_world if not m.youtube_key and m.id not in picked][:1]
         for m in with_trailer + without:

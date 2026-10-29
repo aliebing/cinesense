@@ -27,9 +27,7 @@ def test_picks_matching_trailer_title():
 
 @respx.mock
 def test_no_match_cached_as_none():
-    route = respx.get(SEARCH_URL).mock(
-        return_value=httpx.Response(200, json={"items": [item("x1", "Cat video")]})
-    )
+    route = respx.get(SEARCH_URL).mock(return_value=httpx.Response(200, json={"items": [item("x1", "Cat video")]}))
     c = client()
     assert c.find_trailer("ml-1", "Amélie", 2001) is None
     assert c.find_trailer("ml-1", "Amélie", 2001) is None

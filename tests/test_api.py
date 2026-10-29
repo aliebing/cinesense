@@ -119,9 +119,7 @@ def test_discover_paging_and_total():
 
 
 def test_discover_no_horror_hides_and_counts():
-    data = (
-        client().post("/api/discover", json={"criteria": {"exclude_genres": ["Horror"]}, "limit": 50}).json()
-    )
+    data = client().post("/api/discover", json={"criteria": {"exclude_genres": ["Horror"]}, "limit": 50}).json()
     assert all("Horror" not in i["movie"]["genres"] for i in data["items"])
     assert data["hidden_by_exclusion"] >= 1
 

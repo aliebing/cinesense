@@ -47,9 +47,7 @@ def _with_images(movie: Movie, provider, streaming) -> Movie:
     movie.horizontal_poster_url = movie.horizontal_poster_url or images.horizontal_poster
     movie.backdrop_url = movie.backdrop_url or images.horizontal_backdrop
     movie.images_checked = True
-    provider.update_images(
-        movie.id, images.vertical_poster, images.horizontal_poster, images.horizontal_backdrop
-    )
+    provider.update_images(movie.id, images.vertical_poster, images.horizontal_poster, images.horizontal_backdrop)
     return movie
 
 
@@ -76,9 +74,7 @@ def create_app(load_env: bool = True) -> FastAPI:
     def tags(provider: Provider) -> list[dict]:
         return [{"idx": i, "tag": t} for i, t in enumerate(provider.list_tags())]
 
-    def _discover(
-        req: DiscoverRequest, provider, streaming, embedder, live=None, tasks=None
-    ) -> DiscoverResponse:
+    def _discover(req: DiscoverRequest, provider, streaming, embedder, live=None, tasks=None) -> DiscoverResponse:
         res = SearchService(provider, streaming, embedder, live).run(req.criteria, req.offset, req.limit)
         for r in res.items[:IMAGE_FILL]:
             _with_images(r.movie, provider, streaming)

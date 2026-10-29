@@ -33,9 +33,7 @@ class SearchService:
         hidden = 0
 
         if c.has_tags():
-            hits, hidden = p.tag_search(
-                c.prefer_weights(), c.must_tags(), c.not_tags(), MUST_THRESHOLD, NOT_THRESHOLD
-            )
+            hits, hidden = p.tag_search(c.prefer_weights(), c.must_tags(), c.not_tags(), MUST_THRESHOLD, NOT_THRESHOLD)
             sig.tags = dict(hits)
             restrict = set(sig.tags)
         if c.person:
@@ -57,12 +55,7 @@ class SearchService:
             movies = [m for m in movies if m.id in restrict]
         extended_used = False
         # live search only on the first page (later pages reuse the lazily imported films)
-        if (
-            self.live is not None
-            and offset == 0
-            and (c.title or c.person)
-            and (c.extended or len(movies) < 5)
-        ):
+        if self.live is not None and offset == 0 and (c.title or c.person) and (c.extended or len(movies) < 5):
             live_hits = self._live(c, sig)
             if live_hits:
                 extended_used = True
@@ -78,12 +71,8 @@ class SearchService:
             top_ids = [r.movie.id for r in result.items[: offset + limit]]
             vectors = p.tag_vectors(top_ids)
             idxs = [t.idx for t in c.tags]
-            sig.tag_relevance = {
-                fid: {i: float(vectors[row][i]) for i in idxs} for row, fid in enumerate(top_ids)
-            }
-        page = combined_rank(
-            [r.movie for r in result.items], c, sig, hidden_by_tags=0, offset=offset, limit=limit
-        )
+            sig.tag_relevance = {fid: {i: float(vectors[row][i]) for i in idxs} for row, fid in enumerate(top_ids)}
+        page = combined_rank([r.movie for r in result.items], c, sig, hidden_by_tags=0, offset=offset, limit=limit)
         page.hidden_by_exclusion = result.hidden_by_exclusion
         page.extended_used = extended_used
         if c.availability == "stream":

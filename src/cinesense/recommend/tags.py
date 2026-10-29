@@ -22,9 +22,7 @@ def tag_scores(weights: dict[int, int], matrix: np.ndarray) -> np.ndarray:
     return sims.astype(np.float32)
 
 
-def rank_by_tags(
-    movies: list[Movie], vectors: np.ndarray, weights: dict[int, int], q: MovieQuery
-) -> list[RankedMovie]:
+def rank_by_tags(movies: list[Movie], vectors: np.ndarray, weights: dict[int, int], q: MovieQuery) -> list[RankedMovie]:
     """score = 0.7 * cosine + 0.3 * Bayesian rating / 5; the displayed percent is the same score."""
     keep = {m.id for m in apply_filters(movies, q)}
     has_vec = ~np.isnan(vectors).any(axis=1)

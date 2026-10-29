@@ -88,11 +88,7 @@ class LiveSearch:
             r.raise_for_status()
             candidates = r.json().get("search", [])
             person = next(
-                (
-                    c
-                    for c in candidates
-                    if any(w in (c.get("description") or "").lower() for w in _PERSON_WORDS)
-                ),
+                (c for c in candidates if any(w in (c.get("description") or "").lower() for w in _PERSON_WORDS)),
                 None,
             )
             if person is None:
