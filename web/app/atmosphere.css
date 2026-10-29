@@ -113,12 +113,13 @@
 /* ---------- homepage layout (proportions from the approved mockup at ~2400px) ---------- */
 .cinema-stage {
   --safe-x: 4.5%; /* clear of the curtains, which overlap 2.5% of the stage on each side */
-  --chat-w: clamp(320px, 24cqw, 560px);
+  --chat-w: clamp(380px, 28cqw, 680px);
+  --chat-x: 21%; /* chat column centred in the first third */
   --ui: clamp(12px, 0.62cqw, 16px);
 }
 .home-shade {
   position: absolute; inset: 0; z-index: 5; pointer-events: none;
-  background: radial-gradient(ellipse 34% 55% at 45% 52%, #0009 0%, #0005 50%, transparent 80%), linear-gradient(90deg, #000a, transparent 40%);
+  background: radial-gradient(ellipse 34% 60% at 21% 52%, #0009 0%, #0005 50%, transparent 80%), linear-gradient(90deg, #000a, transparent 40%);
 }
 .home-top {
   position: absolute; z-index: 20; top: 1.1cqw; left: var(--safe-x); display: flex; gap: 2cqw; align-items: baseline;
@@ -131,8 +132,8 @@
   background: #000a; color: #fff; border: 1px solid #ffffff30; border-radius: 999px; padding: .4em 1em; cursor: pointer;
 }
 .home-center {
-  position: absolute; z-index: 15; left: 45%; top: 52%; transform: translate(-50%, -50%);
-  width: var(--chat-w); text-align: center;
+  position: absolute; z-index: 15; left: var(--chat-x); top: 50%; transform: translate(-50%, -50%);
+  width: var(--chat-w); text-align: center; font-size: 1.08em;
 }
 .home-claim { margin: 0; display: flex; flex-direction: column; font-weight: 800; line-height: 1.15; text-shadow: 0 4px 24px #000;
   font-size: clamp(24px, 1.6cqw, 40px); text-wrap: balance; }
@@ -141,9 +142,9 @@
 .home-error { margin-top: .8em; font-size: var(--ui); color: #ffd7a0; text-shadow: 0 2px 8px #000; }
 
 .chat-panel {
-  text-align: left; font-size: calc(var(--ui) * .95);
+  text-align: left; font-size: calc(var(--ui) * 1.05);
   background: #0d0d14b8; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-  border: 1px solid #ffffff26; border-radius: 18px; padding: 1em; box-shadow: 0 20px 60px #000a;
+  border: 1px solid #ffffff26; border-radius: 18px; padding: 1.3em; box-shadow: 0 20px 60px #000a;
 }
 .chat-msg { line-height: 1.45; padding: .65em .9em; border-radius: 12px; margin-bottom: .6em; max-width: 88%; }
 .chat-msg--user { margin-left: auto; background: var(--gold); color: #16130c; }
@@ -163,7 +164,7 @@
 
 .film-titles {
   position: absolute; z-index: 16; pointer-events: none; top: 2.4cqw; height: 10cqw;
-  left: calc(45% + var(--chat-w) / 2 - 5cqw); right: 15%;
+  left: calc(var(--chat-x) + var(--chat-w) / 2 + 2cqw); right: 12%;
 }
 .film-title {
   position: absolute; left: 50%; width: 100%; text-align: center; line-height: .95;
@@ -184,7 +185,7 @@
 
 .home-rows {
   position: absolute; z-index: 10; right: 0; bottom: .8cqw;
-  left: calc(45% + var(--chat-w) / 2 + 6cqw);
+  left: calc(var(--chat-x) + var(--chat-w) / 2 + 3cqw);
   -webkit-mask-image: linear-gradient(90deg, transparent 0%, #0006 8%, #000 22%);
   mask-image: linear-gradient(90deg, transparent 0%, #0006 8%, #000 22%);
 }
