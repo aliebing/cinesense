@@ -3,7 +3,7 @@ Anything else falls back to a deterministic template answer."""
 
 import re
 
-_EMPHASIS = re.compile(r"\*\*(.+?)\*\*|(?<!\*)\*(?!\*)(.+?)\*|_(.+?)_|\"(.+?)\"|“(.+?)”")
+_EMPHASIS = re.compile(r"\*\*(.+?)\*\*|(?<!\*)\*(?!\*)(.+?)\*|(?<!\w)_(.+?)_(?!\w)|\"(.+?)\"|“(.+?)”")
 _STOP = {"the", "a", "an", "of", "in", "on", "and", "to", "for", "at", "it", "is", "my", "me", "you", "up", "time"}
 
 
@@ -28,6 +28,21 @@ def mentioned_titles(text: str, catalogue_titles: set[str]) -> list[str]:
     return found
 
 
+def user_named_titles(text: str, catalogue_titles: set[str]) -> list[str]:
+    """Catalogue titles the user wrote, including single-word ones ("Alien"), matched case-insensitively."""
+    by_norm = {}
+    for t in catalogue_titles:
+        by_norm.setdefault(_norm(t), t)
+    words = _norm(text).split()
+    found = []
+    for n in range(1, 9):
+        for i in range(len(words) - n + 1):
+            key = " ".join(words[i : i + n])
+            if key in by_norm and by_norm[key] not in found and (n > 1 or key not in _STOP):
+                found.append(by_norm[key])
+    return found
+
+
 def validate_titles(
     text: str, allowed_titles: list[str], catalogue_titles: set[str], tag_spans: list[str] = ()
 ) -> tuple[bool, list[str]]:
@@ -39,6 +54,8 @@ def validate_titles(
     bad: list[str] = []
     for m in _EMPHASIS.finditer(text):
         span = next(g for g in m.groups() if g).strip()
+        if m.lastindex and m.lastindex >= 4 and len(span.split()) < 2:
+            continue  # a quoted single word ("Mother") is a name or a word, rarely a film reference
         key = _norm(re.sub(r"\(\d{4}\)$", "", span))
         if key in tags:
             continue

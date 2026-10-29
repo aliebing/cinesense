@@ -2,7 +2,7 @@
 
 import re
 
-from cinesense.agent.grounding import mentioned_titles, validate_titles
+from cinesense.agent.grounding import user_named_titles, validate_titles
 from cinesense.eval.scenarios import Expect
 
 Check = tuple[bool, list[str]]
@@ -48,7 +48,7 @@ def check_grounding(
     reply: str, results: list[dict], catalogue_titles: set[str], user_text: str, tag_spans: list[str] = ()
 ) -> Check:
     """tag_spans: the tags of the final search and the proposals — the same rule as the production guard."""
-    allowed = [r["movie"]["title"] for r in results] + mentioned_titles(user_text, catalogue_titles)
+    allowed = [r["movie"]["title"] for r in results] + user_named_titles(user_text, catalogue_titles)
     ok, bad = validate_titles(reply, allowed, catalogue_titles, tag_spans)
     return ok, [f"unlisted title: {t}" for t in bad]
 

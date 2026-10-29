@@ -61,3 +61,14 @@ def test_emphasised_tag_from_the_criteria_is_not_a_film():
 def test_short_allowed_title_does_not_cut_words():
     ok, bad = validate_titles("**Up** is lovely, unlike The Dark Knight.", ["Up"], BIG)
     assert not ok and bad == ["The Dark Knight"]
+
+
+def test_single_word_title_named_by_the_user_is_allowed():
+    from cinesense.agent.grounding import user_named_titles
+
+    cat = BIG | {"Mother", "Heat"}
+    named = user_named_titles("Tell me more about the movie Alien", cat)
+    assert named == ["Alien"]
+    reply = '**Alien** (1979): the computer, "Mother", wakes the crew.'
+    assert validate_titles(reply, named, cat)[0]
+    assert not validate_titles("Also watch **Heat**.", named, cat)[0]

@@ -11,7 +11,7 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, Tool
 from langgraph.graph import END, START, StateGraph
 from langgraph.types import Command
 
-from cinesense.agent.grounding import mentioned_titles, template_answer, validate_titles
+from cinesense.agent.grounding import template_answer, user_named_titles, validate_titles
 from cinesense.agent.prompts import AGENT_PROMPT, EXPLAIN_PROMPT
 from cinesense.agent.state import AgentState
 from cinesense.domain.criteria import SearchCriteria
@@ -157,7 +157,7 @@ def build_graph(llm, explain_llm, tools: list, service, provider, checkpointer):
         except Exception:  # noqa: BLE001 — the template is always a valid answer
             text = ""
         titles = catalogue_titles()
-        allowed = [r["movie"]["title"] for r in results] + mentioned_titles(wish, titles)
+        allowed = [r["movie"]["title"] for r in results] + user_named_titles(wish, titles)
         names = provider.list_tags()
         tag_spans = [names[t["idx"]] for t in (state.get("criteria") or {}).get("tags", []) if t["idx"] < len(names)]
         tag_spans += [p["tag"] for p in state.get("proposals") or []]
