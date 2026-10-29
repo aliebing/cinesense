@@ -1,5 +1,8 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
+const reportTrailer = vi.fn();
+vi.mock("@/lib/api", () => ({ reportTrailer: (id: string) => reportTrailer(id) }));
+
 import HoverTrailer from "@/components/media/HoverTrailer";
 import { resetActiveTrailer } from "@/lib/useActiveTrailer";
 import type { Movie } from "@/lib/types";
@@ -83,5 +86,50 @@ it("under reduced motion requires a click", () => {
   act(() => vi.advanceTimersByTime(600));
   expect(document.querySelector("iframe")).toBeNull();
   fireEvent.click(screen.getByRole("button", { name: "Play trailer" }));
+  expect(document.querySelector("iframe")).not.toBeNull();
+});
+
+
+function playerMessage(data: object) {
+  act(() => {
+    window.dispatchEvent(new MessageEvent("message", { origin: "https://www.youtube-nocookie.com", data: JSON.stringify(data) }));
+  });
+}
+
+it("keeps the player invisible until YouTube reports playback", () => {
+  render(tile());
+  fireEvent.pointerEnter(screen.getByTestId("hover-trailer"));
+  act(() => vi.advanceTimersByTime(550));
+  const player = document.querySelector(".hover-trailer__player")!;
+  expect(document.querySelector("iframe")!.getAttribute("src")).toContain("enablejsapi=1");
+  expect(player.classList.contains("is-playing")).toBe(false);
+  playerMessage({ event: "onStateChange", info: 1 });
+  expect(player.classList.contains("is-playing")).toBe(true);
+});
+
+it("an unplayable trailer disappears, is reported and never retried", () => {
+  reportTrailer.mockReset();
+  const c = { ...a, youtube_key: "deadKey" };
+  render(tile(c));
+  const box = screen.getByTestId("hover-trailer");
+  fireEvent.pointerEnter(box);
+  act(() => vi.advanceTimersByTime(550));
+  playerMessage({ event: "onError", info: 150 });
+  expect(document.querySelector("iframe")).toBeNull();
+  expect(reportTrailer).toHaveBeenCalledWith("deadKey");
+  fireEvent.pointerLeave(box);
+  fireEvent.pointerEnter(box);
+  act(() => vi.advanceTimersByTime(550));
+  expect(document.querySelector("iframe")).toBeNull();
+  expect(screen.queryByText("No trailer available")).toBeNull(); // no note for a film whose trailer just failed
+});
+
+it("ignores messages from other origins", () => {
+  render(tile({ ...b, youtube_key: "keyX" }));
+  fireEvent.pointerEnter(screen.getByTestId("hover-trailer"));
+  act(() => vi.advanceTimersByTime(550));
+  act(() => {
+    window.dispatchEvent(new MessageEvent("message", { origin: "https://evil.example", data: '{"event":"onError","info":150}' }));
+  });
   expect(document.querySelector("iframe")).not.toBeNull();
 });

@@ -1,6 +1,9 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { expect, it } from "vitest";
+import { expect, it, vi } from "vitest";
+const reportTrailer = vi.fn();
+vi.mock("@/lib/api", () => ({ reportTrailer: (id: string) => reportTrailer(id) }));
+
 import StagePanel from "@/components/genre/StagePanel";
 import { sampleMovies, sampleWorlds } from "./fixtures";
 
@@ -119,4 +122,22 @@ it("the stage trailer stops when a hover trailer starts (one audio source)", asy
   expect(screen.getByTitle("Official trailer: Demo-Film 01")).toBeInTheDocument();
   await userEvent.click(screen.getByRole("button", { name: "hover" }));
   expect(screen.queryByTitle("Official trailer: Demo-Film 01")).toBeNull();
+});
+
+
+it("a blocked stage trailer falls back to the image with a YouTube link and is reported", async () => {
+  const { act } = await import("@testing-library/react");
+  reportTrailer.mockReset();
+  render(<StagePanel movie={{ ...base, youtube_key: "blockedDE1" }} world={world} why="Test" />);
+  await userEvent.click(screen.getByRole("button", { name: /Play trailer/ }));
+  expect(screen.getByTitle("Official trailer: Demo-Film 01").getAttribute("src")).toContain("enablejsapi=1");
+  act(() => {
+    window.dispatchEvent(
+      new MessageEvent("message", { origin: "https://www.youtube-nocookie.com", data: '{"event":"onError","info":150}' }),
+    );
+  });
+  expect(screen.queryByTitle(/Official trailer/)).toBeNull();
+  expect(screen.getByText(/can.t be played here/)).toBeInTheDocument();
+  expect(screen.getByRole("link", { name: "Watch on YouTube" })).toHaveAttribute("href", "https://www.youtube.com/watch?v=blockedDE1");
+  expect(reportTrailer).toHaveBeenCalledWith("blockedDE1");
 });

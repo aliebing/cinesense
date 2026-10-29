@@ -3,14 +3,22 @@ import json
 from fastapi.testclient import TestClient
 
 from cinesense.api.app import create_app
-from cinesense.api.deps import get_agent, get_embedder, get_live, get_provider, get_streaming, get_trailers
+from cinesense.api.deps import (
+    get_agent,
+    get_embedder,
+    get_live,
+    get_provider,
+    get_streaming,
+    get_trailer_checker,
+    get_trailers,
+)
 from cinesense.providers.fixture import FixtureProvider
 
 
 def make_app():
     app = create_app(load_env=False)
     app.dependency_overrides[get_provider] = FixtureProvider
-    for dep in (get_streaming, get_embedder, get_live, get_trailers):
+    for dep in (get_streaming, get_embedder, get_live, get_trailers, get_trailer_checker):
         app.dependency_overrides[dep] = lambda: None
     return app
 

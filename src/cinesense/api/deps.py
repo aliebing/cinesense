@@ -105,3 +105,16 @@ def get_feedback_store():
 
         return PostgresFeedbackStore(lambda: connect(s.database_url))
     return MemoryFeedbackStore()
+
+
+@lru_cache
+def get_trailer_checker():
+    s = get_settings()
+    from cinesense.providers.trailer_check import TrailerChecker
+    from cinesense.providers.youtube import MemoryTrailerStore, PostgresTrailerStore
+
+    if s.database_url:
+        from cinesense.db import connect
+
+        return TrailerChecker(PostgresTrailerStore(lambda: connect(s.database_url)))
+    return TrailerChecker(MemoryTrailerStore())

@@ -8,6 +8,7 @@ from cinesense.api.deps import (
     get_live,
     get_provider,
     get_streaming,
+    get_trailer_checker,
     get_trailers,
 )
 from cinesense.personal.feedback import MemoryFeedbackStore
@@ -23,7 +24,7 @@ def client(runner=None):
     app.dependency_overrides[get_provider] = lambda: PROVIDER
     app.dependency_overrides[get_feedback_store] = lambda: store
     app.dependency_overrides[get_agent] = lambda: runner
-    for dep in (get_streaming, get_embedder, get_live, get_trailers):
+    for dep in (get_streaming, get_embedder, get_live, get_trailers, get_trailer_checker):
         app.dependency_overrides[dep] = lambda: None
     return TestClient(app)
 

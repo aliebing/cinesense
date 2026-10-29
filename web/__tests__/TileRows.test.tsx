@@ -11,11 +11,11 @@ const rows = [
   { world: sampleWorlds[1], movies: sampleMovies(6) },
 ];
 
-it("renders one labelled row per world and calls onSelect", async () => {
+it("renders one row per world without a category label and calls onSelect", async () => {
   const onSelect = vi.fn();
   render(<TileRows rows={rows} onSelect={onSelect} variedSpeed={false} />);
   expect(screen.getAllByTestId("tile-row")).toHaveLength(2);
-  expect(screen.getByRole("link", { name: "Suspense & Mystery" })).toHaveAttribute("href", "/world/suspense");
+  expect(screen.queryByRole("link", { name: "Suspense & Mystery" })).toBeNull();
   await userEvent.click(screen.getAllByRole("button", { name: "Demo-Film 01" })[0]);
   expect(onSelect).toHaveBeenCalledWith(expect.objectContaining({ id: "demo-01" }));
 });

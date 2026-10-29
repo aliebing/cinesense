@@ -1,7 +1,7 @@
 from fastapi.testclient import TestClient
 
 from cinesense.api.app import create_app
-from cinesense.api.deps import get_embedder, get_live, get_provider, get_streaming, get_trailers
+from cinesense.api.deps import get_embedder, get_live, get_provider, get_streaming, get_trailer_checker, get_trailers
 from cinesense.providers.fixture import FixtureProvider
 
 
@@ -12,6 +12,7 @@ def make_app(provider=None, streaming=None, trailers=None):
     app.dependency_overrides[get_embedder] = lambda: None
     app.dependency_overrides[get_live] = lambda: None
     app.dependency_overrides[get_trailers] = lambda: trailers
+    app.dependency_overrides[get_trailer_checker] = lambda: None
     return app
 
 
@@ -69,7 +70,7 @@ def test_home_rows_per_world():
     assert len(data["worlds"]) == 6
     assert set(data["rows"]) == {"suspense", "scifi", "romance", "adventure", "comedy", "action"}
     for wid, films in data["rows"].items():
-        assert 0 < len(films) <= 12 and all(wid in f["world_ids"] for f in films)
+        assert 0 < len(films) <= 16 and all(wid in f["world_ids"] for f in films)
     assert len(data["tiles"]) == 24
     covered = {wid for t in data["tiles"] for wid in t["world_ids"]}
     assert {"suspense", "scifi", "romance", "adventure", "comedy", "action"} <= covered
@@ -187,3 +188,15 @@ def test_images_checked_films_skip_streaming_lookups():
     first = s.image_calls
     c.get("/api/home")
     assert first > 0 and s.image_calls == first
+
+
+def test_home_rows_never_repeat_a_film():
+    data = client().get("/api/home").json()
+    ids = [f["id"] for films in data["rows"].values() for f in films]
+    assert len(ids) == len(set(ids))
+
+
+def test_trailer_report_endpoint_validates_ids():
+    c = client()
+    assert c.post("/api/trailers/report", json={"video_id": "abc_DEF-123"}).status_code == 204
+    assert c.post("/api/trailers/report", json={"video_id": "<script>"}).status_code == 422

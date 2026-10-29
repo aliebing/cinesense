@@ -59,12 +59,13 @@ it("top tile row follows the hero world and advances after 12 s", async () => {
   vi.useFakeTimers({ shouldAdvanceTime: true });
   getHome.mockResolvedValue({ ok: true, data: sampleHome });
   render(<HomePage />);
-  const firstLabel = async () => (await screen.findAllByRole("link", { name: /Suspense|Action/ }))[0];
-  expect((await firstLabel()).textContent).toBe("Suspense & Mystery");
+  const firstWorld = () => screen.getAllByTestId("tile-row")[0].closest(".tile-row-wrap")!.getAttribute("data-world");
+  await screen.findAllByTestId("tile-row");
+  expect(firstWorld()).toBe("suspense");
   await act(async () => {
     await vi.advanceTimersByTimeAsync(12100);
   });
-  expect(screen.getAllByTestId("tile-row")[0].closest(".tile-row-wrap")!.textContent).toContain("Action & Adrenaline");
+  expect(firstWorld()).toBe("action");
   vi.useRealTimers();
 });
 

@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import HoverTrailer from "@/components/media/HoverTrailer";
 import { useActiveTrailer } from "@/lib/useActiveTrailer";
@@ -72,10 +71,7 @@ export default function TileRows({ rows, onSelect, variedSpeed }: Props) {
   return (
     <div className="tile-rows" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
       {rows.map(({ world, movies }, r) => (
-        <div key={world.id} className="tile-row-wrap">
-          <Link href={`/world/${world.id}`} className="tile-row-label" style={{ ["--tint" as string]: world.tint }}>
-            {world.title}
-          </Link>
+        <div key={world.id} className="tile-row-wrap" data-world={world.id}>
           <div className="tile-row-viewport">
           <div
             className="tile-row"

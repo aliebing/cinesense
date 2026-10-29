@@ -1,7 +1,9 @@
 "use client";
 
 import ImageOrPlaceholder from "@/components/ui/ImageOrPlaceholder";
+import { useRef } from "react";
 import { useActiveTrailer } from "@/lib/useActiveTrailer";
+import { embedUrl, listenTo, useYouTubeState } from "@/lib/youtubePlayer";
 import type { MoodWorld, Movie } from "@/lib/types";
 
 const rating = new Intl.NumberFormat("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
@@ -22,16 +24,34 @@ function Trailer({ movie }: { movie: Movie }) {
   const { activeId, activate } = useActiveTrailer();
   const playing = activeId === stageId;
   const setPlaying = (on: boolean) => on && activate(stageId);
+  const frame = useRef<HTMLIFrameElement | null>(null);
+  const raw = movie.youtube_key && movie.youtube_key !== "placeholder" ? movie.youtube_key : null;
+  const { failed } = useYouTubeState(playing, raw);
   const key = movie.youtube_key;
-  if (key && key !== "placeholder" && playing) {
+  if (raw && playing && !failed) {
     return (
       <iframe
+        ref={frame}
+        onLoad={() => listenTo(frame, stageId)}
         className="stage-trailer__frame"
-        src={`https://www.youtube-nocookie.com/embed/${encodeURIComponent(key)}?autoplay=1`}
+        src={embedUrl(raw, "autoplay=1")}
         title={`Official trailer: ${movie.title}`}
         allow="autoplay; encrypted-media; picture-in-picture"
         allowFullScreen
       />
+    );
+  }
+  if (raw && failed) {
+    return (
+      <>
+        <ImageOrPlaceholder src={movie.backdrop_url} alt="" />
+        <small className="stage-trailer__note">
+          This trailer can&apos;t be played here (blocked for other sites or in Germany).{" "}
+          <a href={`https://www.youtube.com/watch?v=${encodeURIComponent(raw)}`} target="_blank" rel="noreferrer">
+            Watch on YouTube
+          </a>
+        </small>
+      </>
     );
   }
   return (

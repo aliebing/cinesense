@@ -2,27 +2,30 @@
 
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useActiveTrailer } from "@/lib/useActiveTrailer";
+import { embedUrl, isBadTrailer, listenTo, useYouTubeState } from "@/lib/youtubePlayer";
 import { useReducedMotion } from "@/lib/useReducedMotion";
 import type { Movie } from "@/lib/types";
 
 const INTENT_MS = 500;
-
 function embedSrc(key: string, muted: boolean) {
   const k = encodeURIComponent(key);
-  return (
-    `https://www.youtube-nocookie.com/embed/${k}?autoplay=1&mute=${muted ? 1 : 0}` +
-    `&controls=0&loop=1&playlist=${k}&modestbranding=1&playsinline=1&rel=0`
-  );
+  return embedUrl(key, `autoplay=1&mute=${muted ? 1 : 0}&controls=0&loop=1&playlist=${k}&modestbranding=1&playsinline=1&rel=0`);
 }
 
-/** Wraps a tile/card: hovering for 0.5 s starts the trailer muted inside it; one trailer app-wide. */
+/** Wraps a tile/card: hovering for 0.5 s starts the trailer muted inside it; one trailer app-wide.
+ *  The player stays invisible until YouTube reports playback; if it reports an error the tile keeps its image,
+ *  the id is reported to the backend and never offered again. */
 export default function HoverTrailer({ movie, children, className = "" }: { movie: Movie; children: ReactNode; className?: string }) {
   const id = useId();
   const { activeId, activate, deactivate } = useActiveTrailer();
   const reduced = useReducedMotion();
   const [muted, setMuted] = useState(true);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const frame = useRef<HTMLIFrameElement | null>(null);
   const active = activeId === id;
+  const candidate = movie.youtube_key && !isBadTrailer(movie.youtube_key) ? movie.youtube_key : null;
+  const { playing, failed } = useYouTubeState(active, candidate);
+  const key = failed ? null : candidate;
 
   useEffect(() => () => {
     if (timer.current) clearTimeout(timer.current);
@@ -40,6 +43,7 @@ export default function HoverTrailer({ movie, children, className = "" }: { movi
     if (timer.current) clearTimeout(timer.current);
     deactivate(id);
   };
+  const listen = () => listenTo(frame, id);
 
   return (
     <div
@@ -49,10 +53,12 @@ export default function HoverTrailer({ movie, children, className = "" }: { movi
       onPointerLeave={onLeave}
     >
       {children}
-      {active && movie.youtube_key && (
-        <div className="hover-trailer__player">
+      {active && key && (
+        <div className={`hover-trailer__player ${playing ? "is-playing" : ""}`}>
           <iframe
-            src={embedSrc(movie.youtube_key, muted)}
+            ref={frame}
+            onLoad={listen}
+            src={embedSrc(key, muted)}
             title={`Trailer: ${movie.title}`}
             allow="autoplay; encrypted-media; picture-in-picture"
           />
@@ -70,7 +76,7 @@ export default function HoverTrailer({ movie, children, className = "" }: { movi
         </div>
       )}
       {active && !movie.youtube_key && <span className="hover-trailer__note">No trailer available</span>}
-      {reduced && movie.youtube_key && !active && (
+      {reduced && key && !active && (
         <button
           type="button"
           className="hover-trailer__play"

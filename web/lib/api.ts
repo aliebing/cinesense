@@ -57,3 +57,5 @@ export const sendFeedback = (filmId: string, value: -1 | 0 | 1) =>
   apiPost<ProfileSummary>("/api/feedback", { film_id: filmId, value });
 export const getProfile = () => apiGet<ProfileSummary>("/api/profile");
 export const resetProfile = () => request<ProfileSummary>("/api/profile", { method: "DELETE" });
+/** The embedded player could not play this trailer; the backend stops offering it. */
+export const reportTrailer = (videoId: string) => apiPost<null>("/api/trailers/report", { video_id: videoId });
