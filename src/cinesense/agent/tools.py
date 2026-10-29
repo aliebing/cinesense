@@ -96,6 +96,8 @@ class ToolKit:
 
     def find_person(self, state: dict, name: str, role: str = "any") -> tuple[dict, str]:
         scores, names = self.provider.search_person(name, role)
+        if not scores:
+            return {}, f"{name} not found in the catalogue; criteria unchanged."
         resolved = next(iter(names.values()), name)
         c = self._criteria(state).model_copy(update={"person": resolved, "person_role": role})
         return {

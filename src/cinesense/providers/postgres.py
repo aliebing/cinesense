@@ -164,21 +164,26 @@ class PostgresProvider:
 
     # --- title / people (typo, accent and sound-alike tolerant) ----------
     def search_title(self, q: str, limit: int = 200) -> dict[str, float]:
-        sounds = "metaphone(cs_norm(title), 24) = metaphone(cs_norm(%(q)s), 24)"
+        sounds = (  # an input without letters sounds like nothing and must not match every such title
+            "(metaphone(cs_norm(%(q)s), 24) <> '' and metaphone(cs_norm(title), 24) = metaphone(cs_norm(%(q)s), 24))"
+        )
         sql = (
             "select id, greatest(similarity(cs_norm(title), cs_norm(%(q)s)), "
             f"case when {sounds} then 0.6 else 0 end) as s "
             f"from films where cs_norm(title) %% cs_norm(%(q)s) or {sounds} "
-            "or cs_norm(title) like '%%' || cs_norm(%(q)s) || '%%' "
+            "or cs_norm(title) like '%%' || cs_norm(%(ql)s) || '%%' escape '\\' "
             "order by s desc, ml_rating_count desc limit %(limit)s"
         )
         with self._conn() as c:
-            rows = c.execute(sql, {"q": q, "limit": limit}).fetchall()
+            ql = q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")  # "%" is a character, not "anything"
+            rows = c.execute(sql, {"q": q, "ql": ql, "limit": limit}).fetchall()
         return {r[0]: max(float(r[1]), 0.5) for r in rows}
 
     def search_person(self, q: str, role: str = "any", limit: int = 400) -> tuple[dict[str, float], dict[str, str]]:
         role_sql = "" if role == "any" else "and role = %(role)s"
-        sounds = "metaphone(cs_norm(name), 24) = metaphone(cs_norm(%(q)s), 24)"
+        sounds = (
+            "(metaphone(cs_norm(%(q)s), 24) <> '' and metaphone(cs_norm(name), 24) = metaphone(cs_norm(%(q)s), 24))"
+        )
         sql = (
             "select film_id, name, greatest(similarity(cs_norm(name), cs_norm(%(q)s)), "
             f"case when {sounds} then 0.6 else 0 end) as s "

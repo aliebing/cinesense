@@ -91,6 +91,8 @@ def feedback(
 ) -> ProfileSummary:
     if user is None:
         raise HTTPException(status_code=400, detail="missing_user_id")
+    if provider.get_movie(req.film_id) is None:  # only real films go into the shared table
+        raise HTTPException(status_code=404, detail="movie_not_found")
     store.set(user, req.film_id, req.value)
     fb = store.get(user)
     return summary(cached_profile(fb, provider) if fb else None, provider)

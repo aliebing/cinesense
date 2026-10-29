@@ -27,6 +27,9 @@ SYNONYMS = {
 }
 
 
+NEGATIONS = ("un", "non", "not ", "no ", "anti")
+
+
 def resolve_tags(names: list[str], all_tags: list[str]) -> tuple[list[tuple[str, int]], list[str]]:
     index = {t.lower(): i for i, t in enumerate(all_tags)}
     resolved: list[tuple[str, int]] = []
@@ -38,7 +41,8 @@ def resolve_tags(names: list[str], all_tags: list[str]) -> tuple[list[tuple[str,
             i = index[candidate.lower()]
         else:
             close = difflib.get_close_matches(name, list(index), n=1, cutoff=0.8)
-            if not close:
+            negated = name.startswith(NEGATIONS) and not close[0].startswith(NEGATIONS) if close else False
+            if not close or negated:  # "unromantic" must never become "romantic"
                 unresolved.append(raw)
                 continue
             i = index[close[0]]

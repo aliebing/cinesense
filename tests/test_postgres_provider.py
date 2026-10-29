@@ -56,3 +56,8 @@ def test_feedback_store_roundtrip_and_profile(provider, db_url):
     finally:
         store.clear(user)
     assert store.get(user) == {}
+
+
+def test_title_search_treats_wildcards_literally(provider):
+    assert len(provider.search_title("%")) < 50
+    assert len(provider.search_title("_")) < 50

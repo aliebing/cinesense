@@ -56,6 +56,15 @@ def _add_usage(usage: dict, msg) -> dict:
     }
 
 
+HISTORY_TURNS = 8  # user turns the model sees; older ones stay in memory but are not resent
+
+
+def trim_history(messages: list, max_turns: int = HISTORY_TURNS) -> list:
+    """The last max_turns user turns, cut at a user message so tool calls and their answers stay together."""
+    starts = [i for i, m in enumerate(messages) if isinstance(m, HumanMessage)]
+    return messages if len(starts) <= max_turns else messages[starts[-max_turns] :]
+
+
 def _profile_kw(state: dict) -> dict:
     from cinesense.personal.profile import Profile
 
@@ -81,7 +90,7 @@ def build_graph(llm, explain_llm, tools: list, service, provider, checkpointer):
         system = SystemMessage(
             AGENT_PROMPT.format(criteria=criteria_summary(state.get("criteria"), provider.list_tags()))
         )
-        msg = agent_llm.invoke([system, *state["messages"]])
+        msg = agent_llm.invoke([system, *trim_history(state["messages"])])
         return {"messages": [msg], "usage": _add_usage(state.get("usage") or {}, msg)}
 
     def tick(state: AgentState) -> dict:

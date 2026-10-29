@@ -9,3 +9,9 @@ def test_resolve_exact_synonym_fuzzy_and_unresolved():
     assert names == ["dark", "medieval", "creepy", "space travel", "world war ii", "dark"]
     assert all(TAGS[i] == n for n, i in resolved)
     assert unresolved == ["cozy vibes"]
+
+
+def test_negated_words_never_resolve_to_their_opposite():
+    tags = ["romantic", "violent", "funny"]
+    resolved, unresolved = resolve_tags(["unromantic", "nonviolent", "not funny"], tags)
+    assert resolved == [] and unresolved == ["unromantic", "nonviolent", "not funny"]

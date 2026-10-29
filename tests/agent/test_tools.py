@@ -81,3 +81,8 @@ def test_find_person_sets_criteria(kit):
 def test_not_horror_also_excludes_the_genre(kit):
     upd, _ = kit.set_mood_tags(state(), [{"name": "horror", "mode": "not"}])
     assert upd["criteria"]["exclude_genres"] == ["Horror"]
+
+
+def test_find_person_without_matches_changes_nothing(kit):
+    upd, msg = kit.find_person(state(), "Zzyzx Qwertyuiop")
+    assert upd == {} and "not found" in msg.lower()

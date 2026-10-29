@@ -122,3 +122,21 @@ def test_run_turn_reports_tools_and_tool_errors(make_agent):
     )
     out = run_turn(g, "t13", "dark", empty())
     assert out["tools_called"] == ["set_mood_tags", "set_mood_tags"] and out["tool_errors"] == 1
+
+
+def test_history_is_trimmed_at_turn_boundaries():
+    from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
+
+    from cinesense.agent.graph import trim_history
+
+    msgs = []
+    for i in range(12):
+        msgs += [
+            HumanMessage(f"q{i}"),
+            AIMessage("", tool_calls=[{"name": "t", "args": {}, "id": f"c{i}"}]),
+            ToolMessage("ok", tool_call_id=f"c{i}"),
+            AIMessage(f"a{i}"),
+        ]
+    kept = trim_history(msgs, max_turns=4)
+    assert isinstance(kept[0], HumanMessage) and kept[0].content == "q8" and len(kept) == 16
+    assert trim_history(msgs[:4], max_turns=4) == msgs[:4]

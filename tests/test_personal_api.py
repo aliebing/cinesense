@@ -93,3 +93,15 @@ def test_chat_receives_profile():
     c.post("/api/feedback", json={"film_id": fid("The Matrix"), "value": 1}, headers=USER)
     c.post("/api/chat", json={"thread_id": "t", "message": "hi", "criteria": {}}, headers=USER)
     assert seen["profile"] is not None and seen["profile"].liked == [fid("The Matrix")]
+
+
+def test_feedback_for_unknown_film_is_rejected():
+    assert client().post("/api/feedback", json={"film_id": "ml-999999999", "value": 1}, headers=USER).status_code == 404
+
+
+def test_world_movies_hide_disliked_films():
+    c = client()
+    first = c.get("/api/worlds/romance/movies?limit=50", headers=USER).json()[0]["movie"]["id"]
+    c.post("/api/feedback", json={"film_id": first, "value": -1}, headers=USER)
+    ids = [r["movie"]["id"] for r in c.get("/api/worlds/romance/movies?limit=50", headers=USER).json()]
+    assert first not in ids

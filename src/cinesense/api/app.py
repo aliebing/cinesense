@@ -31,6 +31,7 @@ Checker = Annotated[object, Depends(get_trailer_checker)]
 
 ROW_SIZE = 16
 IMAGE_FILL = 12  # images fetched per list response (each new film costs one Streaming API request once)
+RELATED_IMAGE_FILL = 24  # the related row shows up to 24 films; no blank tiles
 
 
 class DiscoverRequest(BaseModel):
@@ -118,11 +119,12 @@ def create_app(load_env: bool = True) -> FastAPI:
 
     @app.get("/api/worlds/{world_id}/movies")
     def world_movies(
-        world_id: str, provider: Provider, limit: Annotated[int, Query(ge=1, le=100)] = 12
+        world_id: str, provider: Provider, profile: UserProfile, limit: Annotated[int, Query(ge=1, le=100)] = 12
     ) -> list[RankedMovie]:
         if get_world(world_id) is None:
             raise HTTPException(status_code=404, detail="world_not_found")
-        return SearchService(provider).run(SearchCriteria(world_id=world_id), 0, limit).items
+        # with the profile: a rejected film never comes back as the world's default stage film
+        return SearchService(provider).run(SearchCriteria(world_id=world_id), 0, limit, profile).items
 
     @app.get("/api/movies/{movie_id}")
     def movie(movie_id: str, provider: Provider, streaming: Streaming, trailers: Trailers, checker: Checker) -> Movie:
@@ -157,7 +159,7 @@ def create_app(load_env: bool = True) -> FastAPI:
         items = [r for r in items if r.movie.id != movie_id][:limit]
         if checker is not None:
             checker.filter_playable([r.movie for r in items])
-        for r in items[:IMAGE_FILL]:
+        for r in items[:RELATED_IMAGE_FILL]:
             _with_images(r.movie, provider, streaming)
         return items
 
