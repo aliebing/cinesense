@@ -7,6 +7,9 @@ requires-python = ">=3.12"
 dependencies = [
     "fastapi==0.162.0",
     "httpx==0.28.1",
+    "numpy==2.5.4",
+    "pgvector==0.5.1",
+    "psycopg[binary]==3.3.6",
     "pydantic==2.14.1",
     "uvicorn[standard]==0.54.0",
 ]
@@ -22,6 +25,7 @@ packages = ["src/cinesense"]
 dev = [
     "httpx2==2.16.0",
     "pytest==9.2.0",
+    "respx==0.23.1",
     "ruff==0.17.3",
 ]
 

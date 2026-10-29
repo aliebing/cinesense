@@ -1,4 +1,4 @@
-.PHONY: dev-api dev-web test test-api test-web lint
+.PHONY: dev-api dev-web test test-api test-web lint db-init ingest
 
 dev-api:
 	uv run uvicorn cinesense.api.app:create_app --factory --reload --port 8000
@@ -17,3 +17,9 @@ test-web:
 lint:
 	uv run ruff check .
 	cd web && npm run lint
+
+db-init:
+	uv run python -m cinesense.ingest.pipeline --init-schema --no-films
+
+ingest:
+	uv run python -m cinesense.ingest.pipeline
