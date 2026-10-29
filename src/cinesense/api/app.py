@@ -4,7 +4,9 @@ from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
+from cinesense.api.chat import router as chat_router
 from cinesense.api.deps import get_embedder, get_live, get_provider, get_streaming, get_trailers
+from cinesense.api.images import with_images as _with_images
 from cinesense.config import load_env_file
 from cinesense.domain.criteria import SearchCriteria
 from cinesense.domain.models import MoodWorld, Movie, RankedMovie
@@ -34,23 +36,6 @@ class DiscoverResponse(BaseModel):
     extended_used: bool = False
 
 
-def _with_images(movie: Movie, provider, streaming) -> Movie:
-    """Fill posters once per film; afterwards the film is marked checked and costs no further API calls."""
-    if streaming is None or not movie.imdb_id or movie.images_checked:
-        return movie
-    if movie.poster_url and movie.horizontal_poster_url and movie.backdrop_url:
-        return movie
-    images = streaming.images(movie.imdb_id)
-    if images is None:
-        return movie  # unknown (budget, outage): try again later
-    movie.poster_url = movie.poster_url or images.vertical_poster
-    movie.horizontal_poster_url = movie.horizontal_poster_url or images.horizontal_poster
-    movie.backdrop_url = movie.backdrop_url or images.horizontal_backdrop
-    movie.images_checked = True
-    provider.update_images(movie.id, images.vertical_poster, images.horizontal_poster, images.horizontal_backdrop)
-    return movie
-
-
 def create_app(load_env: bool = True) -> FastAPI:
     if load_env:
         load_env_file()
@@ -61,6 +46,8 @@ def create_app(load_env: bool = True) -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    app.include_router(chat_router)
 
     @app.get("/api/health")
     def health() -> dict[str, str]:

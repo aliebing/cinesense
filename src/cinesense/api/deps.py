@@ -61,3 +61,35 @@ def get_trailers():
     else:
         store = MemoryTrailerStore()
     return YouTubeTrailerClient(s.youtube_api_key, store, daily_limit=s.youtube_daily_limit)
+
+
+@lru_cache
+def get_agent():
+    """Chat runner (thread_id, message, criteria, on_status) -> dict, or None without an OpenRouter key."""
+    s = get_settings()
+    from cinesense.agent.llm import make_llm
+
+    llm = make_llm(s)
+    if llm is None:
+        return None
+    from langgraph.checkpoint.memory import MemorySaver
+
+    from cinesense.agent.graph import build_graph, run_turn
+    from cinesense.agent.tools import ToolKit, make_tools
+    from cinesense.search.service import SearchService
+
+    provider, streaming = get_provider(), get_streaming()
+    service = SearchService(provider, streaming, get_embedder())
+    graph = build_graph(
+        llm,
+        make_llm(s, max_tokens=500),
+        make_tools(ToolKit(service, provider, streaming)),
+        service,
+        provider,
+        MemorySaver(),  # one process-wide memory; the client keeps the thread id
+    )
+
+    def runner(thread_id, message, criteria, on_status=None):
+        return run_turn(graph, thread_id, message, criteria, on_status)
+
+    return runner
