@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 
 from cinesense.domain.models import Movie
-from cinesense.recommend.tags import tag_scores
+from cinesense.recommend.tags import tag_match
 
 FIXTURE_DIR = Path(__file__).resolve().parents[3] / "data" / "fixtures"
 DEFAULT_FIXTURE_PATH = FIXTURE_DIR / "movies.json"
@@ -72,7 +72,7 @@ class FixtureProvider:
         ids = [i for i in ids if i not in hidden]
         if not ids:
             return [], len(hidden)
-        sims = tag_scores(weights, np.stack([self._vectors[i] for i in ids]))
+        sims = tag_match(weights, np.stack([self._vectors[i] for i in ids]))
         ranked = sorted(zip(ids, sims.tolist(), strict=True), key=lambda x: x[1], reverse=True)[:limit]
         return ranked, len(hidden)
 

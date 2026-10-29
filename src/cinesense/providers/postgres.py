@@ -109,31 +109,32 @@ class PostgresProvider:
         not_threshold: float = 0.5,
         limit: int = 500,
     ) -> tuple[list[tuple[str, float]], int]:
-        """Cosine similarity in Postgres (pgvector) with must/not tag constraints.
+        """Weighted mean relevance of the requested tags, computed in Postgres, with must/not tag constraints.
 
-        Returns (ids with similarity, number of films hidden by the not-tags).
+        Returns (ids with score, number of films hidden by the not-tags).
         """
-        user = np.zeros(1128, dtype=np.float32)
-        for idx, w in weights.items():
-            user[idx] = w
-        conds, params = ["tag_vector is not null"], []
+        conds, params = ["true"], []
         for idx in must:
-            conds.append("(tag_vector::real[])[%s] >= %s")
+            conds.append("tv[%s] >= %s")
             params += [idx + 1, must_threshold]
-        hidden_sql = " or ".join(["(tag_vector::real[])[%s] >= %s"] * len(exclude)) or "false"
+        hidden_sql = " or ".join(["tv[%s] >= %s"] * len(exclude)) or "false"
         hidden_params = [p for idx in exclude for p in (idx + 1, not_threshold)]
         where = " and ".join(conds)
+        base = (
+            "with f as (select id, ml_rating_count, tag_vector::real[] as tv from films where tag_vector is not null) "
+        )
+        total = sum(weights.values())
+        order = " + ".join(["%s * tv[%s]"] * len(weights)) or "0"
+        order_params = [p for idx, w in weights.items() for p in (w / total, idx + 1)]
         with self._conn() as c:
             hidden = c.execute(
-                f"select count(*) from films where {where} and ({hidden_sql})", params + hidden_params
+                base + f"select count(*) from f where {where} and ({hidden_sql})", params + hidden_params
             ).fetchone()[0]
-            order = "1 - (tag_vector <=> %s)" if weights else "0"
             sql = (
-                f"select id, {order} as sim from films where {where} and not ({hidden_sql}) "
-                f"order by sim desc, ml_rating_count desc limit %s"
+                base + f"select id, {order} as sim from f where {where} and not ({hidden_sql}) "
+                "order by sim desc, ml_rating_count desc limit %s"
             )
-            args = ([user] if weights else []) + params + hidden_params + [limit]
-            rows = c.execute(sql, args).fetchall()
+            rows = c.execute(sql, order_params + params + hidden_params + [limit]).fetchall()
         return [(r[0], float(r[1])) for r in rows], int(hidden)
 
     # --- plots (RAG) ---------------------------------------------------
