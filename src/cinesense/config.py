@@ -29,6 +29,7 @@ class Settings:
     streaming_api_key: str | None
     youtube_api_key: str | None
     movielens_db_path: Path | None
+    llm_model: str = "anthropic/claude-haiku-5.5"
     streaming_monthly_limit: int = 900
     youtube_daily_limit: int = 95
 
@@ -41,4 +42,5 @@ def get_settings() -> Settings:
         streaming_api_key=_env("STREAMING_AVAILABILITY_API_KEY"),
         youtube_api_key=_env("YOUTUBE_API_KEY"),
         movielens_db_path=Path(ml) if ml else None,
+        llm_model=_env("CINESENSE_LLM_MODEL") or "anthropic/claude-haiku-5.5",
     )
