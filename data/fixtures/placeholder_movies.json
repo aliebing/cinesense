@@ -16,13 +16,15 @@
     "poster_url": "https://picsum.photos/seed/cs-poster-1/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-1/1280/720",
     "youtube_key": "placeholder",
-    "vote_average": 8.7,
-    "vote_count": 120,
-    "age_rating_de": "6",
+    "ml_rating": 4.0,
+    "ml_rating_count": 120,
     "availability": {
       "in_cinema_de": false,
-      "streaming_flatrate_de": [
-        "Amazon Prime Video"
+      "streaming_de": [
+        {
+          "service": "Amazon Prime Video",
+          "type": "subscription"
+        }
       ]
     },
     "is_placeholder": true
@@ -43,13 +45,15 @@
     "poster_url": "https://picsum.photos/seed/cs-poster-2/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-2/1280/720",
     "youtube_key": "placeholder",
-    "vote_average": 8.4,
-    "vote_count": 900,
-    "age_rating_de": "12",
+    "ml_rating": 3.3,
+    "ml_rating_count": 900,
     "availability": {
       "in_cinema_de": false,
-      "streaming_flatrate_de": [
-        "Disney Plus"
+      "streaming_de": [
+        {
+          "service": "Disney Plus",
+          "type": "subscription"
+        }
       ]
     },
     "is_placeholder": true
@@ -71,12 +75,11 @@
     "poster_url": "https://picsum.photos/seed/cs-poster-3/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-3/1280/720",
     "youtube_key": "placeholder",
-    "vote_average": 8.1,
-    "vote_count": 4000,
-    "age_rating_de": "16",
+    "ml_rating": 2.6,
+    "ml_rating_count": 4000,
     "availability": {
       "in_cinema_de": true,
-      "streaming_flatrate_de": []
+      "streaming_de": null
     },
     "is_placeholder": true
   },
@@ -98,13 +101,15 @@
     "poster_url": "https://picsum.photos/seed/cs-poster-4/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-4/1280/720",
     "youtube_key": "placeholder",
-    "vote_average": 7.8,
-    "vote_count": 20000,
-    "age_rating_de": "0",
+    "ml_rating": 4.1,
+    "ml_rating_count": 20000,
     "availability": {
       "in_cinema_de": false,
-      "streaming_flatrate_de": [
-        "WOW"
+      "streaming_de": [
+        {
+          "service": "WOW",
+          "type": "subscription"
+        }
       ]
     },
     "is_placeholder": true
@@ -126,13 +131,15 @@
     "poster_url": "https://picsum.photos/seed/cs-poster-5/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-5/1280/720",
     "youtube_key": "placeholder",
-    "vote_average": 7.5,
-    "vote_count": 5,
-    "age_rating_de": "6",
+    "ml_rating": 3.4,
+    "ml_rating_count": 5,
     "availability": {
       "in_cinema_de": false,
-      "streaming_flatrate_de": [
-        "Netflix"
+      "streaming_de": [
+        {
+          "service": "Netflix",
+          "type": "subscription"
+        }
       ]
     },
     "is_placeholder": true
@@ -153,12 +160,11 @@
     "poster_url": "https://picsum.photos/seed/cs-poster-6/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-6/1280/720",
     "youtube_key": null,
-    "vote_average": 7.2,
-    "vote_count": 120,
-    "age_rating_de": "12",
+    "ml_rating": 2.7,
+    "ml_rating_count": 120,
     "availability": {
       "in_cinema_de": true,
-      "streaming_flatrate_de": []
+      "streaming_de": null
     },
     "is_placeholder": true
   },
@@ -179,12 +185,11 @@
     "poster_url": null,
     "backdrop_url": null,
     "youtube_key": "placeholder",
-    "vote_average": 6.9,
-    "vote_count": 900,
-    "age_rating_de": "16",
+    "ml_rating": 4.2,
+    "ml_rating_count": 900,
     "availability": {
       "in_cinema_de": false,
-      "streaming_flatrate_de": []
+      "streaming_de": null
     },
     "is_placeholder": true
   },
@@ -205,14 +210,19 @@
     "poster_url": "https://picsum.photos/seed/cs-poster-8/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-8/1280/720",
     "youtube_key": "placeholder",
-    "vote_average": 6.6,
-    "vote_count": 4000,
-    "age_rating_de": "0",
+    "ml_rating": 3.5,
+    "ml_rating_count": 4000,
     "availability": {
       "in_cinema_de": false,
-      "streaming_flatrate_de": [
-        "Netflix",
-        "Disney Plus"
+      "streaming_de": [
+        {
+          "service": "Netflix",
+          "type": "subscription"
+        },
+        {
+          "service": "Disney Plus",
+          "type": "subscription"
+        }
       ]
     },
     "is_placeholder": true
@@ -234,12 +244,11 @@
     "poster_url": "https://picsum.photos/seed/cs-poster-9/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-9/1280/720",
     "youtube_key": "placeholder",
-    "vote_average": 6.3,
-    "vote_count": 20000,
-    "age_rating_de": "6",
+    "ml_rating": 2.8,
+    "ml_rating_count": 20000,
     "availability": {
       "in_cinema_de": true,
-      "streaming_flatrate_de": []
+      "streaming_de": null
     },
     "is_placeholder": true
   },
@@ -260,13 +269,15 @@
     "poster_url": "https://picsum.photos/seed/cs-poster-10/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-10/1280/720",
     "youtube_key": "placeholder",
-    "vote_average": 6.0,
-    "vote_count": 5,
-    "age_rating_de": "12",
+    "ml_rating": 4.3,
+    "ml_rating_count": 5,
     "availability": {
       "in_cinema_de": false,
-      "streaming_flatrate_de": [
-        "Netflix"
+      "streaming_de": [
+        {
+          "service": "Netflix",
+          "type": "subscription"
+        }
       ]
     },
     "is_placeholder": true
@@ -289,13 +300,15 @@
     "poster_url": "https://picsum.photos/seed/cs-poster-11/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-11/1280/720",
     "youtube_key": "placeholder",
-    "vote_average": 5.7,
-    "vote_count": 120,
-    "age_rating_de": "16",
+    "ml_rating": 3.6,
+    "ml_rating_count": 120,
     "availability": {
       "in_cinema_de": false,
-      "streaming_flatrate_de": [
-        "Amazon Prime Video"
+      "streaming_de": [
+        {
+          "service": "Amazon Prime Video",
+          "type": "subscription"
+        }
       ]
     },
     "is_placeholder": true
@@ -317,12 +330,11 @@
     "poster_url": "https://picsum.photos/seed/cs-poster-12/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-12/1280/720",
     "youtube_key": null,
-    "vote_average": 5.4,
-    "vote_count": 900,
-    "age_rating_de": "0",
+    "ml_rating": 2.9,
+    "ml_rating_count": 900,
     "availability": {
       "in_cinema_de": true,
-      "streaming_flatrate_de": []
+      "streaming_de": null
     },
     "is_placeholder": true
   },
@@ -343,14 +355,19 @@
     "poster_url": "https://picsum.photos/seed/cs-poster-13/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-13/1280/720",
     "youtube_key": "placeholder",
-    "vote_average": 5.1,
-    "vote_count": 4000,
-    "age_rating_de": "6",
+    "ml_rating": 4.4,
+    "ml_rating_count": 4000,
     "availability": {
       "in_cinema_de": false,
-      "streaming_flatrate_de": [
-        "Netflix",
-        "Disney Plus"
+      "streaming_de": [
+        {
+          "service": "Netflix",
+          "type": "subscription"
+        },
+        {
+          "service": "Disney Plus",
+          "type": "subscription"
+        }
       ]
     },
     "is_placeholder": true
@@ -371,12 +388,11 @@
     "poster_url": "https://picsum.photos/seed/cs-poster-14/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-14/1280/720",
     "youtube_key": "placeholder",
-    "vote_average": 8.8,
-    "vote_count": 20000,
-    "age_rating_de": "12",
+    "ml_rating": 3.7,
+    "ml_rating_count": 20000,
     "availability": {
       "in_cinema_de": false,
-      "streaming_flatrate_de": []
+      "streaming_de": null
     },
     "is_placeholder": true
   },
@@ -397,12 +413,11 @@
     "poster_url": "https://picsum.photos/seed/cs-poster-15/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-15/1280/720",
     "youtube_key": "placeholder",
-    "vote_average": 8.5,
-    "vote_count": 5,
-    "age_rating_de": "16",
+    "ml_rating": 3.0,
+    "ml_rating_count": 5,
     "availability": {
       "in_cinema_de": true,
-      "streaming_flatrate_de": []
+      "streaming_de": null
     },
     "is_placeholder": true
   },
@@ -424,13 +439,15 @@
     "poster_url": "https://picsum.photos/seed/cs-poster-16/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-16/1280/720",
     "youtube_key": "placeholder",
-    "vote_average": 8.2,
-    "vote_count": 120,
-    "age_rating_de": "0",
+    "ml_rating": 4.5,
+    "ml_rating_count": 120,
     "availability": {
       "in_cinema_de": false,
-      "streaming_flatrate_de": [
-        "Amazon Prime Video"
+      "streaming_de": [
+        {
+          "service": "Amazon Prime Video",
+          "type": "subscription"
+        }
       ]
     },
     "is_placeholder": true
@@ -452,13 +469,15 @@
     "poster_url": "https://picsum.photos/seed/cs-poster-17/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-17/1280/720",
     "youtube_key": "placeholder",
-    "vote_average": 7.9,
-    "vote_count": 900,
-    "age_rating_de": "6",
+    "ml_rating": 3.8,
+    "ml_rating_count": 900,
     "availability": {
       "in_cinema_de": false,
-      "streaming_flatrate_de": [
-        "Disney Plus"
+      "streaming_de": [
+        {
+          "service": "Disney Plus",
+          "type": "subscription"
+        }
       ]
     },
     "is_placeholder": true
@@ -479,12 +498,11 @@
     "poster_url": "https://picsum.photos/seed/cs-poster-18/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-18/1280/720",
     "youtube_key": null,
-    "vote_average": 7.6,
-    "vote_count": 4000,
-    "age_rating_de": "12",
+    "ml_rating": 3.1,
+    "ml_rating_count": 4000,
     "availability": {
       "in_cinema_de": true,
-      "streaming_flatrate_de": []
+      "streaming_de": null
     },
     "is_placeholder": true
   },
@@ -505,13 +523,15 @@
     "poster_url": "https://picsum.photos/seed/cs-poster-19/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-19/1280/720",
     "youtube_key": "placeholder",
-    "vote_average": 7.3,
-    "vote_count": 20000,
-    "age_rating_de": "16",
+    "ml_rating": 4.6,
+    "ml_rating_count": 20000,
     "availability": {
       "in_cinema_de": false,
-      "streaming_flatrate_de": [
-        "WOW"
+      "streaming_de": [
+        {
+          "service": "WOW",
+          "type": "subscription"
+        }
       ]
     },
     "is_placeholder": true
@@ -533,13 +553,15 @@
     "poster_url": "https://picsum.photos/seed/cs-poster-20/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-20/1280/720",
     "youtube_key": "placeholder",
-    "vote_average": 7.0,
-    "vote_count": 5,
-    "age_rating_de": "0",
+    "ml_rating": 3.9,
+    "ml_rating_count": 5,
     "availability": {
       "in_cinema_de": false,
-      "streaming_flatrate_de": [
-        "Netflix"
+      "streaming_de": [
+        {
+          "service": "Netflix",
+          "type": "subscription"
+        }
       ]
     },
     "is_placeholder": true
@@ -561,12 +583,11 @@
     "poster_url": "https://picsum.photos/seed/cs-poster-21/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-21/1280/720",
     "youtube_key": "placeholder",
-    "vote_average": 6.7,
-    "vote_count": 120,
-    "age_rating_de": "6",
+    "ml_rating": 3.2,
+    "ml_rating_count": 120,
     "availability": {
       "in_cinema_de": true,
-      "streaming_flatrate_de": []
+      "streaming_de": null
     },
     "is_placeholder": true
   },
@@ -588,13 +609,15 @@
     "poster_url": "https://picsum.photos/seed/cs-poster-22/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-22/1280/720",
     "youtube_key": "placeholder",
-    "vote_average": 6.4,
-    "vote_count": 900,
-    "age_rating_de": "12",
+    "ml_rating": 2.5,
+    "ml_rating_count": 900,
     "availability": {
       "in_cinema_de": false,
-      "streaming_flatrate_de": [
-        "Disney Plus"
+      "streaming_de": [
+        {
+          "service": "Disney Plus",
+          "type": "subscription"
+        }
       ]
     },
     "is_placeholder": true
@@ -616,14 +639,19 @@
     "poster_url": "https://picsum.photos/seed/cs-poster-23/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-23/1280/720",
     "youtube_key": "placeholder",
-    "vote_average": 6.1,
-    "vote_count": 4000,
-    "age_rating_de": "16",
+    "ml_rating": 4.0,
+    "ml_rating_count": 4000,
     "availability": {
       "in_cinema_de": false,
-      "streaming_flatrate_de": [
-        "Netflix",
-        "Disney Plus"
+      "streaming_de": [
+        {
+          "service": "Netflix",
+          "type": "subscription"
+        },
+        {
+          "service": "Disney Plus",
+          "type": "subscription"
+        }
       ]
     },
     "is_placeholder": true
@@ -645,12 +673,11 @@
     "poster_url": "https://picsum.photos/seed/cs-poster-24/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-24/1280/720",
     "youtube_key": null,
-    "vote_average": 5.8,
-    "vote_count": 20000,
-    "age_rating_de": "0",
+    "ml_rating": 3.3,
+    "ml_rating_count": 20000,
     "availability": {
       "in_cinema_de": true,
-      "streaming_flatrate_de": []
+      "streaming_de": null
     },
     "is_placeholder": true
   },
@@ -671,13 +698,15 @@
     "poster_url": "https://picsum.photos/seed/cs-poster-25/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-25/1280/720",
     "youtube_key": "placeholder",
-    "vote_average": 5.5,
-    "vote_count": 5,
-    "age_rating_de": "6",
+    "ml_rating": 2.6,
+    "ml_rating_count": 5,
     "availability": {
       "in_cinema_de": false,
-      "streaming_flatrate_de": [
-        "Netflix"
+      "streaming_de": [
+        {
+          "service": "Netflix",
+          "type": "subscription"
+        }
       ]
     },
     "is_placeholder": true
@@ -698,13 +727,15 @@
     "poster_url": "https://picsum.photos/seed/cs-poster-26/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-26/1280/720",
     "youtube_key": "placeholder",
-    "vote_average": 5.2,
-    "vote_count": 120,
-    "age_rating_de": "12",
+    "ml_rating": 4.1,
+    "ml_rating_count": 120,
     "availability": {
       "in_cinema_de": false,
-      "streaming_flatrate_de": [
-        "Amazon Prime Video"
+      "streaming_de": [
+        {
+          "service": "Amazon Prime Video",
+          "type": "subscription"
+        }
       ]
     },
     "is_placeholder": true
@@ -726,12 +757,11 @@
     "poster_url": "https://picsum.photos/seed/cs-poster-27/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-27/1280/720",
     "youtube_key": "placeholder",
-    "vote_average": 8.9,
-    "vote_count": 900,
-    "age_rating_de": "16",
+    "ml_rating": 3.4,
+    "ml_rating_count": 900,
     "availability": {
       "in_cinema_de": true,
-      "streaming_flatrate_de": []
+      "streaming_de": null
     },
     "is_placeholder": true
   },
@@ -753,12 +783,11 @@
     "poster_url": "https://picsum.photos/seed/cs-poster-28/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-28/1280/720",
     "youtube_key": "placeholder",
-    "vote_average": 8.6,
-    "vote_count": 4000,
-    "age_rating_de": "0",
+    "ml_rating": 2.7,
+    "ml_rating_count": 4000,
     "availability": {
       "in_cinema_de": false,
-      "streaming_flatrate_de": []
+      "streaming_de": null
     },
     "is_placeholder": true
   },
@@ -779,13 +808,15 @@
     "poster_url": "https://picsum.photos/seed/cs-poster-29/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-29/1280/720",
     "youtube_key": "placeholder",
-    "vote_average": 8.3,
-    "vote_count": 20000,
-    "age_rating_de": "6",
+    "ml_rating": 4.2,
+    "ml_rating_count": 20000,
     "availability": {
       "in_cinema_de": false,
-      "streaming_flatrate_de": [
-        "WOW"
+      "streaming_de": [
+        {
+          "service": "WOW",
+          "type": "subscription"
+        }
       ]
     },
     "is_placeholder": true
@@ -806,12 +837,11 @@
     "poster_url": "https://picsum.photos/seed/cs-poster-30/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-30/1280/720",
     "youtube_key": null,
-    "vote_average": 8.0,
-    "vote_count": 5,
-    "age_rating_de": "12",
+    "ml_rating": 3.5,
+    "ml_rating_count": 5,
     "availability": {
       "in_cinema_de": true,
-      "streaming_flatrate_de": []
+      "streaming_de": null
     },
     "is_placeholder": true
   },
@@ -832,13 +862,15 @@
     "poster_url": "https://picsum.photos/seed/cs-poster-31/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-31/1280/720",
     "youtube_key": "placeholder",
-    "vote_average": 7.7,
-    "vote_count": 120,
-    "age_rating_de": "16",
+    "ml_rating": 2.8,
+    "ml_rating_count": 120,
     "availability": {
       "in_cinema_de": false,
-      "streaming_flatrate_de": [
-        "Amazon Prime Video"
+      "streaming_de": [
+        {
+          "service": "Amazon Prime Video",
+          "type": "subscription"
+        }
       ]
     },
     "is_placeholder": true
@@ -860,13 +892,15 @@
     "poster_url": "https://picsum.photos/seed/cs-poster-32/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-32/1280/720",
     "youtube_key": "placeholder",
-    "vote_average": 7.4,
-    "vote_count": 900,
-    "age_rating_de": "0",
+    "ml_rating": 4.3,
+    "ml_rating_count": 900,
     "availability": {
       "in_cinema_de": false,
-      "streaming_flatrate_de": [
-        "Disney Plus"
+      "streaming_de": [
+        {
+          "service": "Disney Plus",
+          "type": "subscription"
+        }
       ]
     },
     "is_placeholder": true
@@ -889,12 +923,11 @@
     "poster_url": "https://picsum.photos/seed/cs-poster-33/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-33/1280/720",
     "youtube_key": "placeholder",
-    "vote_average": 7.1,
-    "vote_count": 4000,
-    "age_rating_de": "6",
+    "ml_rating": 3.6,
+    "ml_rating_count": 4000,
     "availability": {
       "in_cinema_de": true,
-      "streaming_flatrate_de": []
+      "streaming_de": null
     },
     "is_placeholder": true
   },
@@ -915,13 +948,15 @@
     "poster_url": "https://picsum.photos/seed/cs-poster-34/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-34/1280/720",
     "youtube_key": "placeholder",
-    "vote_average": 6.8,
-    "vote_count": 20000,
-    "age_rating_de": "12",
+    "ml_rating": 2.9,
+    "ml_rating_count": 20000,
     "availability": {
       "in_cinema_de": false,
-      "streaming_flatrate_de": [
-        "WOW"
+      "streaming_de": [
+        {
+          "service": "WOW",
+          "type": "subscription"
+        }
       ]
     },
     "is_placeholder": true
@@ -943,12 +978,11 @@
     "poster_url": "https://picsum.photos/seed/cs-poster-35/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-35/1280/720",
     "youtube_key": "placeholder",
-    "vote_average": 6.5,
-    "vote_count": 5,
-    "age_rating_de": "16",
+    "ml_rating": 4.4,
+    "ml_rating_count": 5,
     "availability": {
       "in_cinema_de": false,
-      "streaming_flatrate_de": []
+      "streaming_de": null
     },
     "is_placeholder": true
   },
@@ -969,12 +1003,11 @@
     "poster_url": "https://picsum.photos/seed/cs-poster-36/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-36/1280/720",
     "youtube_key": null,
-    "vote_average": 6.2,
-    "vote_count": 120,
-    "age_rating_de": "0",
+    "ml_rating": 3.7,
+    "ml_rating_count": 120,
     "availability": {
       "in_cinema_de": true,
-      "streaming_flatrate_de": []
+      "streaming_de": null
     },
     "is_placeholder": true
   },
@@ -995,13 +1028,15 @@
     "poster_url": "https://picsum.photos/seed/cs-poster-37/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-37/1280/720",
     "youtube_key": "placeholder",
-    "vote_average": 5.9,
-    "vote_count": 900,
-    "age_rating_de": "6",
+    "ml_rating": 3.0,
+    "ml_rating_count": 900,
     "availability": {
       "in_cinema_de": false,
-      "streaming_flatrate_de": [
-        "Disney Plus"
+      "streaming_de": [
+        {
+          "service": "Disney Plus",
+          "type": "subscription"
+        }
       ]
     },
     "is_placeholder": true
@@ -1022,14 +1057,19 @@
     "poster_url": "https://picsum.photos/seed/cs-poster-38/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-38/1280/720",
     "youtube_key": "placeholder",
-    "vote_average": 5.6,
-    "vote_count": 4000,
-    "age_rating_de": "12",
+    "ml_rating": 4.5,
+    "ml_rating_count": 4000,
     "availability": {
       "in_cinema_de": false,
-      "streaming_flatrate_de": [
-        "Netflix",
-        "Disney Plus"
+      "streaming_de": [
+        {
+          "service": "Netflix",
+          "type": "subscription"
+        },
+        {
+          "service": "Disney Plus",
+          "type": "subscription"
+        }
       ]
     },
     "is_placeholder": true
@@ -1051,12 +1091,11 @@
     "poster_url": "https://picsum.photos/seed/cs-poster-39/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-39/1280/720",
     "youtube_key": "placeholder",
-    "vote_average": 5.3,
-    "vote_count": 20000,
-    "age_rating_de": "16",
+    "ml_rating": 3.8,
+    "ml_rating_count": 20000,
     "availability": {
       "in_cinema_de": true,
-      "streaming_flatrate_de": []
+      "streaming_de": null
     },
     "is_placeholder": true
   },
@@ -1078,13 +1117,15 @@
     "poster_url": "https://picsum.photos/seed/cs-poster-40/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-40/1280/720",
     "youtube_key": "placeholder",
-    "vote_average": 5.0,
-    "vote_count": 5,
-    "age_rating_de": "0",
+    "ml_rating": 3.1,
+    "ml_rating_count": 5,
     "availability": {
       "in_cinema_de": false,
-      "streaming_flatrate_de": [
-        "Netflix"
+      "streaming_de": [
+        {
+          "service": "Netflix",
+          "type": "subscription"
+        }
       ]
     },
     "is_placeholder": true
@@ -1106,13 +1147,15 @@
     "poster_url": "https://picsum.photos/seed/cs-poster-41/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-41/1280/720",
     "youtube_key": "placeholder",
-    "vote_average": 8.7,
-    "vote_count": 120,
-    "age_rating_de": "6",
+    "ml_rating": 4.6,
+    "ml_rating_count": 120,
     "availability": {
       "in_cinema_de": false,
-      "streaming_flatrate_de": [
-        "Amazon Prime Video"
+      "streaming_de": [
+        {
+          "service": "Amazon Prime Video",
+          "type": "subscription"
+        }
       ]
     },
     "is_placeholder": true
@@ -1133,12 +1176,11 @@
     "poster_url": "https://picsum.photos/seed/cs-poster-42/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-42/1280/720",
     "youtube_key": null,
-    "vote_average": 8.4,
-    "vote_count": 900,
-    "age_rating_de": "12",
+    "ml_rating": 3.9,
+    "ml_rating_count": 900,
     "availability": {
       "in_cinema_de": true,
-      "streaming_flatrate_de": []
+      "streaming_de": null
     },
     "is_placeholder": true
   },
@@ -1159,14 +1201,19 @@
     "poster_url": "https://picsum.photos/seed/cs-poster-43/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-43/1280/720",
     "youtube_key": "placeholder",
-    "vote_average": 8.1,
-    "vote_count": 4000,
-    "age_rating_de": "16",
+    "ml_rating": 3.2,
+    "ml_rating_count": 4000,
     "availability": {
       "in_cinema_de": false,
-      "streaming_flatrate_de": [
-        "Netflix",
-        "Disney Plus"
+      "streaming_de": [
+        {
+          "service": "Netflix",
+          "type": "subscription"
+        },
+        {
+          "service": "Disney Plus",
+          "type": "subscription"
+        }
       ]
     },
     "is_placeholder": true
@@ -1189,13 +1236,15 @@
     "poster_url": "https://picsum.photos/seed/cs-poster-44/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-44/1280/720",
     "youtube_key": "placeholder",
-    "vote_average": 7.8,
-    "vote_count": 20000,
-    "age_rating_de": "0",
+    "ml_rating": 2.5,
+    "ml_rating_count": 20000,
     "availability": {
       "in_cinema_de": false,
-      "streaming_flatrate_de": [
-        "WOW"
+      "streaming_de": [
+        {
+          "service": "WOW",
+          "type": "subscription"
+        }
       ]
     },
     "is_placeholder": true
@@ -1217,12 +1266,11 @@
     "poster_url": "https://picsum.photos/seed/cs-poster-45/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-45/1280/720",
     "youtube_key": "placeholder",
-    "vote_average": 7.5,
-    "vote_count": 5,
-    "age_rating_de": "6",
+    "ml_rating": 4.0,
+    "ml_rating_count": 5,
     "availability": {
       "in_cinema_de": true,
-      "streaming_flatrate_de": []
+      "streaming_de": null
     },
     "is_placeholder": true
   },
@@ -1243,13 +1291,15 @@
     "poster_url": "https://picsum.photos/seed/cs-poster-46/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-46/1280/720",
     "youtube_key": "placeholder",
-    "vote_average": 7.2,
-    "vote_count": 120,
-    "age_rating_de": "12",
+    "ml_rating": 3.3,
+    "ml_rating_count": 120,
     "availability": {
       "in_cinema_de": false,
-      "streaming_flatrate_de": [
-        "Amazon Prime Video"
+      "streaming_de": [
+        {
+          "service": "Amazon Prime Video",
+          "type": "subscription"
+        }
       ]
     },
     "is_placeholder": true
@@ -1271,13 +1321,15 @@
     "poster_url": "https://picsum.photos/seed/cs-poster-47/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-47/1280/720",
     "youtube_key": "placeholder",
-    "vote_average": 6.9,
-    "vote_count": 900,
-    "age_rating_de": "16",
+    "ml_rating": 2.6,
+    "ml_rating_count": 900,
     "availability": {
       "in_cinema_de": false,
-      "streaming_flatrate_de": [
-        "Disney Plus"
+      "streaming_de": [
+        {
+          "service": "Disney Plus",
+          "type": "subscription"
+        }
       ]
     },
     "is_placeholder": true
@@ -1299,12 +1351,11 @@
     "poster_url": "https://picsum.photos/seed/cs-poster-48/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-48/1280/720",
     "youtube_key": null,
-    "vote_average": 6.6,
-    "vote_count": 4000,
-    "age_rating_de": "0",
+    "ml_rating": 4.1,
+    "ml_rating_count": 4000,
     "availability": {
       "in_cinema_de": true,
-      "streaming_flatrate_de": []
+      "streaming_de": null
     },
     "is_placeholder": true
   }

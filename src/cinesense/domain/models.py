@@ -1,28 +1,56 @@
+from datetime import date
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
+
+StreamingType = Literal["subscription", "rent", "buy", "addon", "free"]
+
+
+class StreamingOption(BaseModel):
+    service: str
+    type: StreamingType
+    link: str | None = None
 
 
 class Availability(BaseModel):
     in_cinema_de: bool = False
-    streaming_flatrate_de: list[str] = Field(default_factory=list)
+    # None = unknown (not looked up, budget exhausted or source down); [] = known: not streaming
+    streaming_de: list[StreamingOption] | None = None
+
+    @computed_field
+    @property
+    def subscription_services(self) -> list[str]:
+        seen: list[str] = []
+        for o in self.streaming_de or []:
+            if o.type == "subscription" and o.service not in seen:
+                seen.append(o.service)
+        return seen
 
 
 class Movie(BaseModel):
     id: str
     title: str
+    kind: Literal["film", "documentary"] = "film"
     year: int | None = None
     runtime_min: int | None = None
-    original_language: str
+    original_language: str | None = None
     genres: list[str] = Field(default_factory=list)
     world_ids: list[str] = Field(default_factory=list)
+    top_tags: list[str] = Field(default_factory=list)
     overview: str = ""
+    directors: list[str] = Field(default_factory=list)
+    cast_top: list[str] = Field(default_factory=list)
+    movielens_id: int | None = None
+    imdb_id: str | None = None
+    wikidata_id: str | None = None
+    wikipedia_title: str | None = None
+    release_date_de: date | None = None
     poster_url: str | None = None
+    horizontal_poster_url: str | None = None
     backdrop_url: str | None = None
     youtube_key: str | None = None
-    vote_average: float | None = None
-    vote_count: int = 0
-    age_rating_de: str | None = None
+    ml_rating: float | None = None  # MovieLens average, 0–5
+    ml_rating_count: int = 0
     availability: Availability = Field(default_factory=Availability)
     is_placeholder: bool = False
 
@@ -42,10 +70,11 @@ class MovieQuery(BaseModel):
     exclude_genres: list[str] = Field(default_factory=list)
     max_runtime_min: int | None = None
     availability: Literal["cinema", "stream", "any"] = "any"
-    min_vote_count: int = 0
+    min_rating_count: int = 0
 
 
 class RankedMovie(BaseModel):
     movie: Movie
     score: float
     match_percent: int
+    reasons: list[str] = Field(default_factory=list)

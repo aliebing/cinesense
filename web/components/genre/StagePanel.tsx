@@ -6,13 +6,13 @@ import type { MoodWorld, Movie } from "@/lib/types";
 
 const FEEDBACK = ["👍 More like this", "⚡ More action", "😂 Funnier", "👎 Not for me"];
 const rating = new Intl.NumberFormat("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const count = new Intl.NumberFormat("en-US");
 
 function metaLine(m: Movie): string {
   const parts = [
     m.year ? String(m.year) : null,
     m.runtime_min ? `${Math.floor(m.runtime_min / 60)} h ${m.runtime_min % 60} min` : null,
-    `${m.original_language.toUpperCase()} (original)`,
-    m.age_rating_de ? `FSK ${m.age_rating_de}` : null,
+    m.original_language ? `${m.original_language.toUpperCase()} (original)` : null,
   ];
   return parts.filter(Boolean).join(" · ");
 }
@@ -48,7 +48,7 @@ function Trailer({ movie }: { movie: Movie }) {
 
 /** Cinema stage: poster, trailer, info and feedback (spec §5, layout B). */
 export default function StagePanel({ movie, world, why }: { movie: Movie; world: MoodWorld; why: string }) {
-  const { in_cinema_de, streaming_flatrate_de } = movie.availability;
+  const { in_cinema_de, subscription_services } = movie.availability;
   return (
     <section className="stage" aria-label={`On stage: ${movie.title}`}>
       <div className="stage-poster">
@@ -64,8 +64,12 @@ export default function StagePanel({ movie, world, why }: { movie: Movie; world:
         <div className="stage-tags">
           {movie.is_placeholder && <span className="stage-tag--placeholder">Placeholder</span>}
           {in_cinema_de && <span>🎬 In cinemas</span>}
-          {streaming_flatrate_de.length > 0 && <span>📺 Streaming on {streaming_flatrate_de.join(", ")}</span>}
-          {movie.vote_average !== null && <span>⭐ TMDB {rating.format(movie.vote_average)}</span>}
+          {subscription_services.length > 0 && <span>📺 Streaming on {subscription_services.join(", ")}</span>}
+          {movie.ml_rating !== null && (
+            <span>
+              ⭐ MovieLens {rating.format(movie.ml_rating)}/5 ({count.format(movie.ml_rating_count)} ratings)
+            </span>
+          )}
         </div>
         <div className="stage-why">
           <b>Why it fits you:</b> <span>{why}</span>

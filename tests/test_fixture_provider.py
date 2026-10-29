@@ -27,4 +27,4 @@ def test_fixture_contains_edge_cases():
     assert any(m.youtube_key is None for m in movies)
     assert any(m.poster_url is None for m in movies)
     assert any("Horror" in m.genres for m in movies)
-    assert any(not m.availability.in_cinema_de and not m.availability.streaming_flatrate_de for m in movies)
+    assert any(not m.availability.in_cinema_de and not m.availability.subscription_services for m in movies)

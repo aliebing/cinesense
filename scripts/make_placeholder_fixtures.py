@@ -38,10 +38,12 @@ def build() -> list[dict]:
                 "poster_url": None if n == 7 else f"https://picsum.photos/seed/cs-poster-{n}/300/450",
                 "backdrop_url": None if n == 7 else f"https://picsum.photos/seed/cs-backdrop-{n}/1280/720",
                 "youtube_key": None if n % 6 == 0 else "placeholder",
-                "vote_average": round(5.0 + ((n * 37) % 40) / 10, 1),
-                "vote_count": [5, 120, 900, 4000, 20000][n % 5],
-                "age_rating_de": ["0", "6", "12", "16"][n % 4],
-                "availability": {"in_cinema_de": in_cinema, "streaming_flatrate_de": streaming},
+                "ml_rating": round(2.5 + ((n * 37) % 22) / 10, 1),
+                "ml_rating_count": [5, 120, 900, 4000, 20000][n % 5],
+                "availability": {
+                    "in_cinema_de": in_cinema,
+                    "streaming_de": [{"service": p, "type": "subscription"} for p in streaming] or None,
+                },
                 "is_placeholder": True,
             }
         )

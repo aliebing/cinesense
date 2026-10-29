@@ -13,8 +13,8 @@ def make_movie():
             "genres": ["Comedy"],
             "world_ids": ["humor"],
             "runtime_min": 100,
-            "vote_average": 7.0,
-            "vote_count": 1000,
+            "ml_rating": 3.6,
+            "ml_rating_count": 1000,
             "availability": Availability(),
         }
         data.update(overrides)

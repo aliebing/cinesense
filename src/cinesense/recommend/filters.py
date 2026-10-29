@@ -12,9 +12,9 @@ def _passes(m: Movie, q: MovieQuery, excluded: set[str]) -> bool:
         return False
     if q.availability == "cinema" and not m.availability.in_cinema_de:
         return False
-    if q.availability == "stream" and not m.availability.streaming_flatrate_de:
+    if q.availability == "stream" and not m.availability.subscription_services:
         return False
-    return m.vote_count >= q.min_vote_count
+    return m.ml_rating_count >= q.min_rating_count
 
 
 def apply_filters(movies: list[Movie], q: MovieQuery) -> list[Movie]:

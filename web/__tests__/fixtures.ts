@@ -11,26 +11,35 @@ export function sampleMovies(n: number): Movie[] {
     return {
       id: `demo-${num}`,
       title: `Demo-Film ${num}`,
+      kind: "film" as const,
       year: 2020,
       runtime_min: 120,
       original_language: "en",
       genres: ["Action"],
       world_ids: [i % 2 ? "suspense" : "action"],
+      top_tags: ["dark"],
       overview: "Placeholder",
+      directors: ["Jane Doe"],
+      cast_top: ["A. Actor"],
+      movielens_id: null,
+      imdb_id: `tt00000${num}`,
+      wikidata_id: null,
+      wikipedia_title: null,
+      release_date_de: null,
       poster_url: `https://picsum.photos/seed/p${num}/300/450`,
+      horizontal_poster_url: `https://picsum.photos/seed/h${num}/720/405`,
       backdrop_url: `https://picsum.photos/seed/b${num}/1280/720`,
       youtube_key: "placeholder",
-      vote_average: 7.5,
-      vote_count: 1000,
-      age_rating_de: "12",
-      availability: { in_cinema_de: true, streaming_flatrate_de: [] },
+      ml_rating: 3.8,
+      ml_rating_count: 1000,
+      availability: { in_cinema_de: true, streaming_de: null, subscription_services: [] },
       is_placeholder: true,
     };
   });
 }
 
 export function sampleRanked(n: number): RankedMovie[] {
-  return sampleMovies(n).map((movie, i) => ({ movie, score: 8 - i * 0.1, match_percent: 90 - i }));
+  return sampleMovies(n).map((movie, i) => ({ movie, score: 0.9 - i * 0.01, match_percent: 90 - i, reasons: [] }));
 }
 
 export const sampleHome: HomeData = {
