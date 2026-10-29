@@ -76,13 +76,12 @@ body {
   z-index: 50;
   pointer-events: none;
   width: calc((100vw - var(--stage-w)) / 2 + var(--stage-w) * var(--curtain-overlap));
-  overflow: hidden;
-  filter: drop-shadow(0 0 18px #000);
 }
-.cinema-curtain--left { left: 0; }
-.cinema-curtain--right { right: 0; }
-/* The panel image is a right-hand curtain; its inner edge sits at ~17% of the image width at the top
-   and moves outwards towards the floor. Show the inner part and let the rest run off-screen. */
+/* the fabric casts a soft shadow onto the screen beside it */
+.cinema-curtain--left { left: 0; filter: drop-shadow(16px 0 26px #000d) drop-shadow(4px 0 6px #0009); }
+.cinema-curtain--right { right: 0; filter: drop-shadow(-16px 0 26px #000d) drop-shadow(-4px 0 6px #0009); }
+/* The panel image is a right-hand curtain whose natural edge starts at its left side and moves outwards
+   towards the floor. Show the inner part; the rest runs off-screen (no clipping, so the edge stays soft). */
 .curtain-photo {
   position: absolute;
   top: 0;
@@ -91,8 +90,8 @@ body {
   max-width: none;
   object-fit: fill;
 }
-.cinema-curtain--right .curtain-photo { left: -34%; }
-.cinema-curtain--left .curtain-photo { right: -34%; transform: scaleX(-1); }
+.cinema-curtain--right .curtain-photo { left: -2%; }
+.cinema-curtain--left .curtain-photo { right: -2%; transform: scaleX(-1); }
 
 @media (prefers-reduced-motion: reduce) {
   *,

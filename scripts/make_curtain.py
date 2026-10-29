@@ -34,8 +34,8 @@ for y in range(h):
     hit = np.flatnonzero(frac > 0.6)
     if hit.size:
         edges[y] = hit[0]
-# smooth the edge vertically so it reads as one fabric line
-k = 41
+# light vertical smoothing only, so the edge keeps the fabric's natural wobble
+k = 9
 pad = np.pad(edges, k // 2, mode="edge")
 edges = np.array([np.median(pad[i : i + k]) for i in range(h)], dtype=np.float32)
 # the top rows pick up hanging scenery left of the curtain: don't let the edge jump left there
@@ -43,19 +43,21 @@ ref_edge = np.median(edges[int(h * 0.18) : int(h * 0.3)])
 top = int(h * 0.17)
 edges[:top] = np.maximum(edges[:top], ref_edge)
 xs_full = np.arange(w, dtype=np.float32)[None, :]
-edges_in = edges + 4  # pull the cut slightly into the fabric
-alpha = np.clip((xs_full - edges_in[:, None]) / 6.0 + 0.5, 0, 1)
-# near the edge, drop pixels that aren't red velvet (blue rim light, the white dress)
-near = xs_full < (edges_in[:, None] + 18)
-reddish = R > 1.4 * np.maximum(G, B)
-alpha = np.where(near & ~reddish, 0, alpha)
+dist = xs_full - edges[:, None]  # >0 inside the fabric
+# natural soft matte from the photo near the edge; solid inside, empty well outside
+matte = np.clip((R - 1.25 * np.maximum(G, B) - 8.0) / 22.0, 0, 1)
+alpha = np.where(dist > 12, 1.0, np.where(dist < -25, 0.0, matte))
+# no stray scenery beside the curtain head
+alpha[: int(h * 0.2)] = np.where(dist[: int(h * 0.2)] < -4, 0.0, alpha[: int(h * 0.2)])
 alpha = (
     np.asarray(
-        Image.fromarray((alpha * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(1.5)),
+        Image.fromarray((alpha * 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(1.2)),
         dtype=np.float32,
     )
     / 255
 )
+# rolled hem: the fabric turns away from the light at its edge
+roll = 0.5 + 0.5 * np.clip(dist / 45.0, 0, 1) ** 0.7
 
 # --- colour grade towards photo B (warmer, more saturated red) ---
 ref = np.asarray(Image.open(ref_path).convert("RGB"), dtype=np.float32)
@@ -63,7 +65,7 @@ ref_mask = (ref[..., 0] - np.maximum(ref[..., 1], ref[..., 2])) > 25
 src_mask = alpha > 0.9
 gains = ref[ref_mask].mean(axis=0) / np.maximum(img[src_mask].mean(axis=0), 1)
 gains = 1 + (gains - 1) * 0.6  # blend 60 % towards B
-graded = np.clip(img * gains, 0, 255)
+graded = np.clip(img * gains * roll[..., None], 0, 255)
 # a touch more contrast in the folds
 lum = graded.mean(axis=2, keepdims=True)
 graded = np.clip(lum + (graded - lum) * 1.12, 0, 255)
@@ -81,7 +83,7 @@ def smoothstep(e0, e1, x):
 out = np.zeros_like(rgba)
 xs = np.arange(w, dtype=np.float32)
 for y in range(h):
-    s = 1.0 - 0.55 * smoothstep(0.2, 1.0, y / h)  # 1 at top, 0.45 at the floor
+    s = 1.0 - 0.3 * smoothstep(0.3, 1.0, y / h)  # 1 at top, 0.7 at the floor
     # destination x maps to source x: outer edge fixed at w-1
     src_x = (w - 1) - ((w - 1) - xs) / s
     valid = src_x >= 0
