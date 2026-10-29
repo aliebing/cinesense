@@ -12,12 +12,15 @@ const api = {
   getWorldMovies: vi.fn(),
   getMovie: vi.fn(),
   getRelated: vi.fn(),
+  discover: vi.fn(),
 };
 vi.mock("@/lib/api", () => ({
   getWorlds: () => api.getWorlds(),
   getWorldMovies: (id: string) => api.getWorldMovies(id),
   getMovie: (id: string) => api.getMovie(id),
   getRelated: (id: string, worldId?: string) => api.getRelated(id, worldId),
+  discover: (...a: unknown[]) => api.discover(...a),
+  getTags: () => Promise.resolve({ ok: true, data: [{ idx: 0, tag: "dark" }] }),
 }));
 
 import GenreView from "@/components/genre/GenreView";
@@ -67,4 +70,15 @@ it("asks for related films within the world shown on the page", async () => {
   render(<GenreView worldId="action" filmId={null} />);
   await screen.findByRole("heading", { name: "Demo-Film 01" });
   await waitFor(() => expect(api.getRelated).toHaveBeenCalledWith("demo-01", "action"));
+});
+
+it("re-ranks the related row with the chip criteria inside the world", async () => {
+  const { setSearchState, emptyCriteria } = await import("@/lib/searchState");
+  setSearchState({ ...emptyCriteria(), tags: [{ idx: 0, weight: 6, mode: "prefer" }] });
+  api.discover.mockResolvedValue({ ok: true, data: { items: sampleRanked(3), total: 3, hidden_by_exclusion: 0, extended_used: false } });
+  render(<GenreView worldId="action" filmId={null} />);
+  await screen.findByRole("heading", { name: "Demo-Film 01" });
+  await waitFor(() => expect(api.discover).toHaveBeenCalled());
+  expect(api.discover.mock.calls[0][0]).toMatchObject({ world_id: "action", tags: [{ idx: 0, weight: 6, mode: "prefer" }] });
+  setSearchState(emptyCriteria());
 });

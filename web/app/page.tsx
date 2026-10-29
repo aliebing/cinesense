@@ -9,7 +9,9 @@ import ChatPanel from "@/components/chat/ChatPanel";
 import FilmTitles from "@/components/home/FilmTitles";
 import TileRows, { visibleWorlds } from "@/components/home/TileRows";
 import WorldLabel from "@/components/home/WorldLabel";
-import { getHome, type ApiResult } from "@/lib/api";
+import SearchChips from "@/components/search/SearchChips";
+import { getHome, getTags, type ApiResult, type Tag } from "@/lib/api";
+import { hasAnyCriteria, useSearchState } from "@/lib/searchState";
 import type { HomeData, Movie } from "@/lib/types";
 import { useActiveTrailer } from "@/lib/useActiveTrailer";
 import { useIsNarrow, useReducedMotion } from "@/lib/useReducedMotion";
@@ -22,11 +24,16 @@ export default function HomePage() {
   const [active, setActive] = useState(0);
   const [variedSpeed, setVariedSpeed] = useState(false);
   const { activeId } = useActiveTrailer();
+  const [criteria, setCriteria] = useSearchState();
+  const [tags, setTags] = useState<Tag[]>([]);
 
   useEffect(() => {
     let cancelled = false;
     getHome().then((r) => {
       if (!cancelled) setResult(r);
+    });
+    getTags().then((r) => {
+      if (!cancelled && r.ok) setTags(r.data);
     });
     return () => {
       cancelled = true;
@@ -71,7 +78,15 @@ export default function HomePage() {
           <em>Choose a feeling.</em>
         </h1>
         <p className="home-sub">Tell me what you’re in the mood for tonight.</p>
-        <ChatPanel mode="static" />
+        <ChatPanel mode="static" horrorIdx={tags.find((t) => t.tag === "horror")?.idx ?? null} />
+        {hasAnyCriteria(criteria) && (
+          <div className="home-chips">
+            <SearchChips tags={tags} criteria={criteria} onChange={setCriteria} />
+            <button type="button" className="chat-results" onClick={() => router.push("/results")}>
+              Show results →
+            </button>
+          </div>
+        )}
         {result && !result.ok && <p className="home-error">Couldn&apos;t load films</p>}
       </main>
 

@@ -8,7 +8,9 @@ import CinemaFrame from "@/components/cinema/CinemaFrame";
 import ChatDrawer from "@/components/genre/ChatDrawer";
 import RelatedRow from "@/components/genre/RelatedRow";
 import StagePanel from "@/components/genre/StagePanel";
-import { getMovie, getRelated, getWorldMovies, getWorlds } from "@/lib/api";
+import SearchChips from "@/components/search/SearchChips";
+import { discover, getMovie, getRelated, getTags, getWorldMovies, getWorlds, type Tag } from "@/lib/api";
+import { hasAnyCriteria, useSearchState } from "@/lib/searchState";
 import type { MoodWorld, Movie, RankedMovie } from "@/lib/types";
 import { useReducedMotion } from "@/lib/useReducedMotion";
 
@@ -23,6 +25,14 @@ export default function GenreView({ worldId, filmId }: { worldId: string; filmId
   const reduced = useReducedMotion();
   const [state, setState] = useState<State>({ kind: "loading" });
   const [related, setRelated] = useState<RankedMovie[]>([]);
+  const [criteria, setCriteria] = useSearchState();
+  const [tags, setTags] = useState<Tag[]>([]);
+  const [hidden, setHidden] = useState(0);
+  const criteriaKey = JSON.stringify(criteria);
+
+  useEffect(() => {
+    getTags().then((r) => r.ok && setTags(r.data));
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -52,13 +62,28 @@ export default function GenreView({ worldId, filmId }: { worldId: string; filmId
   useEffect(() => {
     if (!stageId) return;
     let cancelled = false;
-    getRelated(stageId, worldId).then((r) => {
-      if (!cancelled) setRelated(r.ok ? r.data : []);
-    });
+    const active = JSON.parse(criteriaKey);
+    const t = setTimeout(() => {
+      if (hasAnyCriteria(active)) {
+        // the chip bar re-ranks the row within this world
+        discover({ ...active, world_id: worldId }, 0, 24).then((r) => {
+          if (cancelled) return;
+          setRelated(r.ok ? r.data.items : []);
+          setHidden(r.ok ? r.data.hidden_by_exclusion : 0);
+        });
+      } else {
+        getRelated(stageId, worldId).then((r) => {
+          if (cancelled) return;
+          setRelated(r.ok ? r.data : []);
+          setHidden(0);
+        });
+      }
+    }, 300);
     return () => {
       cancelled = true;
+      clearTimeout(t);
     };
-  }, [stageId, worldId]);
+  }, [stageId, worldId, criteriaKey]);
 
   if (state.kind === "not_found") {
     notFound();
@@ -91,6 +116,9 @@ export default function GenreView({ worldId, filmId }: { worldId: string; filmId
       {movie && world && (
         <>
           <StagePanel movie={movie} world={world} why={`Highly rated in the “${world.title}” world`} />
+          <div className="genre-chips">
+            <SearchChips tags={tags} criteria={criteria} onChange={setCriteria} hiddenCount={hidden} />
+          </div>
           <RelatedRow items={related.filter((r) => r.movie.id !== movie.id)} onSelect={select} />
           <ChatDrawer />
         </>

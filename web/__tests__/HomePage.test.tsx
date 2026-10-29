@@ -6,7 +6,7 @@ import { mockMatchMedia, sampleHome } from "./fixtures";
 const push = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push, replace: vi.fn() }) }));
 const getHome = vi.fn();
-vi.mock("@/lib/api", () => ({ getHome: () => getHome() }));
+vi.mock("@/lib/api", () => ({ getHome: () => getHome(), getTags: () => Promise.resolve({ ok: true, data: [] }) }));
 
 import HomePage from "@/app/page";
 
@@ -46,7 +46,7 @@ it("shows one tile strip and no film titles on narrow screens", async () => {
 it("shows English quick filters without a language chip", async () => {
   getHome.mockResolvedValue({ ok: true, data: sampleHome });
   const { container } = render(<HomePage />);
-  const chips = [...container.querySelectorAll(".chat-chips span")].map((c) => c.textContent);
+  const chips = [...container.querySelectorAll(".chat-chips button")].map((c) => c.textContent);
   expect(chips).toEqual(["🎬 In cinemas", "📺 Streaming", "🚫 No horror"]);
   expect(screen.queryByText(/Englisch|English/)).toBeNull();
 });
