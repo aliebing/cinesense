@@ -38,3 +38,26 @@ def test_truncated_explanation_falls_back(make_agent):
     g = make_agent([ai(calls=[("set_mood_tags", {"tags": [{"name": "dark"}]})]), ai("ok")], explain_msgs=[cut])
     out = run_turn(g, "g2", "dark films", SearchCriteria().model_dump())
     assert out["grounding_fallback"] and out["reply"].startswith("Here are films")
+
+
+TAGS = ["dark", "pulp", "time", "space", "love"]  # tags of the current search; never all 1,128
+BIG = CATALOGUE | {"The Dark Knight", "Pulp Fiction", "Children of Men", "Alien", "Casino", "Creepy"}
+
+
+def test_tag_words_never_hide_unlisted_titles():
+    for reply in (
+        "You might also enjoy The Dark Knight.",
+        "Inception, and so is Pulp Fiction.",
+        "Try **Alien** or **Casino**.",
+    ):
+        ok, _ = validate_titles(reply, ["Inception"], BIG, tag_spans=TAGS)
+        assert not ok, reply
+
+
+def test_emphasised_tag_from_the_criteria_is_not_a_film():
+    assert validate_titles("Shall I also exclude **Creepy**?", [], BIG, tag_spans=["creepy"])[0]
+
+
+def test_short_allowed_title_does_not_cut_words():
+    ok, bad = validate_titles("**Up** is lovely, unlike The Dark Knight.", ["Up"], BIG)
+    assert not ok and bad == ["The Dark Knight"]

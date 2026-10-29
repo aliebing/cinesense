@@ -18,6 +18,15 @@ def test_report_has_all_sections_and_labels_the_judge():
         "cost_total_usd": 0.01,
         "cost_per_turn_usd": 0.005,
         "usage_missing": 0,
+        "grounding_raw": 0.8,
+        "availability_claims": 1.0,
+        "counts": {
+            "constraint_satisfaction": [0, 1],
+            "tool_selection": [1, 1],
+            "reply_checks": [0, 0],
+            "grounding": [1, 1],
+            "availability_claims": [1, 1],
+        },
     }
     results = [
         {
@@ -51,7 +60,8 @@ def test_report_has_all_sections_and_labels_the_judge():
         ],
         "judge_cost_usd": 0.2,
     }
-    md = render_report(summary, results, comparison, "2026-10-29")
+    md = render_report(summary, results, comparison, "2026-10-29", "anthropic/claude-haiku-5.5")
+    assert "(0/1)" in md and "own ranking objective" in md and "## Template fallbacks" in md
     for heading in ("## Automatic metrics", "## Relevance — LLM judge", "## Ranking comparison", "## Failures"):
         assert heading in md
     assert "LLM judge (Claude Sonnet 5.5)" in md and "X: 150 min > 120" in md and "0.80" in md

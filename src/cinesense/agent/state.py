@@ -14,4 +14,5 @@ class AgentState(TypedDict, total=False):
     rounds: int
     usage: dict  # input_tokens, output_tokens
     grounding_fallback: bool
+    grounding_reason: list[str]  # why the template answer was used
     profile: dict | None  # Profile JSON (👍/👎 taste) used by the deterministic search

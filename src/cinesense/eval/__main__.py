@@ -105,7 +105,7 @@ def main() -> None:
         if r["category"] not in COMPARE or r["error"]:
             continue
         c = SearchCriteria(**r["criteria"])
-        if not (c.has_tags() or c.plot_query):
+        if not c.prefer_weights():  # baselines have no plot/person signal: compare mood-tag searches only
             continue
         ranked = {n: rank(n, provider, c, 10, embedder) for n in RANKERS}
         wish = " → ".join(r["turns"])
@@ -127,7 +127,7 @@ def main() -> None:
     (OUT_DIR / "results" / f"{stamp}.json").write_text(
         json.dumps({"summary": summary, "results": results, "comparison": comparison}, indent=2, ensure_ascii=False)
     )
-    (OUT_DIR / "REPORT.md").write_text(render_report(summary, results, comparison, stamp[:10]))
+    (OUT_DIR / "REPORT.md").write_text(render_report(summary, results, comparison, stamp[:10], s.llm_model))
     print(json.dumps(summary, indent=2))
     print(f"Judge cost ${comparison['judge_cost_usd']:.3f}; report: eval/REPORT.md")
 

@@ -1,4 +1,10 @@
-from cinesense.eval.checks import check_constraints, check_grounding, check_reply, check_tools
+from cinesense.eval.checks import (
+    check_availability_claims,
+    check_constraints,
+    check_grounding,
+    check_reply,
+    check_tools,
+)
 from cinesense.eval.scenarios import Expect, load_scenarios
 
 
@@ -76,4 +82,13 @@ def test_person_found_via_search_reason_counts():
 
 
 def test_bold_tag_names_are_not_film_titles():
-    assert check_grounding("Shall I exclude **Creepy**?", [], {"Creepy"}, "", tag_names=["creepy"])[0]
+    assert check_grounding("Shall I exclude **Creepy**?", [], {"Creepy"}, "", tag_spans=["creepy"])[0]
+    assert not check_grounding("Also try Pulp Fiction.", [], {"Pulp Fiction"}, "", tag_spans=["pulp"])[0]
+
+
+def test_streaming_claim_needs_known_availability():
+    unknown = [r(streaming=None)]
+    assert not check_availability_claims("The best films you can stream tonight.", unknown)[0]
+    assert check_availability_claims("Streaming availability is not confirmed for these.", unknown)[0]
+    assert check_availability_claims("You can stream it on Netflix.", [r(streaming=[{}], subs=["Netflix"])])[0]
+    assert check_availability_claims("A dark space film.", unknown)[0]

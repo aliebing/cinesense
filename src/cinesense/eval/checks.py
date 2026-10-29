@@ -1,5 +1,7 @@
 """Automatic checks for one scenario's final turn. Pure functions over the API's JSON shapes."""
 
+import re
+
 from cinesense.agent.grounding import mentioned_titles, validate_titles
 from cinesense.eval.scenarios import Expect
 
@@ -43,11 +45,11 @@ def check_tools(called: list[str], e: Expect) -> Check:
 
 
 def check_grounding(
-    reply: str, results: list[dict], catalogue_titles: set[str], user_text: str, tag_names: list[str] = ()
+    reply: str, results: list[dict], catalogue_titles: set[str], user_text: str, tag_spans: list[str] = ()
 ) -> Check:
-    # mood tags ("creepy") may share a name with a film; naming a tag is not naming a film
-    allowed = [r["movie"]["title"] for r in results] + mentioned_titles(user_text, catalogue_titles) + list(tag_names)
-    ok, bad = validate_titles(reply, allowed, catalogue_titles)
+    """tag_spans: the tags of the final search and the proposals — the same rule as the production guard."""
+    allowed = [r["movie"]["title"] for r in results] + mentioned_titles(user_text, catalogue_titles)
+    ok, bad = validate_titles(reply, allowed, catalogue_titles, tag_spans)
     return ok, [f"unlisted title: {t}" for t in bad]
 
 
@@ -64,3 +66,28 @@ def title_hit(results: list[dict], e: Expect) -> bool | None:
         return None
     titles = {r["movie"]["title"] for r in results}
     return bool(titles & set(e.titles_any))
+
+
+_STREAM_CLAIM = re.compile(
+    r"\b(you can stream|to stream|streams on|streaming on|available to stream|can be streamed)\b", re.I
+)
+_HEDGE = re.compile(r"not confirmed|unknown|couldn.t (check|confirm)|can.t confirm|unable to confirm", re.I)
+
+
+def check_availability_claims(reply: str, results: list[dict]) -> Check:
+    """A reply may only say films stream when at least one result has known subscription streaming."""
+    known = any((r["movie"].get("availability") or {}).get("subscription_services") for r in results)
+    if _STREAM_CLAIM.search(reply) and not known and not _HEDGE.search(reply):
+        return False, ["claims streaming without known availability"]
+    return True, []
+
+
+def applies(kind: str, e: Expect) -> bool:
+    """Whether a check has anything to test in this scenario (for honest k/n reporting)."""
+    if kind == "constraints":
+        return bool(e.max_runtime or e.exclude_genres or e.kind or e.availability or e.year_from or e.person)
+    if kind == "tools":
+        return bool(e.tools_any or e.tools_none)
+    if kind == "reply":
+        return bool(e.reply_contains_any)
+    return True

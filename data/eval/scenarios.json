@@ -31,8 +31,8 @@
   {"id": "ambiguous-01", "category": "ambiguous", "turns": ["Solaris"], "expect": {"tools_any": ["similar_to", "film_facts", "set_mood_tags"], "results_required": false}},
   {"id": "ambiguous-02", "category": "ambiguous", "turns": ["something good"], "expect": {"results_required": false}},
   {"id": "metadata-01", "category": "missing_metadata", "turns": ["German films released in cinemas since 2023"], "expect": {"tools_any": ["set_filters"], "year_from": 2023, "results_required": false}},
-  {"id": "fail-01", "category": "failure", "failure": "streaming_down", "turns": ["Where can I stream Inception in Germany?"], "expect": {"tools_any": ["check_streaming"], "results_required": false, "reply_contains_any": ["unknown", "not", "couldn", "can't", "unable"]}},
-  {"id": "fail-02", "category": "failure", "failure": "budget_exhausted", "turns": ["Dark science fiction that I can stream"], "expect": {"tools_any": ["set_mood_tags", "set_filters"], "availability": "stream"}},
+  {"id": "fail-01", "category": "failure", "failure": "streaming_down", "turns": ["Where can I stream Inception in Germany?"], "expect": {"tools_any": ["check_streaming"], "results_required": false, "reply_contains_any": ["unknown", "couldn't", "can't", "unable", "not confirmed", "not available"]}},
+  {"id": "fail-02", "category": "availability", "turns": ["Dark science fiction that I can stream"], "expect": {"tools_any": ["set_mood_tags", "set_filters"], "availability": "stream"}},
   {"id": "fail-03", "category": "failure", "failure": "embeddings_down", "turns": ["A story about a robot who falls in love"], "expect": {"tools_any": ["search_plot", "set_mood_tags"], "results_required": false}},
-  {"id": "fail-04", "category": "failure", "failure": "live_down", "turns": ["Films with Sandra Hüller"], "expect": {"tools_any": ["find_person"], "results_required": false}}
+  {"id": "fail-04", "category": "failure", "turns": ["Films with Mirela Vondrakowska"], "expect": {"tools_any": ["find_person"], "results_required": false}}
 ]

@@ -157,11 +157,19 @@ def build_graph(llm, explain_llm, tools: list, service, provider, checkpointer):
         except Exception:  # noqa: BLE001 — the template is always a valid answer
             text = ""
         titles = catalogue_titles()
-        allowed = [r["movie"]["title"] for r in results] + mentioned_titles(wish, titles) + provider.list_tags()
-        ok, bad = validate_titles(text, allowed, titles) if text else (False, ["(empty answer)"])
+        allowed = [r["movie"]["title"] for r in results] + mentioned_titles(wish, titles)
+        names = provider.list_tags()
+        tag_spans = [names[t["idx"]] for t in (state.get("criteria") or {}).get("tags", []) if t["idx"] < len(names)]
+        tag_spans += [p["tag"] for p in state.get("proposals") or []]
+        ok, bad = validate_titles(text, allowed, titles, tag_spans) if text else (False, ["(empty answer)"])
         if not ok:
             log.warning("grounding fallback, unlisted titles: %s", bad)
-            return {"messages": [AIMessage(template_answer(results))], "grounding_fallback": True, "usage": usage}
+            return {
+                "messages": [AIMessage(template_answer(results))],
+                "grounding_fallback": True,
+                "grounding_reason": bad or ["no usable answer (error or cut off)"],
+                "usage": usage,
+            }
         return {"messages": [AIMessage(text)], "usage": usage}
 
     g = StateGraph(AgentState)
@@ -213,6 +221,7 @@ def run_turn(
         "rounds": 0,
         "usage": {},
         "grounding_fallback": False,
+        "grounding_reason": [],
         "profile": profile.model_dump() if profile is not None else None,
     }
     with _locks_guard:
@@ -244,6 +253,7 @@ def _run_locked(graph, config: dict, inputs: dict, on_status) -> dict:
         "usage": s.get("usage", {}),
         "rounds": s.get("rounds", 0),
         "grounding_fallback": s.get("grounding_fallback", False),
+        "grounding_reason": s.get("grounding_reason", []),
         "history_len": len(s["messages"]),
         "tools_called": tools_called,
         "tool_errors": tool_errors,

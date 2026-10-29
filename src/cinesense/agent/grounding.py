@@ -28,18 +28,25 @@ def mentioned_titles(text: str, catalogue_titles: set[str]) -> list[str]:
     return found
 
 
-def validate_titles(text: str, allowed_titles: list[str], catalogue_titles: set[str]) -> tuple[bool, list[str]]:
+def validate_titles(
+    text: str, allowed_titles: list[str], catalogue_titles: set[str], tag_spans: list[str] = ()
+) -> tuple[bool, list[str]]:
+    """tag_spans: mood tags of the current search; an emphasised span that is exactly such a tag ("**creepy**")
+    is a tag, not a film. Tags never take part in the substring check, so they cannot hide real titles."""
+    tags = {_norm(t) for t in tag_spans}
     allowed = {_norm(t) for t in allowed_titles}
     catalogue = {_norm(t): t for t in catalogue_titles}
     bad: list[str] = []
     for m in _EMPHASIS.finditer(text):
         span = next(g for g in m.groups() if g).strip()
         key = _norm(re.sub(r"\(\d{4}\)$", "", span))
+        if key in tags:
+            continue
         if key not in allowed and (key in catalogue or _looks_like_title(span)):
             bad.append(catalogue.get(key, span))
     stripped = text
     for t in sorted(allowed_titles, key=len, reverse=True):  # "The Matrix Reloaded" must not match "The Matrix"
-        stripped = re.sub(re.escape(t), " ", stripped, flags=re.IGNORECASE)
+        stripped = re.sub(rf"(?<!\w){re.escape(t)}(?!\w)", " ", stripped, flags=re.IGNORECASE)
     for t in mentioned_titles(stripped, catalogue_titles):
         if _norm(t) not in allowed and t not in bad:
             bad.append(t)

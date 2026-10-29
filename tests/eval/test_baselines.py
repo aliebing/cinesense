@@ -27,7 +27,8 @@ def test_bayesian_ignores_tags_but_cinesense_uses_them():
     assert [m.id for m in rank("bayesian", P, c, 5)] == [m.id for m in plain]
     m = ranking_metrics(P, c, {n: rank(n, P, c, 10) for n in RANKERS})
     assert m["cinesense"]["tag_relevance"] > m["bayesian"]["tag_relevance"]
-    assert set(m["cosine"]) == {"tag_relevance", "median_rating_count", "constraint_ok"}
+    assert set(m["cosine"]) == {"tag_relevance", "tag_cosine", "median_rating_count", "constraint_ok"}
+    assert m["cosine"]["tag_cosine"] >= m["cinesense"]["tag_cosine"] - 0.2
 
 
 def fake(text):

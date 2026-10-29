@@ -73,8 +73,10 @@ def ranking_metrics(provider, c: SearchCriteria, ranked: dict[str, list[Movie]])
             rel = None
         excluded = {g.lower() for g in c.exclude_genres}
         ok = [_passes(m, c) and not any(g.lower() in excluded for g in m.genres) for m in films]
+        cos = float(np.mean(np.nan_to_num(tag_scores(weights, vecs)))) if weights and films else None
         out[name] = {
-            "tag_relevance": round(rel, 3) if rel is not None else None,
+            "tag_relevance": round(rel, 3) if rel is not None else None,  # CineSense's own objective
+            "tag_cosine": round(cos, 3) if cos is not None else None,  # movieFinder's objective
             "median_rating_count": int(statistics.median([m.ml_rating_count for m in films])) if films else None,
             "constraint_ok": round(sum(ok) / len(ok), 3) if ok else None,
         }

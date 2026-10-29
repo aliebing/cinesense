@@ -96,5 +96,28 @@ def test_summary_rates():
         {"Film q"},
     )
     s = summarise(res)
-    assert s["scenarios"] == 2 and s["constraint_satisfaction"] == 0.5 and s["tool_selection"] == 1.0
+    assert s["scenarios"] == 2 and s["constraint_satisfaction"] == 0.0 and s["tool_selection"] is None
     assert s["tool_success"] == 1.0
+    assert s["counts"]["constraint_satisfaction"] == [0, 1]  # only the scenario with a constraint applies
+    assert s["counts"]["reply_checks"] == [0, 0]
+
+
+def test_raw_grounding_counts_fallbacks_and_zero_tokens_flag_usage():
+    def make(failure):
+        def run(*a, **k):
+            return {
+                "reply": "Here are films that match:",
+                "criteria": {},
+                "results": [movie("Z")],
+                "tools_called": [],
+                "grounding_fallback": True,
+                "grounding_reason": ["Titanic"],
+                "usage": {"input_tokens": 0, "output_tokens": 0},
+            }
+
+        return run
+
+    res = run_scenarios([Scenario(id="g", category="mood", turns=["q"])], make, set())
+    s = summarise(res)
+    assert res[0]["usage_missing"] and res[0]["grounding_reason"] == ["Titanic"]
+    assert s["grounding"] == 1.0 and s["grounding_raw"] == 0.0
