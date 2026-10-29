@@ -78,8 +78,8 @@ body {
   width: calc((100vw - var(--stage-w)) / 2 + var(--stage-w) * var(--curtain-overlap));
 }
 /* the fabric casts a soft shadow onto the screen beside it */
-.cinema-curtain--left { left: 0; filter: drop-shadow(7px 0 12px #0008); }
-.cinema-curtain--right { right: 0; filter: drop-shadow(-7px 0 12px #0008); }
+.cinema-curtain--left { left: 0; filter: drop-shadow(12px 0 20px #000c) drop-shadow(3px 0 6px #0008); }
+.cinema-curtain--right { right: 0; filter: drop-shadow(-12px 0 20px #000c) drop-shadow(-3px 0 6px #0008); }
 .cinema-curtain-inner {
   position: absolute;
   inset: 0;
