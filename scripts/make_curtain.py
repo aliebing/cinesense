@@ -5,7 +5,8 @@ The panel is a right-hand curtain (inner edge on its left); the page mirrors it 
 usage:
   uv run --no-project --with pillow python scripts/make_curtain.py <velvet_photo.jpg> web/public/curtain.webp
 
-Source (Unsplash license, free to use): "A red curtain with a black background" by Ambitious Studio* | Rick Barrett,
+Source (Unsplash license, free to use): "A red curtain with a black background"
+by Ambitious Studio* | Rick Barrett,
 https://unsplash.com/photos/a-red-curtain-with-a-black-background-AwsdyjRm-kw
 """
 
