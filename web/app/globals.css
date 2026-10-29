@@ -8,9 +8,9 @@
   --fg: #f2efe8;
   --muted: #a29f99;
   --bar: 6vh;
-  --stage-ratio: 2.35; /* wide cinema screen */
+  --stage-ratio: 2.29; /* wide cinema screen */
   --curtain-overlap: 0.025; /* share of the stage width each curtain covers */
-  --stage-max: 84vw; /* leaves room for the curtains at the sides */ /* leaves room for the curtains at the sides */
+  --stage-max: calc(84vw + 40px); /* leaves room for the curtains at the sides */ /* leaves room for the curtains at the sides */
   --stage-w: min(var(--stage-max), calc((100vh - 2 * var(--bar)) * var(--stage-ratio)));
 }
 
