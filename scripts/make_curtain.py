@@ -18,7 +18,7 @@ from PIL import Image, ImageEnhance
 
 src_path, out_path = sys.argv[1:3]
 x0, x1, colour, brightness = (float(v) for v in (sys.argv[3:7] or (0.22, 0.83, 1.25, 1.12)))
-out_width = int(sys.argv[7]) if len(sys.argv) > 7 else 600  # slim panel: a little over two folds show on screen
+out_width = int(sys.argv[7]) if len(sys.argv) > 7 else 600  # ~2 folds on screen
 OUT_HEIGHT = 2200
 
 photo = Image.open(src_path).convert("RGB")
