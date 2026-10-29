@@ -52,13 +52,13 @@ export default function GenreView({ worldId, filmId }: { worldId: string; filmId
   useEffect(() => {
     if (!stageId) return;
     let cancelled = false;
-    getRelated(stageId).then((r) => {
+    getRelated(stageId, worldId).then((r) => {
       if (!cancelled) setRelated(r.ok ? r.data : []);
     });
     return () => {
       cancelled = true;
     };
-  }, [stageId]);
+  }, [stageId, worldId]);
 
   if (state.kind === "not_found") {
     notFound();

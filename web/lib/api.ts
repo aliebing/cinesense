@@ -22,4 +22,7 @@ export const getWorlds = () => apiGet<MoodWorld[]>("/api/worlds");
 export const getWorldMovies = (worldId: string, limit = 12) =>
   apiGet<RankedMovie[]>(`/api/worlds/${encodeURIComponent(worldId)}/movies?limit=${limit}`);
 export const getMovie = (id: string) => apiGet<Movie>(`/api/movies/${encodeURIComponent(id)}`);
-export const getRelated = (id: string) => apiGet<RankedMovie[]>(`/api/movies/${encodeURIComponent(id)}/related`);
+export const getRelated = (id: string, worldId?: string) =>
+  apiGet<RankedMovie[]>(
+    `/api/movies/${encodeURIComponent(id)}/related${worldId ? `?world_id=${encodeURIComponent(worldId)}` : ""}`,
+  );

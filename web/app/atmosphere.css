@@ -48,18 +48,18 @@
 }
 .fog i { position: absolute; border-radius: 50%; mix-blend-mode: screen; transition: background 3s ease; }
 /* far: large, slow, dim, tinted */
-.fog--far i { filter: blur(5cqw); }
+.fog--far i { filter: blur(5cqw); opacity: .25; }
 .fog--far i:nth-child(1) { width: 95%; height: 70%; right: -20%; top: 15%; background: var(--tint); animation: fogA 40s ease-in-out infinite; }
 .fog--far i:nth-child(2) { width: 70%; height: 60%; right: 15%; top: -15%; background: #8090a8; animation: fogB 46s ease-in-out infinite; }
 .fog--far i:nth-child(3) { width: 60%; height: 80%; right: -5%; top: 0; background: #c9b48a; animation: fogA 52s ease-in-out infinite reverse; }
 /* mid: grey-blue, medium speed */
 .fog--mid { z-index: 2; }
-.fog--mid i { filter: blur(3.5cqw); }
+.fog--mid i { filter: blur(3.5cqw); opacity: .3; }
 .fog--mid i:nth-child(1) { width: 75%; height: 40%; right: 0; top: 30%; background: #5d6b80; animation: fogC 26s ease-in-out infinite; }
 .fog--mid i:nth-child(2) { width: 55%; height: 35%; right: 30%; top: 10%; background: var(--tint); animation: fogB 22s ease-in-out infinite reverse; }
 /* near: thin fast wisps, very low opacity */
 .fog--near { z-index: 3; }
-.fog--near i { filter: blur(1.8cqw); height: 9%; border-radius: 40%; background: #b9c3d6; }
+.fog--near i { filter: blur(1.8cqw); height: 9%; border-radius: 40%; background: #b9c3d6; opacity: .1; }
 .fog--near i:nth-child(1) { width: 90%; right: -30%; top: 22%; animation: wisp 16s linear infinite; }
 .fog--near i:nth-child(2) { width: 70%; right: -40%; top: 48%; animation: wisp 21s linear infinite 6s; }
 @keyframes fogA { 0%,100% { transform: translate(0,0) scale(1); opacity: .22; } 35% { transform: translate(-14%,9%) scale(1.3); opacity: .55; } 70% { transform: translate(-4%,-10%) scale(.88); opacity: .32; } }

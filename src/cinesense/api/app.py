@@ -34,7 +34,7 @@ def create_app() -> FastAPI:
     app = FastAPI(title="CineSense API")
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["http://localhost:3000"],
+        allow_origin_regex=r"http://(localhost|127\.0\.0\.1)(:\d+)?",
         allow_methods=["*"],
         allow_headers=["*"],
     )
@@ -64,12 +64,17 @@ def create_app() -> FastAPI:
 
     @app.get("/api/movies/{movie_id}/related")
     def related(
-        movie_id: str, provider: Provider, limit: Annotated[int, Query(ge=1, le=100)] = 13
+        movie_id: str,
+        provider: Provider,
+        limit: Annotated[int, Query(ge=1, le=100)] = 13,
+        world_id: str | None = None,
     ) -> list[RankedMovie]:
         found = provider.get_movie(movie_id)
         if found is None:
             raise HTTPException(status_code=404, detail="movie_not_found")
-        world_id = found.world_ids[0] if found.world_ids else None
+        # Rank within the world the user is browsing; fall back to the film's first world.
+        if world_id is None or get_world(world_id) is None:
+            world_id = found.world_ids[0] if found.world_ids else None
         ranked = rank_baseline(provider.list_movies(), MovieQuery(world_id=world_id))
         return [r for r in ranked if r.movie.id != movie_id][:limit]
 

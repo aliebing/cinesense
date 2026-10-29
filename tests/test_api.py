@@ -59,3 +59,16 @@ def test_home_has_24_tiles_from_all_worlds():
     covered = {wid for t in data["tiles"] for wid in t["world_ids"]}
     assert {"spannung", "scifi", "gefuehl", "abenteuer", "humor", "action"} <= covered
     assert data["titles"] and all(isinstance(t, str) for t in data["titles"])
+
+
+def test_related_uses_requested_world_for_multi_world_film():
+    c = client()
+    film = c.get("/api/movies/demo-28").json()
+    assert film["world_ids"] == ["abenteuer", "humor"]
+    items = c.get("/api/movies/demo-28/related?world_id=humor").json()
+    assert items and all("humor" in i["movie"]["world_ids"] for i in items)
+
+
+def test_cors_allows_local_dev_origins_on_any_port():
+    r = client().get("/api/health", headers={"Origin": "http://127.0.0.1:3001"})
+    assert r.headers.get("access-control-allow-origin") == "http://127.0.0.1:3001"

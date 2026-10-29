@@ -17,7 +17,7 @@ vi.mock("@/lib/api", () => ({
   getWorlds: () => api.getWorlds(),
   getWorldMovies: (id: string) => api.getWorldMovies(id),
   getMovie: (id: string) => api.getMovie(id),
-  getRelated: (id: string) => api.getRelated(id),
+  getRelated: (id: string, worldId?: string) => api.getRelated(id, worldId),
 }));
 
 import GenreView from "@/components/genre/GenreView";
@@ -61,4 +61,10 @@ it("shows an error state when the backend is unreachable", async () => {
   api.getWorldMovies.mockResolvedValue({ ok: false, error: "network" });
   render(<GenreView worldId="action" filmId={null} />);
   expect(await screen.findByText("Filme konnten nicht geladen werden")).toBeInTheDocument();
+});
+
+it("asks for related films within the world shown on the page", async () => {
+  render(<GenreView worldId="action" filmId={null} />);
+  await screen.findByRole("heading", { name: "Demo-Film 01" });
+  await waitFor(() => expect(api.getRelated).toHaveBeenCalledWith("demo-01", "action"));
 });
