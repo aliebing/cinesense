@@ -4,7 +4,7 @@ import { useState } from "react";
 import ChatPanel from "@/components/chat/ChatPanel";
 
 /** Collapsible glass chat at the right edge of the genre page; same conversation as on the homepage. */
-export default function ChatDrawer() {
+export default function ChatDrawer({ horrorIdx = null }: { horrorIdx?: number | null }) {
   const [open, setOpen] = useState(false);
   if (!open) {
     return (
@@ -21,7 +21,7 @@ export default function ChatDrawer() {
           ×
         </button>
       </header>
-      <ChatPanel mode="live" />
+      <ChatPanel mode="live" horrorIdx={horrorIdx} />
     </aside>
   );
 }

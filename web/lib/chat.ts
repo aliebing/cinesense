@@ -114,8 +114,32 @@ export function setChatLog(next: ChatEntry[]) {
   listeners.forEach((l) => l());
 }
 
+export function getChatLog(): ChatEntry[] {
+  return loadLog();
+}
+
 export function clearChatLog() {
+  status = null;
   setChatLog([]);
+}
+
+// --- turn in flight, shared so a second panel (genre drawer) shows it and can't start another turn ---
+let status: string | null = null;
+
+export function setChatStatus(next: string | null) {
+  status = next;
+  listeners.forEach((l) => l());
+}
+
+export function useChatStatus(): string | null {
+  return useSyncExternalStore(
+    (cb) => {
+      listeners.add(cb);
+      return () => listeners.delete(cb);
+    },
+    () => status,
+    () => null,
+  );
 }
 
 export function useChatLog(): [ChatEntry[], (next: ChatEntry[]) => void] {

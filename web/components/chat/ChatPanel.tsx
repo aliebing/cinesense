@@ -3,7 +3,16 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import ChatResults from "@/components/chat/ChatResults";
-import { ChatError, type ChatEntry, type Proposal, streamChat, threadId, useChatLog } from "@/lib/chat";
+import {
+  ChatError,
+  getChatLog,
+  type Proposal,
+  setChatStatus,
+  streamChat,
+  threadId,
+  useChatLog,
+  useChatStatus,
+} from "@/lib/chat";
 import { useSearchState, withNoHorror } from "@/lib/searchState";
 import type { Movie } from "@/lib/types";
 
@@ -15,7 +24,8 @@ export default function ChatPanel({ mode, horrorIdx = null }: { mode: "static" |
   const [criteria, setCriteria] = useSearchState();
   const [entries, setEntries] = useChatLog();
   const [draft, setDraft] = useState("");
-  const [status, setStatus] = useState<string | null>(null);
+  const status = useChatStatus();
+  const busy = status !== null;
   const logRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -24,22 +34,21 @@ export default function ChatPanel({ mode, horrorIdx = null }: { mode: "static" |
 
   const send = async () => {
     const text = draft.trim();
-    if (!text || status !== null) return;
+    if (!text || busy) return;
     setDraft("");
-    const withUser: ChatEntry[] = [...entries, { role: "user", text }];
-    setEntries(withUser);
-    setStatus("Thinking…");
+    setEntries([...getChatLog(), { role: "user", text }]);
+    setChatStatus("Thinking…");
     try {
-      const out = await streamChat({ threadId: threadId(), message: text, criteria }, setStatus);
+      const out = await streamChat({ threadId: threadId(), message: text, criteria }, setChatStatus);
       setCriteria(out.criteria);
       setEntries([
-        ...withUser,
+        ...getChatLog(),
         { role: "bot", text: out.reply, results: out.results, proposals: out.proposals, handoff: out.handoff },
       ]);
     } catch (e) {
-      setEntries([...withUser, { role: "bot", text: e instanceof ChatError ? e.message : String(e), error: true }]);
+      setEntries([...getChatLog(), { role: "bot", text: e instanceof ChatError ? e.message : String(e), error: true }]);
     } finally {
-      setStatus(null);
+      setChatStatus(null);
     }
   };
 
@@ -106,7 +115,7 @@ export default function ChatPanel({ mode, horrorIdx = null }: { mode: "static" |
                   <div className="chat-proposals">
                     Also exclude:{" "}
                     {e.proposals!.map((p) => (
-                      <button key={p.idx} type="button" aria-label={`Also exclude ${p.tag}`} onClick={() => applyProposal(i, p)}>
+                      <button key={p.idx} type="button" aria-label={`Also exclude ${p.tag}`} disabled={busy} onClick={() => applyProposal(i, p)}>
                         🚫 {p.tag} +
                       </button>
                     ))}
@@ -143,14 +152,14 @@ export default function ChatPanel({ mode, horrorIdx = null }: { mode: "static" |
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
         />
-        <button type="submit" aria-label="Send" disabled={!live || status !== null}>
+        <button type="submit" aria-label="Send" disabled={!live || busy}>
           ➤
         </button>
       </form>
       {!live && <p className="chat-hint">The chat agent is coming soon</p>}
       <div className="chat-chips">
         {quick.map((q) => (
-          <button key={q.label} type="button" aria-pressed={q.on} className={q.on ? "is-on" : ""} onClick={q.toggle}>
+          <button key={q.label} type="button" aria-pressed={q.on} className={q.on ? "is-on" : ""} disabled={busy} onClick={q.toggle}>
             {q.label}
           </button>
         ))}

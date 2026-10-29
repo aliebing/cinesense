@@ -114,3 +114,44 @@ it("keeps the conversation when the panel is mounted again (page change)", async
   render(<ChatPanel mode="live" />);
   expect(screen.getByText("Here are dark picks.")).toBeInTheDocument();
 });
+
+it("a second panel (genre drawer) sees the turn in flight and cannot send", async () => {
+  let resolve: (v: unknown) => void = () => {};
+  streamChat.mockImplementation(() => new Promise((r) => (resolve = r)));
+  render(
+    <>
+      <div data-testid="home">
+        <ChatPanel mode="live" />
+      </div>
+    </>,
+  );
+  await send("dark");
+  const { getAllByRole } = render(<ChatPanel mode="live" />);
+  const sends = getAllByRole("button", { name: "Send" });
+  expect(sends.every((b) => (b as HTMLButtonElement).disabled)).toBe(true);
+  resolve(final());
+  await waitFor(() => expect(screen.getAllByText("Here are dark picks.").length).toBeGreaterThan(0));
+});
+
+it("disables quick chips while the agent works so its answer can't undo them", async () => {
+  let resolve: (v: unknown) => void = () => {};
+  streamChat.mockImplementation(() => new Promise((r) => (resolve = r)));
+  render(<ChatPanel mode="live" />);
+  await send("dark");
+  expect(screen.getByRole("button", { name: "📺 Streaming" })).toBeDisabled();
+  resolve(final());
+  await waitFor(() => expect(screen.getByRole("button", { name: "📺 Streaming" })).toBeEnabled());
+});
+
+it("appends the reply to the latest log instead of an old snapshot", async () => {
+  const { setChatLog } = await import("@/lib/chat");
+  let resolve: (v: unknown) => void = () => {};
+  streamChat.mockImplementation(() => new Promise((r) => (resolve = r)));
+  render(<ChatPanel mode="live" />);
+  await send("dark");
+  const { getChatLog } = await import("@/lib/chat");
+  setChatLog([...getChatLog(), { role: "bot", text: "note added meanwhile" }]);
+  resolve(final());
+  expect(await screen.findByText("Here are dark picks.")).toBeInTheDocument();
+  expect(screen.getByText("note added meanwhile")).toBeInTheDocument();
+});

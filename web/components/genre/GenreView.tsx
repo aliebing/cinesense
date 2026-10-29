@@ -120,7 +120,7 @@ export default function GenreView({ worldId, filmId }: { worldId: string; filmId
             <SearchChips tags={tags} criteria={criteria} onChange={setCriteria} hiddenCount={hidden} />
           </div>
           <RelatedRow items={related.filter((r) => r.movie.id !== movie.id)} onSelect={select} />
-          <ChatDrawer />
+          <ChatDrawer horrorIdx={tags.find((t) => t.tag === "horror")?.idx ?? null} />
         </>
       )}
     </CinemaFrame>
