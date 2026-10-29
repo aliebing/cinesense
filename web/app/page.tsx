@@ -1,69 +1,83 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import FogLight from "@/components/atmosphere/FogLight";
+import HeroSlides from "@/components/atmosphere/HeroSlides";
+import CinemaFrame from "@/components/cinema/CinemaFrame";
+import ChatPanel from "@/components/chat/ChatPanel";
+import FilmTitles from "@/components/home/FilmTitles";
+import TileRows from "@/components/home/TileRows";
+import WorldLabel from "@/components/home/WorldLabel";
+import { getHome, type ApiResult } from "@/lib/api";
+import type { HomeData, Movie } from "@/lib/types";
+import { useReducedMotion } from "@/lib/useReducedMotion";
+
+export default function HomePage() {
+  const router = useRouter();
+  const reduced = useReducedMotion();
+  const [result, setResult] = useState<ApiResult<HomeData> | null>(null);
+  const [active, setActive] = useState(0);
+  const [variedSpeed, setVariedSpeed] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    getHome().then((r) => {
+      if (!cancelled) setResult(r);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const data = result?.ok ? result.data : null;
+  const worlds = useMemo(() => data?.worlds ?? [], [data]);
+  const images = useMemo(() => {
+    const out: Record<string, string | null> = {};
+    for (const w of worlds) {
+      const m = data?.tiles.find((t) => t.world_ids.includes(w.id));
+      out[w.id] = m?.backdrop_url ?? m?.poster_url ?? null;
+    }
+    return out;
+  }, [worlds, data]);
+  const advance = useCallback(() => setActive((i) => (worlds.length ? (i + 1) % worlds.length : 0)), [worlds.length]);
+  const world = worlds[active];
+
+  const openMovie = (m: Movie) => router.push(`/welt/${m.world_ids[0]}?film=${m.id}`);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+    <CinemaFrame>
+      <HeroSlides worlds={worlds} images={images} activeIndex={active} onAdvance={advance} />
+      <FogLight tint={world?.tint ?? "#1b4a6b"} reduced={reduced} />
+      <div className="home-shade" aria-hidden="true" />
+
+      <header className="home-top">
+        <span className="home-logo">CineSense</span>
+        <nav aria-label="Hauptnavigation" className="home-nav">
+          <span>🎬 Im Kino</span> · <span>📺 Im Stream</span> · <span aria-label="Profil">👤</span>
+        </nav>
+      </header>
+      <button type="button" className="tempo-toggle" onClick={() => setVariedSpeed((v) => !v)}>
+        Tempo: {variedSpeed ? "unterschiedlich" : "gleichmäßig"}
+      </button>
+
+      <main className="home-center">
+        <h1 className="home-claim">
+          <span>Don&apos;t choose a movie.</span>
+          <em>Choose a feeling.</em>
+        </h1>
+        <p className="home-sub">Sag mir, worauf du heute Lust hast.</p>
+        <ChatPanel mode="static" />
+        {result && !result.ok && <p className="home-error">Filme konnten nicht geladen werden</p>}
       </main>
-    </div>
+
+      {data && <FilmTitles titles={data.titles} />}
+      {data && (
+        <div className="home-rows">
+          <TileRows movies={data.tiles} rows={4} onSelect={openMovie} variedSpeed={variedSpeed} />
+        </div>
+      )}
+      {world && <WorldLabel world={world} href={`/welt/${world.id}`} />}
+    </CinemaFrame>
   );
 }
