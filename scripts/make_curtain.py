@@ -17,13 +17,13 @@ import sys
 from PIL import Image, ImageEnhance
 
 src_path, out_path = sys.argv[1:3]
-x0, x1, colour, brightness = (float(v) for v in (sys.argv[3:7] or (0.04, 0.86, 1.25, 1.12)))
-out_width = int(sys.argv[7]) if len(sys.argv) > 7 else 600  # slim panel: about three folds show on screen
+x0, x1, colour, brightness = (float(v) for v in (sys.argv[3:7] or (0.22, 0.83, 1.25, 1.12)))
+out_width = int(sys.argv[7]) if len(sys.argv) > 7 else 600  # slim panel: a little over two folds show on screen
 OUT_HEIGHT = 2200
 
 photo = Image.open(src_path).convert("RGB")
 w, h = photo.size
-# most of the photo width (about five folds), squeezed into a slim panel so the curtain looks zoomed out
+# about four folds of the photo, squeezed into a slim panel so the curtain looks slightly zoomed out
 panel = photo.crop((int(w * x0), 0, int(w * x1), h))
 panel = panel.resize((out_width or round(panel.width * OUT_HEIGHT / panel.height), OUT_HEIGHT), Image.LANCZOS)
 panel = ImageEnhance.Color(panel).enhance(colour)
