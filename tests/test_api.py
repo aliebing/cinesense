@@ -1,17 +1,27 @@
 from fastapi.testclient import TestClient
 
 from cinesense.api.app import create_app
+from cinesense.api.deps import get_embedder, get_provider, get_streaming
+from cinesense.providers.fixture import FixtureProvider
+
+
+def make_app(provider=None, streaming=None):
+    app = create_app(load_env=False)
+    app.dependency_overrides[get_provider] = lambda: provider or FixtureProvider()
+    app.dependency_overrides[get_streaming] = lambda: streaming
+    app.dependency_overrides[get_embedder] = lambda: None
+    return app
 
 
 def test_health():
-    client = TestClient(create_app())
+    client = TestClient(make_app())
     r = client.get("/api/health")
     assert r.status_code == 200
     assert r.json() == {"status": "ok"}
 
 
-def client() -> TestClient:
-    return TestClient(create_app())
+def client(**kw) -> TestClient:
+    return TestClient(make_app(**kw))
 
 
 def test_worlds_returns_six():
@@ -52,9 +62,12 @@ def test_related_excludes_self():
     assert c.get("/api/movies/nope/related").status_code == 404
 
 
-def test_home_has_24_tiles_from_all_worlds():
+def test_home_rows_per_world():
     data = client().get("/api/home").json()
     assert len(data["worlds"]) == 6
+    assert set(data["rows"]) == {"suspense", "scifi", "romance", "adventure", "comedy", "action"}
+    for wid, films in data["rows"].items():
+        assert 0 < len(films) <= 12 and all(wid in f["world_ids"] for f in films)
     assert len(data["tiles"]) == 24
     covered = {wid for t in data["tiles"] for wid in t["world_ids"]}
     assert {"suspense", "scifi", "romance", "adventure", "comedy", "action"} <= covered
@@ -72,3 +85,53 @@ def test_related_uses_requested_world_for_multi_world_film():
 def test_cors_allows_local_dev_origins_on_any_port():
     r = client().get("/api/health", headers={"Origin": "http://127.0.0.1:3001"})
     assert r.headers.get("access-control-allow-origin") == "http://127.0.0.1:3001"
+
+
+class StubStreaming:
+    def __init__(self, options):
+        self.options = options
+
+    def get_de(self, imdb_id):
+        return self.options
+
+    def images(self, imdb_id):
+        return None
+
+
+def test_tags_endpoint_lists_fixture_tags():
+    r = client().get("/api/tags")
+    assert r.status_code == 200 and isinstance(r.json(), list)
+
+
+def test_discover_validates_weights():
+    r = client().post("/api/discover", json={"criteria": {"tags": [{"idx": 1, "weight": 0}]}})
+    assert r.status_code == 422
+
+
+def test_discover_paging_and_total():
+    c = client()
+    first = c.post("/api/discover", json={"criteria": {}, "offset": 0, "limit": 5}).json()
+    second = c.post("/api/discover", json={"criteria": {}, "offset": 5, "limit": 5}).json()
+    assert first["total"] == second["total"] >= 10
+    assert {i["movie"]["id"] for i in first["items"]}.isdisjoint({i["movie"]["id"] for i in second["items"]})
+
+
+def test_discover_no_horror_hides_and_counts():
+    data = (
+        client().post("/api/discover", json={"criteria": {"exclude_genres": ["Horror"]}, "limit": 50}).json()
+    )
+    assert all("Horror" not in i["movie"]["genres"] for i in data["items"])
+    assert data["hidden_by_exclusion"] >= 1
+
+
+def test_movie_detail_adds_streaming():
+    from cinesense.domain.models import StreamingOption
+
+    stub = StubStreaming([StreamingOption(service="Netflix", type="subscription")])
+    body = client(streaming=stub).get("/api/movies/demo-01").json()
+    assert body["availability"]["subscription_services"] == ["Netflix"]
+
+
+def test_movie_detail_streaming_unknown_when_none():
+    body = client(streaming=StubStreaming(None)).get("/api/movies/demo-01").json()
+    assert body["availability"]["streaming_de"] is None

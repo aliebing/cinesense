@@ -26,6 +26,7 @@ def build() -> list[dict]:
         movies.append(
             {
                 "id": f"demo-{n:02d}",
+                "imdb_id": f"tt99{n:05d}",
                 "title": f"Demo-Film {n:02d}",
                 "year": 1995 + (n * 7) % 31,
                 "runtime_min": 85 + (n * 13) % 91,

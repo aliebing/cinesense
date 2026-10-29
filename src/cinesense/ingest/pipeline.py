@@ -127,9 +127,17 @@ async def ingest_catalogue(conn, ml_path, limit: int | None, with_extras: bool) 
         wd = await fetch_wikidata([f.movielens_id for f in films], client)
         log.info("Wikidata matches: %d", len(wd))
         rows, people = [], []
+        # one row per Wikidata item: MovieLens has a few duplicates; films are ordered most-rated first
+        taken = dict(
+            conn.execute("select wikidata_id, id from films where wikidata_id is not null").fetchall()
+        )
         for f in films:
             if f.movielens_id not in wd:
                 continue
+            qid = wd[f.movielens_id].wikidata_id
+            if taken.get(qid, f"ml-{f.movielens_id}") != f"ml-{f.movielens_id}":
+                continue
+            taken[qid] = f"ml-{f.movielens_id}"
             if f.tag_vector is None and not wd[f.movielens_id].wikipedia_title:
                 continue  # documentaries without genome need a Wikipedia article to be useful
             rows.append(film_row(f, wd[f.movielens_id], tags))

@@ -134,3 +134,40 @@ class PostgresProvider:
                 best[film_id] = (float(sim), text)
         ids = list(best)[:k]
         return [(m, best[m.id][0], best[m.id][1]) for m in self.get_many(ids)]
+
+    # --- title / people (typo, accent and sound-alike tolerant) ----------
+    def search_title(self, q: str, limit: int = 200) -> dict[str, float]:
+        sounds = "metaphone(cs_norm(title), 24) = metaphone(cs_norm(%(q)s), 24)"
+        sql = (
+            "select id, greatest(similarity(cs_norm(title), cs_norm(%(q)s)), "
+            f"case when {sounds} then 0.6 else 0 end) as s "
+            f"from films where cs_norm(title) %% cs_norm(%(q)s) or {sounds} "
+            "or cs_norm(title) like '%%' || cs_norm(%(q)s) || '%%' "
+            "order by s desc, ml_rating_count desc limit %(limit)s"
+        )
+        with self._conn() as c:
+            rows = c.execute(sql, {"q": q, "limit": limit}).fetchall()
+        return {r[0]: max(float(r[1]), 0.5) for r in rows}
+
+    def search_person(
+        self, q: str, role: str = "any", limit: int = 400
+    ) -> tuple[dict[str, float], dict[str, str]]:
+        role_sql = "" if role == "any" else "and role = %(role)s"
+        sounds = "metaphone(cs_norm(name), 24) = metaphone(cs_norm(%(q)s), 24)"
+        sql = (
+            "select film_id, name, greatest(similarity(cs_norm(name), cs_norm(%(q)s)), "
+            f"case when {sounds} then 0.6 else 0 end) as s "
+            f"from film_people where (cs_norm(name) %% cs_norm(%(q)s) or {sounds}) "
+            f"{role_sql} order by s desc limit %(limit)s"
+        )
+        with self._conn() as c:
+            rows = c.execute(sql, {"q": q, "role": role, "limit": limit}).fetchall()
+        scores: dict[str, float] = {}
+        names: dict[str, str] = {}
+        best = max((float(r[2]) for r in rows), default=0.0)
+        for film_id, name, s in rows:
+            # keep only the best-matching person (a typo of one name shouldn't pull in similar names)
+            if float(s) >= best - 0.15 and film_id not in scores:
+                scores[film_id] = float(s)
+                names[film_id] = name
+        return scores, names

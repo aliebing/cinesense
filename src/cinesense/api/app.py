@@ -2,35 +2,52 @@ from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
 
-from cinesense.api.deps import get_provider
-from cinesense.domain.models import MoodWorld, Movie, MovieQuery, RankedMovie
+from cinesense.api.deps import get_embedder, get_provider, get_streaming
+from cinesense.config import load_env_file
+from cinesense.domain.criteria import SearchCriteria
+from cinesense.domain.models import MoodWorld, Movie, RankedMovie
 from cinesense.domain.worlds import WORLDS, get_world
-from cinesense.providers.base import MovieProvider
-from cinesense.recommend.baseline import rank_baseline
+from cinesense.search.service import SearchService
 
-Provider = Annotated[MovieProvider, Depends(get_provider)]
+Provider = Annotated[object, Depends(get_provider)]
+Streaming = Annotated[object, Depends(get_streaming)]
+Embedder = Annotated[object, Depends(get_embedder)]
 
-HOME_TILES_PER_WORLD = 4
-HOME_TITLES_PER_WORLD = 2
-
-
-def _home(provider: MovieProvider) -> dict:
-    movies = provider.list_movies()
-    per_world = [rank_baseline(movies, MovieQuery(world_id=w.id)) for w in WORLDS]
-    tiles: list[Movie] = []
-    seen: set[str] = set()
-    # Round-robin across worlds so every world is represented on the homepage.
-    for i in range(max(len(r) for r in per_world)):
-        for ranked in per_world:
-            if i < len(ranked) and ranked[i].movie.id not in seen and len(tiles) < 6 * HOME_TILES_PER_WORLD:
-                tiles.append(ranked[i].movie)
-                seen.add(ranked[i].movie.id)
-    titles = [r.movie.title for ranked in per_world for r in ranked[:HOME_TITLES_PER_WORLD]]
-    return {"worlds": list(WORLDS), "tiles": tiles, "titles": titles}
+ROW_SIZE = 12
 
 
-def create_app() -> FastAPI:
+class DiscoverRequest(BaseModel):
+    criteria: SearchCriteria = Field(default_factory=SearchCriteria)
+    offset: int = Field(default=0, ge=0)
+    limit: int = Field(default=20, ge=1, le=50)
+
+
+class DiscoverResponse(BaseModel):
+    items: list[RankedMovie]
+    total: int
+    hidden_by_exclusion: int = 0
+    extended_used: bool = False
+
+
+def _with_images(movie: Movie, provider, streaming) -> Movie:
+    if streaming is None or not movie.imdb_id or (movie.poster_url and movie.horizontal_poster_url):
+        return movie
+    images = streaming.images(movie.imdb_id)
+    if images:
+        movie.poster_url = movie.poster_url or images.vertical_poster
+        movie.horizontal_poster_url = movie.horizontal_poster_url or images.horizontal_poster
+        movie.backdrop_url = movie.backdrop_url or images.horizontal_backdrop
+        provider.update_images(
+            movie.id, images.vertical_poster, images.horizontal_poster, images.horizontal_backdrop
+        )
+    return movie
+
+
+def create_app(load_env: bool = True) -> FastAPI:
+    if load_env:
+        load_env_file()
     app = FastAPI(title="CineSense API")
     app.add_middleware(
         CORSMiddleware,
@@ -47,20 +64,42 @@ def create_app() -> FastAPI:
     def worlds() -> list[MoodWorld]:
         return list(WORLDS)
 
+    @app.get("/api/tags")
+    def tags(provider: Provider) -> list[dict]:
+        return [{"idx": i, "tag": t} for i, t in enumerate(provider.list_tags())]
+
+    def _discover(req: DiscoverRequest, provider, streaming, embedder) -> DiscoverResponse:
+        res = SearchService(provider, streaming, embedder).run(req.criteria, req.offset, req.limit)
+        return DiscoverResponse(items=res.items, total=res.total, hidden_by_exclusion=res.hidden_by_exclusion)
+
+    @app.post("/api/discover")
+    def discover(
+        req: DiscoverRequest, provider: Provider, streaming: Streaming, embedder: Embedder
+    ) -> DiscoverResponse:
+        return _discover(req, provider, streaming, embedder)
+
+    @app.post("/api/search")
+    def search(
+        req: DiscoverRequest, provider: Provider, streaming: Streaming, embedder: Embedder
+    ) -> DiscoverResponse:
+        return _discover(req, provider, streaming, embedder)
+
     @app.get("/api/worlds/{world_id}/movies")
     def world_movies(
         world_id: str, provider: Provider, limit: Annotated[int, Query(ge=1, le=100)] = 12
     ) -> list[RankedMovie]:
         if get_world(world_id) is None:
             raise HTTPException(status_code=404, detail="world_not_found")
-        return rank_baseline(provider.list_movies(), MovieQuery(world_id=world_id))[:limit]
+        return SearchService(provider).run(SearchCriteria(world_id=world_id), 0, limit).items
 
     @app.get("/api/movies/{movie_id}")
-    def movie(movie_id: str, provider: Provider) -> Movie:
+    def movie(movie_id: str, provider: Provider, streaming: Streaming) -> Movie:
         found = provider.get_movie(movie_id)
         if found is None:
             raise HTTPException(status_code=404, detail="movie_not_found")
-        return found
+        if streaming is not None and found.imdb_id:
+            found.availability.streaming_de = streaming.get_de(found.imdb_id)
+        return _with_images(found, provider, streaming)
 
     @app.get("/api/movies/{movie_id}/related")
     def related(
@@ -75,11 +114,22 @@ def create_app() -> FastAPI:
         # Rank within the world the user is browsing; fall back to the film's first world.
         if world_id is None or get_world(world_id) is None:
             world_id = found.world_ids[0] if found.world_ids else None
-        ranked = rank_baseline(provider.list_movies(), MovieQuery(world_id=world_id))
-        return [r for r in ranked if r.movie.id != movie_id][:limit]
+        items = SearchService(provider).run(SearchCriteria(world_id=world_id), 0, limit + 1).items
+        return [r for r in items if r.movie.id != movie_id][:limit]
 
     @app.get("/api/home")
     def home(provider: Provider) -> dict:
-        return _home(provider)
+        movies = provider.list_movies()
+        rows: dict[str, list[Movie]] = {}
+        for w in WORLDS:
+            in_world = [m for m in movies if w.id in m.world_ids]
+            # popular films with a trailer first, so hovering a tile usually plays something
+            in_world.sort(key=lambda m: (m.youtube_key is not None, m.ml_rating_count), reverse=True)
+            rows[w.id] = in_world[:ROW_SIZE]
+        titles = []
+        for w in WORLDS:
+            titles += [m.title for m in rows[w.id][:2] if m.title not in titles]
+        tiles = [m for w in WORLDS for m in rows[w.id][:4]]
+        return {"worlds": list(WORLDS), "rows": rows, "tiles": tiles, "titles": titles}
 
     return app

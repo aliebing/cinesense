@@ -45,3 +45,54 @@ def test_documentary_without_vector_kind():
     ml = MovieLensFilm(5, "Some Doc", 2005, ["Documentary"], 3.9, 40, None)
     row = film_row(ml, WikidataFilm(5, "Q5"), [])
     assert row["kind"] == "documentary" and row["tag_vector"] is None and row["top_tags"] == []
+
+
+def test_duplicate_wikidata_items_keep_first(monkeypatch):
+    """Two MovieLens ids mapping to one Wikidata item: only the first (most-rated) is kept."""
+    import asyncio
+
+    from cinesense.ingest import pipeline
+
+    vec = np.zeros(1128, dtype=np.float32)
+    films = [
+        MovieLensFilm(1, "A", 2000, ["Action"], 4.0, 900, vec),
+        MovieLensFilm(2, "A (dup)", 2000, ["Action"], 3.0, 10, vec),
+    ]
+    monkeypatch.setattr(pipeline, "read_genome_tags", lambda p: ["t"] * 1128)
+    monkeypatch.setattr(pipeline, "read_films", lambda p: films)
+    monkeypatch.setattr(pipeline, "read_documentaries_without_genome", lambda p: [])
+
+    async def fake_fetch(ids, client):
+        return {i: WikidataFilm(i, "Q1") for i in ids}
+
+    monkeypatch.setattr(pipeline, "fetch_wikidata", fake_fetch)
+    upserted = []
+    monkeypatch.setattr(pipeline, "_upsert_films", lambda conn, rows: upserted.extend(rows))
+    monkeypatch.setattr(pipeline, "_replace_people", lambda conn, ids, rows: None)
+
+    class Conn:
+        def cursor(self):
+            class Cur:
+                def __enter__(self):
+                    return self
+
+                def __exit__(self, *a):
+                    return False
+
+                def executemany(self, *a):
+                    return None
+
+            return Cur()
+
+        def commit(self):
+            return None
+
+        def execute(self, *a):
+            class R:
+                def fetchall(self):
+                    return []
+
+            return R()
+
+    asyncio.run(pipeline.ingest_catalogue(Conn(), "x", None, with_extras=False))
+    assert [r["id"] for r in upserted] == ["ml-1"]
