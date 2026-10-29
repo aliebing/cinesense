@@ -1,7 +1,31 @@
 [project]
 name = "cinesenseai"
 version = "0.1.0"
-description = "Add your description here"
+description = "CineSense: mood-based movie discovery with an AI agent"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "fastapi==0.162.0",
+    "httpx==0.28.1",
+    "pydantic==2.14.1",
+    "uvicorn[standard]==0.54.0",
+]
+
+[dependency-groups]
+dev = [
+    "httpx2==2.16.0",
+    "pytest==9.2.0",
+    "ruff==0.17.3",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+extend-exclude = ["docs", "web"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
