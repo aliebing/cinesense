@@ -198,5 +198,39 @@ def test_home_rows_never_repeat_a_film():
 
 def test_trailer_report_endpoint_validates_ids():
     c = client()
-    assert c.post("/api/trailers/report", json={"video_id": "abc_DEF-123"}).status_code == 204
+    assert c.post("/api/trailers/report", json={"video_id": "abc_DEF-123"}).status_code in (204, 400)
     assert c.post("/api/trailers/report", json={"video_id": "<script>"}).status_code == 422
+
+
+def test_trailer_report_requires_a_user_and_a_known_trailer():
+    from cinesense.api.deps import get_trailer_checker
+    from cinesense.providers.trailer_check import TrailerChecker
+    from cinesense.providers.youtube import MemoryTrailerStore
+
+    app = make_app()
+    checker = TrailerChecker(MemoryTrailerStore())
+    app.dependency_overrides[get_trailer_checker] = lambda: checker
+    c = TestClient(app)
+    key = next(m.youtube_key for m in FixtureProvider().list_movies() if m.youtube_key)
+    user = {"X-CineSense-User": "0b6f7c1e-2c55-4c4e-9a0b-4d1f3f1a2b3c"}
+    assert c.post("/api/trailers/report", json={"video_id": key}).status_code == 400  # no user
+    assert c.post("/api/trailers/report", json={"video_id": "unknownXYZ1"}, headers=user).status_code == 404
+    assert c.post("/api/trailers/report", json={"video_id": key}, headers=user).status_code == 204
+    assert checker.playable(key) is False
+
+
+def test_stage_never_offers_a_reported_fallback_trailer():
+    from cinesense.api.deps import get_trailer_checker
+    from cinesense.providers.trailer_check import TrailerChecker
+    from cinesense.providers.youtube import MemoryTrailerStore
+
+    class Fallback:
+        def find_trailer(self, film_id, title, year):
+            return "fallbackBad1"
+
+    checker = TrailerChecker(MemoryTrailerStore())
+    checker.mark_bad("fallbackBad1")
+    film = next(m for m in FixtureProvider().list_movies() if not m.youtube_key)
+    app = make_app(trailers=Fallback())
+    app.dependency_overrides[get_trailer_checker] = lambda: checker
+    assert TestClient(app).get(f"/api/movies/{film.id}").json()["youtube_key"] is None

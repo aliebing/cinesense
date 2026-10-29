@@ -39,3 +39,37 @@ def test_player_report_marks_a_trailer_bad_even_if_oembed_says_ok():
     movies = [film(1, "blockedDE")]
     TrailerChecker(store, httpx.Client()).filter_playable(movies)  # a new process still knows it
     assert movies[0].youtube_key is None
+
+
+@respx.mock
+def test_unknown_verdicts_are_cached_briefly_and_never_block():
+    route = respx.get(OEMBED_URL).mock(return_value=httpx.Response(429))
+    checker = TrailerChecker(MemoryTrailerStore(), httpx.Client())
+    movies = [film(1, "rateLimited1")]
+    checker.filter_playable(movies)
+    checker.filter_playable([film(2, "rateLimited1")])
+    assert movies[0].youtube_key == "rateLimited1" and route.call_count == 1
+
+
+def test_known_verdicts_come_from_the_store_in_one_batch():
+    class CountingStore(MemoryTrailerStore):
+        batches = 0
+
+        def get_many(self, keys):
+            CountingStore.batches += 1
+            return {k: self.get(k) for k in keys if self.get(k) is not None}
+
+    store = CountingStore()
+    store.put("check:deadOne1", None)
+    checker = TrailerChecker(store, httpx.Client())
+    movies = [film(1, "deadOne1")]
+    checker.filter_known(movies)  # never calls YouTube
+    assert movies[0].youtube_key is None and CountingStore.batches == 1
+
+
+def test_report_accepts_only_known_ids_and_is_rate_limited():
+    checker = TrailerChecker(MemoryTrailerStore(), httpx.Client())
+    assert not checker.report("neverServed1", "user-1234-abcd", known=False)
+    assert checker.report("servedKey01", "user-1234-abcd", known=True)
+    accepted = [checker.report(f"k{i:09d}", "user-1234-abcd", known=True) for i in range(40)]
+    assert accepted.count(False) > 0  # per-user limit

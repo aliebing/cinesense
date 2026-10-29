@@ -14,7 +14,7 @@ from cinesense.api.deps import (
     get_trailers,
 )
 from cinesense.api.images import with_images as _with_images
-from cinesense.api.personal import UserProfile
+from cinesense.api.personal import UserProfile, get_user
 from cinesense.api.personal import router as personal_router
 from cinesense.config import load_env_file
 from cinesense.domain.criteria import SearchCriteria
@@ -78,7 +78,7 @@ def create_app(load_env: bool = True) -> FastAPI:
     ) -> DiscoverResponse:
         res = SearchService(provider, streaming, embedder, live).run(req.criteria, req.offset, req.limit, profile)
         if checker is not None:
-            checker.filter_playable([r.movie for r in res.items])
+            checker.filter_known([r.movie for r in res.items])
         for r in res.items[:IMAGE_FILL]:
             _with_images(r.movie, provider, streaming)
         if res.extended_used and tasks is not None:
@@ -135,6 +135,8 @@ def create_app(load_env: bool = True) -> FastAPI:
             checker.filter_playable([found])
         if found.youtube_key is None and trailers is not None:  # Wikidata trailer ids win when they play
             found.youtube_key = trailers.find_trailer(found.id, found.title, found.year)
+            if checker is not None:
+                checker.filter_playable([found])  # a reported fallback trailer is never offered again
         if streaming is not None and found.imdb_id:
             found.availability.streaming_de = streaming.get_de(found.imdb_id)
         return _with_images(found, provider, streaming)
@@ -158,7 +160,7 @@ def create_app(load_env: bool = True) -> FastAPI:
         items = SearchService(provider).run(SearchCriteria(world_id=world_id), 0, limit + 1, profile).items
         items = [r for r in items if r.movie.id != movie_id][:limit]
         if checker is not None:
-            checker.filter_playable([r.movie for r in items])
+            checker.filter_known([r.movie for r in items])
         for r in items[:RELATED_IMAGE_FILL]:
             _with_images(r.movie, provider, streaming)
         return items
@@ -167,10 +169,19 @@ def create_app(load_env: bool = True) -> FastAPI:
         video_id: str = Field(pattern=r"^[A-Za-z0-9_-]{6,20}$")
 
     @app.post("/api/trailers/report", status_code=204)
-    def report_trailer(req: TrailerReport, checker: Checker) -> None:
+    def report_trailer(
+        req: TrailerReport, checker: Checker, provider: Provider, user: Annotated[str | None, Depends(get_user)]
+    ) -> None:
         """The embedded player could not play this trailer (deleted, blocked in Germany, embedding off)."""
-        if checker is not None:
-            checker.mark_bad(req.video_id)
+        if user is None:
+            raise HTTPException(status_code=400, detail="missing_user_id")
+        if checker is None:
+            return
+        known = checker.served(req.video_id) or any(m.youtube_key == req.video_id for m in provider.list_movies())
+        if not known:
+            raise HTTPException(status_code=404, detail="unknown_trailer")
+        if not checker.report(req.video_id, user, known=True):
+            raise HTTPException(status_code=429, detail="too_many_reports")
 
     @app.get("/api/home")
     def home(provider: Provider, streaming: Streaming, checker: Checker) -> dict:
@@ -180,7 +191,7 @@ def create_app(load_env: bool = True) -> FastAPI:
             in_world = sorted((m for m in movies if w.id in m.world_ids), key=lambda m: m.ml_rating_count, reverse=True)
             pool = [m.model_copy(deep=True) for m in in_world[: ROW_SIZE * 4]]
             if checker is not None:
-                checker.filter_playable(pool)
+                checker.filter_known(pool)  # never waits for YouTube; unknown ids are checked in the background
             # popular films with a playable trailer first, so hovering a tile usually plays something
             pools[w.id] = sorted(pool, key=lambda m: (m.youtube_key is not None, m.ml_rating_count), reverse=True)
         rows: dict[str, list[Movie]] = {w.id: [] for w in WORLDS}

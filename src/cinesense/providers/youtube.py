@@ -37,6 +37,9 @@ class MemoryTrailerStore:
     def put(self, film_id, video_id, checked_at=None):
         self._data[film_id] = (video_id, checked_at or datetime.now(UTC))
 
+    def get_many(self, film_ids):
+        return {f: self._data[f] for f in film_ids if f in self._data}
+
     def calls_today(self):
         return self._calls
 
@@ -52,6 +55,15 @@ class PostgresTrailerStore:
         with self._conn() as c:
             row = c.execute("select video_id, checked_at from trailer_cache where film_id = %s", (film_id,)).fetchone()
         return (row[0], row[1]) if row else None
+
+    def get_many(self, film_ids):
+        if not film_ids:
+            return {}
+        with self._conn() as c:
+            rows = c.execute(
+                "select film_id, video_id, checked_at from trailer_cache where film_id = any(%s)", (list(film_ids),)
+            ).fetchall()
+        return {r[0]: (r[1], r[2]) for r in rows}
 
     def put(self, film_id, video_id, checked_at=None):
         with self._conn() as c:
