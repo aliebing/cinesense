@@ -1,4 +1,4 @@
-import type { HomeData, Movie, RankedMovie } from "@/lib/types";
+import type { HomeData, MoodWorld, Movie, RankedMovie } from "@/lib/types";
 
 export type ApiError = "network" | "not_found" | "server";
 export type ApiResult<T> = { ok: true; data: T } | { ok: false; error: ApiError };
@@ -18,6 +18,7 @@ export async function apiGet<T>(path: string): Promise<ApiResult<T>> {
 }
 
 export const getHome = () => apiGet<HomeData>("/api/home");
+export const getWorlds = () => apiGet<MoodWorld[]>("/api/worlds");
 export const getWorldMovies = (worldId: string, limit = 12) =>
   apiGet<RankedMovie[]>(`/api/worlds/${encodeURIComponent(worldId)}/movies?limit=${limit}`);
 export const getMovie = (id: string) => apiGet<Movie>(`/api/movies/${encodeURIComponent(id)}`);
