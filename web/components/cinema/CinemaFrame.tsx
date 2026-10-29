@@ -2,8 +2,8 @@ import type { ReactNode } from "react";
 
 /**
  * Cinema screen: matte-black room, letterbox bars above and below (always present),
- * a full-width stage, and photographed velvet curtains (narrowing towards the floor) in front of its edges.
- * Curtain photo: cottonbro studio on Pexels, cut out, tapered and colour-graded (public/curtain.webp).
+ * a wide stage, and photographed velvet curtains hanging straight down in front of its edges.
+ * Curtain photo: Ambitious Studio* | Rick Barrett on Unsplash (public/curtain.webp, see scripts/make_curtain.py).
  */
 export default function CinemaFrame({ children }: { children: ReactNode }) {
   return (
@@ -17,12 +17,16 @@ export default function CinemaFrame({ children }: { children: ReactNode }) {
       </div>
       <div className="cinema-letterbox" data-testid="letterbox" aria-hidden="true" />
       <div className="cinema-curtain cinema-curtain--left" data-testid="curtain" aria-hidden="true">
-        {/* eslint-disable-next-line @next/next/no-img-element -- decorative static image, sized by CSS */}
-        <img className="curtain-photo" src="/curtain.webp" alt="" draggable={false} />
+        <div className="cinema-curtain-inner">
+          {/* eslint-disable-next-line @next/next/no-img-element -- decorative static image, sized by CSS */}
+          <img className="curtain-photo" src="/curtain.webp" alt="" draggable={false} />
+        </div>
       </div>
       <div className="cinema-curtain cinema-curtain--right" data-testid="curtain" aria-hidden="true">
-        {/* eslint-disable-next-line @next/next/no-img-element -- decorative static image, sized by CSS */}
-        <img className="curtain-photo" src="/curtain.webp" alt="" draggable={false} />
+        <div className="cinema-curtain-inner">
+          {/* eslint-disable-next-line @next/next/no-img-element -- decorative static image, sized by CSS */}
+          <img className="curtain-photo" src="/curtain.webp" alt="" draggable={false} />
+        </div>
       </div>
     </div>
   );

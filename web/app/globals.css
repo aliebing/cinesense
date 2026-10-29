@@ -8,9 +8,9 @@
   --fg: #f2efe8;
   --muted: #a29f99;
   --bar: 6vh;
-  --stage-ratio: 2.25; /* wide cinema screen */
-  --curtain-overlap: 0.075; /* share of the stage width each curtain covers */
-  --stage-max: 100vw; /* content runs full width and disappears behind the curtains */ /* leaves room for the curtains at the sides */
+  --stage-ratio: 2.35; /* wide cinema screen */
+  --curtain-overlap: 0.025; /* share of the stage width each curtain covers */
+  --stage-max: 84vw; /* leaves room for the curtains at the sides */ /* leaves room for the curtains at the sides */
   --stage-w: min(var(--stage-max), calc((100vh - 2 * var(--bar)) * var(--stage-ratio)));
 }
 
@@ -78,20 +78,34 @@ body {
   width: calc((100vw - var(--stage-w)) / 2 + var(--stage-w) * var(--curtain-overlap));
 }
 /* the fabric casts a soft shadow onto the screen beside it */
-.cinema-curtain--left { left: 0; filter: drop-shadow(16px 0 26px #000d) drop-shadow(4px 0 6px #0009); }
-.cinema-curtain--right { right: 0; filter: drop-shadow(-16px 0 26px #000d) drop-shadow(-4px 0 6px #0009); }
-/* The panel image is a right-hand curtain whose natural edge starts at its left side and moves outwards
-   towards the floor. Show the inner part; the rest runs off-screen (no clipping, so the edge stays soft). */
+.cinema-curtain--left { left: 0; filter: drop-shadow(18px 0 28px #000e) drop-shadow(5px 0 8px #000a); }
+.cinema-curtain--right { right: 0; filter: drop-shadow(-18px 0 28px #000e) drop-shadow(-5px 0 8px #000a); }
+.cinema-curtain-inner {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+/* photographed velvet hanging straight down; the panel is a right-hand curtain, mirrored for the left */
 .curtain-photo {
   position: absolute;
-  top: 0;
+  inset: 0;
+  width: 100%;
   height: 100%;
-  width: 200%;
-  max-width: none;
-  object-fit: fill;
+  object-fit: cover;
+  object-position: left center;
 }
-.cinema-curtain--right .curtain-photo { left: -2%; }
-.cinema-curtain--left .curtain-photo { right: -2%; transform: scaleX(-1); }
+.cinema-curtain--left .curtain-photo { transform: scaleX(-1); }
+/* inner edge rolls away from the light; darker towards the top and the floor */
+.cinema-curtain-inner::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(var(--edge-dir), #000c 0, #0006 1.2vw, transparent 3vw),
+    linear-gradient(to bottom, #000b 0%, transparent 14%, transparent 86%, #000c 100%);
+}
+.cinema-curtain--right .cinema-curtain-inner { --edge-dir: 90deg; }
+.cinema-curtain--left .cinema-curtain-inner { --edge-dir: 270deg; }
 
 @media (prefers-reduced-motion: reduce) {
   *,

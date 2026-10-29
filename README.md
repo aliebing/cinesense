@@ -50,7 +50,7 @@ The full design is in `docs/superpowers/specs/2026-10-29-cinesense-design.md`.
 
 ## Data and attribution
 
-The curtain image is based on a photo by cottonbro studio on [Pexels](https://www.pexels.com/photo/6899772/). It was cut out, tapered and colour-graded with `scripts/make_curtain.py`.
+The curtain image is based on a photo by Ambitious Studio* | Rick Barrett on [Unsplash](https://unsplash.com/photos/a-red-curtain-with-a-black-background-AwsdyjRm-kw), cropped and colour-adjusted with `scripts/make_curtain.py`.
 
 Film data will come from [TMDB](https://www.themoviedb.org/), and streaming availability from JustWatch via TMDB. Both will be attributed in the app once integrated (Plan 2). No unlicensed sources are used, and nothing is scraped.
 
