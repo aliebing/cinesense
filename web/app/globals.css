@@ -76,27 +76,23 @@ body {
   z-index: 50;
   pointer-events: none;
   width: calc((100vw - var(--stage-w)) / 2 + var(--stage-w) * var(--curtain-overlap));
+  overflow: hidden;
   filter: drop-shadow(0 0 18px #000);
 }
 .cinema-curtain--left { left: 0; }
 .cinema-curtain--right { right: 0; }
-.curtain-fabric {
+/* The panel image is a right-hand curtain; its inner edge sits at ~17% of the image width at the top
+   and moves outwards towards the floor. Show the inner part and let the rest run off-screen. */
+.curtain-photo {
   position: absolute;
-  inset: 0;
-  width: 100%;
+  top: 0;
   height: 100%;
+  width: 200%;
+  max-width: none;
+  object-fit: fill;
 }
-/* the tie-back sits where the folds gather (32% of the curtain width, 76% of the height) */
-.curtain-tie {
-  position: absolute;
-  top: 74.5%;
-  width: 46%;
-  min-width: 40px;
-  height: auto;
-  filter: drop-shadow(0 3px 5px #000c);
-}
-.cinema-curtain--left .curtain-tie { left: 0; }
-.cinema-curtain--right .curtain-tie { right: 0; }
+.cinema-curtain--right .curtain-photo { left: -34%; }
+.cinema-curtain--left .curtain-photo { right: -34%; transform: scaleX(-1); }
 
 @media (prefers-reduced-motion: reduce) {
   *,

@@ -1,9 +1,9 @@
 import type { ReactNode } from "react";
-import { CurtainFabric, TieBack } from "@/components/cinema/Curtain";
 
 /**
  * Cinema screen: matte-black room, letterbox bars above and below (always present),
- * a wide stage, and velvet curtains gathered near the bottom by an antique-gold tie-back.
+ * a full-width stage, and photographed velvet curtains (narrowing towards the floor) in front of its edges.
+ * Curtain photo: cottonbro studio on Pexels, cut out, tapered and colour-graded (public/curtain.webp).
  */
 export default function CinemaFrame({ children }: { children: ReactNode }) {
   return (
@@ -17,12 +17,12 @@ export default function CinemaFrame({ children }: { children: ReactNode }) {
       </div>
       <div className="cinema-letterbox" data-testid="letterbox" aria-hidden="true" />
       <div className="cinema-curtain cinema-curtain--left" data-testid="curtain" aria-hidden="true">
-        <CurtainFabric side="left" />
-        <TieBack side="left" />
+        {/* eslint-disable-next-line @next/next/no-img-element -- decorative static image, sized by CSS */}
+        <img className="curtain-photo" src="/curtain.webp" alt="" draggable={false} />
       </div>
       <div className="cinema-curtain cinema-curtain--right" data-testid="curtain" aria-hidden="true">
-        <CurtainFabric side="right" />
-        <TieBack side="right" />
+        {/* eslint-disable-next-line @next/next/no-img-element -- decorative static image, sized by CSS */}
+        <img className="curtain-photo" src="/curtain.webp" alt="" draggable={false} />
       </div>
     </div>
   );
