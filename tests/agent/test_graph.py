@@ -104,3 +104,13 @@ def test_concurrent_turns_on_one_thread_are_serialised(make_agent):
         t.join()
     assert {outs["a"]["reply"], outs["b"]["reply"]} == {"first", "second"}
     assert outs["a"]["history_len"] != outs["b"]["history_len"]
+
+
+def test_present_uses_the_profile(make_agent):
+    from cinesense.personal.profile import Profile
+    from cinesense.providers.fixture import FixtureProvider
+
+    titanic = next(m.id for m in FixtureProvider().list_movies() if m.title == "Titanic")
+    g = make_agent([ai(calls=[("set_filters", {"max_runtime_min": 300})]), ai("ok")])
+    out = run_turn(g, "t12", "films", empty(), profile=Profile(disliked=[titanic]))
+    assert out["results"] and titanic not in [r["movie"]["id"] for r in out["results"]]

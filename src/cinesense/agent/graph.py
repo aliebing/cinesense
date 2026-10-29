@@ -57,7 +57,9 @@ def _add_usage(usage: dict, msg) -> dict:
 
 
 def _profile_kw(state: dict) -> dict:
-    return {}
+    from cinesense.personal.profile import Profile
+
+    return {"profile": Profile(**state["profile"])} if state.get("profile") else {}
 
 
 def _last_human(messages: list) -> str:
@@ -191,7 +193,12 @@ TOOL_STATUS = {
 
 
 def run_turn(
-    graph, thread_id: str, message: str, ui_criteria: dict, on_status: Callable[[str], None] | None = None
+    graph,
+    thread_id: str,
+    message: str,
+    ui_criteria: dict,
+    on_status: Callable[[str], None] | None = None,
+    profile=None,
 ) -> dict:
     """One chat turn. The UI's chips are the truth: they seed the criteria; per-turn fields are reset."""
     config = {"configurable": {"thread_id": thread_id}, "recursion_limit": 4 * MAX_ROUNDS + 10}
@@ -206,6 +213,7 @@ def run_turn(
         "rounds": 0,
         "usage": {},
         "grounding_fallback": False,
+        "profile": profile.model_dump() if profile is not None else None,
     }
     with _locks_guard:
         lock = _thread_locks[thread_id]

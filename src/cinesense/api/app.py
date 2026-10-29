@@ -7,6 +7,8 @@ from pydantic import BaseModel, Field
 from cinesense.api.chat import router as chat_router
 from cinesense.api.deps import get_embedder, get_live, get_provider, get_streaming, get_trailers
 from cinesense.api.images import with_images as _with_images
+from cinesense.api.personal import UserProfile
+from cinesense.api.personal import router as personal_router
 from cinesense.config import load_env_file
 from cinesense.domain.criteria import SearchCriteria
 from cinesense.domain.models import MoodWorld, Movie, RankedMovie
@@ -48,6 +50,7 @@ def create_app(load_env: bool = True) -> FastAPI:
     )
 
     app.include_router(chat_router)
+    app.include_router(personal_router)
 
     @app.get("/api/health")
     def health() -> dict[str, str]:
@@ -61,8 +64,10 @@ def create_app(load_env: bool = True) -> FastAPI:
     def tags(provider: Provider) -> list[dict]:
         return [{"idx": i, "tag": t} for i, t in enumerate(provider.list_tags())]
 
-    def _discover(req: DiscoverRequest, provider, streaming, embedder, live=None, tasks=None) -> DiscoverResponse:
-        res = SearchService(provider, streaming, embedder, live).run(req.criteria, req.offset, req.limit)
+    def _discover(
+        req: DiscoverRequest, provider, streaming, embedder, live=None, tasks=None, profile=None
+    ) -> DiscoverResponse:
+        res = SearchService(provider, streaming, embedder, live).run(req.criteria, req.offset, req.limit, profile)
         for r in res.items[:IMAGE_FILL]:
             _with_images(r.movie, provider, streaming)
         if res.extended_used and tasks is not None:
@@ -79,9 +84,9 @@ def create_app(load_env: bool = True) -> FastAPI:
 
     @app.post("/api/discover")
     def discover(
-        req: DiscoverRequest, provider: Provider, streaming: Streaming, embedder: Embedder
+        req: DiscoverRequest, provider: Provider, streaming: Streaming, embedder: Embedder, profile: UserProfile
     ) -> DiscoverResponse:
-        return _discover(req, provider, streaming, embedder)
+        return _discover(req, provider, streaming, embedder, profile=profile)
 
     @app.post("/api/search")
     def search(
@@ -91,8 +96,9 @@ def create_app(load_env: bool = True) -> FastAPI:
         embedder: Embedder,
         live: Live,
         tasks: BackgroundTasks,
+        profile: UserProfile,
     ) -> DiscoverResponse:
-        return _discover(req, provider, streaming, embedder, live, tasks)
+        return _discover(req, provider, streaming, embedder, live, tasks, profile)
 
     @app.get("/api/worlds/{world_id}/movies")
     def world_movies(
@@ -118,6 +124,7 @@ def create_app(load_env: bool = True) -> FastAPI:
         movie_id: str,
         provider: Provider,
         streaming: Streaming,
+        profile: UserProfile,
         limit: Annotated[int, Query(ge=1, le=100)] = 13,
         world_id: str | None = None,
     ) -> list[RankedMovie]:
@@ -127,7 +134,7 @@ def create_app(load_env: bool = True) -> FastAPI:
         # Rank within the world the user is browsing; fall back to the film's first world.
         if world_id is None or get_world(world_id) is None:
             world_id = found.world_ids[0] if found.world_ids else None
-        items = SearchService(provider).run(SearchCriteria(world_id=world_id), 0, limit + 1).items
+        items = SearchService(provider).run(SearchCriteria(world_id=world_id), 0, limit + 1, profile).items
         items = [r for r in items if r.movie.id != movie_id][:limit]
         for r in items[:IMAGE_FILL]:
             _with_images(r.movie, provider, streaming)

@@ -14,3 +14,4 @@ class AgentState(TypedDict, total=False):
     rounds: int
     usage: dict  # input_tokens, output_tokens
     grounding_fallback: bool
+    profile: dict | None  # Profile JSON (👍/👎 taste) used by the deterministic search

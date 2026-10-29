@@ -23,7 +23,7 @@ def events(text: str) -> list[tuple[str, dict]]:
     return out
 
 
-def fake_runner(thread_id, message, criteria, on_status=None):
+def fake_runner(thread_id, message, criteria, on_status=None, profile=None):
     on_status("Setting mood tags…")
     return {
         "reply": f"echo {message}",

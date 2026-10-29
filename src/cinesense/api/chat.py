@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 
 from cinesense.api.deps import get_agent, get_provider, get_streaming
 from cinesense.api.images import with_images
+from cinesense.api.personal import UserProfile
 from cinesense.domain.criteria import SearchCriteria
 from cinesense.domain.models import Movie
 
@@ -37,6 +38,7 @@ def chat(
     runner: Annotated[object, Depends(get_agent)],
     provider: Annotated[object, Depends(get_provider)],
     streaming: Annotated[object, Depends(get_streaming)],
+    profile: UserProfile,
 ):
     def events():
         if runner is None:
@@ -46,7 +48,9 @@ def chat(
 
         def work():
             try:
-                out = runner(req.thread_id, req.message, req.criteria.model_dump(), lambda t: q.put(("status", t)))
+                out = runner(
+                    req.thread_id, req.message, req.criteria.model_dump(), lambda t: q.put(("status", t)), profile
+                )
                 for r in out.get("results", [])[:IMAGE_FILL]:
                     r["movie"] = with_images(Movie(**r["movie"]), provider, streaming).model_dump(mode="json")
                 u = out.get("usage") or {}

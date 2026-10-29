@@ -89,7 +89,19 @@ def get_agent():
         MemorySaver(),  # one process-wide memory; the client keeps the thread id
     )
 
-    def runner(thread_id, message, criteria, on_status=None):
-        return run_turn(graph, thread_id, message, criteria, on_status)
+    def runner(thread_id, message, criteria, on_status=None, profile=None):
+        return run_turn(graph, thread_id, message, criteria, on_status, profile)
 
     return runner
+
+
+@lru_cache
+def get_feedback_store():
+    s = get_settings()
+    from cinesense.personal.feedback import MemoryFeedbackStore, PostgresFeedbackStore
+
+    if s.database_url:
+        from cinesense.db import connect
+
+        return PostgresFeedbackStore(lambda: connect(s.database_url))
+    return MemoryFeedbackStore()
