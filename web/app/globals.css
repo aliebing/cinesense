@@ -9,8 +9,9 @@
   --muted: #a29f99;
   --bar: 6vh;
   --stage-ratio: 2.39; /* Cinemascope */
-  --curtain-overlap: 0.05; /* share of the stage width each curtain covers */
-  --stage-w: min(100vw, calc((100vh - 2 * var(--bar)) * var(--stage-ratio)));
+  --curtain-overlap: 0.025; /* share of the stage width each curtain covers */
+  --stage-max: 84vw; /* leaves room for the curtains at the sides */
+  --stage-w: min(var(--stage-max), calc((100vh - 2 * var(--bar)) * var(--stage-ratio)));
 }
 
 @theme inline {

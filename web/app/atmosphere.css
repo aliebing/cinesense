@@ -112,7 +112,7 @@
 
 /* ---------- homepage layout (proportions from the approved mockup at ~2400px) ---------- */
 .cinema-stage {
-  --safe-x: 6.5%; /* clear of the curtains, which overlap 5% of the stage on each side */
+  --safe-x: 4.5%; /* clear of the curtains, which overlap 2.5% of the stage on each side */
   --chat-w: clamp(320px, 24cqw, 560px);
   --ui: clamp(12px, 0.62cqw, 16px);
 }
