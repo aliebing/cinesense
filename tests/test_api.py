@@ -50,7 +50,7 @@ def test_unknown_world_404():
 
 def test_movie_detail_and_404():
     c = client()
-    assert c.get("/api/movies/demo-01").json()["title"] == "Demo-Film 01"
+    assert c.get("/api/movies/ml-2571").json()["title"] == "The Matrix"
     r = c.get("/api/movies/nope")
     assert r.status_code == 404
     assert r.json()["detail"] == "movie_not_found"
@@ -58,8 +58,8 @@ def test_movie_detail_and_404():
 
 def test_related_excludes_self():
     c = client()
-    items = c.get("/api/movies/demo-01/related").json()
-    assert items and all(i["movie"]["id"] != "demo-01" for i in items)
+    items = c.get("/api/movies/ml-2571/related").json()
+    assert items and all(i["movie"]["id"] != "ml-2571" for i in items)
     assert len(items) <= 13
     assert c.get("/api/movies/nope/related").status_code == 404
 
@@ -78,10 +78,10 @@ def test_home_rows_per_world():
 
 def test_related_uses_requested_world_for_multi_world_film():
     c = client()
-    film = c.get("/api/movies/demo-28").json()
-    assert film["world_ids"] == ["adventure", "comedy"]
-    items = c.get("/api/movies/demo-28/related?world_id=comedy").json()
-    assert items and all("comedy" in i["movie"]["world_ids"] for i in items)
+    film = c.get("/api/movies/ml-2571").json()
+    assert film["world_ids"][0] == "suspense" and "scifi" in film["world_ids"]
+    items = c.get("/api/movies/ml-2571/related?world_id=scifi").json()
+    assert items and all("scifi" in i["movie"]["world_ids"] for i in items)
 
 
 def test_cors_allows_local_dev_origins_on_any_port():
@@ -130,12 +130,12 @@ def test_movie_detail_adds_streaming():
     from cinesense.domain.models import StreamingOption
 
     stub = StubStreaming([StreamingOption(service="Netflix", type="subscription")])
-    body = client(streaming=stub).get("/api/movies/demo-01").json()
+    body = client(streaming=stub).get("/api/movies/ml-2571").json()
     assert body["availability"]["subscription_services"] == ["Netflix"]
 
 
 def test_movie_detail_streaming_unknown_when_none():
-    body = client(streaming=StubStreaming(None)).get("/api/movies/demo-01").json()
+    body = client(streaming=StubStreaming(None)).get("/api/movies/ml-2571").json()
     assert body["availability"]["streaming_de"] is None
 
 
@@ -164,7 +164,7 @@ def test_wikidata_key_skips_youtube_api():
             return "yt-fallback"
 
     c = client(trailers=Spy())
-    assert c.get("/api/movies/demo-01").json()["youtube_key"] == "placeholder"  # has a key already
+    assert c.get("/api/movies/ml-2571").json()["youtube_key"] not in (None, "yt-fallback")  # Wikidata key
     no_key = next(m for m in FixtureProvider().list_movies() if m.youtube_key is None)
     assert c.get(f"/api/movies/{no_key.id}").json()["youtube_key"] == "yt-fallback"
     assert Spy.calls == 1
