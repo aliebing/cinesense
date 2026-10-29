@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import ImageOrPlaceholder from "@/components/ui/ImageOrPlaceholder";
+import { useActiveTrailer } from "@/lib/useActiveTrailer";
 import type { MoodWorld, Movie } from "@/lib/types";
 
 const FEEDBACK = ["👍 More like this", "⚡ More action", "😂 Funnier", "👎 Not for me"];
@@ -18,7 +18,11 @@ function metaLine(m: Movie): string {
 }
 
 function Trailer({ movie }: { movie: Movie }) {
-  const [playing, setPlaying] = useState(false);
+  // shares the app-wide "one trailer at a time" store with the hover trailers
+  const stageId = `stage-${movie.id}`;
+  const { activeId, activate } = useActiveTrailer();
+  const playing = activeId === stageId;
+  const setPlaying = (on: boolean) => on && activate(stageId);
   const key = movie.youtube_key;
   if (key && key !== "placeholder" && playing) {
     return (

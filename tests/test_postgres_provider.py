@@ -33,5 +33,7 @@ def test_semantic_search_returns_chunks(provider):
         EmbeddingClient(get_settings().openrouter_api_key).embed(["hackers discover reality is a simulation"])
     )[0]
     hits = provider.semantic_search(vec, k=10)
-    assert hits and any(m.id == "ml-2571" for m, _, _ in hits)
+    titles = [m.title for m, _, _ in hits]
+    assert len(hits) == 10  # ef_search raised: recall is no longer capped
+    assert any("Matrix" in t or t in ("eXistenZ", "The Thirteenth Floor") for t in titles)
     assert all(isinstance(chunk, str) and chunk for _, _, chunk in hits)

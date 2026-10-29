@@ -114,13 +114,15 @@ class YouTubeTrailerClient:
                     "maxResults": 5,
                     "videoEmbeddable": "true",
                     "q": q,
-                    "key": self.api_key,
                 },
+                headers={"X-goog-api-key": self.api_key},  # header, so the key never appears in URLs or logs
                 timeout=8,
             )
-            r.raise_for_status()
         except httpx.HTTPError as exc:
-            log.warning("youtube search failed: %s", exc)
+            log.warning("youtube search failed: %s", type(exc).__name__)
+            return None
+        if r.status_code != 200:
+            log.warning("youtube search status %s", r.status_code)
             return None
         want = _norm(title)
         video_id = next(

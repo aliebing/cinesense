@@ -2,6 +2,7 @@
 and a person's filmography from Wikidata (newest first). Hits not in the catalogue are imported lazily."""
 
 import logging
+import time
 from datetime import date, timedelta
 
 import httpx
@@ -9,7 +10,7 @@ import httpx
 from cinesense.domain.models import Availability, Movie
 from cinesense.ingest.wikidata import HEADERS, SPARQL_URL, USER_AGENT, _qid, _v, _wiki_title
 from cinesense.ingest.worlds_map import assign_worlds, normalise_wikidata_genres
-from cinesense.providers.streaming import images_from_payload, options_from_payload
+from cinesense.providers.streaming import _fresh, images_from_payload, options_from_payload
 
 WBSEARCH_URL = "https://www.wikidata.org/w/api.php"
 log = logging.getLogger(__name__)
@@ -34,19 +35,25 @@ class LiveSearch:
     def __init__(self, streaming, http: httpx.Client | None = None) -> None:
         self.streaming = streaming
         self.http = http or httpx.Client()
+        self._people: dict[str, tuple[float, tuple]] = {}  # normalised name -> (time, result), 1 day
 
     def search_title(self, q: str) -> list[Movie]:
         """1 Streaming Availability request; typo-tolerant, includes DE streaming options and posters."""
         if self.streaming is None:
             return []
-        r = self.streaming._request(
-            "/shows/search/title",
-            {"title": q, "country": "de", "show_type": "movie", "output_language": "en"},
-        )
-        if r is None or r.status_code != 200:
-            return []
+        key = f"browse:live-title:{' '.join(q.lower().split())}"  # cached a day (browse_cache table)
+        cached = _fresh(self.streaming.store.get(key), timedelta(days=1))
+        if cached is None:
+            r = self.streaming._request(
+                "/shows/search/title",
+                {"title": q, "country": "de", "show_type": "movie", "output_language": "en"},
+            )
+            if r is None or r.status_code != 200:
+                return []
+            cached = {"shows": r.json()}
+            self.streaming.store.put(key, cached)
         out = []
-        for show in r.json():
+        for show in cached["shows"]:
             if not show.get("imdbId"):
                 continue
             self.streaming.store.put(show["imdbId"], show)  # doubles as the per-film cache entry
@@ -54,6 +61,16 @@ class LiveSearch:
         return out
 
     def search_person(self, name: str) -> tuple[str | None, list[Movie]]:
+        key = " ".join(name.lower().split())
+        hit = self._people.get(key)
+        if hit and time.monotonic() - hit[0] < 86_400:
+            return hit[1]
+        result = self._search_person(name)
+        if result[0] is not None:
+            self._people[key] = (time.monotonic(), result)
+        return result
+
+    def _search_person(self, name: str) -> tuple[str | None, list[Movie]]:
         try:
             r = self.http.get(
                 WBSEARCH_URL,

@@ -168,3 +168,24 @@ def test_wikidata_key_skips_youtube_api():
     no_key = next(m for m in FixtureProvider().list_movies() if m.youtube_key is None)
     assert c.get(f"/api/movies/{no_key.id}").json()["youtube_key"] == "yt-fallback"
     assert Spy.calls == 1
+
+
+def test_images_checked_films_skip_streaming_lookups():
+    class CountingStreaming(StubStreaming):
+        def __init__(self):
+            super().__init__(None)
+            self.image_calls = 0
+
+        def images(self, imdb_id):
+            from cinesense.providers.streaming import ImageSet
+
+            self.image_calls += 1
+            return ImageSet(None, None, None)  # looked up, nothing found -> mark checked, never ask again
+
+    s = CountingStreaming()
+    prov = FixtureProvider()
+    c = client(provider=prov, streaming=s)
+    c.get("/api/home")
+    first = s.image_calls
+    c.get("/api/home")
+    assert first > 0 and s.image_calls == first

@@ -96,3 +96,25 @@ def test_duplicate_wikidata_items_keep_first(monkeypatch):
 
     asyncio.run(pipeline.ingest_catalogue(Conn(), "x", None, with_extras=False))
     assert [r["id"] for r in upserted] == ["ml-1"]
+
+
+def test_ingest_plots_limits_to_given_ids():
+    import asyncio
+
+    from cinesense.ingest.pipeline import ingest_plots
+
+    seen = {}
+
+    class Conn:
+        def execute(self, sql, params=()):
+            seen["sql"], seen["params"] = sql, params
+
+            class R:
+                def fetchall(self):
+                    return []
+
+            return R()
+
+    asyncio.run(ingest_plots(Conn(), None, None, ids=["wd-Q1", "imdb-tt2"]))
+    assert "id = any(%s)" in seen["sql"]
+    assert seen["params"] == (["wd-Q1", "imdb-tt2"],)

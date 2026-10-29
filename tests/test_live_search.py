@@ -65,3 +65,12 @@ def test_live_person_search_newest_first():
     assert name == "Sandra Hüller"
     assert [f.title for f in films] == ["New Film", "Old Film"]
     assert films[0].id == "wd-Q2" and films[0].imdb_id == "tt2"
+
+
+@respx.mock
+def test_live_title_search_is_cached_per_query():
+    route = respx.get(f"{BASE_URL}/shows/search/title").mock(return_value=httpx.Response(200, json=[SHOW]))
+    live = LiveSearch(streaming(), http=httpx.Client())
+    live.search_title("Brand New Flim")
+    live.search_title("  brand new flim ")
+    assert route.call_count == 1

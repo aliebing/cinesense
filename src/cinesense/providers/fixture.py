@@ -48,8 +48,13 @@ class FixtureProvider:
     def get_many(self, ids: list[str]) -> list[Movie]:
         return [self._by_id[i].model_copy(deep=True) for i in ids if i in self._by_id]
 
-    def update_images(self, *args, **kwargs) -> None:
-        return None
+    def update_images(self, movie_id, poster=None, horizontal=None, backdrop=None) -> None:
+        m = self._by_id.get(movie_id)
+        if m is not None:
+            m.poster_url = m.poster_url or poster
+            m.horizontal_poster_url = m.horizontal_poster_url or horizontal
+            m.backdrop_url = m.backdrop_url or backdrop
+            m.images_checked = True
 
     def list_tags(self) -> list[str]:
         return list(self._tags)

@@ -4,6 +4,7 @@ Free plan: 1,000 requests/month — every call goes through a cache and a monthl
 """
 
 import logging
+import time
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Protocol
@@ -16,6 +17,7 @@ BASE_URL = "https://api.movieofthenight.com/v4"
 STREAMING_TTL = timedelta(days=7)
 IMAGES_TTL = timedelta(days=200)  # signed image URLs stay valid ~280 days
 BROWSE_TTL = timedelta(days=1)
+BREAKER_SECONDS = 15 * 60  # after a 429/5xx/timeout, stop calling for a while instead of draining the budget
 log = logging.getLogger(__name__)
 
 
@@ -112,29 +114,42 @@ class StreamingClient:
         store: StreamingStore,
         monthly_limit: int = 900,
         http: httpx.Client | None = None,
+        image_limit: int = 300,
     ):
         self.api_key = api_key
         self.store = store
         self.monthly_limit = monthly_limit
+        self.image_limit = image_limit  # images may only use part of the monthly budget
         self.http = http or httpx.Client()
+        self._down_until = 0.0
 
-    def _request(self, path: str, params: dict) -> httpx.Response | None:
-        if not self.api_key or self.store.calls_this_month() >= self.monthly_limit:
+    def _request(self, path: str, params: dict, limit: int | None = None) -> httpx.Response | None:
+        if not self.api_key or time.monotonic() < self._down_until:
+            return None
+        if self.store.calls_this_month() >= min(limit or self.monthly_limit, self.monthly_limit):
             return None
         try:
             self.store.add_call()
-            return self.http.get(
+            r = self.http.get(
                 f"{BASE_URL}{path}", params=params, headers={"X-API-Key": self.api_key}, timeout=5
             )
         except httpx.HTTPError as exc:
-            log.warning("streaming API error: %s", exc)
+            log.warning("streaming API error: %s", type(exc).__name__)
+            self._down_until = time.monotonic() + BREAKER_SECONDS
             return None
+        if r.status_code == 429 or r.status_code >= 500:
+            log.warning(
+                "streaming API status %s — pausing calls for %d min", r.status_code, BREAKER_SECONDS // 60
+            )
+            self._down_until = time.monotonic() + BREAKER_SECONDS
+            return None
+        return r
 
-    def _show(self, imdb_id: str, ttl: timedelta = STREAMING_TTL) -> dict | None:
+    def _show(self, imdb_id: str, ttl: timedelta = STREAMING_TTL, limit: int | None = None) -> dict | None:
         cached = _fresh(self.store.get(imdb_id), ttl)
         if cached is not None:
             return cached
-        r = self._request(f"/shows/{imdb_id}", {"country": "de", "output_language": "en"})
+        r = self._request(f"/shows/{imdb_id}", {"country": "de", "output_language": "en"}, limit)
         if r is None:
             return None
         if r.status_code == 404:
@@ -143,7 +158,11 @@ class StreamingClient:
         if r.status_code != 200:
             log.warning("streaming API status %s for %s", r.status_code, imdb_id)
             return None
-        payload = r.json()
+        try:
+            payload = r.json()
+        except ValueError:
+            log.warning("streaming API returned malformed JSON for %s", imdb_id)
+            return None
         self.store.put(imdb_id, payload)
         return payload
 
@@ -155,7 +174,7 @@ class StreamingClient:
         return options_from_payload(payload)
 
     def images(self, imdb_id: str) -> ImageSet | None:
-        payload = _fresh(self.store.get(imdb_id), IMAGES_TTL) or self._show(imdb_id)
+        payload = _fresh(self.store.get(imdb_id), IMAGES_TTL) or self._show(imdb_id, limit=self.image_limit)
         return images_from_payload(payload) if payload else None
 
     def browse(self, genre: str, cursor: str | None = None) -> tuple[list[dict], str | None]:
@@ -165,7 +184,7 @@ class StreamingClient:
             params = {"country": "de", "show_type": "movie", "genres": genre, "order_by": "popularity_1week"}
             if cursor:
                 params["cursor"] = cursor
-            r = self._request("/shows/search/filters", params)
+            r = self._request("/shows/search/filters", params, self.image_limit)
             if r is None or r.status_code != 200:
                 return [], None
             cached = r.json()
@@ -176,9 +195,9 @@ class StreamingClient:
         return cached.get("shows", []), cached.get("nextCursor") if cached.get("hasMore") else None
 
 
-def options_from_payload(payload: dict) -> list[StreamingOption]:
+def options_from_payload(payload: dict) -> list[StreamingOption] | None:
     if payload.get("notFound"):
-        return []
+        return None  # the API doesn't know the title: availability is unknown, not "not streaming"
     out = []
     for o in (payload.get("streamingOptions") or {}).get("de", []):
         try:

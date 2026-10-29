@@ -97,3 +97,26 @@ it("links to IMDb and Wikipedia and shows people, tags and German cinema release
   expect(screen.getByText("space travel")).toBeInTheDocument();
   expect(screen.getByText("🎬 In cinemas (German release 2026-10-01)")).toBeInTheDocument();
 });
+
+it("the stage trailer stops when a hover trailer starts (one audio source)", async () => {
+  const { resetActiveTrailer, useActiveTrailer } = await import("@/lib/useActiveTrailer");
+  resetActiveTrailer();
+  function Hover() {
+    const { activate } = useActiveTrailer();
+    return (
+      <button type="button" onClick={() => activate("hover-x")}>
+        hover
+      </button>
+    );
+  }
+  render(
+    <>
+      <StagePanel movie={{ ...base, youtube_key: "abc123" }} world={world} why="x" />
+      <Hover />
+    </>,
+  );
+  await userEvent.click(screen.getByRole("button", { name: /Play trailer/ }));
+  expect(screen.getByTitle("Official trailer: Demo-Film 01")).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: "hover" }));
+  expect(screen.queryByTitle("Official trailer: Demo-Film 01")).toBeNull();
+});

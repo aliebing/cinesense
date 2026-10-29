@@ -166,11 +166,20 @@ async def ingest_catalogue(conn, ml_path, limit: int | None, with_extras: bool) 
 
 
 async def ingest_plots(
-    conn, embedder: EmbeddingClient | None, max_films: int | None, concurrency: int = 5
+    conn,
+    embedder: EmbeddingClient | None,
+    max_films: int | None,
+    concurrency: int = 5,
+    ids: list[str] | None = None,
 ) -> None:
+    where = "wikipedia_title is not null and plot_checked_at is null"
+    params: tuple = ()
+    if ids is not None:  # lazily imported films only — never crawl the whole catalogue from an API worker
+        where += " and id = any(%s)"
+        params = (ids,)
     todo = conn.execute(
-        "select id, wikipedia_title from films where wikipedia_title is not null and plot_checked_at is null "
-        "order by ml_rating_count desc nulls last, id"
+        f"select id, wikipedia_title from films where {where} order by ml_rating_count desc nulls last, id",
+        params,
     ).fetchall()
     if max_films:
         todo = todo[:max_films]

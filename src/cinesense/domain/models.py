@@ -53,6 +53,7 @@ class Movie(BaseModel):
     ml_rating_count: int = 0
     availability: Availability = Field(default_factory=Availability)
     is_placeholder: bool = False
+    images_checked: bool = False  # images were looked up once (found or not) — don't spend API calls again
 
 
 class MoodWorld(BaseModel):

@@ -59,3 +59,15 @@ def test_cache_refreshed_after_30_days():
     store.put("ml-1", "old", datetime.now(UTC) - timedelta(days=31))
     assert client(store).find_trailer("ml-1", "A", None) == "v"
     assert route.call_count == 1
+
+
+@respx.mock
+def test_key_sent_as_header_and_never_logged(caplog):
+    route = respx.get(SEARCH_URL).mock(return_value=httpx.Response(403, json={"error": "quota"}))
+    c = YouTubeTrailerClient("SECRET-KEY", MemoryTrailerStore(), http=httpx.Client())
+    with caplog.at_level("WARNING"):
+        assert c.find_trailer("ml-1", "A", None) is None
+    req = route.calls[0].request
+    assert req.headers["X-goog-api-key"] == "SECRET-KEY"
+    assert "SECRET-KEY" not in str(req.url)
+    assert "SECRET-KEY" not in caplog.text

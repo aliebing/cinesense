@@ -110,3 +110,13 @@ def test_extended_not_used_without_title_or_person(make_movie):
         SearchCriteria(extended=True), 0, 20
     )
     assert live.calls == 0 and not res.extended_used
+
+
+def test_extended_skipped_on_later_pages(make_movie):
+    from cinesense.search.service import SearchService
+
+    live = FakeLive(make_movie(id="x"))
+    SearchService(FakeProvider([make_movie(id="a")]), live=live).run(
+        SearchCriteria(title="brand new"), 20, 20
+    )
+    assert live.calls == 0

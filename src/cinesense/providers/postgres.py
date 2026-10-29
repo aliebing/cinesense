@@ -1,5 +1,6 @@
 """Catalogue access in Supabase Postgres (pgvector for plot embeddings and Tag Genome vectors)."""
 
+import threading
 import time
 from datetime import date, timedelta
 
@@ -13,7 +14,8 @@ _FIELDS = (
     "directors, cast_top, movielens_id, imdb_id, wikidata_id, wikipedia_title, release_date_de, poster_url, "
     "horizontal_poster_url, backdrop_url, youtube_key, ml_rating, ml_rating_count"
 )
-_NAMES = [f.strip() for f in _FIELDS.split(",")]
+_NAMES = [f.strip() for f in _FIELDS.split(",")] + ["images_checked"]
+_FIELDS += ", (images_fetched_at is not null) as images_checked"
 
 
 def row_to_movie(row: tuple) -> Movie:
@@ -28,17 +30,27 @@ class PostgresProvider:
         self._conn = conn_factory
         self._cache_seconds = cache_seconds
         self._movies: list[Movie] | None = None
+        self._by_id: dict[str, Movie] = {}
         self._loaded_at = 0.0
         self._tags: list[str] | None = None
+        self._lock = threading.Lock()
 
     # --- MovieProvider -------------------------------------------------
     def list_movies(self) -> list[Movie]:
-        if self._movies is None or time.monotonic() - self._loaded_at > self._cache_seconds:
+        with self._lock:
+            movies = self._movies
+            fresh = movies is not None and time.monotonic() - self._loaded_at <= self._cache_seconds
+        if not fresh:
             with self._conn() as c:
                 rows = c.execute(f"select {_FIELDS} from films").fetchall()
-            self._movies = [row_to_movie(r) for r in rows]
-            self._loaded_at = time.monotonic()
-        return list(self._movies)
+            movies = [row_to_movie(r) for r in rows]
+            with self._lock:
+                self._movies, self._by_id, self._loaded_at = (
+                    movies,
+                    {m.id: m for m in movies},
+                    time.monotonic(),
+                )
+        return [m.model_copy(deep=True) for m in movies]
 
     def get_movie(self, movie_id: str) -> Movie | None:
         with self._conn() as c:
@@ -56,6 +68,7 @@ class PostgresProvider:
     def update_images(
         self, movie_id: str, poster: str | None, horizontal: str | None, backdrop: str | None
     ) -> None:
+        """Store looked-up images (or just 'checked' if none were found)."""
         with self._conn() as c:
             c.execute(
                 "update films set poster_url = coalesce(%s, poster_url), "
@@ -64,7 +77,13 @@ class PostgresProvider:
                 (poster, horizontal, backdrop, movie_id),
             )
             c.commit()
-        self._movies = None  # refresh cached list on next read
+        with self._lock:  # patch the cached film; never reload the whole table for an image update
+            m = self._by_id.get(movie_id)
+            if m is not None:
+                m.poster_url = m.poster_url or poster
+                m.horizontal_poster_url = m.horizontal_poster_url or horizontal
+                m.backdrop_url = m.backdrop_url or backdrop
+                m.images_checked = True
 
     # --- tags ------------------------------------------------------------
     def list_tags(self) -> list[str]:
@@ -123,6 +142,7 @@ class PostgresProvider:
     def semantic_search(self, query_embedding: list[float], k: int = 20) -> list[tuple[Movie, float, str]]:
         vec = np.asarray(query_embedding, dtype=np.float32)
         with self._conn() as c:
+            c.execute("set local hnsw.ef_search = 400")  # default 40 caps HNSW recall at ~40 chunks
             rows = c.execute(
                 "select film_id, text, 1 - (embedding <=> %s) as sim from plot_chunks "
                 "order by embedding <=> %s limit %s",
@@ -207,4 +227,5 @@ class PostgresProvider:
                     rows,
                 )
             c.commit()
-        self._movies = None
+        with self._lock:
+            self._movies = None  # new films: reload once

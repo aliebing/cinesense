@@ -43,7 +43,7 @@ def test_maps_de_options_and_caches():
 
 
 @respx.mock
-def test_404_cached_as_empty_list():
+def _old_404_cached_as_empty_list():
     route = respx.get(SHOW).mock(return_value=httpx.Response(404))
     c = client()
     assert c.get_de("tt0816692") == []
@@ -92,3 +92,42 @@ def test_browse_returns_shows_and_caches_a_day():
     assert len(shows) == 1 and cursor == "c2"
     c.browse("scifi")
     assert route.call_count == 1
+
+
+@respx.mock
+def test_404_is_unknown_not_not_streaming():
+    route = respx.get(SHOW).mock(return_value=httpx.Response(404))
+    c = client()
+    assert c.get_de("tt0816692") is None
+    assert c.get_de("tt0816692") is None
+    assert route.call_count == 1  # still cached: the API doesn't know the title
+
+
+@respx.mock
+def test_circuit_breaker_after_failure_stops_spending():
+    route = respx.get(SHOW).mock(return_value=httpx.Response(503))
+    store = MemoryStreamingStore()
+    c = client(store)
+    assert c.get_de("tt0816692") is None
+    assert c.get_de("tt0000001") is None
+    assert route.call_count == 1 and store.calls_this_month() == 1
+
+
+@respx.mock
+def test_images_have_their_own_sub_budget():
+    route = respx.get(SHOW).mock(return_value=httpx.Response(200, json=PAYLOAD))
+    store = MemoryStreamingStore()
+    for _ in range(300):
+        store.add_call()
+    c = StreamingClient("k", store, monthly_limit=900, image_limit=300, http=httpx.Client())
+    assert c.images("tt0816692") is None  # images budget spent
+    assert route.call_count == 0
+    assert c.get_de("tt0816692") is not None  # availability still allowed
+
+
+def test_malformed_200_returns_none():
+    import respx as _r
+
+    with _r.mock:
+        _r.get(SHOW).mock(return_value=httpx.Response(200, text="<html>oops</html>"))
+        assert client().get_de("tt0816692") is None
