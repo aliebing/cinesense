@@ -93,6 +93,7 @@ body {
   height: 100%;
   object-fit: cover;
   object-position: 47% center; /* the bright crests in the middle of the photo */
+  filter: brightness(0.88); /* tone the bright crest down a touch */
 }
 .cinema-curtain--left .curtain-photo { transform: scaleX(-1); }
 /* a little darker towards the screen, as the fabric turns away from the light */
