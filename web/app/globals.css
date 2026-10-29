@@ -100,7 +100,7 @@ body {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(var(--edge-dir), #000a 0, #0005 1.2vw, transparent 3.5vw);
+  background: linear-gradient(var(--edge-dir), #000d 0, #0008 1.5vw, #0003 3.5vw, transparent 5vw);
 }
 .cinema-curtain--right .cinema-curtain-inner { --edge-dir: 90deg; }
 .cinema-curtain--left .cinema-curtain-inner { --edge-dir: 270deg; }
