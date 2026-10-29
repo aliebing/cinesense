@@ -3,7 +3,8 @@
 The panel is a right-hand curtain (inner edge on its left); the page mirrors it for the left side.
 
 usage:
-  uv run --no-project --with pillow python scripts/make_curtain.py <velvet_photo.jpg> web/public/curtain.webp \
+  uv run --no-project --with pillow python scripts/make_curtain.py \
+      <velvet_photo.jpg> web/public/curtain.webp \
       [x0 x1 colour brightness [width]]   # crop (fractions of photo width), colour/brightness, output width
 
 Source (Unsplash license, free to use): "A red curtain with a black background"
