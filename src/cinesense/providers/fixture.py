@@ -66,6 +66,9 @@ class FixtureProvider:
                 out[row] = self._vectors[film_id]
         return out
 
+    def mean_tag_vector(self) -> np.ndarray:
+        return np.stack(list(self._vectors.values())).mean(axis=0) if self._vectors else np.zeros(1128, np.float32)
+
     def tag_search(self, weights, must, exclude, must_threshold=0.6, not_threshold=0.5, limit=500):
         ids = [i for i in self._vectors if all(self._vectors[i][t] >= must_threshold for t in must)]
         hidden = [i for i in ids if any(self._vectors[i][t] >= not_threshold for t in exclude)]

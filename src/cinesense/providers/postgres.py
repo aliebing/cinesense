@@ -33,6 +33,7 @@ class PostgresProvider:
         self._by_id: dict[str, Movie] = {}
         self._loaded_at = 0.0
         self._tags: list[str] | None = None
+        self._mean: np.ndarray | None = None
         self._lock = threading.Lock()
 
     # --- MovieProvider -------------------------------------------------
@@ -99,6 +100,13 @@ class PostgresProvider:
             if v is not None:
                 out[i] = np.asarray(v.to_numpy() if hasattr(v, "to_numpy") else v, dtype=np.float32)
         return out
+
+    def mean_tag_vector(self) -> np.ndarray:
+        if self._mean is None:
+            with self._conn() as c:
+                v = c.execute("select avg(tag_vector) from films where tag_vector is not null").fetchone()[0]
+            self._mean = np.asarray(v.to_numpy() if hasattr(v, "to_numpy") else v, dtype=np.float32)
+        return self._mean
 
     def tag_search(
         self,

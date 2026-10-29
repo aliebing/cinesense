@@ -37,3 +37,22 @@ def test_semantic_search_returns_chunks(provider):
     assert len(hits) == 10  # ef_search raised: recall is no longer capped
     assert any("Matrix" in t or t in ("eXistenZ", "The Thirteenth Floor") for t in titles)
     assert all(isinstance(chunk, str) and chunk for _, _, chunk in hits)
+
+
+def test_feedback_store_roundtrip_and_profile(provider, db_url):
+    import uuid
+
+    from cinesense.db import connect
+    from cinesense.personal.feedback import PostgresFeedbackStore
+    from cinesense.personal.profile import build_profile
+
+    store, user = PostgresFeedbackStore(lambda: connect(db_url)), f"test-{uuid.uuid4()}"
+    try:
+        store.set(user, "ml-2571", 1)
+        store.set(user, "ml-1721", -1)
+        assert store.get(user) == {"ml-2571": 1, "ml-1721": -1}
+        prof = build_profile(store.get(user), provider)
+        assert "cyberpunk" in prof.taste_names and provider.mean_tag_vector().shape == (1128,)
+    finally:
+        store.clear(user)
+    assert store.get(user) == {}

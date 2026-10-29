@@ -26,7 +26,7 @@ class SearchService:
             log.warning("embedding failed: %s", exc)
             return None
 
-    def run(self, c: SearchCriteria, offset: int = 0, limit: int = 20) -> CombinedResult:
+    def run(self, c: SearchCriteria, offset: int = 0, limit: int = 20, profile=None) -> CombinedResult:
         p = self.provider
         sig = Signals(tag_names=dict(enumerate(p.list_tags())) if c.has_tags() else {})
         restrict: set[str] | None = None
@@ -50,6 +50,13 @@ class SearchService:
             elif not (c.has_tags() or c.person or c.title):
                 restrict |= set(sig.plot)
 
+        if profile is not None:
+            sig.disliked = set(profile.disliked)
+            if profile.taste:
+                hits = dict(p.tag_search(profile.taste, [], [], MUST_THRESHOLD, NOT_THRESHOLD, limit=3000)[0])
+                # scale against the best film not rated yet: the liked films would otherwise dwarf everything
+                best = max((v for k, v in hits.items() if k not in profile.liked), default=0.0)
+                sig.profile = {k: min(1.0, v / best) for k, v in hits.items()} if best > 0 else None
         movies = p.list_movies()
         if restrict is not None:
             movies = [m for m in movies if m.id in restrict]

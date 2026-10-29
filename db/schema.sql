@@ -69,3 +69,12 @@ create table if not exists trailer_cache (film_id text primary key, video_id tex
 create table if not exists youtube_quota (day date primary key, calls int not null default 0);
 
 alter table films add column if not exists plot_checked_at timestamptz;
+
+-- 👍/👎 per anonymous browser id (random UUID; no personal data)
+create table if not exists feedback (
+  user_id text not null,
+  film_id text not null,
+  value smallint not null check (value in (-1, 1)),
+  updated_at timestamptz not null default now(),
+  primary key (user_id, film_id)
+);

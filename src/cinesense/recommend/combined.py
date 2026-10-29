@@ -6,7 +6,8 @@ from cinesense.domain.criteria import SearchCriteria
 from cinesense.domain.models import Movie, RankedMovie
 from cinesense.recommend.baseline import DEFAULT_PRIOR_MEAN, bayesian_rating
 
-WEIGHTS = {"tags": 0.4, "plot": 0.3, "people": 0.2, "rating": 0.1}
+WEIGHTS = {"tags": 0.4, "plot": 0.3, "people": 0.2, "profile": 0.15, "rating": 0.1}
+TASTE_REASON = 0.75  # normalised profile match from which "fits your taste" is shown
 
 
 @dataclass
@@ -18,6 +19,8 @@ class Signals:
     tag_relevance: dict[str, dict[int, float]] = field(default_factory=dict)  # for reasons
     tag_names: dict[int, str] = field(default_factory=dict)
     person_names: dict[str, str] = field(default_factory=dict)
+    profile: dict[str, float] | None = None  # film id -> taste match (raw)
+    disliked: set[str] = field(default_factory=set)  # 👎 films: hidden and counted
 
 
 @dataclass
@@ -69,7 +72,7 @@ def combined_rank(
     hidden = hidden_by_tags
     kept: list[Movie] = []
     for m in movies:
-        if excluded and any(g.lower() in excluded for g in m.genres):
+        if m.id in signals.disliked or (excluded and any(g.lower() in excluded for g in m.genres)):
             hidden += 1
             continue
         if _passes(m, criteria):
@@ -83,6 +86,8 @@ def combined_rank(
     people = {**(signals.title or {}), **(signals.person or {})}
     if signals.person is not None or signals.title is not None:
         active["people"] = people
+    if signals.profile:
+        active["profile"] = _normalised(signals.profile)
     rated = [m.ml_rating for m in kept if m.ml_rating is not None]
     prior = sum(rated) / len(rated) if rated else DEFAULT_PRIOR_MEAN
     total_w = sum(WEIGHTS[k] for k in active) + WEIGHTS["rating"]
@@ -117,6 +122,8 @@ def _reasons(m: Movie, c: SearchCriteria, s: Signals) -> list[str]:
         out.append(f"with {s.person_names[m.id]}")
     if s.title and m.id in s.title:
         out.append("title match")
+    if s.profile and _normalised(s.profile).get(m.id, 0.0) >= TASTE_REASON:
+        out.append("fits your taste")
     if services := m.availability.subscription_services:
         out.append(f"streaming on {', '.join(services[:2])}")
     if m.availability.in_cinema_de:
