@@ -34,6 +34,8 @@ dev = [
 pythonpath = ["src"]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+addopts = "-m 'not db'"
+markers = ["db: needs the Supabase catalogue (run with: uv run pytest -m db)"]
 
 [tool.ruff]
 line-length = 110

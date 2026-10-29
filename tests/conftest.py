@@ -21,3 +21,14 @@ def make_movie():
         return Movie(**data)
 
     return _make
+
+
+@pytest.fixture(scope="session")
+def db_url():
+    from cinesense.config import get_settings, load_env_file
+
+    load_env_file()
+    url = get_settings().database_url
+    if not url:
+        pytest.skip("SUPABASE_DB_URL not set")
+    return url
