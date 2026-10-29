@@ -25,9 +25,9 @@ export type Movie = {
 
 export type MoodWorld = {
   id: string;
-  title_de: string;
+  title: string;
   kicker: string;
-  subtitle_de: string;
+  subtitle: string;
   tint: string;
   genres: string[];
 };

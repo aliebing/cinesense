@@ -68,7 +68,7 @@ export default function GenreView({ worldId, filmId }: { worldId: string; filmId
   const select = (m: Movie) => {
     if (state.kind !== "ready") return;
     setState({ ...state, movie: m });
-    router.replace(`/welt/${worldId}?film=${m.id}`, { scroll: false });
+    router.replace(`/world/${worldId}?film=${m.id}`, { scroll: false });
   };
 
   const world = state.kind === "ready" ? state.world : null;
@@ -83,14 +83,14 @@ export default function GenreView({ worldId, filmId }: { worldId: string; filmId
       />
       <FogLight tint={world?.tint ?? "#1b4a6b"} reduced={reduced} />
       <header className="genre-top">
-        <Link href="/">CineSense &nbsp;← Zurück zur Startseite</Link>
-        {world && <span className="genre-world">Welt: {world.title_de}</span>}
+        <Link href="/">CineSense &nbsp;← Back to home</Link>
+        {world && <span className="genre-world">World: {world.title}</span>}
       </header>
-      {state.kind === "error" && <p className="genre-error">Filme konnten nicht geladen werden</p>}
-      {state.kind === "loading" && <p className="genre-loading">Lädt …</p>}
+      {state.kind === "error" && <p className="genre-error">Couldn&apos;t load films</p>}
+      {state.kind === "loading" && <p className="genre-loading">Loading …</p>}
       {movie && world && (
         <>
-          <StagePanel movie={movie} world={world} why={`Gut bewertet in der Welt „${world.title_de}“`} />
+          <StagePanel movie={movie} world={world} why={`Highly rated in the “${world.title}” world`} />
           <RelatedRow items={related.filter((r) => r.movie.id !== movie.id)} onSelect={select} />
           <ChatDrawer />
         </>

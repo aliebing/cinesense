@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="de" className={`${bebas.variable} ${figtree.variable}`}>
+    <html lang="en" className={`${bebas.variable} ${figtree.variable}`}>
       <body>{children}</body>
     </html>
   );

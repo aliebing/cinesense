@@ -10,9 +10,9 @@
       "Thriller"
     ],
     "world_ids": [
-      "spannung"
+      "suspense"
     ],
-    "overview": "Platzhalter für einen Film aus der Welt „Spannung & Rätsel“. Echte Daten folgen.",
+    "overview": "Placeholder for a film from the “Suspense & Mystery” world. Real data coming soon.",
     "poster_url": "https://picsum.photos/seed/cs-poster-1/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-1/1280/720",
     "youtube_key": "placeholder",
@@ -39,7 +39,7 @@
     "world_ids": [
       "scifi"
     ],
-    "overview": "Platzhalter für einen Film aus der Welt „Science-Fiction“. Echte Daten folgen.",
+    "overview": "Placeholder for a film from the “Science Fiction” world. Real data coming soon.",
     "poster_url": "https://picsum.photos/seed/cs-poster-2/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-2/1280/720",
     "youtube_key": "placeholder",
@@ -65,9 +65,9 @@
       "Drama"
     ],
     "world_ids": [
-      "gefuehl"
+      "romance"
     ],
-    "overview": "Platzhalter für einen Film aus der Welt „Liebe & Gefühle“. Echte Daten folgen.",
+    "overview": "Placeholder for a film from the “Love & Feelings” world. Real data coming soon.",
     "poster_url": "https://picsum.photos/seed/cs-poster-3/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-3/1280/720",
     "youtube_key": "placeholder",
@@ -91,10 +91,10 @@
       "Fantasy"
     ],
     "world_ids": [
-      "abenteuer",
-      "humor"
+      "adventure",
+      "comedy"
     ],
-    "overview": "Platzhalter für einen Film aus der Welt „Abenteuer“. Echte Daten folgen.",
+    "overview": "Placeholder for a film from the “Adventure” world. Real data coming soon.",
     "poster_url": "https://picsum.photos/seed/cs-poster-4/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-4/1280/720",
     "youtube_key": "placeholder",
@@ -120,9 +120,9 @@
       "Family"
     ],
     "world_ids": [
-      "humor"
+      "comedy"
     ],
-    "overview": "Platzhalter für einen Film aus der Welt „Humor & Leichtigkeit“. Echte Daten folgen.",
+    "overview": "Placeholder for a film from the “Comedy & Feel-Good” world. Real data coming soon.",
     "poster_url": "https://picsum.photos/seed/cs-poster-5/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-5/1280/720",
     "youtube_key": "placeholder",
@@ -149,7 +149,7 @@
     "world_ids": [
       "action"
     ],
-    "overview": "Platzhalter für einen Film aus der Welt „Action & Adrenalin“. Echte Daten folgen.",
+    "overview": "Placeholder for a film from the “Action & Adrenaline” world. Real data coming soon.",
     "poster_url": "https://picsum.photos/seed/cs-poster-6/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-6/1280/720",
     "youtube_key": null,
@@ -173,9 +173,9 @@
       "Thriller"
     ],
     "world_ids": [
-      "spannung"
+      "suspense"
     ],
-    "overview": "Platzhalter für einen Film aus der Welt „Spannung & Rätsel“. Echte Daten folgen.",
+    "overview": "Placeholder for a film from the “Suspense & Mystery” world. Real data coming soon.",
     "poster_url": null,
     "backdrop_url": null,
     "youtube_key": "placeholder",
@@ -199,9 +199,9 @@
     ],
     "world_ids": [
       "scifi",
-      "gefuehl"
+      "romance"
     ],
-    "overview": "Platzhalter für einen Film aus der Welt „Science-Fiction“. Echte Daten folgen.",
+    "overview": "Placeholder for a film from the “Science Fiction” world. Real data coming soon.",
     "poster_url": "https://picsum.photos/seed/cs-poster-8/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-8/1280/720",
     "youtube_key": "placeholder",
@@ -228,9 +228,9 @@
       "Drama"
     ],
     "world_ids": [
-      "gefuehl"
+      "romance"
     ],
-    "overview": "Platzhalter für einen Film aus der Welt „Liebe & Gefühle“. Echte Daten folgen.",
+    "overview": "Placeholder for a film from the “Love & Feelings” world. Real data coming soon.",
     "poster_url": "https://picsum.photos/seed/cs-poster-9/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-9/1280/720",
     "youtube_key": "placeholder",
@@ -254,9 +254,9 @@
       "Fantasy"
     ],
     "world_ids": [
-      "abenteuer"
+      "adventure"
     ],
-    "overview": "Platzhalter für einen Film aus der Welt „Abenteuer“. Echte Daten folgen.",
+    "overview": "Placeholder for a film from the “Adventure” world. Real data coming soon.",
     "poster_url": "https://picsum.photos/seed/cs-poster-10/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-10/1280/720",
     "youtube_key": "placeholder",
@@ -283,9 +283,9 @@
       "Horror"
     ],
     "world_ids": [
-      "humor"
+      "comedy"
     ],
-    "overview": "Platzhalter für einen Film aus der Welt „Humor & Leichtigkeit“. Echte Daten folgen.",
+    "overview": "Placeholder for a film from the “Comedy & Feel-Good” world. Real data coming soon.",
     "poster_url": "https://picsum.photos/seed/cs-poster-11/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-11/1280/720",
     "youtube_key": "placeholder",
@@ -311,9 +311,9 @@
     ],
     "world_ids": [
       "action",
-      "spannung"
+      "suspense"
     ],
-    "overview": "Platzhalter für einen Film aus der Welt „Action & Adrenalin“. Echte Daten folgen.",
+    "overview": "Placeholder for a film from the “Action & Adrenaline” world. Real data coming soon.",
     "poster_url": "https://picsum.photos/seed/cs-poster-12/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-12/1280/720",
     "youtube_key": null,
@@ -337,9 +337,9 @@
       "Thriller"
     ],
     "world_ids": [
-      "spannung"
+      "suspense"
     ],
-    "overview": "Platzhalter für einen Film aus der Welt „Spannung & Rätsel“. Echte Daten folgen.",
+    "overview": "Placeholder for a film from the “Suspense & Mystery” world. Real data coming soon.",
     "poster_url": "https://picsum.photos/seed/cs-poster-13/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-13/1280/720",
     "youtube_key": "placeholder",
@@ -367,7 +367,7 @@
     "world_ids": [
       "scifi"
     ],
-    "overview": "Platzhalter für einen Film aus der Welt „Science-Fiction“. Echte Daten folgen.",
+    "overview": "Placeholder for a film from the “Science Fiction” world. Real data coming soon.",
     "poster_url": "https://picsum.photos/seed/cs-poster-14/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-14/1280/720",
     "youtube_key": "placeholder",
@@ -391,9 +391,9 @@
       "Drama"
     ],
     "world_ids": [
-      "gefuehl"
+      "romance"
     ],
-    "overview": "Platzhalter für einen Film aus der Welt „Liebe & Gefühle“. Echte Daten folgen.",
+    "overview": "Placeholder for a film from the “Love & Feelings” world. Real data coming soon.",
     "poster_url": "https://picsum.photos/seed/cs-poster-15/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-15/1280/720",
     "youtube_key": "placeholder",
@@ -417,10 +417,10 @@
       "Fantasy"
     ],
     "world_ids": [
-      "abenteuer",
-      "humor"
+      "adventure",
+      "comedy"
     ],
-    "overview": "Platzhalter für einen Film aus der Welt „Abenteuer“. Echte Daten folgen.",
+    "overview": "Placeholder for a film from the “Adventure” world. Real data coming soon.",
     "poster_url": "https://picsum.photos/seed/cs-poster-16/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-16/1280/720",
     "youtube_key": "placeholder",
@@ -446,9 +446,9 @@
       "Family"
     ],
     "world_ids": [
-      "humor"
+      "comedy"
     ],
-    "overview": "Platzhalter für einen Film aus der Welt „Humor & Leichtigkeit“. Echte Daten folgen.",
+    "overview": "Placeholder for a film from the “Comedy & Feel-Good” world. Real data coming soon.",
     "poster_url": "https://picsum.photos/seed/cs-poster-17/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-17/1280/720",
     "youtube_key": "placeholder",
@@ -475,7 +475,7 @@
     "world_ids": [
       "action"
     ],
-    "overview": "Platzhalter für einen Film aus der Welt „Action & Adrenalin“. Echte Daten folgen.",
+    "overview": "Placeholder for a film from the “Action & Adrenaline” world. Real data coming soon.",
     "poster_url": "https://picsum.photos/seed/cs-poster-18/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-18/1280/720",
     "youtube_key": null,
@@ -499,9 +499,9 @@
       "Thriller"
     ],
     "world_ids": [
-      "spannung"
+      "suspense"
     ],
-    "overview": "Platzhalter für einen Film aus der Welt „Spannung & Rätsel“. Echte Daten folgen.",
+    "overview": "Placeholder for a film from the “Suspense & Mystery” world. Real data coming soon.",
     "poster_url": "https://picsum.photos/seed/cs-poster-19/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-19/1280/720",
     "youtube_key": "placeholder",
@@ -527,9 +527,9 @@
     ],
     "world_ids": [
       "scifi",
-      "gefuehl"
+      "romance"
     ],
-    "overview": "Platzhalter für einen Film aus der Welt „Science-Fiction“. Echte Daten folgen.",
+    "overview": "Placeholder for a film from the “Science Fiction” world. Real data coming soon.",
     "poster_url": "https://picsum.photos/seed/cs-poster-20/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-20/1280/720",
     "youtube_key": "placeholder",
@@ -555,9 +555,9 @@
       "Drama"
     ],
     "world_ids": [
-      "gefuehl"
+      "romance"
     ],
-    "overview": "Platzhalter für einen Film aus der Welt „Liebe & Gefühle“. Echte Daten folgen.",
+    "overview": "Placeholder for a film from the “Love & Feelings” world. Real data coming soon.",
     "poster_url": "https://picsum.photos/seed/cs-poster-21/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-21/1280/720",
     "youtube_key": "placeholder",
@@ -582,9 +582,9 @@
       "Horror"
     ],
     "world_ids": [
-      "abenteuer"
+      "adventure"
     ],
-    "overview": "Platzhalter für einen Film aus der Welt „Abenteuer“. Echte Daten folgen.",
+    "overview": "Placeholder for a film from the “Adventure” world. Real data coming soon.",
     "poster_url": "https://picsum.photos/seed/cs-poster-22/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-22/1280/720",
     "youtube_key": "placeholder",
@@ -610,9 +610,9 @@
       "Family"
     ],
     "world_ids": [
-      "humor"
+      "comedy"
     ],
-    "overview": "Platzhalter für einen Film aus der Welt „Humor & Leichtigkeit“. Echte Daten folgen.",
+    "overview": "Placeholder for a film from the “Comedy & Feel-Good” world. Real data coming soon.",
     "poster_url": "https://picsum.photos/seed/cs-poster-23/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-23/1280/720",
     "youtube_key": "placeholder",
@@ -639,9 +639,9 @@
     ],
     "world_ids": [
       "action",
-      "spannung"
+      "suspense"
     ],
-    "overview": "Platzhalter für einen Film aus der Welt „Action & Adrenalin“. Echte Daten folgen.",
+    "overview": "Placeholder for a film from the “Action & Adrenaline” world. Real data coming soon.",
     "poster_url": "https://picsum.photos/seed/cs-poster-24/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-24/1280/720",
     "youtube_key": null,
@@ -665,9 +665,9 @@
       "Thriller"
     ],
     "world_ids": [
-      "spannung"
+      "suspense"
     ],
-    "overview": "Platzhalter für einen Film aus der Welt „Spannung & Rätsel“. Echte Daten folgen.",
+    "overview": "Placeholder for a film from the “Suspense & Mystery” world. Real data coming soon.",
     "poster_url": "https://picsum.photos/seed/cs-poster-25/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-25/1280/720",
     "youtube_key": "placeholder",
@@ -694,7 +694,7 @@
     "world_ids": [
       "scifi"
     ],
-    "overview": "Platzhalter für einen Film aus der Welt „Science-Fiction“. Echte Daten folgen.",
+    "overview": "Placeholder for a film from the “Science Fiction” world. Real data coming soon.",
     "poster_url": "https://picsum.photos/seed/cs-poster-26/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-26/1280/720",
     "youtube_key": "placeholder",
@@ -720,9 +720,9 @@
       "Drama"
     ],
     "world_ids": [
-      "gefuehl"
+      "romance"
     ],
-    "overview": "Platzhalter für einen Film aus der Welt „Liebe & Gefühle“. Echte Daten folgen.",
+    "overview": "Placeholder for a film from the “Love & Feelings” world. Real data coming soon.",
     "poster_url": "https://picsum.photos/seed/cs-poster-27/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-27/1280/720",
     "youtube_key": "placeholder",
@@ -746,10 +746,10 @@
       "Fantasy"
     ],
     "world_ids": [
-      "abenteuer",
-      "humor"
+      "adventure",
+      "comedy"
     ],
-    "overview": "Platzhalter für einen Film aus der Welt „Abenteuer“. Echte Daten folgen.",
+    "overview": "Placeholder for a film from the “Adventure” world. Real data coming soon.",
     "poster_url": "https://picsum.photos/seed/cs-poster-28/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-28/1280/720",
     "youtube_key": "placeholder",
@@ -773,9 +773,9 @@
       "Family"
     ],
     "world_ids": [
-      "humor"
+      "comedy"
     ],
-    "overview": "Platzhalter für einen Film aus der Welt „Humor & Leichtigkeit“. Echte Daten folgen.",
+    "overview": "Placeholder for a film from the “Comedy & Feel-Good” world. Real data coming soon.",
     "poster_url": "https://picsum.photos/seed/cs-poster-29/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-29/1280/720",
     "youtube_key": "placeholder",
@@ -802,7 +802,7 @@
     "world_ids": [
       "action"
     ],
-    "overview": "Platzhalter für einen Film aus der Welt „Action & Adrenalin“. Echte Daten folgen.",
+    "overview": "Placeholder for a film from the “Action & Adrenaline” world. Real data coming soon.",
     "poster_url": "https://picsum.photos/seed/cs-poster-30/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-30/1280/720",
     "youtube_key": null,
@@ -826,9 +826,9 @@
       "Thriller"
     ],
     "world_ids": [
-      "spannung"
+      "suspense"
     ],
-    "overview": "Platzhalter für einen Film aus der Welt „Spannung & Rätsel“. Echte Daten folgen.",
+    "overview": "Placeholder for a film from the “Suspense & Mystery” world. Real data coming soon.",
     "poster_url": "https://picsum.photos/seed/cs-poster-31/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-31/1280/720",
     "youtube_key": "placeholder",
@@ -854,9 +854,9 @@
     ],
     "world_ids": [
       "scifi",
-      "gefuehl"
+      "romance"
     ],
-    "overview": "Platzhalter für einen Film aus der Welt „Science-Fiction“. Echte Daten folgen.",
+    "overview": "Placeholder for a film from the “Science Fiction” world. Real data coming soon.",
     "poster_url": "https://picsum.photos/seed/cs-poster-32/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-32/1280/720",
     "youtube_key": "placeholder",
@@ -883,9 +883,9 @@
       "Horror"
     ],
     "world_ids": [
-      "gefuehl"
+      "romance"
     ],
-    "overview": "Platzhalter für einen Film aus der Welt „Liebe & Gefühle“. Echte Daten folgen.",
+    "overview": "Placeholder for a film from the “Love & Feelings” world. Real data coming soon.",
     "poster_url": "https://picsum.photos/seed/cs-poster-33/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-33/1280/720",
     "youtube_key": "placeholder",
@@ -909,9 +909,9 @@
       "Fantasy"
     ],
     "world_ids": [
-      "abenteuer"
+      "adventure"
     ],
-    "overview": "Platzhalter für einen Film aus der Welt „Abenteuer“. Echte Daten folgen.",
+    "overview": "Placeholder for a film from the “Adventure” world. Real data coming soon.",
     "poster_url": "https://picsum.photos/seed/cs-poster-34/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-34/1280/720",
     "youtube_key": "placeholder",
@@ -937,9 +937,9 @@
       "Family"
     ],
     "world_ids": [
-      "humor"
+      "comedy"
     ],
-    "overview": "Platzhalter für einen Film aus der Welt „Humor & Leichtigkeit“. Echte Daten folgen.",
+    "overview": "Placeholder for a film from the “Comedy & Feel-Good” world. Real data coming soon.",
     "poster_url": "https://picsum.photos/seed/cs-poster-35/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-35/1280/720",
     "youtube_key": "placeholder",
@@ -963,9 +963,9 @@
     ],
     "world_ids": [
       "action",
-      "spannung"
+      "suspense"
     ],
-    "overview": "Platzhalter für einen Film aus der Welt „Action & Adrenalin“. Echte Daten folgen.",
+    "overview": "Placeholder for a film from the “Action & Adrenaline” world. Real data coming soon.",
     "poster_url": "https://picsum.photos/seed/cs-poster-36/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-36/1280/720",
     "youtube_key": null,
@@ -989,9 +989,9 @@
       "Thriller"
     ],
     "world_ids": [
-      "spannung"
+      "suspense"
     ],
-    "overview": "Platzhalter für einen Film aus der Welt „Spannung & Rätsel“. Echte Daten folgen.",
+    "overview": "Placeholder for a film from the “Suspense & Mystery” world. Real data coming soon.",
     "poster_url": "https://picsum.photos/seed/cs-poster-37/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-37/1280/720",
     "youtube_key": "placeholder",
@@ -1018,7 +1018,7 @@
     "world_ids": [
       "scifi"
     ],
-    "overview": "Platzhalter für einen Film aus der Welt „Science-Fiction“. Echte Daten folgen.",
+    "overview": "Placeholder for a film from the “Science Fiction” world. Real data coming soon.",
     "poster_url": "https://picsum.photos/seed/cs-poster-38/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-38/1280/720",
     "youtube_key": "placeholder",
@@ -1045,9 +1045,9 @@
       "Drama"
     ],
     "world_ids": [
-      "gefuehl"
+      "romance"
     ],
-    "overview": "Platzhalter für einen Film aus der Welt „Liebe & Gefühle“. Echte Daten folgen.",
+    "overview": "Placeholder for a film from the “Love & Feelings” world. Real data coming soon.",
     "poster_url": "https://picsum.photos/seed/cs-poster-39/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-39/1280/720",
     "youtube_key": "placeholder",
@@ -1071,10 +1071,10 @@
       "Fantasy"
     ],
     "world_ids": [
-      "abenteuer",
-      "humor"
+      "adventure",
+      "comedy"
     ],
-    "overview": "Platzhalter für einen Film aus der Welt „Abenteuer“. Echte Daten folgen.",
+    "overview": "Placeholder for a film from the “Adventure” world. Real data coming soon.",
     "poster_url": "https://picsum.photos/seed/cs-poster-40/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-40/1280/720",
     "youtube_key": "placeholder",
@@ -1100,9 +1100,9 @@
       "Family"
     ],
     "world_ids": [
-      "humor"
+      "comedy"
     ],
-    "overview": "Platzhalter für einen Film aus der Welt „Humor & Leichtigkeit“. Echte Daten folgen.",
+    "overview": "Placeholder for a film from the “Comedy & Feel-Good” world. Real data coming soon.",
     "poster_url": "https://picsum.photos/seed/cs-poster-41/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-41/1280/720",
     "youtube_key": "placeholder",
@@ -1129,7 +1129,7 @@
     "world_ids": [
       "action"
     ],
-    "overview": "Platzhalter für einen Film aus der Welt „Action & Adrenalin“. Echte Daten folgen.",
+    "overview": "Placeholder for a film from the “Action & Adrenaline” world. Real data coming soon.",
     "poster_url": "https://picsum.photos/seed/cs-poster-42/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-42/1280/720",
     "youtube_key": null,
@@ -1153,9 +1153,9 @@
       "Thriller"
     ],
     "world_ids": [
-      "spannung"
+      "suspense"
     ],
-    "overview": "Platzhalter für einen Film aus der Welt „Spannung & Rätsel“. Echte Daten folgen.",
+    "overview": "Placeholder for a film from the “Suspense & Mystery” world. Real data coming soon.",
     "poster_url": "https://picsum.photos/seed/cs-poster-43/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-43/1280/720",
     "youtube_key": "placeholder",
@@ -1183,9 +1183,9 @@
     ],
     "world_ids": [
       "scifi",
-      "gefuehl"
+      "romance"
     ],
-    "overview": "Platzhalter für einen Film aus der Welt „Science-Fiction“. Echte Daten folgen.",
+    "overview": "Placeholder for a film from the “Science Fiction” world. Real data coming soon.",
     "poster_url": "https://picsum.photos/seed/cs-poster-44/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-44/1280/720",
     "youtube_key": "placeholder",
@@ -1211,9 +1211,9 @@
       "Drama"
     ],
     "world_ids": [
-      "gefuehl"
+      "romance"
     ],
-    "overview": "Platzhalter für einen Film aus der Welt „Liebe & Gefühle“. Echte Daten folgen.",
+    "overview": "Placeholder for a film from the “Love & Feelings” world. Real data coming soon.",
     "poster_url": "https://picsum.photos/seed/cs-poster-45/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-45/1280/720",
     "youtube_key": "placeholder",
@@ -1237,9 +1237,9 @@
       "Fantasy"
     ],
     "world_ids": [
-      "abenteuer"
+      "adventure"
     ],
-    "overview": "Platzhalter für einen Film aus der Welt „Abenteuer“. Echte Daten folgen.",
+    "overview": "Placeholder for a film from the “Adventure” world. Real data coming soon.",
     "poster_url": "https://picsum.photos/seed/cs-poster-46/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-46/1280/720",
     "youtube_key": "placeholder",
@@ -1265,9 +1265,9 @@
       "Family"
     ],
     "world_ids": [
-      "humor"
+      "comedy"
     ],
-    "overview": "Platzhalter für einen Film aus der Welt „Humor & Leichtigkeit“. Echte Daten folgen.",
+    "overview": "Placeholder for a film from the “Comedy & Feel-Good” world. Real data coming soon.",
     "poster_url": "https://picsum.photos/seed/cs-poster-47/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-47/1280/720",
     "youtube_key": "placeholder",
@@ -1293,9 +1293,9 @@
     ],
     "world_ids": [
       "action",
-      "spannung"
+      "suspense"
     ],
-    "overview": "Platzhalter für einen Film aus der Welt „Action & Adrenalin“. Echte Daten folgen.",
+    "overview": "Placeholder for a film from the “Action & Adrenaline” world. Real data coming soon.",
     "poster_url": "https://picsum.photos/seed/cs-poster-48/300/450",
     "backdrop_url": "https://picsum.photos/seed/cs-backdrop-48/1280/720",
     "youtube_key": null,

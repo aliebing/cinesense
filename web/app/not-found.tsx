@@ -7,9 +7,9 @@ export default function NotFound() {
     <CinemaFrame>
       <FogLight tint="#1b4a6b" />
       <div className="not-found">
-        <h1>Nicht gefunden</h1>
-        <p>Diese Welt oder diesen Film gibt es hier nicht.</p>
-        <Link href="/">Zur Startseite</Link>
+        <h1>Not found</h1>
+        <p>This world or film doesn’t exist here.</p>
+        <Link href="/">Back to home</Link>
       </div>
     </CinemaFrame>
   );

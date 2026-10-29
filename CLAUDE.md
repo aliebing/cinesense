@@ -12,9 +12,9 @@ The grading briefs are `turing-college-capstone.md` and `turing-college-sprint4.
 
 ## Conventions
 
-- **Language:** UI text is German. Code, identifiers, comments, commits and docs are English. Talk to the user in German.
-- **Look:** dark only, on a matte near-black ground, with fog and light on every page. The main stage is a 16:9 cinema frame with letterbox bars and curtain hints. Text must stay readable over all effects.
-- **Data:** never fabricate film facts. Plan 1 uses clearly labelled fictional "Demo-Film" placeholders. Real data comes only from TMDB, and no unlicensed sources are allowed.
+- **Language:** UI text, code, identifiers, comments, commits and docs are all English. Talk to the user in German.
+- **Look:** dark only, on a matte near-black ground, with fog and light on every page. The main stage is a wide (~2.25:1) cinema screen with letterbox bars and solid red side curtains; tune via the CSS variables at the top of `web/app/globals.css`. Text must stay readable over all effects.
+- **Data:** never fabricate film facts. Plan 1 uses clearly labelled fictional "Demo-Film" placeholders (badge "Placeholder"). Real data comes only from TMDB, and no unlicensed sources are allowed.
 - **External services** stay behind adapters (`src/cinesense/providers/`). Tests run offline on fixtures.
 
 ## Layout
@@ -31,7 +31,7 @@ The grading briefs are `turing-college-capstone.md` and `turing-college-sprint4.
 
 ```bash
 uv sync                                   # backend deps
-make dev-api                              # FastAPI on :8000
+make dev-api                              # FastAPI on :8000 (auto-reload)
 make dev-web                              # Next.js on :3000
 make test                                 # backend + frontend tests
 uv run pytest tests/test_api.py::test_health -v   # single backend test
@@ -45,3 +45,8 @@ make lint                                 # ruff + eslint
 - OpenRouter (LLMs)
 - LangSmith tracing (EU endpoint)
 - TMDB (`TMDB_API_KEY`, `TMDB_READ_ACCESS_TOKEN`)
+
+## Gotchas
+
+- The Next.js 16 dev server (Turbopack) sometimes keeps serving a stale `globals.css`. If a CSS change doesn't show, stop the server, delete `web/.next` and restart.
+- Routes use English world ids (`/world/suspense`, `/world/comedy`, …) from `src/cinesense/domain/worlds.py`.

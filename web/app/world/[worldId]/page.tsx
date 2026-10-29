@@ -19,7 +19,7 @@ export default function GenrePage(props: RouteProps) {
     <Suspense
       fallback={
         <CinemaFrame>
-          <p className="genre-loading">Lädt …</p>
+          <p className="genre-loading">Loading …</p>
         </CinemaFrame>
       }
     >

@@ -16,8 +16,8 @@ export default function ChatDrawer() {
   return (
     <aside className="drawer" aria-label="Chat">
       <header className="drawer-head">
-        <span>Weiter eingrenzen</span>
-        <button type="button" aria-label="Chat schließen" onClick={() => setOpen(false)}>
+        <span>Refine your search</span>
+        <button type="button" aria-label="Close chat" onClick={() => setOpen(false)}>
           ×
         </button>
       </header>

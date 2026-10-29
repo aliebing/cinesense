@@ -29,9 +29,9 @@ class Movie(BaseModel):
 
 class MoodWorld(BaseModel):
     id: str
-    title_de: str
+    title: str
     kicker: str
-    subtitle_de: str
+    subtitle: str
     tint: str
     genres: list[str]
 

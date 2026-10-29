@@ -44,7 +44,7 @@ export default function HomePage() {
   const advance = useCallback(() => setActive((i) => (worlds.length ? (i + 1) % worlds.length : 0)), [worlds.length]);
   const world = worlds[active];
 
-  const openMovie = (m: Movie) => router.push(`/welt/${m.world_ids[0]}?film=${m.id}`);
+  const openMovie = (m: Movie) => router.push(`/world/${m.world_ids[0]}?film=${m.id}`);
 
   return (
     <CinemaFrame>
@@ -54,12 +54,12 @@ export default function HomePage() {
 
       <header className="home-top">
         <span className="home-logo">CineSense</span>
-        <nav aria-label="Hauptnavigation" className="home-nav">
-          <span>🎬 Im Kino</span> · <span>📺 Im Stream</span> · <span aria-label="Profil">👤</span>
+        <nav aria-label="Main navigation" className="home-nav">
+          <span>🎬 In cinemas</span> · <span>📺 Streaming</span> · <span aria-label="Profile">👤</span>
         </nav>
       </header>
       <button type="button" className="tempo-toggle" onClick={() => setVariedSpeed((v) => !v)}>
-        Tempo: {variedSpeed ? "unterschiedlich" : "gleichmäßig"}
+        Speed: {variedSpeed ? "varied" : "even"}
       </button>
 
       <main className="home-center">
@@ -67,9 +67,9 @@ export default function HomePage() {
           <span>Don&apos;t choose a movie.</span>
           <em>Choose a feeling.</em>
         </h1>
-        <p className="home-sub">Sag mir, worauf du heute Lust hast.</p>
+        <p className="home-sub">Tell me what you’re in the mood for tonight.</p>
         <ChatPanel mode="static" />
-        {result && !result.ok && <p className="home-error">Filme konnten nicht geladen werden</p>}
+        {result && !result.ok && <p className="home-error">Couldn&apos;t load films</p>}
       </main>
 
       {data && !narrow && <FilmTitles titles={data.titles} />}
@@ -78,7 +78,7 @@ export default function HomePage() {
           <TileRows movies={data.tiles} rows={narrow ? 1 : 4} onSelect={openMovie} variedSpeed={variedSpeed} />
         </div>
       )}
-      {world && <WorldLabel world={world} href={`/welt/${world.id}`} />}
+      {world && <WorldLabel world={world} href={`/world/${world.id}`} />}
     </CinemaFrame>
   );
 }

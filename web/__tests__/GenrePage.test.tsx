@@ -35,7 +35,7 @@ it("puts the requested film on stage", async () => {
   api.getMovie.mockResolvedValue({ ok: true, data: sampleMovies(3)[2] });
   render(<GenreView worldId="action" filmId="demo-03" />);
   expect(await screen.findByRole("heading", { name: "Demo-Film 03" })).toBeInTheDocument();
-  expect(screen.getByText("Welt: Action & Adrenalin")).toBeInTheDocument();
+  expect(screen.getByText("World: Action & Adrenaline")).toBeInTheDocument();
 });
 
 it("falls back to the top-ranked film without a film param", async () => {
@@ -60,7 +60,7 @@ it("shows an error state when the backend is unreachable", async () => {
   api.getWorlds.mockResolvedValue({ ok: false, error: "network" });
   api.getWorldMovies.mockResolvedValue({ ok: false, error: "network" });
   render(<GenreView worldId="action" filmId={null} />);
-  expect(await screen.findByText("Filme konnten nicht geladen werden")).toBeInTheDocument();
+  expect(await screen.findByText("Couldn't load films")).toBeInTheDocument();
 });
 
 it("asks for related films within the world shown on the page", async () => {

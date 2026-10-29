@@ -1,28 +1,28 @@
 "use client";
 
-const CHIPS = ["🎬 Läuft im Kino", "📺 Im Stream", "🇬🇧 Englisch", "🚫 Kein Grusel"];
+const CHIPS = ["🎬 In cinemas", "📺 Streaming", "🚫 No horror"];
 
 /** Chat window. Plan 1 ships the static form; Plan 3 switches mode to "live". */
 export default function ChatPanel({ mode }: { mode: "static" | "live" }) {
   const disabled = mode === "static";
   return (
     <div className="chat-panel">
-      <div className="chat-msg chat-msg--user">Was Lustiges oder Action auf Englisch, gern Marvel, aber kein Grusel.</div>
+      <div className="chat-msg chat-msg--user">Something funny or action, Marvel is welcome, but no horror.</div>
       <div className="chat-msg chat-msg--bot">
-        Beispiel: So wird der Agent antworten und dir passende Filme mit Begründung vorschlagen.
+        Example: this is where the agent will reply and suggest matching films with reasons.
       </div>
       <form className="chat-input" onSubmit={(e) => e.preventDefault()}>
         <input
           id="chat-input"
-          aria-label="Nachricht an CineSense"
-          placeholder="z. B. „wie Interstellar, aber kürzer“"
+          aria-label="Message CineSense"
+          placeholder="e.g. “like Interstellar, but shorter”"
           disabled={disabled}
         />
-        <button type="submit" aria-label="Senden" disabled={disabled}>
+        <button type="submit" aria-label="Send" disabled={disabled}>
           ➤
         </button>
       </form>
-      {disabled && <p className="chat-hint">Der Chat-Agent folgt in Kürze</p>}
+      {disabled && <p className="chat-hint">The chat agent is coming soon</p>}
       <div className="chat-chips">
         {CHIPS.map((c) => (
           <span key={c}>{c}</span>

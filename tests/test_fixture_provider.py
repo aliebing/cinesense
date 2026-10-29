@@ -1,12 +1,13 @@
 from cinesense.providers.fixture import FixtureProvider
 
-WORLD_IDS = ["spannung", "scifi", "gefuehl", "abenteuer", "humor", "action"]
+WORLD_IDS = ["suspense", "scifi", "romance", "adventure", "comedy", "action"]
 
 
 def test_loads_48_placeholder_movies():
     movies = FixtureProvider().list_movies()
     assert len(movies) == 48
     assert all(m.is_placeholder and m.title.startswith("Demo-Film") for m in movies)
+    assert all(m.overview.startswith("Placeholder") for m in movies)
 
 
 def test_every_world_has_eight_movies():

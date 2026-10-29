@@ -23,15 +23,15 @@ it("shows the claim and navigates to the genre page when a tile is clicked", asy
   expect(screen.getByText("Choose a feeling.")).toBeInTheDocument();
   const tile = await screen.findAllByRole("button", { name: "Demo-Film 01" });
   await userEvent.click(tile[0]);
-  expect(push).toHaveBeenCalledWith("/welt/action?film=demo-01");
+  expect(push).toHaveBeenCalledWith("/world/action?film=demo-01");
 });
 
 it("keeps claim and chat when the backend is unreachable", async () => {
   getHome.mockResolvedValue({ ok: false, error: "network" });
   render(<HomePage />);
-  await waitFor(() => expect(screen.getByText("Filme konnten nicht geladen werden")).toBeInTheDocument());
+  await waitFor(() => expect(screen.getByText("Couldn't load films")).toBeInTheDocument());
   expect(screen.getByText("Don't choose a movie.")).toBeInTheDocument();
-  expect(screen.getByRole("textbox", { name: "Nachricht an CineSense" })).toBeInTheDocument();
+  expect(screen.getByRole("textbox", { name: "Message CineSense" })).toBeInTheDocument();
 });
 
 it("shows one tile strip and no film titles on narrow screens", async () => {
@@ -41,4 +41,12 @@ it("shows one tile strip and no film titles on narrow screens", async () => {
   await screen.findAllByRole("button", { name: "Demo-Film 01" });
   expect(screen.getAllByTestId("tile-row")).toHaveLength(1);
   expect(screen.queryByTestId("film-titles")).toBeNull();
+});
+
+it("shows English quick filters without a language chip", async () => {
+  getHome.mockResolvedValue({ ok: true, data: sampleHome });
+  const { container } = render(<HomePage />);
+  const chips = [...container.querySelectorAll(".chat-chips span")].map((c) => c.textContent);
+  expect(chips).toEqual(["🎬 In cinemas", "📺 Streaming", "🚫 No horror"]);
+  expect(screen.queryByText(/Englisch|English/)).toBeNull();
 });

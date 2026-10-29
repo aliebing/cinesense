@@ -1,8 +1,8 @@
 import type { HomeData, Movie, MoodWorld, RankedMovie } from "@/lib/types";
 
 export const sampleWorlds: MoodWorld[] = [
-  { id: "spannung", title_de: "Spannung & Rätsel", kicker: "Mystery & Thriller", subtitle_de: "Geheimnisse", tint: "#1b4a6b", genres: ["Mystery"] },
-  { id: "action", title_de: "Action & Adrenalin", kicker: "Action & Adrenalin", subtitle_de: "Tempo", tint: "#a8382a", genres: ["Action"] },
+  { id: "suspense", title: "Suspense & Mystery", kicker: "Mystery & Thriller", subtitle: "Secrets", tint: "#1b4a6b", genres: ["Mystery"] },
+  { id: "action", title: "Action & Adrenaline", kicker: "Action & Adrenaline", subtitle: "Pace", tint: "#a8382a", genres: ["Action"] },
 ];
 
 export function sampleMovies(n: number): Movie[] {
@@ -15,8 +15,8 @@ export function sampleMovies(n: number): Movie[] {
       runtime_min: 120,
       original_language: "en",
       genres: ["Action"],
-      world_ids: [i % 2 ? "spannung" : "action"],
-      overview: "Platzhalter",
+      world_ids: [i % 2 ? "suspense" : "action"],
+      overview: "Placeholder",
       poster_url: `https://picsum.photos/seed/p${num}/300/450`,
       backdrop_url: `https://picsum.photos/seed/b${num}/1280/720`,
       youtube_key: "placeholder",

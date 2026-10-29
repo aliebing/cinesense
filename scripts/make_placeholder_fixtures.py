@@ -33,7 +33,7 @@ def build() -> list[dict]:
                 "genres": genres,
                 "world_ids": [world.id] + ([second.id] if second else []),
                 "overview": (
-                    f"Platzhalter für einen Film aus der Welt „{world.title_de}“. Echte Daten folgen."
+                    f"Placeholder for a film from the “{world.title}” world. Real data coming soon."
                 ),
                 "poster_url": None if n == 7 else f"https://picsum.photos/seed/cs-poster-{n}/300/450",
                 "backdrop_url": None if n == 7 else f"https://picsum.photos/seed/cs-backdrop-{n}/1280/720",

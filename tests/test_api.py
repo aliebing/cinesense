@@ -17,7 +17,7 @@ def client() -> TestClient:
 def test_worlds_returns_six():
     r = client().get("/api/worlds")
     assert r.status_code == 200
-    assert [w["id"] for w in r.json()] == ["spannung", "scifi", "gefuehl", "abenteuer", "humor", "action"]
+    assert [w["id"] for w in r.json()] == ["suspense", "scifi", "romance", "adventure", "comedy", "action"]
 
 
 def test_world_movies_ranked_and_limited():
@@ -57,16 +57,16 @@ def test_home_has_24_tiles_from_all_worlds():
     assert len(data["worlds"]) == 6
     assert len(data["tiles"]) == 24
     covered = {wid for t in data["tiles"] for wid in t["world_ids"]}
-    assert {"spannung", "scifi", "gefuehl", "abenteuer", "humor", "action"} <= covered
+    assert {"suspense", "scifi", "romance", "adventure", "comedy", "action"} <= covered
     assert data["titles"] and all(isinstance(t, str) for t in data["titles"])
 
 
 def test_related_uses_requested_world_for_multi_world_film():
     c = client()
     film = c.get("/api/movies/demo-28").json()
-    assert film["world_ids"] == ["abenteuer", "humor"]
-    items = c.get("/api/movies/demo-28/related?world_id=humor").json()
-    assert items and all("humor" in i["movie"]["world_ids"] for i in items)
+    assert film["world_ids"] == ["adventure", "comedy"]
+    items = c.get("/api/movies/demo-28/related?world_id=comedy").json()
+    assert items and all("comedy" in i["movie"]["world_ids"] for i in items)
 
 
 def test_cors_allows_local_dev_origins_on_any_port():

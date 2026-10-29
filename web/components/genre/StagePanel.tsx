@@ -4,14 +4,14 @@ import { useState } from "react";
 import ImageOrPlaceholder from "@/components/ui/ImageOrPlaceholder";
 import type { MoodWorld, Movie } from "@/lib/types";
 
-const FEEDBACK = ["👍 Mehr davon", "⚡ Mehr Action", "😂 Lustiger", "👎 Nicht mein Ding"];
-const rating = new Intl.NumberFormat("de-DE", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const FEEDBACK = ["👍 More like this", "⚡ More action", "😂 Funnier", "👎 Not for me"];
+const rating = new Intl.NumberFormat("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
 function metaLine(m: Movie): string {
   const parts = [
     m.year ? String(m.year) : null,
     m.runtime_min ? `${Math.floor(m.runtime_min / 60)} h ${m.runtime_min % 60} min` : null,
-    `${m.original_language.toUpperCase()} (OV)`,
+    `${m.original_language.toUpperCase()} (original)`,
     m.age_rating_de ? `FSK ${m.age_rating_de}` : null,
   ];
   return parts.filter(Boolean).join(" · ");
@@ -25,7 +25,7 @@ function Trailer({ movie }: { movie: Movie }) {
       <iframe
         className="stage-trailer__frame"
         src={`https://www.youtube-nocookie.com/embed/${encodeURIComponent(key)}?autoplay=1`}
-        title={`Offizieller Trailer: ${movie.title}`}
+        title={`Official trailer: ${movie.title}`}
         allow="autoplay; encrypted-media; picture-in-picture"
         allowFullScreen
       />
@@ -35,12 +35,12 @@ function Trailer({ movie }: { movie: Movie }) {
     <>
       <ImageOrPlaceholder src={movie.backdrop_url} alt="" />
       {key && key !== "placeholder" ? (
-        <button type="button" className="stage-trailer__play" onClick={() => setPlaying(true)} aria-label="Trailer abspielen">
+        <button type="button" className="stage-trailer__play" onClick={() => setPlaying(true)} aria-label="Play trailer">
           <b aria-hidden="true">▶</b>
         </button>
       ) : null}
       <small className="stage-trailer__note">
-        {key === "placeholder" ? "Platzhalter-Trailer" : key ? "Offizieller Trailer (YouTube)" : "Kein offizieller Trailer verfügbar"}
+        {key === "placeholder" ? "Placeholder trailer" : key ? "Official trailer (YouTube)" : "No official trailer available"}
       </small>
     </>
   );
@@ -50,7 +50,7 @@ function Trailer({ movie }: { movie: Movie }) {
 export default function StagePanel({ movie, world, why }: { movie: Movie; world: MoodWorld; why: string }) {
   const { in_cinema_de, streaming_flatrate_de } = movie.availability;
   return (
-    <section className="stage" aria-label={`Auf der Bühne: ${movie.title}`}>
+    <section className="stage" aria-label={`On stage: ${movie.title}`}>
       <div className="stage-poster">
         <ImageOrPlaceholder src={movie.poster_url} alt={`Poster: ${movie.title}`} />
       </div>
@@ -58,21 +58,21 @@ export default function StagePanel({ movie, world, why }: { movie: Movie; world:
         <Trailer movie={movie} />
       </div>
       <div className="stage-info">
-        <div className="stage-kicker">{movie.genres.join(" · ") || world.title_de}</div>
+        <div className="stage-kicker">{movie.genres.join(" · ") || world.title}</div>
         <h2>{movie.title}</h2>
         <p className="stage-meta">{metaLine(movie)}</p>
         <div className="stage-tags">
-          {movie.is_placeholder && <span className="stage-tag--placeholder">Platzhalter</span>}
-          {in_cinema_de && <span>🎬 Im Kino</span>}
-          {streaming_flatrate_de.length > 0 && <span>📺 Im Stream bei {streaming_flatrate_de.join(", ")}</span>}
+          {movie.is_placeholder && <span className="stage-tag--placeholder">Placeholder</span>}
+          {in_cinema_de && <span>🎬 In cinemas</span>}
+          {streaming_flatrate_de.length > 0 && <span>📺 Streaming on {streaming_flatrate_de.join(", ")}</span>}
           {movie.vote_average !== null && <span>⭐ TMDB {rating.format(movie.vote_average)}</span>}
         </div>
         <div className="stage-why">
-          <b>Warum für dich:</b> <span>{why}</span>
+          <b>Why it fits you:</b> <span>{why}</span>
         </div>
         <div className="stage-feedback">
           {FEEDBACK.map((f) => (
-            <button key={f} type="button" disabled title="Folgt mit der Personalisierung">
+            <button key={f} type="button" disabled title="Coming with personalisation">
               {f}
             </button>
           ))}

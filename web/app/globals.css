@@ -8,9 +8,9 @@
   --fg: #f2efe8;
   --muted: #a29f99;
   --bar: 6vh;
-  --stage-ratio: 2; /* wide cinema screen */
-  --curtain-overlap: 0.02; /* share of the stage width each curtain covers */
-  --stage-max: 90vw; /* leaves room for the curtains at the sides */
+  --stage-ratio: 2.25; /* wide cinema screen */
+  --curtain-overlap: 0.023; /* share of the stage width each curtain covers */
+  --stage-max: 86vw; /* leaves room for the curtains at the sides */
   --stage-w: min(var(--stage-max), calc((100vh - 2 * var(--bar)) * var(--stage-ratio)));
 }
 
@@ -79,13 +79,12 @@ body {
   /* solid, saturated velvet folds in the foreground — no fade */
   background: repeating-linear-gradient(
     90deg,
-    #3a050f 0px,
-    #6e0d1c 14px,
-    #a81b2e 24px,
-    #c42a3d 29px,
-    #8a1324 38px,
-    #4a0812 50px,
-    #3a050f 58px
+    #3c0610 0px,
+    #74101e 11px,
+    #b01d31 19px,
+    #8a1324 28px,
+    #4a0812 38px,
+    #3c0610 42px
   );
 }
 .cinema-curtain--left {

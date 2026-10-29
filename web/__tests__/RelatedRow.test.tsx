@@ -9,7 +9,7 @@ beforeEach(() => mockMatchMedia(() => false));
 it("shows match badges and selects a film on click", async () => {
   const onSelect = vi.fn();
   render(<RelatedRow items={sampleRanked(3)} onSelect={onSelect} />);
-  expect(screen.getAllByText("90 %").length).toBeGreaterThan(0);
+  expect(screen.getAllByText("90%").length).toBeGreaterThan(0);
   await userEvent.click(screen.getAllByRole("button", { name: /Demo-Film 02/ })[0]);
   expect(onSelect).toHaveBeenCalledWith(expect.objectContaining({ id: "demo-02" }));
 });
