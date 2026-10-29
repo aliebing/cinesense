@@ -92,7 +92,7 @@ body {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 47% center; /* the bright crests in the middle of the photo */
+  object-position: center; /* the panel is centred on a bright crest (scripts/make_curtain.py) */
 }
 .cinema-curtain--left .curtain-photo { transform: scaleX(-1); }
 
