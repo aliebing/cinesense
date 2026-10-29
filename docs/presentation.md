@@ -39,11 +39,13 @@ Framing: **SCR** (Situation → Complication → Resolution). Each section is ab
   - mood, "like X", runtime, exclusions, documentaries, people, plot, conflicts, follow-ups, facts, ambiguous wishes
   - 4 injected failures: streaming down, budget exhausted, embeddings down, unknown person
 - **Automatic results** (see `eval/REPORT.md`):
-  - constraint satisfaction 97%
+  - 36 / 36 scenarios pass all checks
+  - constraint satisfaction 100%
   - tool selection 100%, tool success 100%
-  - grounding 97%
-  - median latency 7.4 s
+  - grounding 100%: the validator caught 5 replies that named films outside the results and replaced them with the template answer
+  - median latency 7.8 s (p90 11.5 s)
   - **$0.001 per chat turn**
+  - LLM judge (Sonnet 5.5) mean 3.91 / 5 for the agent's picks
 - **Ranking comparison** on identical criteria and filters:
 
   | | Tag relevance@10 | LLM judge (Sonnet 5.5) |
