@@ -61,10 +61,13 @@ class ToolKit:
         resolved, unresolved = resolve_tags([s.name for s in specs], self.provider.list_tags())
         current = [] if replace else [t.model_dump() for t in c.tags]
         added = []
-        for spec, (tag, idx) in zip([s for s in specs if s.name not in unresolved], resolved, strict=True):
+        specs_ok = [s for s in specs if s.name not in unresolved]
+        for spec, (tag, idx) in zip(specs_ok, resolved, strict=True):
             current = [t for t in current if t["idx"] != idx] + [{"idx": idx, "weight": spec.weight, "mode": spec.mode}]
             added.append(f"{tag} ({spec.mode}, {spec.weight})")
         c = SearchCriteria(**{**c.model_dump(), "tags": current[-12:]})
+        if any(t == "horror" and s.mode == "not" for s, (t, _) in zip(specs_ok, resolved, strict=True)):
+            c = c.with_no_horror(next(i for t, i in resolved if t == "horror"))  # same as the chip: tag + genre
         msg = f"Mood tags now: {', '.join(added) or 'unchanged'}."
         if unresolved:
             msg += f" Not found as tags: {', '.join(unresolved)} — use plot search for those."

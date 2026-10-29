@@ -76,3 +76,8 @@ def test_show_on_stage_handoff(kit):
 def test_find_person_sets_criteria(kit):
     upd, msg = kit.find_person(state(), "Kianu Reeves")
     assert upd["criteria"]["person"] == "Keanu Reeves" and "Keanu Reeves" in msg
+
+
+def test_not_horror_also_excludes_the_genre(kit):
+    upd, _ = kit.set_mood_tags(state(), [{"name": "horror", "mode": "not"}])
+    assert upd["criteria"]["exclude_genres"] == ["Horror"]
