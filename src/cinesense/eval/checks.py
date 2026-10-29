@@ -1,0 +1,62 @@
+"""Automatic checks for one scenario's final turn. Pure functions over the API's JSON shapes."""
+
+from cinesense.agent.grounding import mentioned_titles, validate_titles
+from cinesense.eval.scenarios import Expect
+
+Check = tuple[bool, list[str]]
+
+
+def check_constraints(results: list[dict], e: Expect) -> Check:
+    if not results:
+        return (not e.results_required), ([] if not e.results_required else ["no results"])
+    fails = []
+    for r in results:
+        m, title = r["movie"], r["movie"]["title"]
+        if e.max_runtime and m.get("runtime_min") and m["runtime_min"] > e.max_runtime:
+            fails.append(f"{title}: {m['runtime_min']} min > {e.max_runtime}")
+        if bad := [g for g in m.get("genres", []) if g in e.exclude_genres]:
+            fails.append(f"{title}: excluded genre {', '.join(bad)}")
+        if e.kind and m.get("kind") != e.kind:
+            fails.append(f"{title}: kind {m.get('kind')}")
+        if e.year_from and (m.get("year") is None or m["year"] < e.year_from):
+            fails.append(f"{title}: year {m.get('year')} < {e.year_from}")
+        if e.person:
+            people = [p.lower() for p in m.get("directors", []) + m.get("cast_top", [])]
+            if e.person.lower() not in people:
+                fails.append(f"{title}: without {e.person} in the top-billed people")
+        a = m.get("availability") or {}
+        if e.availability == "stream" and a.get("streaming_de") is not None and not a.get("subscription_services"):
+            fails.append(f"{title}: known not streaming")  # unknown availability is labelled in the UI, not a lie
+        if e.availability == "cinema" and not a.get("in_cinema_de"):
+            fails.append(f"{title}: not in cinemas")
+    return not fails, fails
+
+
+def check_tools(called: list[str], e: Expect) -> Check:
+    fails = []
+    if e.tools_any and not set(called) & set(e.tools_any):
+        fails.append(f"expected one of {e.tools_any}, called {called}")
+    if used := sorted(set(called) & set(e.tools_none)):
+        fails.append(f"should not call {used}")
+    return not fails, fails
+
+
+def check_grounding(reply: str, results: list[dict], catalogue_titles: set[str], user_text: str) -> Check:
+    allowed = [r["movie"]["title"] for r in results] + mentioned_titles(user_text, catalogue_titles)
+    ok, bad = validate_titles(reply, allowed, catalogue_titles)
+    return ok, [f"unlisted title: {t}" for t in bad]
+
+
+def check_reply(reply: str, e: Expect) -> Check:
+    if not e.reply_contains_any:
+        return True, []
+    low = reply.lower()
+    ok = any(s.lower() in low for s in e.reply_contains_any)
+    return ok, [] if ok else [f"reply lacks any of {e.reply_contains_any}"]
+
+
+def title_hit(results: list[dict], e: Expect) -> bool | None:
+    if not e.titles_any:
+        return None
+    titles = {r["movie"]["title"] for r in results}
+    return bool(titles & set(e.titles_any))

@@ -114,3 +114,11 @@ def test_present_uses_the_profile(make_agent):
     g = make_agent([ai(calls=[("set_filters", {"max_runtime_min": 300})]), ai("ok")])
     out = run_turn(g, "t12", "films", empty(), profile=Profile(disliked=[titanic]))
     assert out["results"] and titanic not in [r["movie"]["id"] for r in out["results"]]
+
+
+def test_run_turn_reports_tools_and_tool_errors(make_agent):
+    g = make_agent(
+        [ai(calls=[("set_mood_tags", {"tags": [{"name": "dark"}]}), ("set_mood_tags", {"tags": "bad"})]), ai("ok")]
+    )
+    out = run_turn(g, "t13", "dark", empty())
+    assert out["tools_called"] == ["set_mood_tags", "set_mood_tags"] and out["tool_errors"] == 1

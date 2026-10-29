@@ -222,10 +222,16 @@ def run_turn(
 
 
 def _run_locked(graph, config: dict, inputs: dict, on_status) -> dict:
+    tools_called: list[str] = []
+    tool_errors = 0
     for update in graph.stream(inputs, config, stream_mode="updates"):
-        if on_status and "agent" in update:
+        if "agent" in update:
             for call in getattr(update["agent"]["messages"][-1], "tool_calls", None) or []:
-                on_status(TOOL_STATUS.get(call["name"], "Thinking…"))
+                tools_called.append(call["name"])
+                if on_status:
+                    on_status(TOOL_STATUS.get(call["name"], "Thinking…"))
+        if "tools" in update:
+            tool_errors += sum(getattr(m, "status", "") == "error" for m in update["tools"].get("messages", []))
         if on_status and "present" in update:
             on_status("Ranking films…")
     s = graph.get_state(config).values
@@ -239,4 +245,6 @@ def _run_locked(graph, config: dict, inputs: dict, on_status) -> dict:
         "rounds": s.get("rounds", 0),
         "grounding_fallback": s.get("grounding_fallback", False),
         "history_len": len(s["messages"]),
+        "tools_called": tools_called,
+        "tool_errors": tool_errors,
     }
