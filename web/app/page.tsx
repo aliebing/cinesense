@@ -11,11 +11,12 @@ import TileRows from "@/components/home/TileRows";
 import WorldLabel from "@/components/home/WorldLabel";
 import { getHome, type ApiResult } from "@/lib/api";
 import type { HomeData, Movie } from "@/lib/types";
-import { useReducedMotion } from "@/lib/useReducedMotion";
+import { useIsNarrow, useReducedMotion } from "@/lib/useReducedMotion";
 
 export default function HomePage() {
   const router = useRouter();
   const reduced = useReducedMotion();
+  const narrow = useIsNarrow();
   const [result, setResult] = useState<ApiResult<HomeData> | null>(null);
   const [active, setActive] = useState(0);
   const [variedSpeed, setVariedSpeed] = useState(false);
@@ -48,7 +49,7 @@ export default function HomePage() {
   return (
     <CinemaFrame>
       <HeroSlides worlds={worlds} images={images} activeIndex={active} onAdvance={advance} />
-      <FogLight tint={world?.tint ?? "#1b4a6b"} reduced={reduced} />
+      <FogLight tint={world?.tint ?? "#1b4a6b"} reduced={reduced || narrow} />
       <div className="home-shade" aria-hidden="true" />
 
       <header className="home-top">
@@ -71,10 +72,10 @@ export default function HomePage() {
         {result && !result.ok && <p className="home-error">Filme konnten nicht geladen werden</p>}
       </main>
 
-      {data && <FilmTitles titles={data.titles} />}
+      {data && !narrow && <FilmTitles titles={data.titles} />}
       {data && (
         <div className="home-rows">
-          <TileRows movies={data.tiles} rows={4} onSelect={openMovie} variedSpeed={variedSpeed} />
+          <TileRows movies={data.tiles} rows={narrow ? 1 : 4} onSelect={openMovie} variedSpeed={variedSpeed} />
         </div>
       )}
       {world && <WorldLabel world={world} href={`/welt/${world.id}`} />}

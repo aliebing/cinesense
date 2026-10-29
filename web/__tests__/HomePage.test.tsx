@@ -33,3 +33,12 @@ it("keeps claim and chat when the backend is unreachable", async () => {
   expect(screen.getByText("Don't choose a movie.")).toBeInTheDocument();
   expect(screen.getByRole("textbox", { name: "Nachricht an CineSense" })).toBeInTheDocument();
 });
+
+it("shows one tile strip and no film titles on narrow screens", async () => {
+  mockMatchMedia((q) => q.includes("max-width: 759px"));
+  getHome.mockResolvedValue({ ok: true, data: sampleHome });
+  render(<HomePage />);
+  await screen.findAllByRole("button", { name: "Demo-Film 01" });
+  expect(screen.getAllByTestId("tile-row")).toHaveLength(1);
+  expect(screen.queryByTestId("film-titles")).toBeNull();
+});

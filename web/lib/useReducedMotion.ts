@@ -18,3 +18,7 @@ export function useMediaQuery(query: string): boolean {
 export function useReducedMotion(): boolean {
   return useMediaQuery("(prefers-reduced-motion: reduce)");
 }
+
+export function useIsNarrow(): boolean {
+  return useMediaQuery("(max-width: 759px)");
+}

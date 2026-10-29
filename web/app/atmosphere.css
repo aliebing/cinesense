@@ -260,3 +260,30 @@
 .not-found { position: absolute; z-index: 15; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .6em; text-align: center; font-size: var(--ui); }
 .not-found h1 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: clamp(40px, 4cqw, 96px); letter-spacing: .04em; }
 .not-found a { color: var(--gold); }
+
+/* ---------- phones (<760px): no 16:9 lock, no curtains, content in normal flow ---------- */
+@media (max-width: 759px) {
+  :root { --bar: 2vh; }
+  .cinema-stage {
+    width: 100vw; aspect-ratio: auto; min-height: calc(100vh - 2 * var(--bar));
+    display: flex; flex-direction: column; gap: 16px; padding: 16px max(16px, env(safe-area-inset-left, 0px)) 16px max(16px, env(safe-area-inset-right, 0px));
+    --safe-x: 16px; --ui: 14px; --chat-w: 100%;
+  }
+  .cinema-curtain { display: none; }
+  .flare, .streak, .fog--mid { display: none; }
+  .home-top, .tempo-toggle, .home-center, .home-rows, .world-label,
+  .genre-top, .stage, .related, .drawer, .drawer-tab { position: relative; inset: auto; transform: none; z-index: 15; }
+  .home-top { order: 0; flex-wrap: wrap; gap: 8px 16px; }
+  .tempo-toggle { order: 1; align-self: flex-start; }
+  .home-center { order: 2; width: 100%; }
+  .home-rows { order: 3; left: auto; right: auto; bottom: auto; -webkit-mask-image: none; mask-image: none; }
+  .world-label { order: 4; }
+  .tile { width: 168px; height: 105px; }
+  .tile-row { gap: 8px; }
+  .stage { grid-template-columns: 96px minmax(0, 1fr); gap: 12px; }
+  .stage-trailer { grid-column: 1 / -1; grid-row: 2; }
+  .stage-info { grid-column: 2; grid-row: 1; }
+  .related-card { width: 96px; }
+  .drawer { width: 100%; }
+  .drawer-tab { writing-mode: horizontal-tb; align-self: flex-end; }
+}
