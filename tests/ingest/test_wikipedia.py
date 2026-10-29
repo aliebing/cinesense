@@ -50,3 +50,19 @@ def test_chunk_text_respects_limits_and_overlap():
 
 def test_chunk_text_short_text_single_chunk():
     assert chunk_text("Short plot.") == ["Short plot."]
+
+
+@respx.mock
+async def test_fetch_plot_raises_when_rate_limited_throughout(monkeypatch):
+    import asyncio
+
+    import pytest
+
+    async def no_sleep(_):
+        return None
+
+    monkeypatch.setattr(asyncio, "sleep", no_sleep)
+    respx.get(API_URL).mock(return_value=httpx.Response(429))
+    async with httpx.AsyncClient() as client:
+        with pytest.raises(httpx.HTTPStatusError):  # "retry next run", never "this film has no plot"
+            await fetch_plot("Alien (film)", client)

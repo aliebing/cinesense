@@ -46,6 +46,7 @@ async def fetch_plot(title: str, client: httpx.AsyncClient, retries: int = 4) ->
         if "missing" in page or "disambiguation" in page.get("pageprops", {}):
             return None
         return extract_plot(page.get("extract", ""))
+    r.raise_for_status()  # still rate-limited or failing: an error (retried next run), not "no plot"
     return None
 
 
