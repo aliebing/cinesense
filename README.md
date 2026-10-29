@@ -103,6 +103,49 @@ TMDB is **not** used: its API terms (1.C) forbid use "in connection with … an 
 
 All sources are credited on the in-app **Credits** page. No unlicensed sources are used, and nothing is scraped.
 
+## Evaluation
+
+`make eval` runs 36 scenarios through the real agent and catalogue. They cover mood, "like X", runtime, exclusions, documentaries, people, plot, conflicting wishes, follow-ups, facts, ambiguous input and 4 injected failures (streaming down, streaming budget exhausted, embeddings down, unknown person). The run never spends Streaming Availability budget: it reads streaming data from the cache only. Full results are in [`eval/REPORT.md`](eval/REPORT.md); the raw data is in `eval/results/`.
+
+**Automatic metrics (latest run):**
+
+| Metric | Result |
+|---|---|
+| Scenarios passing all checks | 36 / 36 |
+| Constraint satisfaction (runtime, genres, kind, year, person, availability) | 100% |
+| Tool selection / tool success | 100% / 100% |
+| Grounding (only returned or user-named films in replies) | 100% — 5 replies were caught by the validator and replaced by the template answer |
+| Latency per scenario, median / p90 | 7.8 s / 11.5 s |
+| Cost per chat turn (Claude Haiku 5.5) | $0.0011 |
+
+**Ranking comparison** on identical criteria and hard filters (scenarios with mood tags or plot):
+
+| Ranker | Tag relevance@10 (automatic) | Median MovieLens rating count | LLM judge 1–5 (Claude Sonnet 5.5, subjective) |
+|---|---|---|---|
+| Baseline A: filters + Bayesian rating | 0.32 | 35,000 | 1.36 |
+| Baseline B: movieFinder (tag cosine + rating) | 0.78 | 926 | 3.41 |
+| **CineSense** | **0.85** | 3,977 | **3.82** |
+
+**Reading the results:**
+- CineSense finds films that fit the mood better than movieFinder's cosine method.
+- Its picks are more often films people know (median 3,977 vs 926 MovieLens ratings).
+- The rating-only baseline knows famous films but ignores the wish.
+- The LLM judge gives the agent's own top 5 a mean of 3.91/5.
+
+The whole evaluation costs about $0.25, judge included.
+
+The automatic checks are deliberately narrow; relevance is only measured subjectively. The first run found two false alarms in the checks themselves: the mood tag "Creepy" is also a film title, and a person outside the top-5 billed cast was not counted. Both are fixed with tests.
+
 ## Ethics and privacy
 
-To be completed in Plan 5. It will cover the anonymous user id with no personal data, grounding (no invented film facts), source attribution, and the limits and bias of the recommendations.
+- **No account, no personal data.** Personalisation uses a random UUID created in the browser (`localStorage`). The server stores only that id with film ids and 👍/👎 (`cinesense.feedback`). The 👤 panel shows everything that was learned and deletes it with one click. Chat history lives in server memory only for the running process. LangSmith traces (when enabled) contain the conversation, the chosen criteria and liked/disliked film ids, but no user id. Chat messages go to the model provider through OpenRouter, so users should not type personal information.
+- **Grounding instead of invented facts.** The agent never writes the recommendation list itself. A deterministic search returns real catalogue films, and the explanation may only name those films (or films the user named). Anything else, or an answer cut off mid-sentence, is replaced by a template answer built from the data. Facts come from tools (`film_facts`, `check_streaming`) over Wikidata, Wikipedia and Movie of the Night. Unknown streaming availability is shown as "unknown", never guessed.
+- **The user stays in control.** Every criterion the agent sets is visible and editable as a chip. Vague dislikes ("nothing too scary") are only *proposed* as exclusions, and excluded films are counted ("→ n films hidden"), so filtering is never silent.
+- **Sources and licences.** Only licensed open data and an official API are used, credited per source (table above and the in-app Credits page). TMDB is excluded because its terms forbid AI applications. There are no piracy or streaming-link sites, and nothing is scraped.
+- **Trailers.** They are official YouTube embeds via `youtube-nocookie.com`, started only by a deliberate hover of half a second. They start muted, with one click to unmute, and only one trailer plays at a time. Autoplay on hover is an interpretation of YouTube's embedding rules (the user acts first), not something the terms explicitly name.
+- **Limits and bias.**
+  - The Tag Genome covers mostly films up to about 2019 that were rated by MovieLens users, who skew towards English-language, US and older popular cinema.
+  - Newer films (German releases since 2021, live imports) have no mood tags. They are found through plot, title and people, so mood searches favour older films.
+  - Plot texts come from English Wikipedia, which covers non-English films less well.
+  - The Bayesian rating dampens obscure films, so the ranking leans towards well-known titles.
+  - The taste profile learns only from explicit 👍/👎, with no tracking of views or clicks.

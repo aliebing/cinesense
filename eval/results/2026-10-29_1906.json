@@ -1,0 +1,4705 @@
+{
+  "summary": {
+    "scenarios": 36,
+    "passed": 34,
+    "errors": 0,
+    "constraint_satisfaction": 0.972,
+    "tool_selection": 1.0,
+    "tool_success": 1.0,
+    "grounding": 0.972,
+    "grounding_fallbacks": 3,
+    "reply_checks": 1.0,
+    "title_hit_rate": 1.0,
+    "latency_median_s": 7.41,
+    "latency_p90_s": 11.51,
+    "cost_total_usd": 0.0427,
+    "cost_per_turn_usd": 0.00109,
+    "usage_missing": 0
+  },
+  "results": [
+    {
+      "id": "mood-01",
+      "category": "mood",
+      "failure": null,
+      "turns": [
+        "Something dark and set in space, but no horror"
+      ],
+      "tools_called": [
+        "set_mood_tags"
+      ],
+      "tool_errors": 0,
+      "input_tokens": 5899,
+      "output_tokens": 933,
+      "usage_missing": false,
+      "latency_s": 6.9,
+      "error": null,
+      "reply": "These results match the wish well: all three top picks score high on both dark (80% or more) and space travel (92% or more). None of them is tagged as horror in the criteria provided, so the no-horror condition is respected.\n\n**Star Wars: Episode V - The Empire Strikes Back** — It scores 95% on dark and 92% on space travel, with the Imperial fleet hunting the Rebel Alliance across the galaxy after the Death Star's destruction.\n**Moon** — At 88% dark and 98% space travel, it follows a lone worker maintaining a far-side Moon facility that mines helium-3.\n**Sunshine** — With 80% dark and 99% space travel, it centers on eight astronauts on a last-chance mission to reignite a dying Sun.",
+      "results": [
+        "Star Wars: Episode V - The Empire Strikes Back",
+        "Moon",
+        "Sunshine",
+        "Star Wars: Episode IV - A New Hope",
+        "The Last Man on the Moon",
+        "Star Wars: Episode III - Revenge of the Sith",
+        "Star Wars: Episode VI - Return of the Jedi",
+        "District 9"
+      ],
+      "top": [
+        {
+          "title": "Star Wars: Episode V - The Empire Strikes Back",
+          "year": 1980
+        },
+        {
+          "title": "Moon",
+          "year": 2009
+        },
+        {
+          "title": "Sunshine",
+          "year": 2007
+        },
+        {
+          "title": "Star Wars: Episode IV - A New Hope",
+          "year": 1977
+        },
+        {
+          "title": "The Last Man on the Moon",
+          "year": 2016
+        }
+      ],
+      "criteria": {
+        "tags": [
+          {
+            "idx": 284,
+            "weight": 7,
+            "mode": "prefer"
+          },
+          {
+            "idx": 944,
+            "weight": 7,
+            "mode": "prefer"
+          },
+          {
+            "idx": 521,
+            "weight": 5,
+            "mode": "not"
+          }
+        ],
+        "plot_query": null,
+        "title": null,
+        "person": null,
+        "person_role": "any",
+        "exclude_genres": [
+          "Horror"
+        ],
+        "world_id": null,
+        "availability": "any",
+        "kind": "any",
+        "max_runtime_min": null,
+        "year_from": null,
+        "year_to": null,
+        "original_language": null,
+        "min_rating_count": 0,
+        "extended": false
+      },
+      "grounding_fallback": false,
+      "checks": {
+        "constraints": {
+          "ok": true,
+          "why": []
+        },
+        "tools": {
+          "ok": true,
+          "why": []
+        },
+        "grounding": {
+          "ok": true,
+          "why": []
+        },
+        "reply": {
+          "ok": true,
+          "why": []
+        }
+      },
+      "title_hit": true,
+      "passed": true,
+      "cost_usd": 0.001056,
+      "judge": {
+        "score": 3,
+        "reason": "Moon and Sunshine are dark, space-set non-horror films (Sunshine has some thriller/horror elements), and Empire is fairly dark, but A New Hope is relatively light adventure and The Last Man on the Moon is a documentary about Eugene Cernan that is less dark in tone, so the list is only partly fitting"
+      }
+    },
+    {
+      "id": "mood-02",
+      "category": "mood",
+      "failure": null,
+      "turns": [
+        "I need a feel-good comedy for a rainy Sunday"
+      ],
+      "tools_called": [
+        "set_mood_tags"
+      ],
+      "tool_errors": 0,
+      "input_tokens": 6172,
+      "output_tokens": 1256,
+      "usage_missing": false,
+      "latency_s": 7.41,
+      "error": null,
+      "reply": "These results lean strongly toward warm, funny films, and all eight clear the comedy requirement with scores of 86% or higher. The top three also score high on feel-good, which matches the cosy mood you want for a rainy Sunday. The Wedding Singer scores highest on comedy, but its lower heartwarming score puts it outside the top three.\n\n**Hunt for the Wilderpeople (2016)** — Its top-ranked match for the wish, with heartwarming at 97% and comedy at 93%, and its plot centres on a foster child taken in by a new family.\n**Little Miss Sunshine (2006)** — It pairs strong feel-good (92%) and comedy (91%) scores with a plot about a stressed family, a combination suited to a relaxed afternoon.\n**Waking Ned Devine (a.k.a. Waking Ned) (1998)** — It has the highest feel-good score of the top three (98%), and its plot follows two elderly friends in a tiny Irish village after a lottery win.",
+      "results": [
+        "Hunt for the Wilderpeople",
+        "Little Miss Sunshine",
+        "Intouchables",
+        "Waking Ned Devine (a.k.a. Waking Ned)",
+        "The Castle",
+        "The Wedding Singer",
+        "About a Boy",
+        "St. Vincent"
+      ],
+      "top": [
+        {
+          "title": "Hunt for the Wilderpeople",
+          "year": 2016
+        },
+        {
+          "title": "Little Miss Sunshine",
+          "year": 2006
+        },
+        {
+          "title": "Intouchables",
+          "year": 2011
+        },
+        {
+          "title": "Waking Ned Devine (a.k.a. Waking Ned)",
+          "year": 1998
+        },
+        {
+          "title": "The Castle",
+          "year": 1997
+        }
+      ],
+      "criteria": {
+        "tags": [
+          {
+            "idx": 387,
+            "weight": 7,
+            "mode": "prefer"
+          },
+          {
+            "idx": 229,
+            "weight": 8,
+            "mode": "must"
+          },
+          {
+            "idx": 416,
+            "weight": 6,
+            "mode": "prefer"
+          },
+          {
+            "idx": 496,
+            "weight": 5,
+            "mode": "prefer"
+          }
+        ],
+        "plot_query": null,
+        "title": null,
+        "person": null,
+        "person_role": "any",
+        "exclude_genres": [],
+        "world_id": null,
+        "availability": "any",
+        "kind": "any",
+        "max_runtime_min": null,
+        "year_from": null,
+        "year_to": null,
+        "original_language": null,
+        "min_rating_count": 0,
+        "extended": false
+      },
+      "grounding_fallback": false,
+      "checks": {
+        "constraints": {
+          "ok": true,
+          "why": []
+        },
+        "tools": {
+          "ok": true,
+          "why": []
+        },
+        "grounding": {
+          "ok": true,
+          "why": []
+        },
+        "reply": {
+          "ok": true,
+          "why": []
+        }
+      },
+      "title_hit": null,
+      "passed": true,
+      "cost_usd": 0.001245,
+      "judge": {
+        "score": 5,
+        "reason": "All five are warm, funny, uplifting comedies or comedy-dramas (Wilderpeople, Little Miss Sunshine, Intouchables, Waking Ned, The Castle) that suit a cozy rainy Sunday, with only minor emotional moments to temper the feel-good tone."
+      }
+    },
+    {
+      "id": "mood-03",
+      "category": "mood",
+      "failure": null,
+      "turns": [
+        "A mind-bending film with a big twist ending"
+      ],
+      "tools_called": [
+        "set_mood_tags",
+        "set_mood_tags"
+      ],
+      "tool_errors": 0,
+      "input_tokens": 8524,
+      "output_tokens": 1067,
+      "usage_missing": false,
+      "latency_s": 7.84,
+      "error": null,
+      "reply": "The results closely match the wish for a mind-bending film with a big twist. All eight titles score 96% or higher on the psychological tag and at least 94% on the twist ending tag, so the twist and psychological angle are both strong across the board. The top three are the strongest matches on both criteria.\n\n**Shutter Island** — It scores 99% psychological and 97% twist ending, and its story of U.S. Marshal Teddy Daniels investigating a disappearance at a hospital for the criminally insane fits the mind-bending premise.\n**Identity** — It has the highest twist ending score at 99% and a psychological score of 97%, and its setup of a midnight hearing before a serial killer's execution, with journals and a recorded poem, builds the puzzle.\n**Split** — It pairs a 99% psychological score with a 96% twist ending score, and its premise of three teenage girls kidnapped by a man offers a dark, unsettling mind game.",
+      "results": [
+        "Shutter Island",
+        "The Sixth Sense",
+        "Seven (a.k.a. Se7en)",
+        "Identity",
+        "Fight Club",
+        "The Machinist",
+        "Split",
+        "The Game"
+      ],
+      "top": [
+        {
+          "title": "Shutter Island",
+          "year": 2010
+        },
+        {
+          "title": "The Sixth Sense",
+          "year": 1999
+        },
+        {
+          "title": "Seven (a.k.a. Se7en)",
+          "year": 1995
+        },
+        {
+          "title": "Identity",
+          "year": 2003
+        },
+        {
+          "title": "Fight Club",
+          "year": 1999
+        }
+      ],
+      "criteria": {
+        "tags": [
+          {
+            "idx": 822,
+            "weight": 7,
+            "mode": "prefer"
+          },
+          {
+            "idx": 1049,
+            "weight": 8,
+            "mode": "prefer"
+          }
+        ],
+        "plot_query": null,
+        "title": null,
+        "person": null,
+        "person_role": "any",
+        "exclude_genres": [],
+        "world_id": null,
+        "availability": "any",
+        "kind": "any",
+        "max_runtime_min": null,
+        "year_from": null,
+        "year_to": null,
+        "original_language": null,
+        "min_rating_count": 0,
+        "extended": false
+      },
+      "grounding_fallback": false,
+      "checks": {
+        "constraints": {
+          "ok": true,
+          "why": []
+        },
+        "tools": {
+          "ok": true,
+          "why": []
+        },
+        "grounding": {
+          "ok": true,
+          "why": []
+        },
+        "reply": {
+          "ok": true,
+          "why": []
+        }
+      },
+      "title_hit": true,
+      "passed": true,
+      "cost_usd": 0.001386,
+      "judge": {
+        "score": 5,
+        "reason": "Every film is known for a major twist ending (Shutter Island, The Sixth Sense, Se7en's box reveal, Identity, Fight Club) and most are psychologically mind-bending, so the list fits the wish very well."
+      }
+    },
+    {
+      "id": "mood-04",
+      "category": "mood",
+      "failure": null,
+      "turns": [
+        "Something romantic and bittersweet that makes me cry a little"
+      ],
+      "tools_called": [
+        "set_mood_tags"
+      ],
+      "tool_errors": 0,
+      "input_tokens": 6128,
+      "output_tokens": 1263,
+      "usage_missing": false,
+      "latency_s": 8.42,
+      "error": null,
+      "reply": "These results lean strongly romantic, and the top picks also score high on bittersweet. Tear-jerker and melancholic scores vary more, so the picks differ in how much they will move you. The ranking weights your criteria by preference strength, with romantic and bittersweet counting most.\n\n**Love Story** — Romantic (98%) and bittersweet (88%) with a strong tear-jerker score (90%), following Oliver and Jenny, a wealthy Harvard student and a working-class Radcliffe student who fall in love.\n**The Bridges of Madison County** — The highest bittersweet score (94%) and near-top romantic score (99%), with the story of siblings settling their mother's estate after her unexpected final request.\n**The Fault in Our Stars** — Romantic (93%) and a strong tear-jerker score (89%), centered on Hazel, a teenager with cancer, and the romance she finds at a support group.",
+      "results": [
+        "Love Story",
+        "Up",
+        "The Bridges of Madison County",
+        "The Fault in Our Stars",
+        "Me Before You",
+        "The Notebook",
+        "P.S. I Love You",
+        "(500) Days of Summer"
+      ],
+      "top": [
+        {
+          "title": "Love Story",
+          "year": 1970
+        },
+        {
+          "title": "Up",
+          "year": 2009
+        },
+        {
+          "title": "The Bridges of Madison County",
+          "year": 1995
+        },
+        {
+          "title": "The Fault in Our Stars",
+          "year": 2014
+        },
+        {
+          "title": "Me Before You",
+          "year": 2016
+        }
+      ],
+      "criteria": {
+        "tags": [
+          {
+            "idx": 863,
+            "weight": 8,
+            "mode": "prefer"
+          },
+          {
+            "idx": 137,
+            "weight": 8,
+            "mode": "prefer"
+          },
+          {
+            "idx": 1010,
+            "weight": 7,
+            "mode": "prefer"
+          },
+          {
+            "idx": 639,
+            "weight": 5,
+            "mode": "prefer"
+          }
+        ],
+        "plot_query": null,
+        "title": null,
+        "person": null,
+        "person_role": "any",
+        "exclude_genres": [],
+        "world_id": null,
+        "availability": "any",
+        "kind": "any",
+        "max_runtime_min": null,
+        "year_from": null,
+        "year_to": null,
+        "original_language": null,
+        "min_rating_count": 0,
+        "extended": false
+      },
+      "grounding_fallback": false,
+      "checks": {
+        "constraints": {
+          "ok": true,
+          "why": []
+        },
+        "tools": {
+          "ok": true,
+          "why": []
+        },
+        "grounding": {
+          "ok": true,
+          "why": []
+        },
+        "reply": {
+          "ok": true,
+          "why": []
+        }
+      },
+      "title_hit": null,
+      "passed": true,
+      "cost_usd": 0.001244,
+      "judge": {
+        "score": 5,
+        "reason": "All five are well-known romantic tearjerkers with bittersweet endings (Love Story, The Bridges of Madison County, The Fault in Our Stars, Me Before You), and Up's opening montage is a famously moving love story, so the list fits the wish very well."
+      }
+    },
+    {
+      "id": "mood-05",
+      "category": "mood",
+      "failure": null,
+      "turns": [
+        "An epic medieval adventure with battles"
+      ],
+      "tools_called": [
+        "set_mood_tags",
+        "set_mood_tags"
+      ],
+      "tool_errors": 0,
+      "input_tokens": 8789,
+      "output_tokens": 1754,
+      "usage_missing": false,
+      "latency_s": 11.0,
+      "error": null,
+      "reply": "Here are films that match:\n- **Braveheart** (1995) — epic 98%, medieval 95%\n- **The Lord of the Rings: The Two Towers** (2002) — epic 97%, medieval 79%\n- **The Lord of the Rings: The Fellowship of the Ring** (2001) — epic 97%, medieval 75%\n- **Conan the Barbarian** (1982) — epic 89%, medieval 86%\n- **Robin Hood** (2010) — epic 84%, medieval 96%",
+      "results": [
+        "Braveheart",
+        "The Lord of the Rings: The Two Towers",
+        "The Lord of the Rings: The Fellowship of the Ring",
+        "Conan the Barbarian",
+        "Robin Hood",
+        "Willow",
+        "The 13th Warrior",
+        "The Vikings"
+      ],
+      "top": [
+        {
+          "title": "Braveheart",
+          "year": 1995
+        },
+        {
+          "title": "The Lord of the Rings: The Two Towers",
+          "year": 2002
+        },
+        {
+          "title": "The Lord of the Rings: The Fellowship of the Ring",
+          "year": 2001
+        },
+        {
+          "title": "Conan the Barbarian",
+          "year": 1982
+        },
+        {
+          "title": "Robin Hood",
+          "year": 2010
+        }
+      ],
+      "criteria": {
+        "tags": [
+          {
+            "idx": 358,
+            "weight": 7,
+            "mode": "prefer"
+          },
+          {
+            "idx": 637,
+            "weight": 8,
+            "mode": "prefer"
+          },
+          {
+            "idx": 28,
+            "weight": 7,
+            "mode": "prefer"
+          },
+          {
+            "idx": 118,
+            "weight": 7,
+            "mode": "prefer"
+          }
+        ],
+        "plot_query": null,
+        "title": null,
+        "person": null,
+        "person_role": "any",
+        "exclude_genres": [],
+        "world_id": null,
+        "availability": "any",
+        "kind": "any",
+        "max_runtime_min": null,
+        "year_from": null,
+        "year_to": null,
+        "original_language": null,
+        "min_rating_count": 0,
+        "extended": false
+      },
+      "grounding_fallback": true,
+      "checks": {
+        "constraints": {
+          "ok": true,
+          "why": []
+        },
+        "tools": {
+          "ok": true,
+          "why": []
+        },
+        "grounding": {
+          "ok": true,
+          "why": []
+        },
+        "reply": {
+          "ok": true,
+          "why": []
+        }
+      },
+      "title_hit": null,
+      "passed": true,
+      "cost_usd": 0.001756,
+      "judge": {
+        "score": 4,
+        "reason": "Braveheart and Robin Hood (2010) are true medieval epics with large battles, and the two Lord of the Rings entries deliver epic medieval-style adventure and battles in a fantasy setting, though Conan the Barbarian is set in a mythical prehistoric age rather than the medieval period, which slightly w"
+      }
+    },
+    {
+      "id": "mood-06",
+      "category": "mood",
+      "failure": null,
+      "turns": [
+        "Tense heist movie, clever and stylish"
+      ],
+      "tools_called": [
+        "set_mood_tags"
+      ],
+      "tool_errors": 0,
+      "input_tokens": 6059,
+      "output_tokens": 1203,
+      "usage_missing": false,
+      "latency_s": 7.83,
+      "error": null,
+      "reply": "These results match the wish well: the top films score highly on heist, tense, and stylish, with the strongest overall match on the heist and stylish criteria. Ranking by your weighted criteria puts Reservoir Dogs first, then Bound and Rififi.\n\n**Reservoir Dogs (1992)** — Its 98% heist and 98% stylish scores fit the wish, and its plot of eight men planning a jewelry store robbery with six strangers recruited by Joe Cabot gives it a clear heist setup.\n**Bound (1996)** — It scores 95% on tense and 99% on stylish, the highest style score in the list, and its clever score of 71% is solid, though its plot centers on Corky, a painter and plumber, rather than a robbery.\n**Rififi (Du rififi chez les hommes) (1955)** — It leads on heist at 100% and scores 98% on tense, and its plot of Tony, a former jewel-heist convict pulled into a smash-and-grab, speaks directly to the wish.",
+      "results": [
+        "Reservoir Dogs",
+        "The Usual Suspects",
+        "Rififi (Du rififi chez les hommes)",
+        "Bound",
+        "The Killing",
+        "Inside Man",
+        "Snatch",
+        "Bob le Flambeur"
+      ],
+      "top": [
+        {
+          "title": "Reservoir Dogs",
+          "year": 1992
+        },
+        {
+          "title": "The Usual Suspects",
+          "year": 1995
+        },
+        {
+          "title": "Rififi (Du rififi chez les hommes)",
+          "year": 1955
+        },
+        {
+          "title": "Bound",
+          "year": 1996
+        },
+        {
+          "title": "The Killing",
+          "year": 1956
+        }
+      ],
+      "criteria": {
+        "tags": [
+          {
+            "idx": 497,
+            "weight": 8,
+            "mode": "prefer"
+          },
+          {
+            "idx": 1019,
+            "weight": 7,
+            "mode": "prefer"
+          },
+          {
+            "idx": 219,
+            "weight": 6,
+            "mode": "prefer"
+          },
+          {
+            "idx": 980,
+            "weight": 7,
+            "mode": "prefer"
+          }
+        ],
+        "plot_query": null,
+        "title": null,
+        "person": null,
+        "person_role": "any",
+        "exclude_genres": [],
+        "world_id": null,
+        "availability": "any",
+        "kind": "any",
+        "max_runtime_min": null,
+        "year_from": null,
+        "year_to": null,
+        "original_language": null,
+        "min_rating_count": 0,
+        "extended": false
+      },
+      "grounding_fallback": false,
+      "checks": {
+        "constraints": {
+          "ok": true,
+          "why": []
+        },
+        "tools": {
+          "ok": true,
+          "why": []
+        },
+        "grounding": {
+          "ok": true,
+          "why": []
+        },
+        "reply": {
+          "ok": true,
+          "why": []
+        }
+      },
+      "title_hit": null,
+      "passed": true,
+      "cost_usd": 0.001207,
+      "judge": {
+        "score": 4,
+        "reason": "Rififi and The Killing are classic tense, stylish heist films, and Reservoir Dogs and Bound are clever, stylish heist-related crime thrillers (the former centers on a heist's aftermath, the latter on a mob-money scheme), though The Usual Suspects is more a twisty crime mystery than a true heist movi"
+      }
+    },
+    {
+      "id": "mood-07",
+      "category": "mood",
+      "failure": null,
+      "turns": [
+        "Funny or action, Marvel is welcome, no horror"
+      ],
+      "tools_called": [
+        "set_mood_tags",
+        "set_filters"
+      ],
+      "tool_errors": 0,
+      "input_tokens": 6217,
+      "output_tokens": 864,
+      "usage_missing": false,
+      "latency_s": 6.39,
+      "error": null,
+      "reply": "The top results match your wish for funny or action with Marvel, and none of them are horror. Deadpool leads on funny, action, and Marvel together, with strong scores on all three. The two Guardians of the Galaxy films follow close behind with similar action and Marvel scores.\n\n**Deadpool** — Scores 79% funny, 96% action, and 98% Marvel, and its plot follows the vigilante Wade Wilson ambushing Ajax's convoy on an expressway while showing how he became Deadpool.\n**Guardians of the Galaxy 2** — Scores 76% funny, 96% action, and 98% Marvel, and its plot has the Guardians protecting valuable Anulax batteries from an Abilisk.\n**Guardians of the Galaxy** — Scores 72% funny, 96% action, and 99% Marvel, and its plot has Peter Quill stealing a mysterious orb on the abandoned planet Morag.",
+      "results": [
+        "Deadpool",
+        "Guardians of the Galaxy 2",
+        "Guardians of the Galaxy",
+        "Ant-Man",
+        "The Avengers",
+        "Iron Man",
+        "Big Hero 6",
+        "Avengers: Infinity War - Part II"
+      ],
+      "top": [
+        {
+          "title": "Deadpool",
+          "year": 2016
+        },
+        {
+          "title": "Guardians of the Galaxy 2",
+          "year": 2017
+        },
+        {
+          "title": "Guardians of the Galaxy",
+          "year": 2014
+        },
+        {
+          "title": "Ant-Man",
+          "year": 2015
+        },
+        {
+          "title": "The Avengers",
+          "year": 2012
+        }
+      ],
+      "criteria": {
+        "tags": [
+          {
+            "idx": 416,
+            "weight": 7,
+            "mode": "prefer"
+          },
+          {
+            "idx": 18,
+            "weight": 7,
+            "mode": "prefer"
+          },
+          {
+            "idx": 631,
+            "weight": 6,
+            "mode": "prefer"
+          },
+          {
+            "idx": 521,
+            "weight": 5,
+            "mode": "not"
+          }
+        ],
+        "plot_query": null,
+        "title": null,
+        "person": null,
+        "person_role": "any",
+        "exclude_genres": [
+          "Horror"
+        ],
+        "world_id": null,
+        "availability": "any",
+        "kind": "any",
+        "max_runtime_min": null,
+        "year_from": null,
+        "year_to": null,
+        "original_language": null,
+        "min_rating_count": 0,
+        "extended": false
+      },
+      "grounding_fallback": false,
+      "checks": {
+        "constraints": {
+          "ok": true,
+          "why": []
+        },
+        "tools": {
+          "ok": true,
+          "why": []
+        },
+        "grounding": {
+          "ok": true,
+          "why": []
+        },
+        "reply": {
+          "ok": true,
+          "why": []
+        }
+      },
+      "title_hit": null,
+      "passed": true,
+      "cost_usd": 0.001054,
+      "judge": {
+        "score": 5,
+        "reason": "Every film is a Marvel title that blends comedy with action, none are horror, and the list leans on the funniest entries (Deadpool, the Guardians films, Ant-Man) before ending on the big action ensemble."
+      }
+    },
+    {
+      "id": "like-01",
+      "category": "like_x",
+      "failure": null,
+      "turns": [
+        "Something like Interstellar"
+      ],
+      "tools_called": [
+        "similar_to"
+      ],
+      "tool_errors": 0,
+      "input_tokens": 6046,
+      "output_tokens": 894,
+      "usage_missing": false,
+      "latency_s": 7.41,
+      "error": null,
+      "reply": "The results match the space-travel, space, astronaut, and sci-fi tags closely, with most films scoring above 95% on each. Interstellar ranks first because it hits all five tags at 99–100%, so it is the closest match to the wish itself. Moon and The Martian follow with strong scores on the same tags.\n\n**Interstellar** (2014) — It scores 99–100% on all five tags, and its plot follows a former NASA test pilot turned farmer in a near future facing dust storms and crop blights.\n**Moon** (2009) — It scores 96–99% across the tags, and its plot centers on a lunar facility on the Moon's far side that mines helium-3 for fuel.\n**The Martian** (2015) — It scores 93–100% on the tags, and its plot follows the crew of the Ares III mission on Mars after a severe dust storm threatens their vehicle.",
+      "results": [
+        "Interstellar",
+        "Moon",
+        "The Martian",
+        "2001: A Space Odyssey",
+        "Sunshine",
+        "Europa Report",
+        "Forbidden Planet",
+        "Pandorum"
+      ],
+      "top": [
+        {
+          "title": "Interstellar",
+          "year": 2014
+        },
+        {
+          "title": "Moon",
+          "year": 2009
+        },
+        {
+          "title": "The Martian",
+          "year": 2015
+        },
+        {
+          "title": "2001: A Space Odyssey",
+          "year": 1968
+        },
+        {
+          "title": "Sunshine",
+          "year": 2007
+        }
+      ],
+      "criteria": {
+        "tags": [
+          {
+            "idx": 944,
+            "weight": 6,
+            "mode": "prefer"
+          },
+          {
+            "idx": 941,
+            "weight": 6,
+            "mode": "prefer"
+          },
+          {
+            "idx": 83,
+            "weight": 6,
+            "mode": "prefer"
+          },
+          {
+            "idx": 889,
+            "weight": 6,
+            "mode": "prefer"
+          },
+          {
+            "idx": 888,
+            "weight": 6,
+            "mode": "prefer"
+          }
+        ],
+        "plot_query": null,
+        "title": null,
+        "person": null,
+        "person_role": "any",
+        "exclude_genres": [],
+        "world_id": null,
+        "availability": "any",
+        "kind": "any",
+        "max_runtime_min": null,
+        "year_from": null,
+        "year_to": null,
+        "original_language": null,
+        "min_rating_count": 0,
+        "extended": false
+      },
+      "grounding_fallback": false,
+      "checks": {
+        "constraints": {
+          "ok": true,
+          "why": []
+        },
+        "tools": {
+          "ok": true,
+          "why": []
+        },
+        "grounding": {
+          "ok": true,
+          "why": []
+        },
+        "reply": {
+          "ok": true,
+          "why": []
+        }
+      },
+      "title_hit": null,
+      "passed": true,
+      "cost_usd": 0.001052,
+      "judge": {
+        "score": 4,
+        "reason": "Moon, The Martian, 2001, and Sunshine are strong thematic matches for Interstellar's serious, cerebral space sci-fi, but listing Interstellar itself as #1 is a wasted slot when the viewer wants something like it, and the list lacks closer-in-scale picks like Arrival or Contact."
+      }
+    },
+    {
+      "id": "like-02",
+      "category": "like_x",
+      "failure": null,
+      "turns": [
+        "Films like Amélie"
+      ],
+      "tools_called": [
+        "similar_to",
+        "set_mood_tags"
+      ],
+      "tool_errors": 0,
+      "input_tokens": 8905,
+      "output_tokens": 1368,
+      "usage_missing": false,
+      "latency_s": 10.5,
+      "error": null,
+      "reply": "Here are films that match:\n- **Amelie (Fabuleux destin d'Amélie Poulain, Le)** (2001) — whimsical 94%, romantic comedy 74%\n- **Romantics Anonymous (Les émotifs anonymes)** (2010) — whimsical 53%, romantic comedy 94%\n- **Midnight in Paris** (2011) — whimsical 91%, romantic comedy 76%\n- **Chocolat** (2000) — whimsical 81%, romantic comedy 67%\n- **Priceless (Hors de prix)** (2006) — whimsical 74%, romantic comedy 86%",
+      "results": [
+        "Amelie (Fabuleux destin d'Amélie Poulain, Le)",
+        "Romantics Anonymous (Les émotifs anonymes)",
+        "Midnight in Paris",
+        "Chocolat",
+        "Priceless (Hors de prix)",
+        "Micmacs (Micmacs à tire-larigot)",
+        "Hunting and Gathering (Ensemble, c'est tout)",
+        "Un peu, beaucoup, aveuglément"
+      ],
+      "top": [
+        {
+          "title": "Amelie (Fabuleux destin d'Amélie Poulain, Le)",
+          "year": 2001
+        },
+        {
+          "title": "Romantics Anonymous (Les émotifs anonymes)",
+          "year": 2010
+        },
+        {
+          "title": "Midnight in Paris",
+          "year": 2011
+        },
+        {
+          "title": "Chocolat",
+          "year": 2000
+        },
+        {
+          "title": "Priceless (Hors de prix)",
+          "year": 2006
+        }
+      ],
+      "criteria": {
+        "tags": [
+          {
+            "idx": 1107,
+            "weight": 7,
+            "mode": "prefer"
+          },
+          {
+            "idx": 864,
+            "weight": 6,
+            "mode": "prefer"
+          },
+          {
+            "idx": 828,
+            "weight": 6,
+            "mode": "prefer"
+          },
+          {
+            "idx": 387,
+            "weight": 6,
+            "mode": "prefer"
+          },
+          {
+            "idx": 768,
+            "weight": 5,
+            "mode": "prefer"
+          },
+          {
+            "idx": 410,
+            "weight": 5,
+            "mode": "prefer"
+          }
+        ],
+        "plot_query": null,
+        "title": null,
+        "person": null,
+        "person_role": "any",
+        "exclude_genres": [],
+        "world_id": null,
+        "availability": "any",
+        "kind": "any",
+        "max_runtime_min": null,
+        "year_from": null,
+        "year_to": null,
+        "original_language": null,
+        "min_rating_count": 0,
+        "extended": false
+      },
+      "grounding_fallback": true,
+      "checks": {
+        "constraints": {
+          "ok": true,
+          "why": []
+        },
+        "tools": {
+          "ok": true,
+          "why": []
+        },
+        "grounding": {
+          "ok": true,
+          "why": []
+        },
+        "reply": {
+          "ok": true,
+          "why": []
+        }
+      },
+      "title_hit": null,
+      "passed": true,
+      "cost_usd": 0.001574,
+      "judge": {
+        "score": 4,
+        "reason": "The list pairs Amélie itself with whimsical, romantic, French-flavored films like Romantics Anonymous (a close tonal match), Midnight in Paris, Chocolat and Priceless, though the last two are looser fits and including the original film itself is not a true recommendation."
+      }
+    },
+    {
+      "id": "like-03",
+      "category": "like_x",
+      "failure": null,
+      "turns": [
+        "Like The Matrix but newer, from 2010 or later"
+      ],
+      "tools_called": [
+        "similar_to",
+        "set_filters"
+      ],
+      "tool_errors": 0,
+      "input_tokens": 6234,
+      "output_tokens": 1108,
+      "usage_missing": false,
+      "latency_s": 8.03,
+      "error": null,
+      "reply": "The results match your wish for newer, futuristic sci-fi from 2010 or later, and every film falls within that year range. Strong scores for dystopic future and futuristic themes run through the list. The Machine is the closest to cyberpunk, at 98%.\n\n**Oblivion** — Set after aliens attack Earth and destroy the Moon, it scores 100% on dystopic future and futuristic, with humanity's victory leaving Earth uninhabitable.\n**Elysium** — In 2154, an overpopulated, polluted Earth contrasts with the rich living on an orbiting station, a clear dystopic future with 100% futuristic.\n**The Machine** — Set amid a UK-China war over Taiwan, it pairs a strong cyberpunk score (98%) with a military-driven, near-future story.",
+      "results": [
+        "Oblivion",
+        "Looper",
+        "Elysium",
+        "The Machine",
+        "Autómata (Automata)",
+        "Ex Machina",
+        "Ghost in the Shell",
+        "Synchronicity"
+      ],
+      "top": [
+        {
+          "title": "Oblivion",
+          "year": 2013
+        },
+        {
+          "title": "Looper",
+          "year": 2012
+        },
+        {
+          "title": "Elysium",
+          "year": 2013
+        },
+        {
+          "title": "The Machine",
+          "year": 2013
+        },
+        {
+          "title": "Autómata (Automata)",
+          "year": 2014
+        }
+      ],
+      "criteria": {
+        "tags": [
+          {
+            "idx": 336,
+            "weight": 6,
+            "mode": "prefer"
+          },
+          {
+            "idx": 889,
+            "weight": 6,
+            "mode": "prefer"
+          },
+          {
+            "idx": 279,
+            "weight": 6,
+            "mode": "prefer"
+          },
+          {
+            "idx": 419,
+            "weight": 6,
+            "mode": "prefer"
+          },
+          {
+            "idx": 885,
+            "weight": 6,
+            "mode": "prefer"
+          }
+        ],
+        "plot_query": null,
+        "title": null,
+        "person": null,
+        "person_role": "any",
+        "exclude_genres": [],
+        "world_id": null,
+        "availability": "any",
+        "kind": "any",
+        "max_runtime_min": null,
+        "year_from": 2010,
+        "year_to": null,
+        "original_language": null,
+        "min_rating_count": 0,
+        "extended": false
+      },
+      "grounding_fallback": false,
+      "checks": {
+        "constraints": {
+          "ok": true,
+          "why": []
+        },
+        "tools": {
+          "ok": true,
+          "why": []
+        },
+        "grounding": {
+          "ok": true,
+          "why": []
+        },
+        "reply": {
+          "ok": true,
+          "why": []
+        }
+      },
+      "title_hit": null,
+      "passed": true,
+      "cost_usd": 0.001177,
+      "judge": {
+        "score": 3,
+        "reason": "All five are post-2010 sci-fi films, but they are mostly dystopian or robot stories and lack The Matrix's simulated-reality premise, hacker/chosen-one arc and martial-arts action. Looper and Oblivion come closest in twisty, high-concept feel, while The Machine and Autómata are lower-profile AI stori"
+      }
+    },
+    {
+      "id": "like-04",
+      "category": "like_x",
+      "failure": null,
+      "turns": [
+        "Something like Interstellar but shorter, max 2 hours"
+      ],
+      "tools_called": [
+        "similar_to",
+        "set_filters"
+      ],
+      "tool_errors": 0,
+      "input_tokens": 6203,
+      "output_tokens": 1216,
+      "usage_missing": false,
+      "latency_s": 8.14,
+      "error": null,
+      "reply": "The results closely match your wish for a space film with a 2-hour cap. Every listed film scores above 96% on the space-related tags, so the set centers on space travel and astronauts, like Interstellar. The top picks below have the strongest overall match across those tags.\n\n**Europa Report** — Six astronauts take a privately funded mission to Jupiter's moon Europa to search for extraterrestrial life, and it scores 100% on space travel, space, and astronauts.\n**Destination Moon** — Rocket scientist Dr. Charles Cargraves and General Thayer enlist aircraft magnate Jim Barnes to fund a moon mission after a rocket test fails, and it scores 100% on space travel, space, and astronauts.\n**Sunshine** — In 2057, eight astronauts aboard the starship Icarus II attempt a last-chance mission to detonate a stellar bomb and reignite the dying Sun, and it scores 99% on space travel and space.",
+      "results": [
+        "Moon",
+        "Sunshine",
+        "Europa Report",
+        "Forbidden Planet",
+        "Pandorum",
+        "2010: The Year We Make Contact",
+        "Destination Moon",
+        "Cargo"
+      ],
+      "top": [
+        {
+          "title": "Moon",
+          "year": 2009
+        },
+        {
+          "title": "Sunshine",
+          "year": 2007
+        },
+        {
+          "title": "Europa Report",
+          "year": 2013
+        },
+        {
+          "title": "Forbidden Planet",
+          "year": 1956
+        },
+        {
+          "title": "Pandorum",
+          "year": 2009
+        }
+      ],
+      "criteria": {
+        "tags": [
+          {
+            "idx": 944,
+            "weight": 6,
+            "mode": "prefer"
+          },
+          {
+            "idx": 941,
+            "weight": 6,
+            "mode": "prefer"
+          },
+          {
+            "idx": 83,
+            "weight": 6,
+            "mode": "prefer"
+          },
+          {
+            "idx": 889,
+            "weight": 6,
+            "mode": "prefer"
+          },
+          {
+            "idx": 888,
+            "weight": 6,
+            "mode": "prefer"
+          }
+        ],
+        "plot_query": null,
+        "title": null,
+        "person": null,
+        "person_role": "any",
+        "exclude_genres": [],
+        "world_id": null,
+        "availability": "any",
+        "kind": "any",
+        "max_runtime_min": 120,
+        "year_from": null,
+        "year_to": null,
+        "original_language": null,
+        "min_rating_count": 0,
+        "extended": false
+      },
+      "grounding_fallback": false,
+      "checks": {
+        "constraints": {
+          "ok": true,
+          "why": []
+        },
+        "tools": {
+          "ok": true,
+          "why": []
+        },
+        "grounding": {
+          "ok": true,
+          "why": []
+        },
+        "reply": {
+          "ok": true,
+          "why": []
+        }
+      },
+      "title_hit": null,
+      "passed": true,
+      "cost_usd": 0.001228,
+      "judge": {
+        "score": 4,
+        "reason": "All five films run under 2 hours (90-108 min), and Moon, Sunshine and Europa Report capture Interstellar's cerebral, human-centered space exploration well, though Forbidden Planet is a dated classic and Pandorum is more horror than emotional sci-fi."
+      }
+    },
+    {
+      "id": "runtime-01",
+      "category": "runtime",
+      "failure": null,
+      "turns": [
+        "A thriller under 100 minutes"
+      ],
+      "tools_called": [
+        "set_mood_tags",
+        "set_filters"
+      ],
+      "tool_errors": 0,
+      "input_tokens": 5903,
+      "output_tokens": 790,
+      "usage_missing": false,
+      "latency_s": 5.78,
+      "error": null,
+      "reply": "All of these results are tagged as thrillers and fall within the 100-minute limit, so they match your wish. The top matches score 96% or higher for the thriller tag. Here are the three strongest fits:\n\n**Headhunters (Hodejegerne)** — Roger Brown, Norway's most successful headhunter, steals paintings with his partner Ove to fund his lavish lifestyle, a crime-driven plot that fits the thriller tag.\n**Anything for Her (Pour elle)** — A normal couple's life is upended when police arrest Lisa for murder and a court sentences her to 20 years in prison, a tense premise built around a sudden shock.\n**Dead Calm (1989)** — Traumatised after her son's death, Rae Ingram joins her husband on a yacht trip in the Pacific, where the calm voyage turns dangerous.",
+      "results": [
+        "Headhunters (Hodejegerne)",
+        "Dead Calm",
+        "Anything for Her (Pour elle)",
+        "Identity",
+        "The Disappearance of Alice Creed",
+        "Close Your Eyes (Hypnotic) (Doctor Sleep)",
+        "Point Blank (À bout portant)",
+        "Breakdown"
+      ],
+      "top": [
+        {
+          "title": "Headhunters (Hodejegerne)",
+          "year": 2011
+        },
+        {
+          "title": "Dead Calm",
+          "year": 1989
+        },
+        {
+          "title": "Anything for Her (Pour elle)",
+          "year": 2008
+        },
+        {
+          "title": "Identity",
+          "year": 2003
+        },
+        {
+          "title": "The Disappearance of Alice Creed",
+          "year": 2009
+        }
+      ],
+      "criteria": {
+        "tags": [
+          {
+            "idx": 1024,
+            "weight": 7,
+            "mode": "prefer"
+          }
+        ],
+        "plot_query": null,
+        "title": null,
+        "person": null,
+        "person_role": "any",
+        "exclude_genres": [],
+        "world_id": null,
+        "availability": "any",
+        "kind": "film",
+        "max_runtime_min": 100,
+        "year_from": null,
+        "year_to": null,
+        "original_language": null,
+        "min_rating_count": 0,
+        "extended": false
+      },
+      "grounding_fallback": false,
+      "checks": {
+        "constraints": {
+          "ok": true,
+          "why": []
+        },
+        "tools": {
+          "ok": true,
+          "why": []
+        },
+        "grounding": {
+          "ok": true,
+          "why": []
+        },
+        "reply": {
+          "ok": true,
+          "why": []
+        }
+      },
+      "title_hit": null,
+      "passed": true,
+      "cost_usd": 0.000985,
+      "judge": {
+        "score": 4,
+        "reason": "All five are tightly paced thrillers, and Dead Calm (96 min), Anything for Her (96 min) and Identity (90 min) are clearly under 100 minutes, while Headhunters (about 98-100) and The Disappearance of Alice Creed (about 100) sit right at the limit."
+      }
+    },
+    {
+      "id": "runtime-02",
+      "category": "runtime",
+      "failure": null,
+      "turns": [
+        "I only have an hour and a half, something funny"
+      ],
+      "tools_called": [
+        "set_mood_tags",
+        "set_filters"
+      ],
+      "tool_errors": 0,
+      "input_tokens": 5702,
+      "output_tokens": 810,
+      "usage_missing": false,
+      "latency_s": 6.06,
+      "error": null,
+      "reply": "Here are films that match:\n- **Wallace & Gromit: The Best of Aardman Animation** (1996) — funny 97%\n- **Bill Burr: Why Do I Do This?** (2008) — funny 97%\n- **Family Guy Presents: Something, Something, Something, Dark Side** (2009) — funny 97%\n- **Gabriel Iglesias: Hot and Fluffy** (2007) — funny 97%\n- **Friday** (1995) — funny 95%",
+      "results": [
+        "Wallace & Gromit: The Best of Aardman Animation",
+        "Bill Burr: Why Do I Do This?",
+        "Family Guy Presents: Something, Something, Something, Dark Side",
+        "Gabriel Iglesias: Hot and Fluffy",
+        "Friday",
+        "Live Free or Die",
+        "Black Sheep",
+        "Half Baked"
+      ],
+      "top": [
+        {
+          "title": "Wallace & Gromit: The Best of Aardman Animation",
+          "year": 1996
+        },
+        {
+          "title": "Bill Burr: Why Do I Do This?",
+          "year": 2008
+        },
+        {
+          "title": "Family Guy Presents: Something, Something, Something, Dark Side",
+          "year": 2009
+        },
+        {
+          "title": "Gabriel Iglesias: Hot and Fluffy",
+          "year": 2007
+        },
+        {
+          "title": "Friday",
+          "year": 1995
+        }
+      ],
+      "criteria": {
+        "tags": [
+          {
+            "idx": 416,
+            "weight": 8,
+            "mode": "prefer"
+          }
+        ],
+        "plot_query": null,
+        "title": null,
+        "person": null,
+        "person_role": "any",
+        "exclude_genres": [],
+        "world_id": null,
+        "availability": "any",
+        "kind": "any",
+        "max_runtime_min": 90,
+        "year_from": null,
+        "year_to": null,
+        "original_language": null,
+        "min_rating_count": 0,
+        "extended": false
+      },
+      "grounding_fallback": true,
+      "checks": {
+        "constraints": {
+          "ok": true,
+          "why": []
+        },
+        "tools": {
+          "ok": true,
+          "why": []
+        },
+        "grounding": {
+          "ok": true,
+          "why": []
+        },
+        "reply": {
+          "ok": true,
+          "why": []
+        }
+      },
+      "title_hit": null,
+      "passed": true,
+      "cost_usd": 0.000975,
+      "judge": {
+        "score": 5,
+        "reason": "Every film is a comedy and runs well under 90 minutes (the Aardman compilation, the stand-up specials, Family Guy's ~70-minute Star Wars parody, and Friday at ~91 minutes), so the list fits the short, funny request well."
+      }
+    },
+    {
+      "id": "exclude-01",
+      "category": "exclusion",
+      "failure": null,
+      "turns": [
+        "Scary is fine but please no gore and no horror genre"
+      ],
+      "tools_called": [
+        "set_mood_tags",
+        "set_filters"
+      ],
+      "tool_errors": 0,
+      "input_tokens": 5938,
+      "output_tokens": 1278,
+      "usage_missing": false,
+      "latency_s": 8.16,
+      "error": null,
+      "reply": "These results lean on the scary tag, with scores from 84% to 92%, and the gore tag is used to filter out gory films. The top three below are ranked by scary score.\n\n**Hush** — Scores 92% on scary, and its plot follows a horror author who loses her hearing and speech, a tense premise built on her isolation.\n**ParaNorman** — Scores 89% on scary, with an 11-year-old who speaks with ghosts in the town of Blithe Hollow, where almost no one believes him.\n**Lake Mungo** — Scores 87% on scary, opening with 16-year-old Alice Palmer vanishing while swimming and her body turning up days later.",
+      "results": [
+        "Hush",
+        "ParaNorman",
+        "Cape Fear",
+        "Lake Mungo",
+        "Jurassic Park",
+        "One Hour Photo",
+        "Disturbia",
+        "Hereditary"
+      ],
+      "top": [
+        {
+          "title": "Hush",
+          "year": 2016
+        },
+        {
+          "title": "ParaNorman",
+          "year": 2012
+        },
+        {
+          "title": "Cape Fear",
+          "year": 1991
+        },
+        {
+          "title": "Lake Mungo",
+          "year": 2008
+        },
+        {
+          "title": "Jurassic Park",
+          "year": 1993
+        }
+      ],
+      "criteria": {
+        "tags": [
+          {
+            "idx": 881,
+            "weight": 6,
+            "mode": "prefer"
+          },
+          {
+            "idx": 455,
+            "weight": 8,
+            "mode": "not"
+          }
+        ],
+        "plot_query": null,
+        "title": null,
+        "person": null,
+        "person_role": "any",
+        "exclude_genres": [
+          "Horror"
+        ],
+        "world_id": null,
+        "availability": "any",
+        "kind": "any",
+        "max_runtime_min": null,
+        "year_from": null,
+        "year_to": null,
+        "original_language": null,
+        "min_rating_count": 0,
+        "extended": false
+      },
+      "grounding_fallback": false,
+      "checks": {
+        "constraints": {
+          "ok": true,
+          "why": []
+        },
+        "tools": {
+          "ok": true,
+          "why": []
+        },
+        "grounding": {
+          "ok": true,
+          "why": []
+        },
+        "reply": {
+          "ok": true,
+          "why": []
+        }
+      },
+      "title_hit": null,
+      "passed": true,
+      "cost_usd": 0.001233,
+      "judge": {
+        "score": 3,
+        "reason": "ParaNorman, Cape Fear and Jurassic Park are scary without being straight horror and mostly avoid gore, but Hush (a slasher home-invasion film) and Lake Mungo (a supernatural horror mockumentary) are squarely horror and break the 'no horror genre' request."
+      }
+    },
+    {
+      "id": "exclude-02",
+      "category": "exclusion",
+      "failure": null,
+      "turns": [
+        "Anything except musicals and animation"
+      ],
+      "tools_called": [
+        "set_filters"
+      ],
+      "tool_errors": 0,
+      "input_tokens": 5572,
+      "output_tokens": 680,
+      "usage_missing": false,
+      "latency_s": 5.78,
+      "error": null,
+      "reply": "The results fit your wish because none of them are musicals or animation, so the exclusion criteria are fully met. The list spans prison drama, war history, crime, and nature programming, giving you a range of styles. The top three are below.\n\n**The Shawshank Redemption** — Banker Andy Dufresne is sent to Shawshank State Prison for two life sentences and is befriended by a contraband smuggler named Red.\n**Planet Earth** — It passed the filter with no genre conflicts, though no plot details are available to describe it further.\n**Band of Brothers** — It dramatizes Easy Company's World War II exploits across ten episodes, from training at Camp Toccoa to the Normandy landings.",
+      "results": [
+        "The Shawshank Redemption",
+        "Planet Earth",
+        "Band of Brothers",
+        "Planet Earth II",
+        "The Godfather",
+        "Parasite",
+        "The Godfather: Part II",
+        "The Usual Suspects"
+      ],
+      "top": [
+        {
+          "title": "The Shawshank Redemption",
+          "year": 1994
+        },
+        {
+          "title": "Planet Earth",
+          "year": 2006
+        },
+        {
+          "title": "Band of Brothers",
+          "year": 2001
+        },
+        {
+          "title": "Planet Earth II",
+          "year": 2016
+        },
+        {
+          "title": "The Godfather",
+          "year": 1972
+        }
+      ],
+      "criteria": {
+        "tags": [],
+        "plot_query": null,
+        "title": null,
+        "person": null,
+        "person_role": "any",
+        "exclude_genres": [
+          "Musical",
+          "Animation"
+        ],
+        "world_id": null,
+        "availability": "any",
+        "kind": "any",
+        "max_runtime_min": null,
+        "year_from": null,
+        "year_to": null,
+        "original_language": null,
+        "min_rating_count": 0,
+        "extended": false
+      },
+      "grounding_fallback": false,
+      "checks": {
+        "constraints": {
+          "ok": true,
+          "why": []
+        },
+        "tools": {
+          "ok": true,
+          "why": []
+        },
+        "grounding": {
+          "ok": true,
+          "why": []
+        },
+        "reply": {
+          "ok": true,
+          "why": []
+        }
+      },
+      "title_hit": null,
+      "passed": true,
+      "cost_usd": 0.000897,
+      "judge": {
+        "score": 4,
+        "reason": "None of the films are musicals or animated, so the exclusion is respected, though Planet Earth, Planet Earth II and Band of Brothers are TV documentary/miniseries rather than films, making the list slightly off as film recommendations."
+      }
+    },
+    {
+      "id": "exclude-03",
+      "category": "exclusion",
+      "failure": null,
+      "turns": [
+        "Nothing too scary please"
+      ],
+      "tools_called": [
+        "propose_exclusions"
+      ],
+      "tool_errors": 0,
+      "input_tokens": 4736,
+      "output_tokens": 340,
+      "usage_missing": false,
+      "latency_s": 2.96,
+      "error": null,
+      "reply": "I can exclude \"scary\" and \"creepy\" films from the results. Should I apply that, or would you like a different filter?",
+      "results": [],
+      "top": [],
+      "criteria": {
+        "tags": [],
+        "plot_query": null,
+        "title": null,
+        "person": null,
+        "person_role": "any",
+        "exclude_genres": [],
+        "world_id": null,
+        "availability": "any",
+        "kind": "any",
+        "max_runtime_min": null,
+        "year_from": null,
+        "year_to": null,
+        "original_language": null,
+        "min_rating_count": 0,
+        "extended": false
+      },
+      "grounding_fallback": false,
+      "checks": {
+        "constraints": {
+          "ok": true,
+          "why": []
+        },
+        "tools": {
+          "ok": true,
+          "why": []
+        },
+        "grounding": {
+          "ok": false,
+          "why": [
+            "unlisted title: Creepy"
+          ]
+        },
+        "reply": {
+          "ok": true,
+          "why": []
+        }
+      },
+      "title_hit": null,
+      "passed": false,
+      "cost_usd": 0.000644,
+      "judge": {
+        "score": null,
+        "reason": "no films"
+      }
+    },
+    {
+      "id": "doc-01",
+      "category": "documentary",
+      "failure": null,
+      "turns": [
+        "Documentaries about the Middle Ages or German history"
+      ],
+      "tools_called": [
+        "set_filters",
+        "set_mood_tags"
+      ],
+      "tool_errors": 0,
+      "input_tokens": 5698,
+      "output_tokens": 1015,
+      "usage_missing": false,
+      "latency_s": 7.17,
+      "error": null,
+      "reply": "The results match the German history part of your wish, since every film carries the germany tag at 89% or higher. None of them carries the medieval tag, so nothing here covers the Middle Ages. The list is also led by films about the German occupation of France and the Nazi era.\n\n**The Sorrow and the Pity (Le chagrin et la pitié)** — Examines how French people responded to German occupation, focusing on Clermont-Ferrand and the Auvergne region, and why some turned to resistance or collaboration.\n**The Rape of Europa** — Matches the germany tag at 96%, though no plot summary is available.\n**Triumph of the Will (Triumph des Willens)** — Covers Hitler's rise from the Treaty of Versailles to his 1934 visit to Nuremberg, a direct look at German history of that period.",
+      "results": [
+        "Sorrow and the Pity, The (Le chagrin et la pitié)",
+        "The Rape of Europa",
+        "Triumph of the Will (Triumph des Willens)",
+        "One Day in September",
+        "Into the Arms of Strangers: Stories of the Kindertransport",
+        "Wonderful, Horrible Life of Leni Riefenstahl, The (Macht der Bilder: Leni Riefenstahl, Die)",
+        "Anne Frank Remembered",
+        "Night and Fog (Nuit et brouillard)"
+      ],
+      "top": [
+        {
+          "title": "Sorrow and the Pity, The (Le chagrin et la pitié)",
+          "year": 1969
+        },
+        {
+          "title": "The Rape of Europa",
+          "year": 2006
+        },
+        {
+          "title": "Triumph of the Will (Triumph des Willens)",
+          "year": 1934
+        },
+        {
+          "title": "One Day in September",
+          "year": 1999
+        },
+        {
+          "title": "Into the Arms of Strangers: Stories of the Kindertransport",
+          "year": 2000
+        }
+      ],
+      "criteria": {
+        "tags": [
+          {
+            "idx": 637,
+            "weight": 7,
+            "mode": "prefer"
+          },
+          {
+            "idx": 433,
+            "weight": 7,
+            "mode": "prefer"
+          }
+        ],
+        "plot_query": null,
+        "title": null,
+        "person": null,
+        "person_role": "any",
+        "exclude_genres": [],
+        "world_id": null,
+        "availability": "any",
+        "kind": "documentary",
+        "max_runtime_min": null,
+        "year_from": null,
+        "year_to": null,
+        "original_language": null,
+        "min_rating_count": 0,
+        "extended": false
+      },
+      "grounding_fallback": false,
+      "checks": {
+        "constraints": {
+          "ok": true,
+          "why": []
+        },
+        "tools": {
+          "ok": true,
+          "why": []
+        },
+        "grounding": {
+          "ok": true,
+          "why": []
+        },
+        "reply": {
+          "ok": true,
+          "why": []
+        }
+      },
+      "title_hit": null,
+      "passed": true,
+      "cost_usd": 0.001077,
+      "judge": {
+        "score": 3,
+        "reason": "The list contains documentaries, mostly about Nazi-era Germany and WWII, so it fits the 'German history' half of the wish: Triumph of the Will is directly German, Kindertransport and The Rape of Europa are closely tied to Nazi Germany, and The Sorrow and the Pity concerns occupied France. One Day in"
+      }
+    },
+    {
+      "id": "doc-02",
+      "category": "documentary",
+      "failure": null,
+      "turns": [
+        "A nature documentary"
+      ],
+      "tools_called": [
+        "set_filters",
+        "set_mood_tags"
+      ],
+      "tool_errors": 0,
+      "input_tokens": 5430,
+      "output_tokens": 772,
+      "usage_missing": false,
+      "latency_s": 5.37,
+      "error": null,
+      "reply": "The results closely match the wish, with all nine films scoring between 84% and 91% on the nature tag. The top three rank highest on the preferred nature criterion, and each is a documentary.\n\n**Planet Earth** — It is a documentary with a 91% nature match, the highest score in the results.\n**Wild China** — It is a documentary with a 91% nature match, tied for the highest score.\n**Encounters at the End of the World** — It is a documentary with a 90% nature match, and it follows Werner Herzog and cinematographer Peter Zeitlinger as they travel to Antarctica to meet the people there and capture the continent's unique locations.",
+      "results": [
+        "Planet Earth",
+        "Planet Earth II",
+        "Wild China",
+        "Encounters at the End of the World",
+        "Earth",
+        "Happy People: A Year in the Taiga",
+        "Alaska: Spirit of the Wild",
+        "Deep Blue"
+      ],
+      "top": [
+        {
+          "title": "Planet Earth",
+          "year": 2006
+        },
+        {
+          "title": "Planet Earth II",
+          "year": 2016
+        },
+        {
+          "title": "Wild China",
+          "year": 2008
+        },
+        {
+          "title": "Encounters at the End of the World",
+          "year": 2008
+        },
+        {
+          "title": "Earth",
+          "year": 2007
+        }
+      ],
+      "criteria": {
+        "tags": [
+          {
+            "idx": 694,
+            "weight": 7,
+            "mode": "prefer"
+          }
+        ],
+        "plot_query": null,
+        "title": null,
+        "person": null,
+        "person_role": "any",
+        "exclude_genres": [],
+        "world_id": null,
+        "availability": "any",
+        "kind": "documentary",
+        "max_runtime_min": null,
+        "year_from": null,
+        "year_to": null,
+        "original_language": null,
+        "min_rating_count": 0,
+        "extended": false
+      },
+      "grounding_fallback": false,
+      "checks": {
+        "constraints": {
+          "ok": true,
+          "why": []
+        },
+        "tools": {
+          "ok": true,
+          "why": []
+        },
+        "grounding": {
+          "ok": true,
+          "why": []
+        },
+        "reply": {
+          "ok": true,
+          "why": []
+        }
+      },
+      "title_hit": null,
+      "passed": true,
+      "cost_usd": 0.000929,
+      "judge": {
+        "score": 5,
+        "reason": "All five are acclaimed nature documentaries: Planet Earth, Planet Earth II, Wild China and Earth are wildlife and landscape series or films, and Encounters at the End of the World is Herzog's documentary about Antarctica and its scientists, so it fits slightly less neatly but still falls within the "
+      }
+    },
+    {
+      "id": "person-01",
+      "category": "person",
+      "failure": null,
+      "turns": [
+        "Films with Keanu Reeves"
+      ],
+      "tools_called": [
+        "find_person"
+      ],
+      "tool_errors": 0,
+      "input_tokens": 5790,
+      "output_tokens": 669,
+      "usage_missing": false,
+      "latency_s": 7.22,
+      "error": null,
+      "reply": "The results all match the wish: every film lists Keanu Reeves as a credited person, and the list spans several of his well-known roles. The top picks below cover a sci-fi thriller, a witty period comedy, and an action film. The rest of the list adds more of his films, including the John Wick sequels.\n\n**The Matrix (1999)** — Keanu Reeves stars as Thomas Anderson, a programmer known as \"Neo,\" who investigates the mystery of the \"Matrix\" after catching the attention of the hacker Trinity.\n**Much Ado About Nothing (1993)** — Reeves appears in this comedy, where the witty Benedick, a former acquaintance of Leonato's family, visits Messina with Don Pedro and his noblemen.\n**John Wick (2014)** — Reeves plays John Wick, who is grieving his wife Helen and then faces a group of Russian gangsters after they target him.",
+      "results": [
+        "The Matrix",
+        "Much Ado About Nothing",
+        "John Wick",
+        "Dangerous Liaisons",
+        "John Wick: Chapter Two",
+        "John Wick: Chapter 3 – Parabellum",
+        "A Scanner Darkly",
+        "John Wick: Chapter 4"
+      ],
+      "top": [
+        {
+          "title": "The Matrix",
+          "year": 1999
+        },
+        {
+          "title": "Much Ado About Nothing",
+          "year": 1993
+        },
+        {
+          "title": "John Wick",
+          "year": 2014
+        },
+        {
+          "title": "Dangerous Liaisons",
+          "year": 1988
+        },
+        {
+          "title": "John Wick: Chapter Two",
+          "year": 2017
+        }
+      ],
+      "criteria": {
+        "tags": [],
+        "plot_query": null,
+        "title": null,
+        "person": "Keanu Reeves",
+        "person_role": "cast",
+        "exclude_genres": [],
+        "world_id": null,
+        "availability": "any",
+        "kind": "any",
+        "max_runtime_min": null,
+        "year_from": null,
+        "year_to": null,
+        "original_language": null,
+        "min_rating_count": 0,
+        "extended": false
+      },
+      "grounding_fallback": false,
+      "checks": {
+        "constraints": {
+          "ok": true,
+          "why": []
+        },
+        "tools": {
+          "ok": true,
+          "why": []
+        },
+        "grounding": {
+          "ok": true,
+          "why": []
+        },
+        "reply": {
+          "ok": true,
+          "why": []
+        }
+      },
+      "title_hit": null,
+      "passed": true,
+      "cost_usd": 0.000914,
+      "judge": {
+        "score": 5,
+        "reason": "Keanu Reeves stars in all five films: The Matrix (Neo), Much Ado About Nothing (Don John), John Wick and its sequel (John Wick), and Dangerous Liaisons (Chevalier Danceny), so the list fully fits the wish and shows range."
+      }
+    },
+    {
+      "id": "person-02",
+      "category": "person",
+      "failure": null,
+      "turns": [
+        "Something directed by Christopher Nolan"
+      ],
+      "tools_called": [
+        "find_person"
+      ],
+      "tool_errors": 0,
+      "input_tokens": 5666,
+      "output_tokens": 895,
+      "usage_missing": false,
+      "latency_s": 6.19,
+      "error": null,
+      "reply": "The results all match the Christopher Nolan criterion, so they fit your wish for a Nolan film. The list spans several of his titles, from Memento to The Odyssey. The top three are shown below.\n\n**The Dark Knight** — It matches the Christopher Nolan criterion, and its plot follows a gang of masked criminals who rob a mafia-owned bank in Gotham City, ending with the Joker escaping with the money.\n**Inception** — It matches the Christopher Nolan criterion, and its plot follows professional thieves who use experimental dream-sharing technology to extract information from targets' subconscious minds.\n**Interstellar** — It matches the Christopher Nolan criterion, and its plot follows Joseph Cooper, a widowed former NASA test pilot and farmer, as humanity faces extinction from dust storms and crop blights.",
+      "results": [
+        "The Dark Knight",
+        "Inception",
+        "Interstellar",
+        "Memento",
+        "The Prestige",
+        "The Dark Knight Rises",
+        "The Odyssey",
+        "Batman Begins"
+      ],
+      "top": [
+        {
+          "title": "The Dark Knight",
+          "year": 2008
+        },
+        {
+          "title": "Inception",
+          "year": 2010
+        },
+        {
+          "title": "Interstellar",
+          "year": 2014
+        },
+        {
+          "title": "Memento",
+          "year": 2000
+        },
+        {
+          "title": "The Prestige",
+          "year": 2006
+        }
+      ],
+      "criteria": {
+        "tags": [],
+        "plot_query": null,
+        "title": null,
+        "person": "Christopher Nolan",
+        "person_role": "director",
+        "exclude_genres": [],
+        "world_id": null,
+        "availability": "any",
+        "kind": "any",
+        "max_runtime_min": null,
+        "year_from": null,
+        "year_to": null,
+        "original_language": null,
+        "min_rating_count": 0,
+        "extended": false
+      },
+      "grounding_fallback": false,
+      "checks": {
+        "constraints": {
+          "ok": true,
+          "why": []
+        },
+        "tools": {
+          "ok": true,
+          "why": []
+        },
+        "grounding": {
+          "ok": true,
+          "why": []
+        },
+        "reply": {
+          "ok": true,
+          "why": []
+        }
+      },
+      "title_hit": null,
+      "passed": true,
+      "cost_usd": 0.001014,
+      "judge": {
+        "score": 5,
+        "reason": "All five films (The Dark Knight, Inception, Interstellar, Memento, The Prestige) are directed by Christopher Nolan and represent some of his most acclaimed work."
+      }
+    },
+    {
+      "id": "person-03",
+      "category": "person",
+      "failure": null,
+      "turns": [
+        "films with keanu reevs"
+      ],
+      "tools_called": [
+        "find_person"
+      ],
+      "tool_errors": 0,
+      "input_tokens": 5781,
+      "output_tokens": 593,
+      "usage_missing": false,
+      "latency_s": 6.91,
+      "error": null,
+      "reply": "All eight results feature Keanu Reeves, matching your wish directly. The list spans several genres, from sci-fi and crime thrillers to a period comedy and a drama. The first three picks below are the top matches.\n\n**The Matrix** — Reeves stars as Thomas Anderson, a programmer known as \"Neo,\" who investigates the mystery of the Matrix after hacker Trinity draws him in.\n**Much Ado About Nothing** — Reeves appears as Benedick, the witty former acquaintance of Leonato's household, in this story of Don Pedro's noblemen visiting Messina.\n**John Wick** — Reeves plays John Wick, who is grieving his wife Helen and is drawn back into conflict when Russian gangsters led by Iosef Tarasov come after him.",
+      "results": [
+        "The Matrix",
+        "Much Ado About Nothing",
+        "John Wick",
+        "Dangerous Liaisons",
+        "John Wick: Chapter Two",
+        "John Wick: Chapter 3 – Parabellum",
+        "A Scanner Darkly",
+        "John Wick: Chapter 4"
+      ],
+      "top": [
+        {
+          "title": "The Matrix",
+          "year": 1999
+        },
+        {
+          "title": "Much Ado About Nothing",
+          "year": 1993
+        },
+        {
+          "title": "John Wick",
+          "year": 2014
+        },
+        {
+          "title": "Dangerous Liaisons",
+          "year": 1988
+        },
+        {
+          "title": "John Wick: Chapter Two",
+          "year": 2017
+        }
+      ],
+      "criteria": {
+        "tags": [],
+        "plot_query": null,
+        "title": null,
+        "person": "Keanu Reeves",
+        "person_role": "cast",
+        "exclude_genres": [],
+        "world_id": null,
+        "availability": "any",
+        "kind": "any",
+        "max_runtime_min": null,
+        "year_from": null,
+        "year_to": null,
+        "original_language": null,
+        "min_rating_count": 0,
+        "extended": false
+      },
+      "grounding_fallback": false,
+      "checks": {
+        "constraints": {
+          "ok": true,
+          "why": []
+        },
+        "tools": {
+          "ok": true,
+          "why": []
+        },
+        "grounding": {
+          "ok": true,
+          "why": []
+        },
+        "reply": {
+          "ok": true,
+          "why": []
+        }
+      },
+      "title_hit": null,
+      "passed": true,
+      "cost_usd": 0.000875,
+      "judge": {
+        "score": 5,
+        "reason": "All five films feature Keanu Reeves, including his iconic roles in The Matrix and John Wick series, plus varied work like Much Ado About Nothing and Dangerous Liaisons."
+      }
+    },
+    {
+      "id": "plot-01",
+      "category": "plot",
+      "failure": null,
+      "turns": [
+        "An astronaut stranded alone on a planet has to survive"
+      ],
+      "tools_called": [
+        "search_plot",
+        "set_mood_tags"
+      ],
+      "tool_errors": 0,
+      "input_tokens": 6563,
+      "output_tokens": 1263,
+      "usage_missing": false,
+      "latency_s": 10.7,
+      "error": null,
+      "reply": "The results match the wish well: most titles score high on both the survival and space travel tags. Several are set on other worlds, and the top picks combine a planetary setting with a crew facing danger. The three below are the strongest matches in the list.\n\n**The Martian** — Its crew on Mars faces a severe dust storm that threatens their Mars Ascent Vehicle, and it scores 96% on survival and 100% on space travel.\n**Pandorum** — Its passengers are heading to colonise Tanis, an Earth-like planet, after a 123-year interstellar voyage, with a survival score of 88%.\n**Planet of the Apes** — Astronauts awaken from hibernation after their spacecraft crashes into a lake on an unknown planet, though its survival score is lower at 76%.",
+      "results": [
+        "The Martian",
+        "Pandorum",
+        "Planet of the Apes",
+        "Apollo 13",
+        "The Last Days on Mars",
+        "Interstellar",
+        "Pitch Black",
+        "Alien"
+      ],
+      "top": [
+        {
+          "title": "The Martian",
+          "year": 2015
+        },
+        {
+          "title": "Pandorum",
+          "year": 2009
+        },
+        {
+          "title": "Planet of the Apes",
+          "year": 1968
+        },
+        {
+          "title": "Apollo 13",
+          "year": 1995
+        },
+        {
+          "title": "The Last Days on Mars",
+          "year": 2013
+        }
+      ],
+      "criteria": {
+        "tags": [
+          {
+            "idx": 997,
+            "weight": 7,
+            "mode": "prefer"
+          },
+          {
+            "idx": 944,
+            "weight": 6,
+            "mode": "prefer"
+          }
+        ],
+        "plot_query": "astronaut stranded alone on a planet struggling to survive",
+        "title": null,
+        "person": null,
+        "person_role": "any",
+        "exclude_genres": [],
+        "world_id": null,
+        "availability": "any",
+        "kind": "any",
+        "max_runtime_min": null,
+        "year_from": null,
+        "year_to": null,
+        "original_language": null,
+        "min_rating_count": 0,
+        "extended": false
+      },
+      "grounding_fallback": false,
+      "checks": {
+        "constraints": {
+          "ok": true,
+          "why": []
+        },
+        "tools": {
+          "ok": true,
+          "why": []
+        },
+        "grounding": {
+          "ok": true,
+          "why": []
+        },
+        "reply": {
+          "ok": true,
+          "why": []
+        }
+      },
+      "title_hit": true,
+      "passed": true,
+      "cost_usd": 0.001288,
+      "judge": {
+        "score": 3,
+        "reason": "The Martian is a perfect match and The Last Days on Mars is loosely related (astronauts on Mars, though it becomes a zombie-style horror), but Pandorum is a horror film aboard a spaceship, Planet of the Apes is about astronauts stranded on a planet but as a group and not focused on solo survival, an"
+      }
+    },
+    {
+      "id": "plot-02",
+      "category": "plot",
+      "failure": null,
+      "turns": [
+        "A heist in Berlin"
+      ],
+      "tools_called": [
+        "search_plot"
+      ],
+      "tool_errors": 0,
+      "input_tokens": 6201,
+      "output_tokens": 1143,
+      "usage_missing": false,
+      "latency_s": 9.49,
+      "error": null,
+      "reply": "None of these results is clearly a heist film, so the match is loose. Most are set in Berlin, which covers the location part of the wish. The top three below are in the order returned, and none of their plots describes a heist.\n\n**M** — Set in Berlin, though its plot centers on a child-killer hunt rather than a heist.\n**Antibodies (Antikörper)** — Set in Berlin and follows a serial killer accidentally taken during an overnight operation, so Berlin is its only link to the wish.\n**What to Do in Case of Fire (Was tun, wenn's brennt?)** — Set in Berlin, with radicals reunited by an act they carried out together, the closest to a planned action, though it isn't described as a heist.",
+      "results": [
+        "M",
+        "Antibodies (Antikörper)",
+        "What to Do in Case of Fire (Was tun, wenn's brennt?)",
+        "Jennifer 8",
+        "Wings of Desire (Himmel über Berlin, Der)",
+        "Edukators, The (Die Fetten Jahre sind vorbei)",
+        "Balloon",
+        "Barbara"
+      ],
+      "top": [
+        {
+          "title": "M",
+          "year": 1931
+        },
+        {
+          "title": "Antibodies (Antikörper)",
+          "year": 2005
+        },
+        {
+          "title": "What to Do in Case of Fire (Was tun, wenn's brennt?)",
+          "year": 2002
+        },
+        {
+          "title": "Jennifer 8",
+          "year": 1992
+        },
+        {
+          "title": "Wings of Desire (Himmel über Berlin, Der)",
+          "year": 1987
+        }
+      ],
+      "criteria": {
+        "tags": [],
+        "plot_query": "heist in Berlin",
+        "title": null,
+        "person": null,
+        "person_role": "any",
+        "exclude_genres": [],
+        "world_id": null,
+        "availability": "any",
+        "kind": "any",
+        "max_runtime_min": null,
+        "year_from": null,
+        "year_to": null,
+        "original_language": null,
+        "min_rating_count": 0,
+        "extended": false
+      },
+      "grounding_fallback": false,
+      "checks": {
+        "constraints": {
+          "ok": true,
+          "why": []
+        },
+        "tools": {
+          "ok": true,
+          "why": []
+        },
+        "grounding": {
+          "ok": true,
+          "why": []
+        },
+        "reply": {
+          "ok": true,
+          "why": []
+        }
+      },
+      "title_hit": null,
+      "passed": true,
+      "cost_usd": 0.001192,
+      "judge": {
+        "score": 2,
+        "reason": "Several films are set in Berlin (M, Wings of Desire, What to Do in Case of Fire), and the last has a mild caper element, but none is really a heist film. The rest are serial-killer thrillers or art-house drama."
+      }
+    },
+    {
+      "id": "conflict-01",
+      "category": "conflict",
+      "failure": null,
+      "turns": [
+        "Something really scary but also relaxing and cozy"
+      ],
+      "tools_called": [
+        "set_mood_tags",
+        "search_plot"
+      ],
+      "tool_errors": 0,
+      "input_tokens": 8957,
+      "output_tokens": 1136,
+      "usage_missing": false,
+      "latency_s": 11.51,
+      "error": null,
+      "reply": "These results lean heavily toward scary, with high scare scores across the board. The village-mystery setting matches your wish best, though the plots are dark rather than cozy. The top picks are the ones set in a small village or a quiet, isolated home.\n\n**The Woman in Black (2012)** — It is set in the village of Crythin Gifford, where a London lawyer travels to settle an estate and uncovers a mystery.\n**The Woman in Black (1989)** — It also centers on the village of Crythin Gifford, with a solicitor visiting a coastal market town to handle a client's estate.\n**The Others (2001)** — It offers a quiet, remote country-house setting on Jersey in 1945, where the household's unease builds slowly.",
+      "results": [
+        "The Haunting",
+        "The Conjuring",
+        "The Woman in Black",
+        "The Messengers",
+        "The Others",
+        "Don't Knock Twice",
+        "Don't Be Afraid of the Dark",
+        "The Woman in Black"
+      ],
+      "top": [
+        {
+          "title": "The Haunting",
+          "year": 1963
+        },
+        {
+          "title": "The Conjuring",
+          "year": 2013
+        },
+        {
+          "title": "The Woman in Black",
+          "year": 2012
+        },
+        {
+          "title": "The Messengers",
+          "year": 2007
+        },
+        {
+          "title": "The Others",
+          "year": 2001
+        }
+      ],
+      "criteria": {
+        "tags": [
+          {
+            "idx": 881,
+            "weight": 7,
+            "mode": "prefer"
+          }
+        ],
+        "plot_query": "cozy small village mystery with gentle scares, warm and comforting",
+        "title": null,
+        "person": null,
+        "person_role": "any",
+        "exclude_genres": [],
+        "world_id": null,
+        "availability": "any",
+        "kind": "any",
+        "max_runtime_min": null,
+        "year_from": null,
+        "year_to": null,
+        "original_language": null,
+        "min_rating_count": 0,
+        "extended": false
+      },
+      "grounding_fallback": false,
+      "checks": {
+        "constraints": {
+          "ok": true,
+          "why": []
+        },
+        "tools": {
+          "ok": true,
+          "why": []
+        },
+        "grounding": {
+          "ok": true,
+          "why": []
+        },
+        "reply": {
+          "ok": true,
+          "why": []
+        }
+      },
+      "title_hit": null,
+      "passed": true,
+      "cost_usd": 0.001464,
+      "judge": {
+        "score": 3,
+        "reason": "The list delivers genuine scares through atmospheric, old-fashioned gothic hauntings (The Haunting, The Others, The Woman in Black), but the wish also asks for relaxing and cozy, and these are mostly tense and bleak; The Conjuring is intense and The Messengers is a weak, generic entry, so only the c"
+      }
+    },
+    {
+      "id": "conflict-02",
+      "category": "conflict",
+      "failure": null,
+      "turns": [
+        "A short epic, under 90 minutes, with huge battles"
+      ],
+      "tools_called": [
+        "set_mood_tags",
+        "set_filters",
+        "search_plot"
+      ],
+      "tool_errors": 0,
+      "input_tokens": 9140,
+      "output_tokens": 1372,
+      "usage_missing": false,
+      "latency_s": 11.71,
+      "error": null,
+      "reply": "The results lean strongly toward epic and war titles, with the top matches scoring 85% or higher on epic. Several are multi-part or series releases, so the \"short\" part of your wish may not hold for every pick. The battle focus comes through most clearly in the war-heavy titles.\n\n**Red Cliff (Chi bi) (2008)** — It has the highest epic score in the list (93%) and a war score of 91%, and its story mixes history with a narrative John Woo wrote for modern perspectives.\n**Band of Brothers (2001)** — It has the strongest war score (98%) and an epic score of 87%, following Easy Company through World War II, including the Normandy airborne landings, though it runs as ten episodes.\n**Berserk: The Golden Age Arc - The Egg of the King (2012)** — It has an epic score of 76% and a war score of 63%, following the soldier Guts as he is drawn into the mercenary Band of the Hawk after a siege.",
+      "results": [
+        "Red Cliff (Chi bi)",
+        "Band of Brothers",
+        "Berserk: The Golden Age Arc - The Egg of the King",
+        "Berserk: The Golden Age Arc 3 - Descent",
+        "Berserk: The Golden Age Arc 2 - The Battle for Doldrey",
+        "Red Cliff Part II (Chi Bi Xia: Jue Zhan Tian Xia)",
+        "The Pacific",
+        "Red and the White, The (Csillagosok, katonák)"
+      ],
+      "top": [
+        {
+          "title": "Red Cliff (Chi bi)",
+          "year": 2008
+        },
+        {
+          "title": "Band of Brothers",
+          "year": 2001
+        },
+        {
+          "title": "Berserk: The Golden Age Arc - The Egg of the King",
+          "year": 2012
+        },
+        {
+          "title": "Berserk: The Golden Age Arc 3 - Descent",
+          "year": 2013
+        },
+        {
+          "title": "Berserk: The Golden Age Arc 2 - The Battle for Doldrey",
+          "year": 2012
+        }
+      ],
+      "criteria": {
+        "tags": [
+          {
+            "idx": 358,
+            "weight": 8,
+            "mode": "prefer"
+          },
+          {
+            "idx": 1095,
+            "weight": 5,
+            "mode": "prefer"
+          }
+        ],
+        "plot_query": "huge epic battles with massive armies on the battlefield",
+        "title": null,
+        "person": null,
+        "person_role": "any",
+        "exclude_genres": [],
+        "world_id": null,
+        "availability": "any",
+        "kind": "film",
+        "max_runtime_min": 90,
+        "year_from": null,
+        "year_to": null,
+        "original_language": null,
+        "min_rating_count": 0,
+        "extended": false
+      },
+      "grounding_fallback": false,
+      "checks": {
+        "constraints": {
+          "ok": true,
+          "why": []
+        },
+        "tools": {
+          "ok": true,
+          "why": []
+        },
+        "grounding": {
+          "ok": true,
+          "why": []
+        },
+        "reply": {
+          "ok": true,
+          "why": []
+        }
+      },
+      "title_hit": null,
+      "passed": true,
+      "cost_usd": 0.0016,
+      "judge": {
+        "score": 3,
+        "reason": "The three Berserk films are roughly 76-92 minutes and feature large-scale battles, but Red Cliff (~148+ min) and Band of Brothers (~10 hours) clearly break the under-90-minute requirement."
+      }
+    },
+    {
+      "id": "followup-01",
+      "category": "follow_up",
+      "failure": null,
+      "turns": [
+        "Something dark and set in space",
+        "shorter please, under 2 hours"
+      ],
+      "tools_called": [
+        "set_mood_tags",
+        "set_filters"
+      ],
+      "tool_errors": 0,
+      "input_tokens": 12376,
+      "output_tokens": 1754,
+      "usage_missing": false,
+      "latency_s": 16.03,
+      "error": null,
+      "reply": "These results match both preferences, with dark and space travel scores high across the board. Under the 120-minute cap, the strongest matches are Alien, Moon, and Sunshine. I can't confirm exact running times from the information provided, so I can't say how short each film is.\n\n**Alien (1979)** — A commercial space tug returning to Earth with a crew in stasis fits the space travel and dark tone (91% dark, 98% space travel).\n**Moon (2009)** — A lone worker maintaining a far-side lunar mining station makes it a close match for both criteria (88% dark, 98% space travel).\n**Sunshine (2007)** — A last-chance mission to reignite a dying Sun gives it the strongest space travel match of the three (80% dark, 99% space travel).",
+      "results": [
+        "Alien",
+        "Moon",
+        "Sunshine",
+        "The Last Man on the Moon",
+        "Pandorum",
+        "District 9",
+        "Blade Runner",
+        "Things to Come"
+      ],
+      "top": [
+        {
+          "title": "Alien",
+          "year": 1979
+        },
+        {
+          "title": "Moon",
+          "year": 2009
+        },
+        {
+          "title": "Sunshine",
+          "year": 2007
+        },
+        {
+          "title": "The Last Man on the Moon",
+          "year": 2016
+        },
+        {
+          "title": "Pandorum",
+          "year": 2009
+        }
+      ],
+      "criteria": {
+        "tags": [
+          {
+            "idx": 284,
+            "weight": 7,
+            "mode": "prefer"
+          },
+          {
+            "idx": 944,
+            "weight": 7,
+            "mode": "prefer"
+          }
+        ],
+        "plot_query": null,
+        "title": null,
+        "person": null,
+        "person_role": "any",
+        "exclude_genres": [],
+        "world_id": null,
+        "availability": "any",
+        "kind": "any",
+        "max_runtime_min": 120,
+        "year_from": null,
+        "year_to": null,
+        "original_language": null,
+        "min_rating_count": 0,
+        "extended": false
+      },
+      "grounding_fallback": false,
+      "checks": {
+        "constraints": {
+          "ok": true,
+          "why": []
+        },
+        "tools": {
+          "ok": true,
+          "why": []
+        },
+        "grounding": {
+          "ok": true,
+          "why": []
+        },
+        "reply": {
+          "ok": true,
+          "why": []
+        }
+      },
+      "title_hit": null,
+      "passed": true,
+      "cost_usd": 0.002115,
+      "judge": {
+        "score": 4,
+        "reason": "All five run under two hours, and Alien, Sunshine, Pandorum and Moon are dark, tense space films, but The Last Man on the Moon is a reflective documentary rather than a dark story, which weakens the fit."
+      }
+    },
+    {
+      "id": "followup-02",
+      "category": "follow_up",
+      "failure": null,
+      "turns": [
+        "Funny films from the 90s",
+        "no animation please"
+      ],
+      "tools_called": [
+        "set_mood_tags",
+        "set_filters",
+        "set_filters"
+      ],
+      "tool_errors": 0,
+      "input_tokens": 12853,
+      "output_tokens": 1857,
+      "usage_missing": false,
+      "latency_s": 13.28,
+      "error": null,
+      "reply": "All the results are comedies released between 1994 and 1998, so they fall within your 1990–1999 range and none are animated. Each carries a high funny score, and the top three are the strongest matches.\n\n**Peculiarities of the National Fishing (Osobennosti natsionalnoy rybalki)** — Funniest of the set at 98%, following friends whose fishing vacation goes wrong after they bring a large supply of vodka and get lost.\n**Friday** — Scores 95% for humor and follows an unemployed slacker who spends a day with his best friend, a small-time drug peddler.\n**Black Sheep** — Scores 96% for humor and centers on a bumbling family oddball who drives an advertisement truck to support his brother's campaign for Governor of Washington.",
+      "results": [
+        "Peculiarities of the National Fishing (Osobennosti natsionalnoy rybalki)",
+        "Friday",
+        "Black Sheep",
+        "Half Baked",
+        "There's Something About Mary",
+        "Austin Powers: International Man of Mystery",
+        "Fear of a Black Hat",
+        "Jerry Seinfeld: 'I'm Telling You for the Last Time'"
+      ],
+      "top": [
+        {
+          "title": "Peculiarities of the National Fishing (Osobennosti natsionalnoy rybalki)",
+          "year": 1998
+        },
+        {
+          "title": "Friday",
+          "year": 1995
+        },
+        {
+          "title": "Black Sheep",
+          "year": 1996
+        },
+        {
+          "title": "Half Baked",
+          "year": 1998
+        },
+        {
+          "title": "There's Something About Mary",
+          "year": 1998
+        }
+      ],
+      "criteria": {
+        "tags": [
+          {
+            "idx": 416,
+            "weight": 7,
+            "mode": "prefer"
+          }
+        ],
+        "plot_query": null,
+        "title": null,
+        "person": null,
+        "person_role": "any",
+        "exclude_genres": [
+          "Animation"
+        ],
+        "world_id": null,
+        "availability": "any",
+        "kind": "any",
+        "max_runtime_min": null,
+        "year_from": 1990,
+        "year_to": 1999,
+        "original_language": null,
+        "min_rating_count": 0,
+        "extended": false
+      },
+      "grounding_fallback": false,
+      "checks": {
+        "constraints": {
+          "ok": true,
+          "why": []
+        },
+        "tools": {
+          "ok": true,
+          "why": []
+        },
+        "grounding": {
+          "ok": true,
+          "why": []
+        },
+        "reply": {
+          "ok": true,
+          "why": []
+        }
+      },
+      "title_hit": null,
+      "passed": true,
+      "cost_usd": 0.002214,
+      "judge": {
+        "score": 5,
+        "reason": "All five are live-action comedies released in the 1990s (1995, 1996, 1998 ×3), so they match the funny, 90s and no-animation requirements, with a nicely varied mix of Russian, stoner, slapstick and gross-out humor."
+      }
+    },
+    {
+      "id": "followup-03",
+      "category": "follow_up",
+      "failure": null,
+      "turns": [
+        "Films with Tom Hanks",
+        "only the ones from after 2000"
+      ],
+      "tools_called": [
+        "find_person",
+        "set_filters"
+      ],
+      "tool_errors": 0,
+      "input_tokens": 12116,
+      "output_tokens": 1744,
+      "usage_missing": false,
+      "latency_s": 15.49,
+      "error": null,
+      "reply": "All of these results are from 2002 or later and feature Tom Hanks, so they match both parts of your wish. The top three below are the strongest matches from the list.\n\n**Catch Me If You Can** — Tom Hanks stars in this 2002 film, which follows FBI agent Carl Hanratty as he pursues prisoner Frank Abagnale Jr.\n**Bridge of Spies** — This 2015 film, with Tom Hanks, centers on lawyer James B. Donovan, who is pulled into the case of Soviet spy suspect Rudolf Abel in 1957 New York.\n**Captain Phillips** — This 2013 film, with Tom Hanks, follows Richard Phillips as he takes command of the MV Maersk Alabama and sails through waters where pirate activity is a concern.",
+      "results": [
+        "Catch Me If You Can",
+        "Bridge of Spies",
+        "Captain Phillips",
+        "Sully",
+        "Road to Perdition",
+        "A Beautiful Day in the Neighborhood",
+        "The Post",
+        "The Terminal"
+      ],
+      "top": [
+        {
+          "title": "Catch Me If You Can",
+          "year": 2002
+        },
+        {
+          "title": "Bridge of Spies",
+          "year": 2015
+        },
+        {
+          "title": "Captain Phillips",
+          "year": 2013
+        },
+        {
+          "title": "Sully",
+          "year": 2016
+        },
+        {
+          "title": "Road to Perdition",
+          "year": 2002
+        }
+      ],
+      "criteria": {
+        "tags": [],
+        "plot_query": null,
+        "title": null,
+        "person": "Tom Hanks",
+        "person_role": "cast",
+        "exclude_genres": [],
+        "world_id": null,
+        "availability": "any",
+        "kind": "any",
+        "max_runtime_min": null,
+        "year_from": 2001,
+        "year_to": null,
+        "original_language": null,
+        "min_rating_count": 0,
+        "extended": false
+      },
+      "grounding_fallback": false,
+      "checks": {
+        "constraints": {
+          "ok": false,
+          "why": [
+            "Sully: without Tom Hanks in the top-billed people",
+            "Road to Perdition: without Tom Hanks in the top-billed people"
+          ]
+        },
+        "tools": {
+          "ok": true,
+          "why": []
+        },
+        "grounding": {
+          "ok": true,
+          "why": []
+        },
+        "reply": {
+          "ok": true,
+          "why": []
+        }
+      },
+      "title_hit": null,
+      "passed": false,
+      "cost_usd": 0.002084,
+      "judge": {
+        "score": 5,
+        "reason": "All five films star Tom Hanks and were released after 2000 (2002, 2015, 2013, 2016, 2002), so the list meets both parts of the wish."
+      }
+    },
+    {
+      "id": "facts-01",
+      "category": "facts",
+      "failure": null,
+      "turns": [
+        "Tell me more about the movie Alien"
+      ],
+      "tools_called": [
+        "film_facts"
+      ],
+      "tool_errors": 0,
+      "input_tokens": 4946,
+      "output_tokens": 215,
+      "usage_missing": false,
+      "latency_s": 2.97,
+      "error": null,
+      "reply": "Here's what the catalogue has on Alien (1979): a 117-minute Ridley Scott sci-fi horror film starring Sigourney Weaver, John Hurt and Yaphet Kotto, with a MovieLens rating of 4.1 out of 5. The crew of the commercial tug Nostromo wakes to a mysterious signal and a deadly lifeform aboard their ship. I've pulled up its facts for you; tell me if you'd like to see it on stage or find out where it streams.",
+      "results": [],
+      "top": [],
+      "criteria": {
+        "tags": [],
+        "plot_query": null,
+        "title": null,
+        "person": null,
+        "person_role": "any",
+        "exclude_genres": [],
+        "world_id": null,
+        "availability": "any",
+        "kind": "any",
+        "max_runtime_min": null,
+        "year_from": null,
+        "year_to": null,
+        "original_language": null,
+        "min_rating_count": 0,
+        "extended": false
+      },
+      "grounding_fallback": false,
+      "checks": {
+        "constraints": {
+          "ok": true,
+          "why": []
+        },
+        "tools": {
+          "ok": true,
+          "why": []
+        },
+        "grounding": {
+          "ok": true,
+          "why": []
+        },
+        "reply": {
+          "ok": true,
+          "why": []
+        }
+      },
+      "title_hit": null,
+      "passed": true,
+      "cost_usd": 0.000602,
+      "judge": {
+        "score": null,
+        "reason": "no films"
+      }
+    },
+    {
+      "id": "ambiguous-01",
+      "category": "ambiguous",
+      "failure": null,
+      "turns": [
+        "Solaris"
+      ],
+      "tools_called": [
+        "similar_to"
+      ],
+      "tool_errors": 0,
+      "input_tokens": 6027,
+      "output_tokens": 954,
+      "usage_missing": false,
+      "latency_s": 7.27,
+      "error": null,
+      "reply": "The results closely match the Solaris wish, with every film scoring 99% or higher on science fiction and space, and strong cerebral scores across the board. The top three combine high space and cerebral tags with plots centred on isolated, high-stakes missions in space.\n\n**Moon** — Its 96% cerebral and 99% space scores fit the wish, and its plot follows a lone worker maintaining a far-side lunar station.\n**Interstellar** — It has the highest space score in the set (100%) and a 95% cerebral score, and its plot follows a former NASA pilot facing humanity's extinction.\n**Sunshine** — Its 92% cerebral and 99% space scores fit the wish, and its plot follows eight astronauts on a last-chance mission to reignite the dying Sun.",
+      "results": [
+        "Moon",
+        "Interstellar",
+        "Sunshine",
+        "Forbidden Planet",
+        "2001: A Space Odyssey",
+        "Contact",
+        "Gattaca",
+        "Oblivion"
+      ],
+      "top": [
+        {
+          "title": "Moon",
+          "year": 2009
+        },
+        {
+          "title": "Interstellar",
+          "year": 2014
+        },
+        {
+          "title": "Sunshine",
+          "year": 2007
+        },
+        {
+          "title": "Forbidden Planet",
+          "year": 1956
+        },
+        {
+          "title": "2001: A Space Odyssey",
+          "year": 1968
+        }
+      ],
+      "criteria": {
+        "tags": [
+          {
+            "idx": 888,
+            "weight": 6,
+            "mode": "prefer"
+          },
+          {
+            "idx": 941,
+            "weight": 6,
+            "mode": "prefer"
+          },
+          {
+            "idx": 191,
+            "weight": 6,
+            "mode": "prefer"
+          },
+          {
+            "idx": 889,
+            "weight": 6,
+            "mode": "prefer"
+          },
+          {
+            "idx": 886,
+            "weight": 6,
+            "mode": "prefer"
+          }
+        ],
+        "plot_query": null,
+        "title": null,
+        "person": null,
+        "person_role": "any",
+        "exclude_genres": [],
+        "world_id": null,
+        "availability": "any",
+        "kind": "any",
+        "max_runtime_min": null,
+        "year_from": null,
+        "year_to": null,
+        "original_language": null,
+        "min_rating_count": 0,
+        "extended": false
+      },
+      "grounding_fallback": false,
+      "checks": {
+        "constraints": {
+          "ok": true,
+          "why": []
+        },
+        "tools": {
+          "ok": true,
+          "why": []
+        },
+        "grounding": {
+          "ok": true,
+          "why": []
+        },
+        "reply": {
+          "ok": true,
+          "why": []
+        }
+      },
+      "title_hit": null,
+      "passed": true,
+      "cost_usd": 0.00108,
+      "judge": {
+        "score": 4,
+        "reason": "Moon, Interstellar, Sunshine and 2001 are cerebral, psychologically driven sci-fi that echo Solaris's themes of isolation, memory and the unknowable, though the list omits the closest match (Tarkovsky's own Stalker or Soderbergh's Solaris remake) and Forbidden Planet is a more adventure-oriented fit"
+      }
+    },
+    {
+      "id": "ambiguous-02",
+      "category": "ambiguous",
+      "failure": null,
+      "turns": [
+        "something good"
+      ],
+      "tools_called": [],
+      "tool_errors": 0,
+      "input_tokens": 2321,
+      "output_tokens": 211,
+      "usage_missing": false,
+      "latency_s": 1.74,
+      "error": null,
+      "reply": "Happy to help! What kind of feeling are you after: something funny, moving, thrilling, cozy, or mind-bending?",
+      "results": [],
+      "top": [],
+      "criteria": {
+        "tags": [],
+        "plot_query": null,
+        "title": null,
+        "person": null,
+        "person_role": "any",
+        "exclude_genres": [],
+        "world_id": null,
+        "availability": "any",
+        "kind": "any",
+        "max_runtime_min": null,
+        "year_from": null,
+        "year_to": null,
+        "original_language": null,
+        "min_rating_count": 0,
+        "extended": false
+      },
+      "grounding_fallback": false,
+      "checks": {
+        "constraints": {
+          "ok": true,
+          "why": []
+        },
+        "tools": {
+          "ok": true,
+          "why": []
+        },
+        "grounding": {
+          "ok": true,
+          "why": []
+        },
+        "reply": {
+          "ok": true,
+          "why": []
+        }
+      },
+      "title_hit": null,
+      "passed": true,
+      "cost_usd": 0.000338,
+      "judge": {
+        "score": null,
+        "reason": "no films"
+      }
+    },
+    {
+      "id": "metadata-01",
+      "category": "missing_metadata",
+      "failure": null,
+      "turns": [
+        "German films released in cinemas since 2023"
+      ],
+      "tools_called": [
+        "set_filters"
+      ],
+      "tool_errors": 0,
+      "input_tokens": 5021,
+      "output_tokens": 782,
+      "usage_missing": false,
+      "latency_s": 5.74,
+      "error": null,
+      "reply": "The results match the wish on the listed criteria. Both films are marked as in cinemas, and both carry a 2026 release year, which falls within the since-2023 window. Neither entry includes a plot, so the fit rests on these criteria alone.\n\n**Fatherland** — in cinemas, released 2026, and returned under the German-language filter, though no plot is given.\n**Gentle Monster** — in cinemas, released 2026, and returned under the German-language filter, though no plot is given.",
+      "results": [
+        "Fatherland",
+        "Gentle Monster"
+      ],
+      "top": [
+        {
+          "title": "Fatherland",
+          "year": 2026
+        },
+        {
+          "title": "Gentle Monster",
+          "year": 2026
+        }
+      ],
+      "criteria": {
+        "tags": [],
+        "plot_query": null,
+        "title": null,
+        "person": null,
+        "person_role": "any",
+        "exclude_genres": [],
+        "world_id": null,
+        "availability": "cinema",
+        "kind": "any",
+        "max_runtime_min": null,
+        "year_from": 2023,
+        "year_to": null,
+        "original_language": "de",
+        "min_rating_count": 0,
+        "extended": false
+      },
+      "grounding_fallback": false,
+      "checks": {
+        "constraints": {
+          "ok": true,
+          "why": []
+        },
+        "tools": {
+          "ok": true,
+          "why": []
+        },
+        "grounding": {
+          "ok": true,
+          "why": []
+        },
+        "reply": {
+          "ok": true,
+          "why": []
+        }
+      },
+      "title_hit": null,
+      "passed": true,
+      "cost_usd": 0.000893,
+      "judge": {
+        "score": 3,
+        "reason": "Both films are 2026 releases, which satisfies the date, and both appear to have German co-production involvement. Neither is clearly a straightforwardly German film (Fatherland is a multinational production by a Polish director, and Gentle Monster is a Marie Kreutzer film, likely Austrian-led), and "
+      }
+    },
+    {
+      "id": "fail-01",
+      "category": "failure",
+      "failure": "streaming_down",
+      "turns": [
+        "Where can I stream Inception in Germany?"
+      ],
+      "tools_called": [
+        "check_streaming"
+      ],
+      "tool_errors": 0,
+      "input_tokens": 4739,
+      "output_tokens": 142,
+      "usage_missing": false,
+      "latency_s": 2.64,
+      "error": null,
+      "reply": "I couldn't find streaming availability for Inception in Germany right now, so I can't say where it's available. Check a current streaming guide or the platform's own site for the latest listings.",
+      "results": [],
+      "top": [],
+      "criteria": {
+        "tags": [],
+        "plot_query": null,
+        "title": null,
+        "person": null,
+        "person_role": "any",
+        "exclude_genres": [],
+        "world_id": null,
+        "availability": "any",
+        "kind": "any",
+        "max_runtime_min": null,
+        "year_from": null,
+        "year_to": null,
+        "original_language": null,
+        "min_rating_count": 0,
+        "extended": false
+      },
+      "grounding_fallback": false,
+      "checks": {
+        "constraints": {
+          "ok": true,
+          "why": []
+        },
+        "tools": {
+          "ok": true,
+          "why": []
+        },
+        "grounding": {
+          "ok": true,
+          "why": []
+        },
+        "reply": {
+          "ok": true,
+          "why": []
+        }
+      },
+      "title_hit": null,
+      "passed": true,
+      "cost_usd": 0.000545,
+      "judge": {
+        "score": null,
+        "reason": "no films"
+      }
+    },
+    {
+      "id": "fail-02",
+      "category": "failure",
+      "failure": "budget_exhausted",
+      "turns": [
+        "Dark science fiction that I can stream"
+      ],
+      "tools_called": [
+        "set_mood_tags",
+        "set_filters"
+      ],
+      "tool_errors": 0,
+      "input_tokens": 6000,
+      "output_tokens": 1030,
+      "usage_missing": false,
+      "latency_s": 6.85,
+      "error": null,
+      "reply": "The results closely match your wish for dark science fiction you can stream. Every film scored high on both the science fiction requirement and the dark preference, with scores ranging from 78% to 99%. The top picks combine strong darkness and sci-fi scores with plots that carry a bleak, tense tone.\n\n**Dark City** — Its dark score is the highest in the list (96%), and its plot follows John Murdoch, who wakes in a hotel bathtub with amnesia while men hunt him.\n**Star Wars: Episode V - The Empire Strikes Back** — It scores 95% dark and 98% science fiction, and its story follows the Imperial fleet, led by Darth Vader, hunting the Rebel Alliance across the galaxy.\n**Blade Runner** — It scores 95% dark and 97% science fiction, and its plot places former police officer Rick Deckard in 2019 Los Angeles, pulled back into his old work as a \"blade runner.\"",
+      "results": [
+        "Star Wars: Episode V - The Empire Strikes Back",
+        "Blade Runner",
+        "Dark City",
+        "Alien",
+        "Moon",
+        "Children of Men",
+        "Star Wars: Episode VI - Return of the Jedi",
+        "The Matrix"
+      ],
+      "top": [
+        {
+          "title": "Star Wars: Episode V - The Empire Strikes Back",
+          "year": 1980
+        },
+        {
+          "title": "Blade Runner",
+          "year": 1982
+        },
+        {
+          "title": "Dark City",
+          "year": 1998
+        },
+        {
+          "title": "Alien",
+          "year": 1979
+        },
+        {
+          "title": "Moon",
+          "year": 2009
+        }
+      ],
+      "criteria": {
+        "tags": [
+          {
+            "idx": 284,
+            "weight": 7,
+            "mode": "prefer"
+          },
+          {
+            "idx": 888,
+            "weight": 8,
+            "mode": "must"
+          }
+        ],
+        "plot_query": null,
+        "title": null,
+        "person": null,
+        "person_role": "any",
+        "exclude_genres": [],
+        "world_id": null,
+        "availability": "stream",
+        "kind": "any",
+        "max_runtime_min": null,
+        "year_from": null,
+        "year_to": null,
+        "original_language": null,
+        "min_rating_count": 0,
+        "extended": false
+      },
+      "grounding_fallback": false,
+      "checks": {
+        "constraints": {
+          "ok": true,
+          "why": []
+        },
+        "tools": {
+          "ok": true,
+          "why": []
+        },
+        "grounding": {
+          "ok": true,
+          "why": []
+        },
+        "reply": {
+          "ok": true,
+          "why": []
+        }
+      },
+      "title_hit": null,
+      "passed": true,
+      "cost_usd": 0.001115,
+      "judge": {
+        "score": 4,
+        "reason": "Blade Runner, Dark City, Alien, and Moon are strong dark sci-fi picks, and Empire Strikes Back is the darkest Star Wars entry but fits less well; the list gives no streaming availability information, so that part of the wish can't be verified."
+      }
+    },
+    {
+      "id": "fail-03",
+      "category": "failure",
+      "failure": "embeddings_down",
+      "turns": [
+        "A story about a robot who falls in love"
+      ],
+      "tools_called": [
+        "search_plot",
+        "set_mood_tags",
+        "search_plot"
+      ],
+      "tool_errors": 0,
+      "input_tokens": 8862,
+      "output_tokens": 1521,
+      "usage_missing": false,
+      "latency_s": 11.5,
+      "error": null,
+      "reply": "The results strongly match the romance and science fiction criteria, with most films scoring above 85% on both. Only *Her* clearly points toward the robot-romance idea in the plot_query, and the other plot summaries don't confirm a robot or android falling in love, so treat the rest as looser fits.\n\n**Her** — Its plot centers on Theodore Twombly, a lonely, introverted man, and it scores 81% romance and 92% science fiction, the closest match to the artificial intelligence angle.\n**Passengers** — It pairs the highest science fiction score (99%) with 91% romance, and its setting is a long-haul sleeper ship carrying colonists to a distant planet.\n**Starman** — It is described directly as a love story and scores 89% romance and 92% science fiction, with a plot about an alien visitor arriving on Earth.",
+      "results": [
+        "The Adjustment Bureau",
+        "Passengers",
+        "Frequencies",
+        "TiMER",
+        "Time After Time",
+        "The Space Between Us",
+        "Starman",
+        "Her"
+      ],
+      "top": [
+        {
+          "title": "The Adjustment Bureau",
+          "year": 2011
+        },
+        {
+          "title": "Passengers",
+          "year": 2016
+        },
+        {
+          "title": "Frequencies",
+          "year": 2013
+        },
+        {
+          "title": "TiMER",
+          "year": 2009
+        },
+        {
+          "title": "Time After Time",
+          "year": 1979
+        }
+      ],
+      "criteria": {
+        "tags": [
+          {
+            "idx": 862,
+            "weight": 7,
+            "mode": "prefer"
+          },
+          {
+            "idx": 888,
+            "weight": 6,
+            "mode": "prefer"
+          }
+        ],
+        "plot_query": "android or artificial intelligence develops romantic feelings for a human",
+        "title": null,
+        "person": null,
+        "person_role": "any",
+        "exclude_genres": [],
+        "world_id": null,
+        "availability": "any",
+        "kind": "any",
+        "max_runtime_min": null,
+        "year_from": null,
+        "year_to": null,
+        "original_language": null,
+        "min_rating_count": 0,
+        "extended": false
+      },
+      "grounding_fallback": false,
+      "checks": {
+        "constraints": {
+          "ok": true,
+          "why": []
+        },
+        "tools": {
+          "ok": true,
+          "why": []
+        },
+        "grounding": {
+          "ok": true,
+          "why": []
+        },
+        "reply": {
+          "ok": true,
+          "why": []
+        }
+      },
+      "title_hit": null,
+      "passed": true,
+      "cost_usd": 0.001647,
+      "judge": {
+        "score": 1,
+        "reason": "None of the five films centers on a robot falling in love: they are mostly time, fate, and sci-fi romances about humans (The Adjustment Bureau, Passengers, Frequencies, TiMER, Time After Time), and the only android in the list, Passengers' bartender Arthur, is a minor character with no romance of hi"
+      }
+    },
+    {
+      "id": "fail-04",
+      "category": "failure",
+      "failure": "live_down",
+      "turns": [
+        "Films with Sandra Hüller"
+      ],
+      "tools_called": [
+        "find_person"
+      ],
+      "tool_errors": 0,
+      "input_tokens": 5305,
+      "output_tokens": 853,
+      "usage_missing": false,
+      "latency_s": 7.49,
+      "error": null,
+      "reply": "All eight results match the wish because each lists Sandra Hüller as the person criterion. The top three are the first three listed, and their plot summaries give more context on what each film is about.\n\n**Toni Erdmann** — Hüller is in the cast, and the plot follows divorced music teacher Winfried Conradi, who reconnects with his daughter Ines after his beloved dog dies.\n**Requiem** — Hüller is in the cast, and the story centers on 21-year-old Michaela Klinger, from a fanatically religious Catholic family, who is accepted into university.\n**Woman In Berlin, A (Anonyma - Eine Frau in Berlin)** — Hüller is in the cast, though no plot summary is available for this entry.",
+      "results": [
+        "Toni Erdmann",
+        "Requiem",
+        "Woman In Berlin, A (Anonyma - Eine Frau in Berlin)",
+        "Proxima",
+        "Sisi & I",
+        "Anatomy of a Fall",
+        "The Zone of Interest",
+        "Digger"
+      ],
+      "top": [
+        {
+          "title": "Toni Erdmann",
+          "year": 2016
+        },
+        {
+          "title": "Requiem",
+          "year": 2006
+        },
+        {
+          "title": "Woman In Berlin, A (Anonyma - Eine Frau in Berlin)",
+          "year": 2008
+        },
+        {
+          "title": "Proxima",
+          "year": 2019
+        },
+        {
+          "title": "Sisi & I",
+          "year": 2023
+        }
+      ],
+      "criteria": {
+        "tags": [],
+        "plot_query": null,
+        "title": null,
+        "person": "Sandra Hüller",
+        "person_role": "cast",
+        "exclude_genres": [],
+        "world_id": null,
+        "availability": "any",
+        "kind": "any",
+        "max_runtime_min": null,
+        "year_from": null,
+        "year_to": null,
+        "original_language": null,
+        "min_rating_count": 0,
+        "extended": false
+      },
+      "grounding_fallback": false,
+      "checks": {
+        "constraints": {
+          "ok": true,
+          "why": []
+        },
+        "tools": {
+          "ok": true,
+          "why": []
+        },
+        "grounding": {
+          "ok": true,
+          "why": []
+        },
+        "reply": {
+          "ok": true,
+          "why": []
+        }
+      },
+      "title_hit": null,
+      "passed": true,
+      "cost_usd": 0.000957,
+      "judge": {
+        "score": 4,
+        "reason": "Four of the five films feature Sandra Hüller (Toni Erdmann, Requiem, Proxima, Sisi & I), but A Woman in Berlin stars Nina Hoss and does not appear to include her."
+      }
+    }
+  ],
+  "comparison": {
+    "rows": [
+      {
+        "id": "mood-01",
+        "metrics": {
+          "bayesian": {
+            "tag_relevance": 0.286,
+            "median_rating_count": 35000,
+            "constraint_ok": 1.0
+          },
+          "cosine": {
+            "tag_relevance": 0.756,
+            "median_rating_count": 26625,
+            "constraint_ok": 1.0
+          },
+          "cinesense": {
+            "tag_relevance": 0.822,
+            "median_rating_count": 25449,
+            "constraint_ok": 1.0
+          }
+        },
+        "top": {
+          "bayesian": [
+            "The Shawshank Redemption",
+            "Planet Earth",
+            "Band of Brothers",
+            "Planet Earth II",
+            "The Godfather"
+          ],
+          "cosine": [
+            "Star Wars: Episode V - The Empire Strikes Back",
+            "Moon",
+            "Star Wars: Episode IV - A New Hope",
+            "Lo and Behold: Reveries of the Connected World",
+            "Sunshine"
+          ],
+          "cinesense": [
+            "Star Wars: Episode V - The Empire Strikes Back",
+            "Moon",
+            "Sunshine",
+            "Star Wars: Episode IV - A New Hope",
+            "The Last Man on the Moon"
+          ]
+        },
+        "judge": {
+          "bayesian": 1,
+          "cosine": 3,
+          "cinesense": 3
+        }
+      },
+      {
+        "id": "mood-02",
+        "metrics": {
+          "bayesian": {
+            "tag_relevance": 0.623,
+            "median_rating_count": 26248,
+            "constraint_ok": 1.0
+          },
+          "cosine": {
+            "tag_relevance": 0.759,
+            "median_rating_count": 560,
+            "constraint_ok": 1.0
+          },
+          "cinesense": {
+            "tag_relevance": 0.875,
+            "median_rating_count": 12460,
+            "constraint_ok": 1.0
+          }
+        },
+        "top": {
+          "bayesian": [
+            "Parasite",
+            "Dr. Strangelove or: How I Learned to Stop Worrying and Love the Bomb",
+            "Spider-Man: Into the Spider-Verse",
+            "Life Is Beautiful (La Vita è bella)",
+            "Monty Python and the Holy Grail"
+          ],
+          "cosine": [
+            "Overboard",
+            "Blended",
+            "Delivery Man",
+            "The Castle",
+            "Father of the Bride"
+          ],
+          "cinesense": [
+            "Hunt for the Wilderpeople",
+            "Little Miss Sunshine",
+            "Intouchables",
+            "Waking Ned Devine (a.k.a. Waking Ned)",
+            "The Castle"
+          ]
+        },
+        "judge": {
+          "bayesian": 2,
+          "cosine": 4,
+          "cinesense": 5
+        }
+      },
+      {
+        "id": "mood-03",
+        "metrics": {
+          "bayesian": {
+            "tag_relevance": 0.494,
+            "median_rating_count": 35000,
+            "constraint_ok": 1.0
+          },
+          "cosine": {
+            "tag_relevance": 0.83,
+            "median_rating_count": 107,
+            "constraint_ok": 1.0
+          },
+          "cinesense": {
+            "tag_relevance": 0.964,
+            "median_rating_count": 18741,
+            "constraint_ok": 1.0
+          }
+        },
+        "top": {
+          "bayesian": [
+            "The Shawshank Redemption",
+            "Planet Earth",
+            "Band of Brothers",
+            "Planet Earth II",
+            "The Godfather"
+          ],
+          "cosine": [
+            "The Ones Below",
+            "Retreat",
+            "The Uninvited",
+            "Stonehearst Asylum",
+            "The Waiting"
+          ],
+          "cinesense": [
+            "Shutter Island",
+            "The Sixth Sense",
+            "Seven (a.k.a. Se7en)",
+            "Identity",
+            "Fight Club"
+          ]
+        },
+        "judge": {
+          "bayesian": 1,
+          "cosine": 3,
+          "cinesense": 5
+        }
+      },
+      {
+        "id": "mood-04",
+        "metrics": {
+          "bayesian": {
+            "tag_relevance": 0.355,
+            "median_rating_count": 35000,
+            "constraint_ok": 1.0
+          },
+          "cosine": {
+            "tag_relevance": 0.735,
+            "median_rating_count": 1635,
+            "constraint_ok": 1.0
+          },
+          "cinesense": {
+            "tag_relevance": 0.788,
+            "median_rating_count": 12104,
+            "constraint_ok": 1.0
+          }
+        },
+        "top": {
+          "bayesian": [
+            "The Shawshank Redemption",
+            "Planet Earth",
+            "Band of Brothers",
+            "Planet Earth II",
+            "The Godfather"
+          ],
+          "cosine": [
+            "Truly, Madly, Deeply",
+            "The Bridges of Madison County",
+            "P.S. I Love You",
+            "Love Story",
+            "Me Before You"
+          ],
+          "cinesense": [
+            "Love Story",
+            "Up",
+            "The Bridges of Madison County",
+            "The Fault in Our Stars",
+            "Me Before You"
+          ]
+        },
+        "judge": {
+          "bayesian": 1,
+          "cosine": 5,
+          "cinesense": 5
+        }
+      },
+      {
+        "id": "mood-05",
+        "metrics": {
+          "bayesian": {
+            "tag_relevance": 0.224,
+            "median_rating_count": 35000,
+            "constraint_ok": 1.0
+          },
+          "cosine": {
+            "tag_relevance": 0.651,
+            "median_rating_count": 9922,
+            "constraint_ok": 1.0
+          },
+          "cinesense": {
+            "tag_relevance": 0.672,
+            "median_rating_count": 9226,
+            "constraint_ok": 1.0
+          }
+        },
+        "top": {
+          "bayesian": [
+            "The Shawshank Redemption",
+            "Planet Earth",
+            "Band of Brothers",
+            "Planet Earth II",
+            "The Godfather"
+          ],
+          "cosine": [
+            "Ivanhoe",
+            "The Adventures of Robin Hood",
+            "Robin Hood",
+            "The 13th Warrior",
+            "The Vikings"
+          ],
+          "cinesense": [
+            "Braveheart",
+            "The Lord of the Rings: The Two Towers",
+            "The Lord of the Rings: The Fellowship of the Ring",
+            "Conan the Barbarian",
+            "Robin Hood"
+          ]
+        },
+        "judge": {
+          "bayesian": 1,
+          "cosine": 5,
+          "cinesense": 4
+        }
+      },
+      {
+        "id": "mood-06",
+        "metrics": {
+          "bayesian": {
+            "tag_relevance": 0.542,
+            "median_rating_count": 35000,
+            "constraint_ok": 1.0
+          },
+          "cosine": {
+            "tag_relevance": 0.805,
+            "median_rating_count": 1952,
+            "constraint_ok": 1.0
+          },
+          "cinesense": {
+            "tag_relevance": 0.876,
+            "median_rating_count": 18481,
+            "constraint_ok": 1.0
+          }
+        },
+        "top": {
+          "bayesian": [
+            "The Shawshank Redemption",
+            "Planet Earth",
+            "Band of Brothers",
+            "Planet Earth II",
+            "The Godfather"
+          ],
+          "cosine": [
+            "Bound",
+            "Out of Sight",
+            "Nine Queens (Nueve reinas)",
+            "Sicilian Clan, The (Clan des Siciliens, Le)",
+            "Sexy Beast"
+          ],
+          "cinesense": [
+            "Reservoir Dogs",
+            "The Usual Suspects",
+            "Rififi (Du rififi chez les hommes)",
+            "Bound",
+            "The Killing"
+          ]
+        },
+        "judge": {
+          "bayesian": 1,
+          "cosine": 4,
+          "cinesense": 4
+        }
+      },
+      {
+        "id": "mood-07",
+        "metrics": {
+          "bayesian": {
+            "tag_relevance": 0.272,
+            "median_rating_count": 35000,
+            "constraint_ok": 1.0
+          },
+          "cosine": {
+            "tag_relevance": 0.767,
+            "median_rating_count": 9770,
+            "constraint_ok": 1.0
+          },
+          "cinesense": {
+            "tag_relevance": 0.846,
+            "median_rating_count": 15036,
+            "constraint_ok": 1.0
+          }
+        },
+        "top": {
+          "bayesian": [
+            "The Shawshank Redemption",
+            "Planet Earth",
+            "Band of Brothers",
+            "Planet Earth II",
+            "The Godfather"
+          ],
+          "cosine": [
+            "Ride Along 2",
+            "Guardians of the Galaxy 2",
+            "Ride Along",
+            "Deadpool",
+            "Big Hero 6"
+          ],
+          "cinesense": [
+            "Deadpool",
+            "Guardians of the Galaxy 2",
+            "Guardians of the Galaxy",
+            "Ant-Man",
+            "The Avengers"
+          ]
+        },
+        "judge": {
+          "bayesian": 1,
+          "cosine": 5,
+          "cinesense": 5
+        }
+      },
+      {
+        "id": "like-01",
+        "metrics": {
+          "bayesian": {
+            "tag_relevance": 0.091,
+            "median_rating_count": 35000,
+            "constraint_ok": 1.0
+          },
+          "cosine": {
+            "tag_relevance": 0.91,
+            "median_rating_count": 110,
+            "constraint_ok": 1.0
+          },
+          "cinesense": {
+            "tag_relevance": 0.984,
+            "median_rating_count": 5781,
+            "constraint_ok": 1.0
+          }
+        },
+        "top": {
+          "bayesian": [
+            "The Shawshank Redemption",
+            "Planet Earth",
+            "Band of Brothers",
+            "Planet Earth II",
+            "The Godfather"
+          ],
+          "cosine": [
+            "Planet of the Vampires (Terrore nello spazio)",
+            "Marooned",
+            "Critters 4",
+            "The American Astronaut",
+            "Destination Moon"
+          ],
+          "cinesense": [
+            "Interstellar",
+            "Moon",
+            "The Martian",
+            "2001: A Space Odyssey",
+            "Sunshine"
+          ]
+        },
+        "judge": {
+          "bayesian": 1,
+          "cosine": 2,
+          "cinesense": 4
+        }
+      },
+      {
+        "id": "like-02",
+        "metrics": {
+          "bayesian": {
+            "tag_relevance": 0.199,
+            "median_rating_count": 35000,
+            "constraint_ok": 1.0
+          },
+          "cosine": {
+            "tag_relevance": 0.678,
+            "median_rating_count": 243,
+            "constraint_ok": 1.0
+          },
+          "cinesense": {
+            "tag_relevance": 0.748,
+            "median_rating_count": 375,
+            "constraint_ok": 1.0
+          }
+        },
+        "top": {
+          "bayesian": [
+            "The Shawshank Redemption",
+            "Planet Earth",
+            "Band of Brothers",
+            "Planet Earth II",
+            "The Godfather"
+          ],
+          "cosine": [
+            "Un peu, beaucoup, aveuglément",
+            "Romantics Anonymous (Les émotifs anonymes)",
+            "Priceless (Hors de prix)",
+            "A Good Year",
+            "It Boy (20 ans d'écart)"
+          ],
+          "cinesense": [
+            "Amelie (Fabuleux destin d'Amélie Poulain, Le)",
+            "Romantics Anonymous (Les émotifs anonymes)",
+            "Midnight in Paris",
+            "Chocolat",
+            "Priceless (Hors de prix)"
+          ]
+        },
+        "judge": {
+          "bayesian": 1,
+          "cosine": 4,
+          "cinesense": 4
+        }
+      },
+      {
+        "id": "like-03",
+        "metrics": {
+          "bayesian": {
+            "tag_relevance": 0.279,
+            "median_rating_count": 7412,
+            "constraint_ok": 1.0
+          },
+          "cosine": {
+            "tag_relevance": 0.859,
+            "median_rating_count": 347,
+            "constraint_ok": 1.0
+          },
+          "cinesense": {
+            "tag_relevance": 0.959,
+            "median_rating_count": 2343,
+            "constraint_ok": 1.0
+          }
+        },
+        "top": {
+          "bayesian": [
+            "Planet Earth II",
+            "Parasite",
+            "Spider-Man: Into the Spider-Verse",
+            "Inception",
+            "Whiplash"
+          ],
+          "cosine": [
+            "Ghost in the Shell",
+            "Autómata (Automata)",
+            "Equals",
+            "The Machine",
+            "Repo Men"
+          ],
+          "cinesense": [
+            "Oblivion",
+            "Looper",
+            "Elysium",
+            "The Machine",
+            "Autómata (Automata)"
+          ]
+        },
+        "judge": {
+          "bayesian": 2,
+          "cosine": 2,
+          "cinesense": 3
+        }
+      },
+      {
+        "id": "like-04",
+        "metrics": {
+          "bayesian": {
+            "tag_relevance": 0.115,
+            "median_rating_count": 16807,
+            "constraint_ok": 1.0
+          },
+          "cosine": {
+            "tag_relevance": 0.884,
+            "median_rating_count": 129,
+            "constraint_ok": 1.0
+          },
+          "cinesense": {
+            "tag_relevance": 0.986,
+            "median_rating_count": 2133,
+            "constraint_ok": 1.0
+          }
+        },
+        "top": {
+          "bayesian": [
+            "Planet Earth",
+            "Band of Brothers",
+            "Planet Earth II",
+            "The Usual Suspects",
+            "12 Angry Men"
+          ],
+          "cosine": [
+            "Planet of the Vampires (Terrore nello spazio)",
+            "Critters 4",
+            "The American Astronaut",
+            "Destination Moon",
+            "Approaching the Unknown"
+          ],
+          "cinesense": [
+            "Moon",
+            "Sunshine",
+            "Europa Report",
+            "Forbidden Planet",
+            "Pandorum"
+          ]
+        },
+        "judge": {
+          "bayesian": 1,
+          "cosine": 2,
+          "cinesense": 4
+        }
+      },
+      {
+        "id": "runtime-01",
+        "metrics": {
+          "bayesian": {
+            "tag_relevance": 0.49,
+            "median_rating_count": 16303,
+            "constraint_ok": 1.0
+          },
+          "cosine": {
+            "tag_relevance": 0.855,
+            "median_rating_count": 2831,
+            "constraint_ok": 1.0
+          },
+          "cinesense": {
+            "tag_relevance": 0.949,
+            "median_rating_count": 696,
+            "constraint_ok": 1.0
+          }
+        },
+        "top": {
+          "bayesian": [
+            "Band of Brothers",
+            "12 Angry Men",
+            "Whiplash",
+            "My Neighbor Totoro (Tonari no Totoro)",
+            "Paths of Glory"
+          ],
+          "cosine": [
+            "The Call",
+            "Mute Witness",
+            "Breakdown",
+            "Just Cause",
+            "Dead Calm"
+          ],
+          "cinesense": [
+            "Headhunters (Hodejegerne)",
+            "Dead Calm",
+            "Anything for Her (Pour elle)",
+            "Identity",
+            "The Disappearance of Alice Creed"
+          ]
+        },
+        "judge": {
+          "bayesian": 2,
+          "cosine": 4,
+          "cinesense": 4
+        }
+      },
+      {
+        "id": "runtime-02",
+        "metrics": {
+          "bayesian": {
+            "tag_relevance": 0.328,
+            "median_rating_count": 2925,
+            "constraint_ok": 1.0
+          },
+          "cosine": {
+            "tag_relevance": 0.871,
+            "median_rating_count": 192,
+            "constraint_ok": 1.0
+          },
+          "cinesense": {
+            "tag_relevance": 0.957,
+            "median_rating_count": 609,
+            "constraint_ok": 1.0
+          }
+        },
+        "top": {
+          "bayesian": [
+            "Planet Earth",
+            "Band of Brothers",
+            "Planet Earth II",
+            "Whiplash",
+            "Blue Planet II"
+          ],
+          "cosine": [
+            "Crazy People",
+            "Bill Burr: Why Do I Do This?",
+            "Wallace & Gromit: The Best of Aardman Animation",
+            "Kevin Hart: Seriously Funny",
+            "Kevin Hart: Let Me Explain"
+          ],
+          "cinesense": [
+            "Wallace & Gromit: The Best of Aardman Animation",
+            "Bill Burr: Why Do I Do This?",
+            "Family Guy Presents: Something, Something, Something, Dark Side",
+            "Gabriel Iglesias: Hot and Fluffy",
+            "Friday"
+          ]
+        },
+        "judge": {
+          "bayesian": 1,
+          "cosine": 4,
+          "cinesense": 5
+        }
+      },
+      {
+        "id": "exclude-01",
+        "metrics": {
+          "bayesian": {
+            "tag_relevance": 0.242,
+            "median_rating_count": 35000,
+            "constraint_ok": 1.0
+          },
+          "cosine": {
+            "tag_relevance": 0.79,
+            "median_rating_count": 497,
+            "constraint_ok": 1.0
+          },
+          "cinesense": {
+            "tag_relevance": 0.852,
+            "median_rating_count": 3325,
+            "constraint_ok": 1.0
+          }
+        },
+        "top": {
+          "bayesian": [
+            "The Shawshank Redemption",
+            "Planet Earth",
+            "Band of Brothers",
+            "Planet Earth II",
+            "The Godfather"
+          ],
+          "cosine": [
+            "The Nightmare",
+            "Hush",
+            "The Hive",
+            "Hereditary",
+            "Ava's Possessions"
+          ],
+          "cinesense": [
+            "Hush",
+            "ParaNorman",
+            "Cape Fear",
+            "Lake Mungo",
+            "Jurassic Park"
+          ]
+        },
+        "judge": {
+          "bayesian": 3,
+          "cosine": 1,
+          "cinesense": 2
+        }
+      },
+      {
+        "id": "doc-01",
+        "metrics": {
+          "bayesian": {
+            "tag_relevance": 0.04,
+            "median_rating_count": 2478,
+            "constraint_ok": 1.0
+          },
+          "cosine": {
+            "tag_relevance": 0.469,
+            "median_rating_count": 482,
+            "constraint_ok": 1.0
+          },
+          "cinesense": {
+            "tag_relevance": 0.478,
+            "median_rating_count": 489,
+            "constraint_ok": 1.0
+          }
+        },
+        "top": {
+          "bayesian": [
+            "Planet Earth",
+            "Planet Earth II",
+            "Blue Planet II",
+            "The Blue Planet",
+            "When We Were Kings"
+          ],
+          "cosine": [
+            "Wonderful, Horrible Life of Leni Riefenstahl, The (Macht der Bilder: Leni Riefenstahl, Die)",
+            "Anne Frank Remembered",
+            "Sorrow and the Pity, The (Le chagrin et la pitié)",
+            "Into the Arms of Strangers: Stories of the Kindertransport",
+            "Triumph of the Will (Triumph des Willens)"
+          ],
+          "cinesense": [
+            "Sorrow and the Pity, The (Le chagrin et la pitié)",
+            "The Rape of Europa",
+            "Triumph of the Will (Triumph des Willens)",
+            "One Day in September",
+            "Into the Arms of Strangers: Stories of the Kindertransport"
+          ]
+        },
+        "judge": {
+          "bayesian": 1,
+          "cosine": 4,
+          "cinesense": 3
+        }
+      },
+      {
+        "id": "doc-02",
+        "metrics": {
+          "bayesian": {
+            "tag_relevance": 0.376,
+            "median_rating_count": 2478,
+            "constraint_ok": 1.0
+          },
+          "cosine": {
+            "tag_relevance": 0.835,
+            "median_rating_count": 1118,
+            "constraint_ok": 1.0
+          },
+          "cinesense": {
+            "tag_relevance": 0.862,
+            "median_rating_count": 420,
+            "constraint_ok": 1.0
+          }
+        },
+        "top": {
+          "bayesian": [
+            "Planet Earth",
+            "Planet Earth II",
+            "Blue Planet II",
+            "The Blue Planet",
+            "When We Were Kings"
+          ],
+          "cosine": [
+            "Planet Earth II",
+            "Planet Earth",
+            "Earth",
+            "Africa: The Serengeti",
+            "Happy People: A Year in the Taiga"
+          ],
+          "cinesense": [
+            "Planet Earth",
+            "Planet Earth II",
+            "Wild China",
+            "Encounters at the End of the World",
+            "Earth"
+          ]
+        },
+        "judge": {
+          "bayesian": 4,
+          "cosine": 5,
+          "cinesense": 5
+        }
+      },
+      {
+        "id": "plot-01",
+        "metrics": {
+          "bayesian": {
+            "tag_relevance": 0.299,
+            "median_rating_count": 35000,
+            "constraint_ok": 1.0
+          },
+          "cosine": {
+            "tag_relevance": 0.891,
+            "median_rating_count": 7921,
+            "constraint_ok": 1.0
+          },
+          "cinesense": {
+            "tag_relevance": 0.888,
+            "median_rating_count": 14283,
+            "constraint_ok": 1.0
+          }
+        },
+        "top": {
+          "bayesian": [
+            "The Shawshank Redemption",
+            "Planet Earth",
+            "Band of Brothers",
+            "Planet Earth II",
+            "The Godfather"
+          ],
+          "cosine": [
+            "The Martian",
+            "Apollo 13",
+            "Riddick",
+            "Interstellar",
+            "Alien"
+          ],
+          "cinesense": [
+            "The Martian",
+            "Pandorum",
+            "Planet of the Apes",
+            "Apollo 13",
+            "The Last Days on Mars"
+          ]
+        },
+        "judge": {
+          "bayesian": 1,
+          "cosine": 4,
+          "cinesense": 3
+        }
+      },
+      {
+        "id": "plot-02",
+        "metrics": {
+          "bayesian": {
+            "tag_relevance": null,
+            "median_rating_count": 35000,
+            "constraint_ok": 1.0
+          },
+          "cosine": {
+            "tag_relevance": null,
+            "median_rating_count": 35000,
+            "constraint_ok": 1.0
+          },
+          "cinesense": {
+            "tag_relevance": null,
+            "median_rating_count": 289,
+            "constraint_ok": 1.0
+          }
+        },
+        "top": {
+          "bayesian": [
+            "The Shawshank Redemption",
+            "Planet Earth",
+            "Band of Brothers",
+            "Planet Earth II",
+            "The Godfather"
+          ],
+          "cosine": [
+            "The Shawshank Redemption",
+            "Planet Earth",
+            "Band of Brothers",
+            "Planet Earth II",
+            "The Godfather"
+          ],
+          "cinesense": [
+            "M",
+            "Antibodies (Antikörper)",
+            "What to Do in Case of Fire (Was tun, wenn's brennt?)",
+            "Jennifer 8",
+            "Wings of Desire (Himmel über Berlin, Der)"
+          ]
+        },
+        "judge": {
+          "bayesian": 1,
+          "cosine": 1,
+          "cinesense": 2
+        }
+      },
+      {
+        "id": "conflict-01",
+        "metrics": {
+          "bayesian": {
+            "tag_relevance": 0.242,
+            "median_rating_count": 35000,
+            "constraint_ok": 1.0
+          },
+          "cosine": {
+            "tag_relevance": 0.896,
+            "median_rating_count": 248,
+            "constraint_ok": 1.0
+          },
+          "cinesense": {
+            "tag_relevance": 0.928,
+            "median_rating_count": 994,
+            "constraint_ok": 1.0
+          }
+        },
+        "top": {
+          "bayesian": [
+            "The Shawshank Redemption",
+            "Planet Earth",
+            "Band of Brothers",
+            "Planet Earth II",
+            "The Godfather"
+          ],
+          "cosine": [
+            "The Woman in Black",
+            "Paranormal Activity: The Marked Ones",
+            "Insidious: Chapter 2",
+            "The Nightmare",
+            "Ghost Stories"
+          ],
+          "cinesense": [
+            "The Haunting",
+            "The Conjuring",
+            "The Woman in Black",
+            "The Messengers",
+            "The Others"
+          ]
+        },
+        "judge": {
+          "bayesian": 1,
+          "cosine": 3,
+          "cinesense": 3
+        }
+      },
+      {
+        "id": "conflict-02",
+        "metrics": {
+          "bayesian": {
+            "tag_relevance": 0.257,
+            "median_rating_count": 5319,
+            "constraint_ok": 1.0
+          },
+          "cosine": {
+            "tag_relevance": 0.706,
+            "median_rating_count": 735,
+            "constraint_ok": 1.0
+          },
+          "cinesense": {
+            "tag_relevance": 0.737,
+            "median_rating_count": 334,
+            "constraint_ok": 1.0
+          }
+        },
+        "top": {
+          "bayesian": [
+            "Band of Brothers",
+            "Whiplash",
+            "My Neighbor Totoro (Tonari no Totoro)",
+            "Paths of Glory",
+            "Over the Garden Wall"
+          ],
+          "cosine": [
+            "Red and the White, The (Csillagosok, katonák)",
+            "Band of Brothers",
+            "Red Cliff Part II (Chi Bi Xia: Jue Zhan Tian Xia)",
+            "Red Cliff (Chi bi)",
+            "The Pacific"
+          ],
+          "cinesense": [
+            "Red Cliff (Chi bi)",
+            "Band of Brothers",
+            "Berserk: The Golden Age Arc - The Egg of the King",
+            "Berserk: The Golden Age Arc 3 - Descent",
+            "Berserk: The Golden Age Arc 2 - The Battle for Doldrey"
+          ]
+        },
+        "judge": {
+          "bayesian": 1,
+          "cosine": 2,
+          "cinesense": 2
+        }
+      },
+      {
+        "id": "followup-01",
+        "metrics": {
+          "bayesian": {
+            "tag_relevance": 0.297,
+            "median_rating_count": 16807,
+            "constraint_ok": 1.0
+          },
+          "cosine": {
+            "tag_relevance": 0.716,
+            "median_rating_count": 5548,
+            "constraint_ok": 1.0
+          },
+          "cinesense": {
+            "tag_relevance": 0.808,
+            "median_rating_count": 10863,
+            "constraint_ok": 1.0
+          }
+        },
+        "top": {
+          "bayesian": [
+            "Planet Earth",
+            "Band of Brothers",
+            "Planet Earth II",
+            "The Usual Suspects",
+            "12 Angry Men"
+          ],
+          "cosine": [
+            "Alien",
+            "Moon",
+            "Lo and Behold: Reveries of the Connected World",
+            "Sunshine",
+            "Blade Runner"
+          ],
+          "cinesense": [
+            "Alien",
+            "Moon",
+            "Sunshine",
+            "The Last Man on the Moon",
+            "Pandorum"
+          ]
+        },
+        "judge": {
+          "bayesian": 1,
+          "cosine": 3,
+          "cinesense": 4
+        }
+      },
+      {
+        "id": "followup-02",
+        "metrics": {
+          "bayesian": {
+            "tag_relevance": 0.394,
+            "median_rating_count": 85219,
+            "constraint_ok": 1.0
+          },
+          "cosine": {
+            "tag_relevance": 0.852,
+            "median_rating_count": 399,
+            "constraint_ok": 1.0
+          },
+          "cinesense": {
+            "tag_relevance": 0.944,
+            "median_rating_count": 4418,
+            "constraint_ok": 1.0
+          }
+        },
+        "top": {
+          "bayesian": [
+            "The Shawshank Redemption",
+            "The Usual Suspects",
+            "Schindler's List",
+            "Fight Club",
+            "Pulp Fiction"
+          ],
+          "cosine": [
+            "The Wrong Guy",
+            "Crazy People",
+            "Peculiarities of the National Fishing (Osobennosti natsionalnoy rybalki)",
+            "Monster, The (Mostro, Il)",
+            "The Big Tease"
+          ],
+          "cinesense": [
+            "Peculiarities of the National Fishing (Osobennosti natsionalnoy rybalki)",
+            "Friday",
+            "Black Sheep",
+            "Half Baked",
+            "There's Something About Mary"
+          ]
+        },
+        "judge": {
+          "bayesian": 1,
+          "cosine": 5,
+          "cinesense": 5
+        }
+      }
+    ],
+    "judge_cost_usd": 0.199142
+  }
+}
