@@ -1,4 +1,4 @@
-.PHONY: dev-api dev-web test test-api test-web lint db-init ingest
+.PHONY: dev-api dev-web test test-api test-web lint db-init ingest eval
 
 dev-api:
 	uv run uvicorn cinesense.api.app:create_app --factory --reload --port 8000
@@ -23,3 +23,6 @@ db-init:
 
 ingest:
 	uv run python -m cinesense.ingest.pipeline
+
+eval:
+	uv run python -m cinesense.eval

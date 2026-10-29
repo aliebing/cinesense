@@ -67,6 +67,7 @@ def run_scenarios(
         res.update(
             reply=reply,
             results=[r["movie"]["title"] for r in results],
+            top=[{"title": r["movie"]["title"], "year": r["movie"].get("year")} for r in results[:5]],
             criteria=criteria,
             grounding_fallback=last.get("grounding_fallback", False),
             checks={k: {"ok": ok, "why": why} for k, (ok, why) in checks.items()},
