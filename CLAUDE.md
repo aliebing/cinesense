@@ -14,7 +14,7 @@ The grading briefs are `turing-college-capstone.md` and `turing-college-sprint4.
 
 - **Language:** UI text, code, identifiers, comments, commits and docs are all English. Talk to the user in German.
 - **Look:** dark only, on a matte near-black ground, with fog and light on every page. The main stage is a wide (~2.25:1) cinema screen with letterbox bars and solid red side curtains; tune via the CSS variables at the top of `web/app/globals.css`. Text must stay readable over all effects.
-- **Data:** never fabricate film facts. Plan 1 uses clearly labelled fictional "Demo-Film" placeholders (badge "Placeholder"). Real data comes only from TMDB, and no unlicensed sources are allowed.
+- **Data:** never fabricate film facts. **No TMDB** (its terms forbid AI apps). Sources: MovieLens (local file, never commit it), Wikidata, Wikipedia, Streaming Availability API (1,000 req/month — every call goes through the cache/budget guard), optional YouTube Data API (95 searches/day).
 - **External services** stay behind adapters (`src/cinesense/providers/`). Tests run offline on fixtures.
 
 ## Layout
@@ -37,6 +37,9 @@ make test                                 # backend + frontend tests
 uv run pytest tests/test_api.py::test_health -v   # single backend test
 cd web && npx vitest run __tests__/TileRows.test.tsx  # single frontend test
 make lint                                 # ruff + eslint
+uv run pytest -m db                       # tests against the Supabase catalogue (excluded by default)
+make db-init                              # create/upgrade the cinesense schema
+MOVIELENS_DB_PATH=/home/ali/projects/turing/moviefinder/db/moviedoc.db make ingest  # resumable full ingest
 ```
 
 ## Services (`.env`, see `.env.example`)
@@ -44,7 +47,9 @@ make lint                                 # ruff + eslint
 - Supabase (Postgres + pgvector)
 - OpenRouter (LLMs)
 - LangSmith tracing (EU endpoint)
-- TMDB (`TMDB_API_KEY`, `TMDB_READ_ACCESS_TOKEN`)
+- Streaming Availability API (`STREAMING_AVAILABILITY_API_KEY`, base `https://api.movieofthenight.com/v4`, header `X-API-Key`)
+- YouTube Data API (`YOUTUBE_API_KEY`, optional)
+- The Supabase DB is shared with other projects: all CineSense tables live in the `cinesense` schema (`search_path` is set in `cinesense.db.connect`).
 
 ## Gotchas
 

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import FogLight from "@/components/atmosphere/FogLight";
@@ -65,7 +66,8 @@ export default function HomePage() {
       <header className="home-top">
         <span className="home-logo">CineSense</span>
         <nav aria-label="Main navigation" className="home-nav">
-          <span>🎬 In cinemas</span> · <span>📺 Streaming</span> · <span aria-label="Profile">👤</span>
+          <Link href="/results">🔍 Search</Link> · <span>🎬 In cinemas</span> · <span>📺 Streaming</span> ·{" "}
+          <Link href="/credits">Credits</Link> · <span aria-label="Profile">👤</span>
         </nav>
       </header>
       <button type="button" className="tempo-toggle" onClick={() => setVariedSpeed((v) => !v)}>

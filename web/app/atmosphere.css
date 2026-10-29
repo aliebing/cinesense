@@ -393,3 +393,12 @@
 .stage-tags--mood span { border-color: #f3c76b55; color: #f1dca8; }
 .stage-links { display: flex; gap: .8em; margin-top: .5em; font-size: .85em; }
 .stage-links a { color: var(--gold); }
+.credits h1 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 2.2em; letter-spacing: .03em; }
+.credits p { max-width: 75ch; }
+.credits-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(22em, 1fr)); gap: 1em; }
+.credits-list li { padding: 1em; border-radius: 14px; background: #0d0d14c4; border: 1px solid #ffffff22; }
+.credits-list h2, .credits-privacy h2 { margin: 0 0 .3em; font-size: 1.05em; }
+.credits a { color: var(--gold); }
+.credits-licence { font-size: .85em; color: var(--muted); margin: .2em 0 0; }
+.home-nav a { color: #fff; text-decoration: none; }
+.home-nav a:hover, .home-nav a:focus-visible { color: var(--gold); }
