@@ -105,41 +105,54 @@ All sources are credited on the in-app **Credits** page. No unlicensed sources a
 
 ## Evaluation
 
-`make eval` runs 36 scenarios through the real agent and catalogue. They cover mood, "like X", runtime, exclusions, documentaries, people, plot, conflicting wishes, follow-ups, facts, ambiguous input and 4 injected failures (streaming down, streaming budget exhausted, embeddings down, unknown person). The run never spends Streaming Availability budget: it reads streaming data from the cache only. Full results are in [`eval/REPORT.md`](eval/REPORT.md); the raw data is in `eval/results/`.
+`make eval` runs 36 scenarios through the real agent and catalogue: mood, "like X", runtime, exclusions, documentaries, people, plot, conflicting wishes, follow-ups, facts, ambiguous input, an unknown person, and two injected failures (Streaming Availability API down, embedding service down). Streaming data comes from the cache only in every scenario, so the run never spends API budget and also tests the "budget exhausted" path. Full results: [`eval/REPORT.md`](eval/REPORT.md); raw data in `eval/results/` (earlier runs are kept, including the ones where the checks themselves had bugs).
 
-**Automatic metrics (latest run):**
+**Automatic metrics (final run).** Each rate counts only the scenarios that define the check:
 
 | Metric | Result |
 |---|---|
 | Scenarios passing all checks | 36 / 36 |
-| Constraint satisfaction (runtime, genres, kind, year, person, availability) | 100% |
-| Tool selection / tool success | 100% / 100% |
-| Grounding (only returned or user-named films in replies) | 100% — 5 replies were caught by the validator and replaced by the template answer |
-| Latency per scenario, median / p90 | 7.8 s / 11.5 s |
+| Constraint satisfaction (runtime, genres, kind, year, person, availability) | 19 / 19 |
+| Tool selection (an expected tool was called) | 35 / 35 |
+| Factual reply checks | 2 / 2 |
+| No streaming claim without known availability | 36 / 36 |
+| Grounding **before** the guard: the model's own explanation named only returned films | 31 / 36 (86%) |
+| Grounding **after** the guard: what the user sees | 36 / 36 (5 template fallbacks) |
+| Latency per scenario, median / p90 | 7.8 s / 12.0 s |
 | Cost per chat turn (Claude Haiku 5.5) | $0.0011 |
 
-**Ranking comparison** on identical criteria and hard filters (scenarios with mood tags or plot):
+"Tool success 100%" only means that no tool raised an exception. A degraded source (embeddings down) still returns a result, with weaker relevance.
 
-| Ranker | Tag relevance@10 (automatic) | Median MovieLens rating count | LLM judge 1–5 (Claude Sonnet 5.5, subjective) |
-|---|---|---|---|
-| Baseline A: filters + Bayesian rating | 0.32 | 35,000 | 1.36 |
-| Baseline B: movieFinder (tag cosine + rating) | 0.78 | 926 | 3.41 |
-| **CineSense** | **0.85** | 3,977 | **3.82** |
+**Ranking comparison.** 21 mood-tag scenarios, run with the criteria the agent set and identical hard filters for all three rankers:
 
-**Reading the results:**
-- CineSense finds films that fit the mood better than movieFinder's cosine method.
-- Its picks are more often films people know (median 3,977 vs 926 MovieLens ratings).
-- The rating-only baseline knows famous films but ignores the wish.
-- The LLM judge gives the agent's own top 5 a mean of 3.91/5.
+| Ranker | Tag relevance@10 | Tag cosine@10 | Median MovieLens rating count | LLM judge 1–5 |
+|---|---|---|---|---|
+| Baseline A: filters + Bayesian rating | 0.31 | 0.05 | 35,000 | 1.38 |
+| Baseline B: movieFinder (tag cosine + rating) | 0.79 | **0.20** | 624 | 3.48 |
+| **CineSense** | **0.85** | 0.17 | 5,781 | **3.95** |
 
-The whole evaluation costs about $0.25, judge included.
+How to read the comparison:
+- Each ranker wins on its own objective. *Tag relevance* (weighted mean of the requested tags) is what CineSense ranks by. *Tag cosine* is what movieFinder ranks by.
+- The independent signal is the LLM judge (Claude Sonnet 5.5, subjective). It prefers CineSense (3.95 vs 3.48).
+- The judge sees only titles and years, which may favour well-known films. CineSense's picks are clearly better known than movieFinder's (median 5,781 vs 624 ratings).
+- The rating-only baseline ignores the wish.
+- The judge gives the agent's own top 5 a mean of 3.97/5 over 31 scenarios.
 
-The automatic checks are deliberately narrow; relevance is only measured subjectively. The first run found two false alarms in the checks themselves: the mood tag "Creepy" is also a film title, and a person outside the top-5 billed cast was not counted. Both are fixed with tests.
+The whole evaluation costs about $0.22: $0.04 for agent turns and $0.18 for the judge.
+
+Limits of the evaluation:
+- The automatic checks are narrow, and relevance is only judged subjectively.
+- There are no scenarios for missing trailers or Wikidata/Wikipedia outages, because the agent's tools read the catalogue, not those sources, at chat time.
+- The first runs found bugs in the checks themselves, all fixed with tests:
+  - the mood tag "Creepy" is also a film title
+  - a person outside the top-5 billed cast was not counted
+  - a single-word title named by the user ("Alien") was flagged
+- An independent review found a real defect: allowing all tag names had weakened the title guard. It was fixed before the final run.
 
 ## Ethics and privacy
 
-- **No account, no personal data.** Personalisation uses a random UUID created in the browser (`localStorage`). The server stores only that id with film ids and 👍/👎 (`cinesense.feedback`). The 👤 panel shows everything that was learned and deletes it with one click. Chat history lives in server memory only for the running process. LangSmith traces (when enabled) contain the conversation, the chosen criteria and liked/disliked film ids, but no user id. Chat messages go to the model provider through OpenRouter, so users should not type personal information.
-- **Grounding instead of invented facts.** The agent never writes the recommendation list itself. A deterministic search returns real catalogue films, and the explanation may only name those films (or films the user named). Anything else, or an answer cut off mid-sentence, is replaced by a template answer built from the data. Facts come from tools (`film_facts`, `check_streaming`) over Wikidata, Wikipedia and Movie of the Night. Unknown streaming availability is shown as "unknown", never guessed.
+- **No account, no personal data.** Personalisation uses a random UUID created in the browser (`localStorage`). The server stores only that id with film ids and 👍/👎 (`cinesense.feedback`). The 👤 panel shows everything that was learned and deletes it with one click. Chat history lives in server memory only for the running process. LangSmith traces (when enabled) contain the conversation, the chosen criteria, the taste tags and liked/disliked film ids, and a random per-tab conversation id, but not the user id. Chat messages go to the model provider through OpenRouter, so users should not type personal information.
+- **Grounding instead of invented facts.** The agent never writes the recommendation list itself. A deterministic search returns real catalogue films, and the explanation may only name those films (or films the user named). Anything else, or an answer cut off mid-sentence, is replaced by a template answer built from the data. The explanation may also only say a film streams if the data confirms it. Direct answers without a result list (e.g. facts about one film) come from tool data but are not passed through the title check. Facts come from tools (`film_facts`, `check_streaming`) over Wikidata, Wikipedia and Movie of the Night. Unknown streaming availability is shown as "unknown", never guessed.
 - **The user stays in control.** Every criterion the agent sets is visible and editable as a chip. Vague dislikes ("nothing too scary") are only *proposed* as exclusions, and excluded films are counted ("→ n films hidden"), so filtering is never silent.
 - **Sources and licences.** Only licensed open data and an official API are used, credited per source (table above and the in-app Credits page). TMDB is excluded because its terms forbid AI applications. There are no piracy or streaming-link sites, and nothing is scraped.
 - **Trailers.** They are official YouTube embeds via `youtube-nocookie.com`, started only by a deliberate hover of half a second. They start muted, with one click to unmute, and only one trailer plays at a time. Autoplay on hover is an interpretation of YouTube's embedding rules (the user acts first), not something the terms explicitly name.

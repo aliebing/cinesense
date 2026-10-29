@@ -38,24 +38,27 @@ Framing: **SCR** (Situation → Complication → Resolution). Each section is ab
 - **36 scenarios**, run through the real agent and catalogue:
   - mood, "like X", runtime, exclusions, documentaries, people, plot, conflicts, follow-ups, facts, ambiguous wishes
   - 4 injected failures: streaming down, budget exhausted, embeddings down, unknown person
-- **Automatic results** (see `eval/REPORT.md`):
-  - 36 / 36 scenarios pass all checks
-  - constraint satisfaction 100%
-  - tool selection 100%, tool success 100%
-  - grounding 100%: the validator caught 5 replies that named films outside the results and replaced them with the template answer
-  - median latency 7.8 s (p90 11.5 s)
+- **Automatic results** (`eval/REPORT.md`, k/n over scenarios that define each check):
+  - 36/36 pass
+  - constraints 19/19
+  - tool selection 35/35
+  - no unbacked streaming claims 36/36
+  - grounding: the model's own explanation was clean in 31/36; the guard replaced the other 5 with the template, so users saw 36/36 grounded replies
+  - median latency 7.8 s
   - **$0.001 per chat turn**
-  - LLM judge (Sonnet 5.5) mean 3.91 / 5 for the agent's picks
-- **Ranking comparison** on identical criteria and filters:
+- **Ranking comparison** on 21 mood scenarios, with identical criteria and filters:
 
-  | | Tag relevance@10 | LLM judge (Sonnet 5.5) |
-  |---|---|---|
-  | Filters + Bayesian rating | 0.32 | 1.36 |
-  | movieFinder cosine | 0.78 | 3.41 |
-  | **CineSense** | **0.85** | **3.82** |
+  | | Tag relevance | Tag cosine | LLM judge (Sonnet 5.5) |
+  |---|---|---|---|
+  | Filters + Bayesian rating | 0.31 | 0.05 | 1.38 |
+  | movieFinder cosine | 0.79 | 0.20 | 3.48 |
+  | **CineSense** | **0.85** | 0.17 | **3.95** |
 
-  CineSense also picks better-known films than cosine (median 3,977 vs 926 MovieLens ratings).
-- **Total cost** of the evaluation, including the judge: about $0.25.
+  Each ranker wins on its own metric. The judge prefers CineSense, which also picks better-known films (median 5,781 vs 624 ratings). Caveat: the judge sees titles only.
+- **Honesty:**
+  - The first runs exposed bugs in the checks.
+  - An independent review found that a "fix" had weakened the title guard. It was repaired, and everything was re-run.
+  - Total evaluation cost: about $0.22.
 
 ## 5. Challenges
 
