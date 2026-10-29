@@ -1,6 +1,8 @@
 """Anonymous personalisation: 👍/👎 per browser id (header X-CineSense-User) and the derived taste profile."""
 
 import re
+import threading
+from collections import OrderedDict
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, Header, HTTPException
@@ -26,7 +28,27 @@ def get_user_profile(
     if user is None:
         return None
     feedback = store.get(user)
-    return build_profile(feedback, provider) if feedback else None
+    return cached_profile(feedback, provider) if feedback else None
+
+
+_CACHE_SIZE = 512
+_profiles: OrderedDict[tuple, Profile] = OrderedDict()
+_profiles_lock = threading.Lock()
+
+
+def cached_profile(feedback: dict[str, int], provider) -> Profile:
+    """Profiles depend only on the feedback, so they are cached by its content (no invalidation needed)."""
+    key = (id(provider), tuple(sorted(feedback.items())))
+    with _profiles_lock:
+        if key in _profiles:
+            _profiles.move_to_end(key)
+            return _profiles[key]
+    prof = build_profile(feedback, provider)
+    with _profiles_lock:
+        _profiles[key] = prof
+        while len(_profiles) > _CACHE_SIZE:
+            _profiles.popitem(last=False)
+    return prof
 
 
 UserProfile = Annotated[Profile | None, Depends(get_user_profile)]
@@ -71,7 +93,7 @@ def feedback(
         raise HTTPException(status_code=400, detail="missing_user_id")
     store.set(user, req.film_id, req.value)
     fb = store.get(user)
-    return summary(build_profile(fb, provider) if fb else None, provider)
+    return summary(cached_profile(fb, provider) if fb else None, provider)
 
 
 @router.get("/api/profile")

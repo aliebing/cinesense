@@ -3,7 +3,7 @@
 import { useSyncExternalStore } from "react";
 import type { Criteria } from "@/lib/searchState";
 import type { RankedMovie } from "@/lib/types";
-import { USER_HEADER, userId } from "@/lib/user";
+import { randomId, USER_HEADER, userId } from "@/lib/user";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const UNAVAILABLE = "The assistant is unavailable right now — you can still use the chips and search.";
@@ -80,11 +80,11 @@ export function threadId(): string {
   try {
     const existing = window.sessionStorage.getItem(THREAD_KEY);
     if (existing) return existing;
-    const id = crypto.randomUUID();
+    const id = randomId();
     window.sessionStorage.setItem(THREAD_KEY, id);
     return id;
   } catch {
-    memoryThread ??= crypto.randomUUID();
+    memoryThread ??= randomId();
     return memoryThread;
   }
 }

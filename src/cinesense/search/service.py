@@ -53,10 +53,7 @@ class SearchService:
         if profile is not None:
             sig.disliked = set(profile.disliked)
             if profile.taste:
-                hits = dict(p.tag_search(profile.taste, [], [], MUST_THRESHOLD, NOT_THRESHOLD, limit=3000)[0])
-                # scale against the best film not rated yet: the liked films would otherwise dwarf everything
-                best = max((v for k, v in hits.items() if k not in profile.liked), default=0.0)
-                sig.profile = {k: min(1.0, v / best) for k, v in hits.items()} if best > 0 else None
+                sig.profile = _taste_scores(p, profile)
         movies = p.list_movies()
         if restrict is not None:
             movies = [m for m in movies if m.id in restrict]
@@ -113,3 +110,19 @@ class SearchService:
                 kept.append(r)  # unknown stays (labelled in the UI); known-not-streaming drops out
         page.items = kept + page.items[STREAM_CHECK_LIMIT:]
         return page
+
+
+_taste_cache: dict[tuple, dict[str, float] | None] = {}
+
+
+def _taste_scores(provider, profile) -> dict[str, float] | None:
+    """Taste match per film, cached per profile (a full tag search over the catalogue otherwise runs on every
+    personalised request). Scaled against the best film not rated yet: liked films would dwarf everything."""
+    key = (id(provider), tuple(sorted(profile.taste.items())), tuple(sorted(profile.liked)))
+    if key not in _taste_cache:
+        hits = dict(provider.tag_search(profile.taste, [], [], MUST_THRESHOLD, NOT_THRESHOLD, limit=3000)[0])
+        best = max((v for k, v in hits.items() if k not in profile.liked), default=0.0)
+        if len(_taste_cache) > 256:
+            _taste_cache.clear()
+        _taste_cache[key] = {k: min(1.0, v / best) for k, v in hits.items()} if best > 0 else None
+    return _taste_cache[key]

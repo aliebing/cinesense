@@ -86,8 +86,9 @@ def combined_rank(
     people = {**(signals.title or {}), **(signals.person or {})}
     if signals.person is not None or signals.title is not None:
         active["people"] = people
-    if signals.profile:
-        active["profile"] = _normalised(signals.profile)
+    taste = _normalised(signals.profile) if signals.profile else {}  # once, not per film
+    if taste:
+        active["profile"] = taste
     rated = [m.ml_rating for m in kept if m.ml_rating is not None]
     prior = sum(rated) / len(rated) if rated else DEFAULT_PRIOR_MEAN
     total_w = sum(WEIGHTS[k] for k in active) + WEIGHTS["rating"]
@@ -102,14 +103,14 @@ def combined_rank(
                 movie=m,
                 score=score,
                 match_percent=max(0, min(100, round(100 * score))),
-                reasons=_reasons(m, criteria, signals),
+                reasons=_reasons(m, criteria, signals, taste),
             )
         )
     ranked.sort(key=lambda r: (r.score, r.movie.ml_rating_count), reverse=True)
     return CombinedResult(items=ranked[offset : offset + limit], total=len(ranked), hidden_by_exclusion=hidden)
 
 
-def _reasons(m: Movie, c: SearchCriteria, s: Signals) -> list[str]:
+def _reasons(m: Movie, c: SearchCriteria, s: Signals, taste: dict[str, float]) -> list[str]:
     out: list[str] = []
     rel = s.tag_relevance.get(m.id, {})
     for t in c.tags:
@@ -122,7 +123,7 @@ def _reasons(m: Movie, c: SearchCriteria, s: Signals) -> list[str]:
         out.append(f"with {s.person_names[m.id]}")
     if s.title and m.id in s.title:
         out.append("title match")
-    if s.profile and _normalised(s.profile).get(m.id, 0.0) >= TASTE_REASON:
+    if taste.get(m.id, 0.0) >= TASTE_REASON:
         out.append("fits your taste")
     if services := m.availability.subscription_services:
         out.append(f"streaming on {', '.join(services[:2])}")

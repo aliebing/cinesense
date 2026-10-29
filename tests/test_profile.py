@@ -63,3 +63,27 @@ def test_profile_boosts_matching_film_with_reason():
 def test_mean_tag_vector_shape():
     v = FixtureProvider().mean_tag_vector()
     assert v.shape == (1128,) and np.isfinite(v).all()
+
+
+def test_profile_hits_and_profile_are_cached_per_feedback_state():
+    from cinesense.api.personal import cached_profile
+
+    class Counting(FixtureProvider):
+        calls = {"tag_search": 0, "tag_vectors": 0}
+
+        def tag_search(self, *a, **k):
+            self.calls["tag_search"] += 1
+            return super().tag_search(*a, **k)
+
+        def tag_vectors(self, ids):
+            self.calls["tag_vectors"] += 1
+            return super().tag_vectors(ids)
+
+    p = Counting()
+    matrix = film_id(p, "The Matrix")
+    prof = cached_profile({matrix: 1}, p)
+    assert cached_profile({matrix: 1}, p) is prof and p.calls["tag_vectors"] == 1
+    SearchService(p).run(SearchCriteria(), 0, 10, profile=prof)
+    SearchService(p).run(SearchCriteria(), 0, 10, profile=prof)
+    assert p.calls["tag_search"] == 1
+    assert cached_profile({matrix: 1, film_id(p, "Titanic"): -1}, p) is not prof

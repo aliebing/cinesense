@@ -116,3 +116,17 @@ def test_extended_skipped_on_later_pages(make_movie):
     live = FakeLive(make_movie(id="x"))
     SearchService(FakeProvider([make_movie(id="a")]), live=live).run(SearchCriteria(title="brand new"), 20, 20)
     assert live.calls == 0
+
+
+def test_profile_reasons_stay_linear(make_movie):
+    import time
+
+    from cinesense.domain.criteria import SearchCriteria
+    from cinesense.recommend.combined import Signals, combined_rank
+
+    movies = [make_movie(id=f"m{i}", title=f"F{i}") for i in range(5000)]
+    sig = Signals(profile={f"m{i}": (i % 100) / 100 for i in range(3000)})
+    t0 = time.perf_counter()
+    res = combined_rank(movies, SearchCriteria(), sig, limit=5000)
+    assert time.perf_counter() - t0 < 1.0
+    assert sum("fits your taste" in r.reasons for r in res.items) == 750
