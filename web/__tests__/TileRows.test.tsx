@@ -15,7 +15,7 @@ it("renders four rows of buttons labelled by film title and calls onSelect", asy
 });
 
 it("shows placeholder card when poster is missing", () => {
-  const movie = { ...sampleMovies(1)[0], poster_url: null, backdrop_url: null };
+  const movie = { ...sampleMovies(1)[0], poster_url: null, backdrop_url: null, horizontal_poster_url: null };
   render(<TileRows movies={[movie]} rows={1} onSelect={() => {}} variedSpeed={false} />);
   expect(screen.getAllByTestId("image-placeholder").length).toBeGreaterThan(0);
 });

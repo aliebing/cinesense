@@ -1,5 +1,6 @@
 "use client";
 
+import HoverTrailer from "@/components/media/HoverTrailer";
 import ImageOrPlaceholder from "@/components/ui/ImageOrPlaceholder";
 import type { Movie, RankedMovie } from "@/lib/types";
 
@@ -12,8 +13,8 @@ export default function RelatedRow({ items, onSelect }: { items: RankedMovie[]; 
       <div className="related-viewport">
         <div className="related-track">
           {[...items, ...items].map((r, i) => (
+            <HoverTrailer key={`${r.movie.id}-${i}`} movie={r.movie} className="related-wrap">
             <button
-              key={`${r.movie.id}-${i}`}
               type="button"
               className="related-card"
               aria-label={`${r.movie.title}, ${r.match_percent}% match`}
@@ -25,6 +26,7 @@ export default function RelatedRow({ items, onSelect }: { items: RankedMovie[]; 
               <i>{r.match_percent}%</i>
               <span>{r.movie.title}</span>
             </button>
+            </HoverTrailer>
           ))}
         </div>
       </div>

@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import HoverTrailer from "@/components/media/HoverTrailer";
 import ImageOrPlaceholder from "@/components/ui/ImageOrPlaceholder";
+import { useActiveTrailer } from "@/lib/useActiveTrailer";
 import { useReducedMotion } from "@/lib/useReducedMotion";
 import type { Movie } from "@/lib/types";
 
@@ -21,12 +23,13 @@ export default function TileRows({ movies, rows, onSelect, variedSpeed }: Props)
   const rowRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [paused, setPaused] = useState(false);
   const reduced = useReducedMotion();
+  const { activeId } = useActiveTrailer();
   const pausedRef = useRef(paused);
   const variedRef = useRef(variedSpeed);
   useEffect(() => {
-    pausedRef.current = paused;
+    pausedRef.current = paused || activeId !== null; // a playing trailer must not slide away
     variedRef.current = variedSpeed;
-  }, [paused, variedSpeed]);
+  }, [paused, variedSpeed, activeId]);
 
   useEffect(() => {
     if (reduced) return;
@@ -64,17 +67,18 @@ export default function TileRows({ movies, rows, onSelect, variedSpeed }: Props)
           }}
         >
           {[...rowMovies, ...rowMovies].map((m, i) => (
-            <button
-              key={`${m.id}-${i}`}
-              type="button"
-              className="tile"
-              aria-label={m.title}
-              tabIndex={i < rowMovies.length ? 0 : -1}
-              aria-hidden={i < rowMovies.length ? undefined : true}
-              onClick={() => onSelect(m)}
-            >
-              <ImageOrPlaceholder src={m.backdrop_url ?? m.poster_url} alt="" />
-            </button>
+            <HoverTrailer key={`${m.id}-${i}`} movie={m} className="tile-wrap">
+              <button
+                type="button"
+                className="tile"
+                aria-label={m.title}
+                tabIndex={i < rowMovies.length ? 0 : -1}
+                aria-hidden={i < rowMovies.length ? undefined : true}
+                onClick={() => onSelect(m)}
+              >
+                <ImageOrPlaceholder src={m.horizontal_poster_url ?? m.backdrop_url ?? m.poster_url} alt="" />
+              </button>
+            </HoverTrailer>
           ))}
         </div>
       ))}
