@@ -40,3 +40,20 @@ def test_thread_memory_keeps_history(make_agent):
     run_turn(g, "t5", "hi", empty())
     out = run_turn(g, "t5", "again", empty())
     assert out["history_len"] >= 4
+
+
+def test_parallel_tool_calls_apply_in_order(make_agent):
+    calls = [
+        ("set_mood_tags", {"tags": [{"name": "dark", "weight": 8}]}),
+        ("set_filters", {"max_runtime_min": 130}),
+        ("set_mood_tags", {"tags": [{"name": "horror", "mode": "not"}]}),
+    ]
+    g = make_agent([ai(calls=calls), ai("Done.")])
+    out = run_turn(g, "t6", "dark, short, no horror", empty())
+    assert len(out["criteria"]["tags"]) == 2 and out["criteria"]["max_runtime_min"] == 130
+
+
+def test_failing_tool_reports_error_to_model(make_agent):
+    g = make_agent([ai(calls=[("set_mood_tags", {"tags": "not-a-list"})]), ai("Sorry.")])
+    out = run_turn(g, "t7", "x", empty())
+    assert out["reply"] == "Sorry."

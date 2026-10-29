@@ -7,7 +7,7 @@ from collections.abc import Callable
 
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langgraph.graph import END, START, StateGraph
-from langgraph.prebuilt import ToolNode
+from langgraph.types import Command
 
 from cinesense.agent.grounding import mentioned_titles, template_answer, validate_titles
 from cinesense.agent.prompts import AGENT_PROMPT, EXPLAIN_PROMPT
@@ -74,6 +74,31 @@ def build_graph(llm, explain_llm, tools: list, service, provider, checkpointer):
     def tick(state: AgentState) -> dict:
         return {"rounds": state.get("rounds", 0) + 1}
 
+    by_name = {t.name: t for t in tools}
+
+    def run_tools(state: AgentState) -> dict:
+        """Run the model's tool calls one after another, each on the state left by the previous one
+        (parallel calls would race on the shared criteria)."""
+        current = dict(state)
+        update: dict = {"messages": []}
+        for call in state["messages"][-1].tool_calls:
+            injected = {**call, "type": "tool_call", "args": {**call["args"], "state": current}}
+            try:
+                result = by_name[call["name"]].invoke(injected)
+            except Exception as exc:  # noqa: BLE001 — the model sees the error and can retry
+                result = Command(
+                    update={"messages": [ToolMessage(f"Error: {exc}"[:300], tool_call_id=call["id"], status="error")]}
+                )
+            changes = (
+                dict(result.update)
+                if isinstance(result, Command)
+                else {"messages": [ToolMessage(str(result), tool_call_id=call["id"])]}
+            )
+            update["messages"] += changes.pop("messages", [])
+            current.update(changes)
+            update.update(changes)
+        return update
+
     def route(state: AgentState) -> str:
         last = state["messages"][-1]
         if getattr(last, "tool_calls", None) and state.get("rounds", 0) < MAX_ROUNDS:
@@ -125,7 +150,7 @@ def build_graph(llm, explain_llm, tools: list, service, provider, checkpointer):
     g = StateGraph(AgentState)
     g.add_node("agent", agent)
     g.add_node("tick", tick)
-    g.add_node("tools", ToolNode(tools))
+    g.add_node("tools", run_tools)
     g.add_node("present", present)
     g.add_node("explain", explain)
     g.add_edge(START, "agent")
