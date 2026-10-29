@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 /**
  * Cinema screen: matte-black room, letterbox bars above and below (always present),
- * the largest 16:9 stage that fits, and velvet curtain hints overlapping the stage edges.
+ * the largest Cinemascope (2.39:1) stage that fits, and narrow velvet curtain hints at its edges.
  */
 export default function CinemaFrame({ children }: { children: ReactNode }) {
   return (

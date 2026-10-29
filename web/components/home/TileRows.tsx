@@ -7,8 +7,8 @@ import type { Movie } from "@/lib/types";
 
 type Props = { movies: Movie[]; rows: number; onSelect: (m: Movie) => void; variedSpeed: boolean };
 
-const EVEN_SPEED = 0.35;
-const VARIED_SPEEDS = [0.3, 0.48, 0.24, 0.4];
+const EVEN_SPEED = 0.6;
+const VARIED_SPEEDS = [0.5, 0.8, 0.42, 0.68];
 
 function splitIntoRows(movies: Movie[], rows: number): Movie[][] {
   const out: Movie[][] = Array.from({ length: rows }, () => []);

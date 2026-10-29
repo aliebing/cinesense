@@ -99,10 +99,10 @@
 @keyframes flare { from { opacity: .55; transform: translateX(0) scale(.95); } to { opacity: 1; transform: translateX(-2cqw) scale(1.08); } }
 
 /* ---------- tile rows ---------- */
-.tile-rows { display: flex; flex-direction: column; gap: .7cqw; overflow: hidden; }
-.tile-row { display: flex; gap: .7cqw; width: max-content; will-change: transform; }
+.tile-rows { display: flex; flex-direction: column; gap: .6cqw; overflow: hidden; }
+.tile-row { display: flex; gap: .6cqw; width: max-content; will-change: transform; }
 .tile {
-  position: relative; flex: none; width: 13.4cqw; height: 8.4cqw; padding: 0; border: 0; cursor: pointer; overflow: hidden;
+  position: relative; flex: none; width: 8.4cqw; height: 5.25cqw; padding: 0; border: 0; cursor: pointer; overflow: hidden;
   border-radius: 4px; background: #0b0c12; outline: 1px solid #ffffff30;
   box-shadow: 0 0 0 1px #0008, 0 .5cqw 1.5cqw #000a;
   filter: brightness(1.12) contrast(1.1) saturate(1.15); transition: filter .3s, outline-color .3s;
@@ -112,7 +112,7 @@
 
 /* ---------- homepage layout (proportions from the approved mockup at ~2400px) ---------- */
 .cinema-stage {
-  --safe-x: 8.5%; /* clear of the curtains, which overlap 7% of the stage on each side */
+  --safe-x: 6.5%; /* clear of the curtains, which overlap 5% of the stage on each side */
   --chat-w: clamp(320px, 24cqw, 560px);
   --ui: clamp(12px, 0.62cqw, 16px);
 }
@@ -162,7 +162,7 @@
 .chat-chips span { font-size: .85em; padding: .35em .75em; border-radius: 999px; border: 1px solid #ffffff30; background: #ffffff0c; }
 
 .film-titles {
-  position: absolute; z-index: 16; pointer-events: none; top: 3cqw; height: 15cqw;
+  position: absolute; z-index: 16; pointer-events: none; top: 2.4cqw; height: 10cqw;
   left: calc(45% + var(--chat-w) / 2 - 5cqw); right: 15%;
 }
 .film-title {
@@ -210,8 +210,8 @@
 .genre-error { color: #ffd7a0; }
 
 .stage {
-  position: absolute; z-index: 15; top: 4cqw; left: var(--safe-x); right: var(--safe-x);
-  display: grid; grid-template-columns: 11fr 33fr 26fr; gap: 1.4cqw; align-items: start; font-size: var(--ui);
+  position: absolute; z-index: 15; top: 3.4cqw; left: var(--safe-x); right: var(--safe-x);
+  display: grid; grid-template-columns: 13cqw 38cqw minmax(0, 1fr); gap: 1.4cqw; align-items: start; font-size: var(--ui);
 }
 .stage-poster { position: relative; aspect-ratio: 2 / 3; border-radius: 8px; overflow: hidden;
   outline: 3px solid var(--gold); box-shadow: 0 0 0 6px #f3c76b33, 0 0 60px #f3c76b55, 0 20px 50px #000; }
@@ -245,7 +245,7 @@
 .related-track { display: flex; gap: .8cqw; width: max-content; padding: .6cqw 0; animation: drift 80s linear infinite; }
 .related-viewport:hover .related-track, .related-viewport:focus-within .related-track { animation-play-state: paused; }
 @keyframes drift { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-.related-card { position: relative; flex: none; width: 7.6cqw; aspect-ratio: 2 / 3; padding: 0; border: 0; border-radius: 8px; overflow: hidden;
+.related-card { position: relative; flex: none; width: 5.8cqw; aspect-ratio: 2 / 3; padding: 0; border: 0; border-radius: 8px; overflow: hidden;
   cursor: pointer; background: #0b0c12; color: #fff; outline: 1px solid #ffffff25; box-shadow: 0 10px 30px #000b; transition: transform .3s, filter .3s; }
 .related-card:hover, .related-card:focus-visible { transform: scale(1.05); filter: brightness(1.15); outline: 2px solid var(--gold); }
 .related-card i { position: absolute; top: .4em; right: .5em; font-style: normal; font-size: .75em; background: #000a; border-radius: 999px; padding: .1em .5em; color: var(--gold); }
@@ -253,7 +253,7 @@
 
 .drawer-tab { position: absolute; z-index: 30; right: var(--safe-x); top: 46%; writing-mode: vertical-rl; font: inherit; font-size: var(--ui); font-weight: 600;
   background: #0d0d14d0; color: #fff; border: 1px solid #ffffff30; border-radius: 10px; padding: 1em .6em; cursor: pointer; }
-.drawer { position: absolute; z-index: 30; right: var(--safe-x); top: 4cqw; bottom: 1cqw; width: var(--chat-w); display: flex; flex-direction: column; font-size: var(--ui); }
+.drawer { position: absolute; z-index: 30; right: var(--safe-x); top: 3.4cqw; bottom: 1cqw; width: var(--chat-w); display: flex; flex-direction: column; font-size: var(--ui); }
 .drawer-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: .5em; font-weight: 600; text-shadow: 0 2px 8px #000; }
 .drawer-head button { font: inherit; font-size: 1.4em; line-height: 1; background: none; border: 0; color: #fff; cursor: pointer; }
 
