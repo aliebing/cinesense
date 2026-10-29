@@ -9,8 +9,8 @@
   --muted: #a29f99;
   --bar: 6vh;
   --stage-ratio: 2.25; /* wide cinema screen */
-  --curtain-overlap: 0.023; /* share of the stage width each curtain covers */
-  --stage-max: 86vw; /* leaves room for the curtains at the sides */
+  --curtain-overlap: 0.02; /* share of the stage width each curtain covers */
+  --stage-max: 87.5vw; /* leaves room for the curtains at the sides */
   --stage-w: min(var(--stage-max), calc((100vh - 2 * var(--bar)) * var(--stage-ratio)));
 }
 
@@ -87,14 +87,25 @@ body {
     #3c0610 42px
   );
 }
+/* gathered towards the outer edge and tied back near the bottom */
 .cinema-curtain--left {
   left: 0;
-  box-shadow: 10px 0 24px #000c;
+  clip-path: polygon(0 0, 100% 0, 99% 18%, 94% 36%, 84% 54%, 68% 70%, 52% 80%, 58% 88%, 70% 100%, 0 100%);
 }
 .cinema-curtain--right {
   right: 0;
-  box-shadow: -10px 0 24px #000c;
+  clip-path: polygon(100% 0, 0 0, 1% 18%, 6% 36%, 16% 54%, 32% 70%, 48% 80%, 42% 88%, 30% 100%, 100% 100%);
 }
+.cinema-tie {
+  position: absolute;
+  top: calc(80% - 1.6vw);
+  width: 3.2vw;
+  min-width: 34px;
+  height: auto;
+  filter: drop-shadow(0 2px 4px #000c);
+}
+.cinema-curtain--left .cinema-tie { left: calc(52% - 2.6vw); }
+.cinema-curtain--right .cinema-tie { right: calc(52% - 2.6vw); }
 /* top and bottom shading plus a warm projector sheen on the folds */
 .cinema-curtain::after {
   content: "";
