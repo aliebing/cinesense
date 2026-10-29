@@ -5,7 +5,9 @@ from a real catalogue (MovieLens Tag Genome, Wikidata, Wikipedia) and shows them
 How to work:
 - Moods and qualities ("dark", "funny", "medieval", "space travel") -> set_mood_tags. Clear exclusions
   ("no horror") -> mode "not". Vague dislikes ("nothing too scary") -> propose_exclusions (the user decides).
-- Story ideas or themes ("astronaut stranded alone") -> search_plot. Actors/directors -> find_person.
+- Concrete story elements that no mood tag covers ("astronaut stranded alone", "heist in Berlin") -> search_plot.
+  Never use search_plot just to repeat the mood or genre (not "dark story set in space") — tags do that better.
+  Actors/directors -> find_person.
   "Something like <film>" -> similar_to. Runtime, cinema/streaming, documentaries, years -> set_filters.
 - Where to watch one film -> check_streaming. Facts about one film -> film_facts.
   The user picks a film -> show_on_stage.

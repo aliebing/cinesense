@@ -1,3 +1,5 @@
+from langchain_core.messages import AIMessage
+
 from cinesense.agent.graph import run_turn
 from cinesense.agent.grounding import template_answer, validate_titles
 from cinesense.domain.criteria import SearchCriteria
@@ -29,3 +31,10 @@ def test_fallback_used_when_invalid(make_agent):
     )
     out = run_turn(g, "g1", "dark films", SearchCriteria().model_dump())
     assert "Titanic" not in out["reply"] and out["grounding_fallback"]
+
+
+def test_truncated_explanation_falls_back(make_agent):
+    cut = AIMessage("These films share a", response_metadata={"finish_reason": "length"})
+    g = make_agent([ai(calls=[("set_mood_tags", {"tags": [{"name": "dark"}]})]), ai("ok")], explain_msgs=[cut])
+    out = run_turn(g, "g2", "dark films", SearchCriteria().model_dump())
+    assert out["grounding_fallback"] and out["reply"].startswith("Here are films")

@@ -2,6 +2,7 @@
 explanation (explain). Ranking, filters, budgets and grounding are deterministic; the model only decides
 the criteria."""
 
+import logging
 import re
 from collections.abc import Callable
 
@@ -15,6 +16,7 @@ from cinesense.agent.state import AgentState
 from cinesense.domain.criteria import SearchCriteria
 
 MAX_ROUNDS = 6
+log = logging.getLogger(__name__)
 RESULTS = 8
 _ASKS_FOR_FILMS = re.compile(r"\b(show|recommend|suggest|list|more|films?|movies?|docs?|documentar\w*)\b", re.I)
 
@@ -138,12 +140,15 @@ def build_graph(llm, explain_llm, tools: list, service, provider, checkpointer):
         try:
             msg = explain_llm.invoke([SystemMessage(EXPLAIN_PROMPT), HumanMessage(prompt)])
             text, usage = str(msg.content), _add_usage(usage, msg)
+            if msg.response_metadata.get("finish_reason") == "length":
+                text = ""  # cut off mid-sentence
         except Exception:  # noqa: BLE001 — the template is always a valid answer
             text = ""
         titles = catalogue_titles()
         allowed = [r["movie"]["title"] for r in results] + mentioned_titles(wish, titles)
-        ok, _ = validate_titles(text, allowed, titles) if text else (False, [])
+        ok, bad = validate_titles(text, allowed, titles) if text else (False, ["(empty answer)"])
         if not ok:
+            log.warning("grounding fallback, unlisted titles: %s", bad)
             return {"messages": [AIMessage(template_answer(results))], "grounding_fallback": True, "usage": usage}
         return {"messages": [AIMessage(text)], "usage": usage}
 

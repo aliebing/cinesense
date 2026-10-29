@@ -82,7 +82,7 @@ def get_agent():
     service = SearchService(provider, streaming, get_embedder())
     graph = build_graph(
         llm,
-        make_llm(s, max_tokens=500),
+        make_llm(s, max_tokens=1500),  # reasoning tokens count against the limit
         make_tools(ToolKit(service, provider, streaming)),
         service,
         provider,
