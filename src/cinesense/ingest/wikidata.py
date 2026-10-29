@@ -8,7 +8,7 @@ from urllib.parse import unquote
 import httpx
 
 SPARQL_URL = "https://query.wikidata.org/sparql"
-USER_AGENT = "CineSense-capstone/0.1 (student project; contact via GitHub aliebing)"
+USER_AGENT = "CineSense-capstone/0.1 (https://github.com/aliebing; student project) httpx"
 HEADERS = {"Accept": "application/sparql-results+json", "User-Agent": USER_AGENT}
 
 _SCALARS = """
