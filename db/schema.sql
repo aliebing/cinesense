@@ -67,3 +67,5 @@ create table if not exists browse_cache (key text primary key, payload jsonb not
 create table if not exists api_budget (month text primary key, calls int not null default 0);
 create table if not exists trailer_cache (film_id text primary key, video_id text, checked_at timestamptz not null);
 create table if not exists youtube_quota (day date primary key, calls int not null default 0);
+
+alter table films add column if not exists plot_checked_at timestamptz;
