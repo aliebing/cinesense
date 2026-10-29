@@ -386,7 +386,7 @@
   font: inherit; color: #fff; background: #ffffff10; border: 1px solid #ffffff30; border-radius: 8px; padding: .45em .6em;
 }
 .advanced-search__check { flex-direction: row !important; align-items: center; gap: .5em !important; color: #fff !important; }
-.genre-chips { position: absolute; z-index: 16; left: var(--safe-x); right: var(--safe-x); bottom: calc(1cqw + 5.8cqw * 1.5 + 2.4em); }
+.genre-chips { position: absolute; z-index: 16; left: var(--safe-x); right: var(--safe-x); bottom: calc(1cqw + 5.8cqw * 1.5 + 4.2em); }
 .stage-people { margin: 0 0 .5em; font-size: .85em; opacity: .85; }
 .stage-tags .stage-tag--muted { opacity: .7; border-style: dashed; }
 .stage-tags--mood { margin-top: .4em; }

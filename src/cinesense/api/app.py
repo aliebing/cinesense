@@ -18,6 +18,7 @@ Live = Annotated[object, Depends(get_live)]
 Trailers = Annotated[object, Depends(get_trailers)]
 
 ROW_SIZE = 12
+IMAGE_FILL = 12  # images fetched per list response (each new film costs one Streaming API request once)
 
 
 class DiscoverRequest(BaseModel):
@@ -74,6 +75,8 @@ def create_app(load_env: bool = True) -> FastAPI:
         req: DiscoverRequest, provider, streaming, embedder, live=None, tasks=None
     ) -> DiscoverResponse:
         res = SearchService(provider, streaming, embedder, live).run(req.criteria, req.offset, req.limit)
+        for r in res.items[:IMAGE_FILL]:
+            _with_images(r.movie, provider, streaming)
         if res.extended_used and tasks is not None:
             from cinesense.ingest.pipeline import enrich_new_films
 
@@ -126,6 +129,7 @@ def create_app(load_env: bool = True) -> FastAPI:
     def related(
         movie_id: str,
         provider: Provider,
+        streaming: Streaming,
         limit: Annotated[int, Query(ge=1, le=100)] = 13,
         world_id: str | None = None,
     ) -> list[RankedMovie]:
@@ -136,7 +140,10 @@ def create_app(load_env: bool = True) -> FastAPI:
         if world_id is None or get_world(world_id) is None:
             world_id = found.world_ids[0] if found.world_ids else None
         items = SearchService(provider).run(SearchCriteria(world_id=world_id), 0, limit + 1).items
-        return [r for r in items if r.movie.id != movie_id][:limit]
+        items = [r for r in items if r.movie.id != movie_id][:limit]
+        for r in items[:IMAGE_FILL]:
+            _with_images(r.movie, provider, streaming)
+        return items
 
     @app.get("/api/home")
     def home(provider: Provider, streaming: Streaming) -> dict:
