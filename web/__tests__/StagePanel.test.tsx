@@ -42,7 +42,8 @@ it("shows streaming providers, TMDB rating, badge and why text", () => {
     },
   };
   render(<StagePanel movie={movie} world={world} why="Highly rated" />);
-  expect(screen.getByText("📺 Streaming on Netflix, Disney+")).toBeInTheDocument();
+  expect(screen.getByText("📺 Netflix")).toBeInTheDocument();
+  expect(screen.getByText("📺 Disney+")).toBeInTheDocument();
   expect(screen.getByText("⭐ MovieLens 4.1/5 (12,345 ratings)")).toBeInTheDocument();
   expect(screen.getByText("Placeholder")).toBeInTheDocument();
   expect(screen.getByText("Highly rated")).toBeInTheDocument();
@@ -53,4 +54,46 @@ it("renders the four feedback buttons disabled", () => {
   render(<StagePanel movie={base} world={world} why="Test" />);
   const names = ["👍 More like this", "⚡ More action", "😂 Funnier", "👎 Not for me"];
   for (const name of names) expect(screen.getByRole("button", { name })).toBeDisabled();
+});
+
+
+it("streaming states: unknown, not in Germany, and rent/buy collapsed", () => {
+  const { rerender } = render(<StagePanel movie={{ ...base, availability: { in_cinema_de: false, streaming_de: null, subscription_services: [] } }} world={world} why="x" />);
+  expect(screen.getByText("Streaming availability unknown")).toBeInTheDocument();
+  rerender(<StagePanel movie={{ ...base, availability: { in_cinema_de: false, streaming_de: [], subscription_services: [] } }} world={world} why="x" />);
+  expect(screen.getByText("Not streaming in Germany")).toBeInTheDocument();
+  rerender(
+    <StagePanel
+      movie={{
+        ...base,
+        availability: {
+          in_cinema_de: false,
+          streaming_de: [
+            { service: "Netflix", type: "subscription", link: null },
+            { service: "Apple TV", type: "rent", link: null },
+            { service: "Prime Video", type: "buy", link: null },
+          ],
+          subscription_services: ["Netflix"],
+        },
+      }}
+      world={world}
+      why="x"
+    />,
+  );
+  expect(screen.getByText("+ rent/buy on 2 services")).toBeInTheDocument();
+});
+
+it("links to IMDb and Wikipedia and shows people, tags and German cinema release", () => {
+  render(
+    <StagePanel
+      movie={{ ...base, imdb_id: "tt0816692", wikipedia_title: "Interstellar (film)", directors: ["Christopher Nolan"], cast_top: ["Matthew McConaughey"], top_tags: ["space travel"], release_date_de: "2026-10-01", availability: { in_cinema_de: true, streaming_de: null, subscription_services: [] } }}
+      world={world}
+      why="x"
+    />,
+  );
+  expect(screen.getByRole("link", { name: "IMDb" })).toHaveAttribute("href", "https://www.imdb.com/title/tt0816692/");
+  expect(screen.getByRole("link", { name: "Wikipedia" })).toHaveAttribute("href", "https://en.wikipedia.org/wiki/Interstellar_(film)");
+  expect(screen.getByText(/Christopher Nolan/)).toBeInTheDocument();
+  expect(screen.getByText("space travel")).toBeInTheDocument();
+  expect(screen.getByText("🎬 In cinemas (German release 2026-10-01)")).toBeInTheDocument();
 });

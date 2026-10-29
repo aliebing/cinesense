@@ -387,3 +387,9 @@
 }
 .advanced-search__check { flex-direction: row !important; align-items: center; gap: .5em !important; color: #fff !important; }
 .genre-chips { position: absolute; z-index: 16; left: var(--safe-x); right: var(--safe-x); bottom: calc(1cqw + 5.8cqw * 1.5 + 2.4em); }
+.stage-people { margin: 0 0 .5em; font-size: .85em; opacity: .85; }
+.stage-tags .stage-tag--muted { opacity: .7; border-style: dashed; }
+.stage-tags--mood { margin-top: .4em; }
+.stage-tags--mood span { border-color: #f3c76b55; color: #f1dca8; }
+.stage-links { display: flex; gap: .8em; margin-top: .5em; font-size: .85em; }
+.stage-links a { color: var(--gold); }
