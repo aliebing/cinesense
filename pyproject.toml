@@ -25,6 +25,7 @@ packages = ["src/cinesense"]
 dev = [
     "httpx2==2.16.0",
     "pytest==9.2.0",
+    "pytest-asyncio==1.4.1",
     "respx==0.23.1",
     "ruff==0.17.3",
 ]
@@ -32,6 +33,7 @@ dev = [
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
+asyncio_mode = "auto"
 
 [tool.ruff]
 line-length = 110
