@@ -64,7 +64,7 @@ class ToolKit:
         for spec, (tag, idx) in zip([s for s in specs if s.name not in unresolved], resolved, strict=True):
             current = [t for t in current if t["idx"] != idx] + [{"idx": idx, "weight": spec.weight, "mode": spec.mode}]
             added.append(f"{tag} ({spec.mode}, {spec.weight})")
-        c = c.model_copy(update={"tags": current[-12:]})
+        c = SearchCriteria(**{**c.model_dump(), "tags": current[-12:]})
         msg = f"Mood tags now: {', '.join(added) or 'unchanged'}."
         if unresolved:
             msg += f" Not found as tags: {', '.join(unresolved)} — use plot search for those."
@@ -110,7 +110,7 @@ class ToolKit:
         for name in film.top_tags[:5]:
             if name in idx and all(t["idx"] != idx[name] for t in tags):
                 tags.append({"idx": idx[name], "weight": 6, "mode": "prefer"})
-        c = c.model_copy(update={"tags": tags[-12:]})
+        c = SearchCriteria(**{**c.model_dump(), "tags": tags[-12:]})
         return (
             {"criteria": c.model_dump(), "criteria_changed": True},
             f"Using the mood of {film.title} ({film.year}): {', '.join(film.top_tags[:5])}.",

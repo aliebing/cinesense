@@ -13,3 +13,4 @@ class AgentState(TypedDict, total=False):
     streaming_checks: int
     rounds: int
     usage: dict  # input_tokens, output_tokens
+    grounding_fallback: bool
