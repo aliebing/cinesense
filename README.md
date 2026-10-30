@@ -29,6 +29,17 @@ Cinema and streaming sites show long title lists and genre grids. Combining seve
 
 ## Setup
 
+### With Docker (quickest)
+
+```bash
+cp .env.example .env          # Supabase, OpenRouter, Streaming Availability (YouTube optional)
+docker compose up --build     # first build takes a few minutes
+```
+
+Then open **http://localhost:8080**. Three containers run: `api` (FastAPI), `web` (Next.js production build) and `proxy` (nginx), which serves both under one address (`/api` goes to the API, everything else to the web app). The catalogue is the existing Supabase (local on the host or in the cloud), so there is no database container; a `127.0.0.1` Supabase URL in `.env` is pointed at the host automatically. Building the catalogue (`make ingest`) still runs outside Docker, because it needs the local MovieLens file.
+
+### Local development
+
 Requirements: Python 3.12 with [uv](https://docs.astral.sh/uv/), and Node.js 20.19+.
 
 ```bash

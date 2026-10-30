@@ -34,7 +34,7 @@ SEGMENTS = [
         "Willkommen bei CineSense. Die Idee: Du suchst keinen Film aus einer endlosen Liste aus, "
         "sondern wählst ein Gefühl. Die Startseite ist wie ein Kinosaal gestaltet, mit Leinwand, Vorhang, "
         "Nebel und Projektorlicht. Im Hintergrund wechseln sechs Stimmungswelten, zum Beispiel Spannung, "
-        "Komödie oder Liebe.",
+        "Komödie oder Liebe, und rechts laufen Filmreihen dieser Welten vorbei. Jede Kachel lässt sich anklicken.",
     ),
     Segment(
         "02_type",
@@ -43,8 +43,7 @@ SEGMENTS = [
     ),
     Segment(
         "03_agent",
-        "Jetzt arbeitet ein KI-Agent, und rechts mischt solange der Kartenstapel. Der Agent übersetzt meinen "
-        "Wunsch in konkrete Suchkriterien. "
+        "Jetzt arbeitet ein KI-Agent. Er übersetzt meinen Wunsch in konkrete Suchkriterien. "
         "Er wählt passende Stimmungs-Tags aus, zum Beispiel Raumfahrt und Science-Fiction, setzt eine "
         "Obergrenze für die Laufzeit und macht aus „kein Horror“ einen Ausschluss. Die eigentliche Suche "
         "danach ist deterministisch. Das Sprachmodell darf keine Filme erfinden, es erklärt nur, was die "
@@ -52,10 +51,11 @@ SEGMENTS = [
     ),
     Segment(
         "04_reply",
-        "Die Antwort steht im Chat, und rechts werden die passenden Filme wie Karten vom Stapel ausgelegt, "
-        "bis zu acht, jede mit einem Prozentwert, wie gut sie passt, und einer kurzen Begründung. Links siehst "
-        "du, was der Agent eingestellt hat: Jeder Stimmungs-Tag ist eine Karte mit Gewicht und Modus, also "
-        "bevorzugen, muss oder ausschließen.",
+        "Die Antwort kommt mit den drei besten Vorschlägen, jeder mit einer kurzen Begründung. Gleichzeitig "
+        "passen sich rechts die Filmreihen an: Oben laufen jetzt die Treffer meiner Suche, darunter weitere "
+        "Filme aus den Genres dieser Treffer, mit denselben Kriterien. Links siehst du, was der Agent "
+        "eingestellt hat: Jeder Stimmungs-Tag ist eine Karte mit Gewicht und Modus, also bevorzugen, muss "
+        "oder ausschließen.",
     ),
     Segment(
         "05_results",
@@ -75,7 +75,7 @@ SEGMENTS = [
         "Regie und Besetzung, Stimmungs-Tags, Links zu IMDb und Wikipedia, "
         "und wo man den Film in Deutschland streamen kann. "
         "Ist das nicht bekannt, steht dort ehrlich „unbekannt“, statt dass geraten wird. Darunter laufen "
-        "weitere passende Filme, die man mit der Maus steuert.",
+        "weitere passende Filme durch. Mit der Maus am rechten oder linken Rand werden sie schneller.",
     ),
     Segment(
         "08_feedback",
@@ -145,7 +145,7 @@ async def main(base: str, api: str, out: Path) -> None:
 
         await narrate(rec, seg["03_agent"], send, pad=0.3)
         # The agent turn takes 10–45 s; whatever outlasts the narration is cut from the video.
-        await rec.wait_cut(page.locator("[data-testid=dealt-card]").first.wait_for(timeout=120000))
+        await rec.wait_cut(page.locator("[data-testid=chat-pick]").first.wait_for(timeout=120000))
         await page.wait_for_timeout(1500)
 
         async def reply():
@@ -158,10 +158,11 @@ async def main(base: str, api: str, out: Path) -> None:
             for _ in range(8):
                 await page.mouse.wheel(0, 120)
                 await asyncio.sleep(0.3)
-            cards = page.locator("[data-testid=dealt-card]")
-            await glide_to(page, cards.first, 1200, dy=0.85)
-            await asyncio.sleep(1.2)
-            await glide_to(page, cards.nth(min(5, await cards.count() - 1)), 1500, dy=0.85)
+            hits = page.locator('.tile-row-wrap[data-world="search-hits"]')
+            await hits.wait_for(timeout=30000)
+            await glide_to(page, hits, 1200, dx=0.6)
+            await asyncio.sleep(1.5)
+            await glide(page, 1500, 800, 1500)  # over the genre rows below
             await asyncio.sleep(1.0)
             await shot(page, out, "chat")
             await glide_to(page, page.locator("[aria-label='Search criteria']"), 1400, dy=0.2)
@@ -206,9 +207,12 @@ async def main(base: str, api: str, out: Path) -> None:
                     await glide_to(page, loc, 1100)
                     await asyncio.sleep(1.6)
             row = page.locator("[aria-label='Also fits your mood']")
-            await glide_to(page, row, 1000, dx=0.75)
+            await glide_to(page, row, 1000, dx=0.5, dy=0.6)
+            await asyncio.sleep(1.0)
+            await glide_to(page, row, 1200, dx=0.96, dy=0.6)  # right edge: runs fast
+            await asyncio.sleep(1.8)
+            await glide_to(page, row, 1600, dx=0.04, dy=0.6)  # left edge: fast the other way
             await asyncio.sleep(1.5)
-            await glide_to(page, row, 1800, dx=0.3)
 
         await narrate(rec, seg["07_stage"], stage)
 

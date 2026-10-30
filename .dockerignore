@@ -1,0 +1,12 @@
+# API image context (repo root): only pyproject, uv.lock, README.md, src and docker/ are copied
+.git
+.venv
+.env
+.superpowers
+web
+data
+eval
+docs
+scripts
+tests
+**/__pycache__
