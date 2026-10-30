@@ -145,6 +145,11 @@ async def strip_trailers(page, api: str) -> None:
         await route.fulfill(response=resp, json=scrub(await resp.json()))
 
     await page.route(api.rstrip("/") + "/api/**", handle)
+    # Chat answers stream past the route above with their trailer ids; hide the 'blocked' note a hover would show.
+    await page.add_init_script(
+        "addEventListener('DOMContentLoaded', () => document.head.appendChild(Object.assign("
+        "document.createElement('style'), { textContent: '.hover-trailer__note { display: none !important; }' })));"
+    )
 
 
 async def narrate(rec: Screencast, seg: Segment, actions=None, pad: float = 0.7) -> None:

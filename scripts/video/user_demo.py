@@ -34,7 +34,7 @@ SEGMENTS = [
         "Willkommen bei CineSense. Die Idee: Du suchst keinen Film aus einer endlosen Liste aus, "
         "sondern wählst ein Gefühl. Die Startseite ist wie ein Kinosaal gestaltet, mit Leinwand, Vorhang, "
         "Nebel und Projektorlicht. Im Hintergrund wechseln sechs Stimmungswelten, zum Beispiel Spannung, "
-        "Komödie oder Liebe, und Filmreihen ziehen vorbei.",
+        "Komödie oder Liebe.",
     ),
     Segment(
         "02_type",
@@ -43,7 +43,8 @@ SEGMENTS = [
     ),
     Segment(
         "03_agent",
-        "Jetzt arbeitet ein KI-Agent. Er übersetzt meinen Wunsch in konkrete Suchkriterien. "
+        "Jetzt arbeitet ein KI-Agent, und rechts mischt solange der Kartenstapel. Der Agent übersetzt meinen "
+        "Wunsch in konkrete Suchkriterien. "
         "Er wählt passende Stimmungs-Tags aus, zum Beispiel Raumfahrt und Science-Fiction, setzt eine "
         "Obergrenze für die Laufzeit und macht aus „kein Horror“ einen Ausschluss. Die eigentliche Suche "
         "danach ist deterministisch. Das Sprachmodell darf keine Filme erfinden, es erklärt nur, was die "
@@ -51,9 +52,10 @@ SEGMENTS = [
     ),
     Segment(
         "04_reply",
-        "Die Antwort kommt mit Vorschlägen, jeder mit einer kurzen Begründung und einem "
-        "Prozentwert, wie gut er passt. Links siehst du, was der Agent eingestellt hat: Jeder Stimmungs-Tag "
-        "ist eine Karte mit Gewicht und Modus, also bevorzugen, muss oder ausschließen.",
+        "Die Antwort steht im Chat, und rechts werden die passenden Filme wie Karten vom Stapel ausgelegt, "
+        "bis zu acht, jede mit einem Prozentwert, wie gut sie passt, und einer kurzen Begründung. Links siehst "
+        "du, was der Agent eingestellt hat: Jeder Stimmungs-Tag ist eine Karte mit Gewicht und Modus, also "
+        "bevorzugen, muss oder ausschließen.",
     ),
     Segment(
         "05_results",
@@ -143,7 +145,7 @@ async def main(base: str, api: str, out: Path) -> None:
 
         await narrate(rec, seg["03_agent"], send, pad=0.3)
         # The agent turn takes 10–45 s; whatever outlasts the narration is cut from the video.
-        await rec.wait_cut(page.locator("[data-testid=chat-pick]").first.wait_for(timeout=120000))
+        await rec.wait_cut(page.locator("[data-testid=dealt-card]").first.wait_for(timeout=120000))
         await page.wait_for_timeout(1500)
 
         async def reply():
@@ -156,6 +158,11 @@ async def main(base: str, api: str, out: Path) -> None:
             for _ in range(8):
                 await page.mouse.wheel(0, 120)
                 await asyncio.sleep(0.3)
+            cards = page.locator("[data-testid=dealt-card]")
+            await glide_to(page, cards.first, 1200, dy=0.85)
+            await asyncio.sleep(1.2)
+            await glide_to(page, cards.nth(min(5, await cards.count() - 1)), 1500, dy=0.85)
+            await asyncio.sleep(1.0)
             await shot(page, out, "chat")
             await glide_to(page, page.locator("[aria-label='Search criteria']"), 1400, dy=0.2)
             await glide_to(page, page.locator("[role=group][aria-label^='Mode for']").first, 1000)

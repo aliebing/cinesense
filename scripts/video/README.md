@@ -25,6 +25,6 @@ Narration is cached per segment in `out/work-*/voice/`, so only changed text is 
 
 ## Notes
 
-- **Trailers:** headless Chrome can't play YouTube embeds. The recorder therefore removes trailer ids from API answers and swallows `/api/trailers/report`. Otherwise a test run would mark working trailers as broken in the shared cache.
+- **Trailers:** headless Chrome can't play YouTube embeds. The recorder therefore removes trailer ids from API answers, swallows `/api/trailers/report` and hides the "blocked" note. Without the swallowed reports, a test run would mark working trailers as broken in the shared cache.
 - **Agent wait:** any part of the agent turn that outlasts the narration is cut from the video (`Screencast.wait_cut`).
 - **Frames:** recorded with the Chrome DevTools screencast (sharp JPEGs with timestamps) and encoded to 30 fps H.264 with ffmpeg. A drawn dot stands in for the mouse pointer, because screencasts don't show the real one.
