@@ -234,3 +234,24 @@ def test_stage_never_offers_a_reported_fallback_trailer():
     app = make_app(trailers=Fallback())
     app.dependency_overrides[get_trailer_checker] = lambda: checker
     assert TestClient(app).get(f"/api/movies/{film.id}").json()["youtube_key"] is None
+
+
+def test_discover_can_skip_image_lookups():
+    """Homepage background rows ask with fill_images=false, so they never spend Streaming API budget."""
+
+    class CountingStreaming(StubStreaming):
+        def __init__(self):
+            super().__init__(None)
+            self.image_calls = 0
+
+        def images(self, imdb_id):
+            self.image_calls += 1
+            return None
+
+    s = CountingStreaming()
+    c = client(streaming=s)
+    body = {"criteria": {"world_id": "scifi"}, "limit": 12}
+    assert c.post("/api/discover", json={**body, "fill_images": False}).status_code == 200
+    assert s.image_calls == 0
+    c.post("/api/discover", json=body)
+    assert s.image_calls > 0

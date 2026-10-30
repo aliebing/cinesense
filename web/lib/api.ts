@@ -36,8 +36,9 @@ export type Tag = { idx: number; tag: string };
 export type DiscoverResult = { items: RankedMovie[]; total: number; hidden_by_exclusion: number; extended_used: boolean };
 
 export const getTags = () => apiGet<Tag[]>("/api/tags");
-export const discover = (criteria: Criteria, offset = 0, limit = 20) =>
-  apiPost<DiscoverResult>("/api/discover", { criteria, offset, limit });
+/** `fillImages: false` skips the Streaming API image lookups (homepage background rows spend no budget). */
+export const discover = (criteria: Criteria, offset = 0, limit = 20, fillImages = true) =>
+  apiPost<DiscoverResult>("/api/discover", fillImages ? { criteria, offset, limit } : { criteria, offset, limit, fill_images: false });
 export const search = (criteria: Criteria, offset = 0, limit = 20) =>
   apiPost<DiscoverResult>("/api/search", { criteria, offset, limit });
 

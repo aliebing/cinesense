@@ -8,24 +8,25 @@ import { useActiveTrailer } from "@/lib/useActiveTrailer";
 import { useReducedMotion } from "@/lib/useReducedMotion";
 import type { Movie, RankedMovie } from "@/lib/types";
 
-const IDLE_SPEED = 28; // px per second while the pointer is elsewhere: the row keeps drifting
+const IDLE_SPEED = 40; // px per second while the pointer is elsewhere: the row keeps running through
+const SLOW_SPEED = 14; // px per second in the middle: still moving, but a card is easy to catch
 const MAX_SPEED = 1100; // px per second with the pointer at the very edge
-const DEAD_ZONE = 0.3; // middle share of the row where it stands still, so a card can be caught
+const DEAD_ZONE = 0.3; // middle share of the row where it only creeps on
 const EASE_MS = 220;
 
 /** Row velocity for a pointer at `ratio` (0 = left edge, 1 = right edge) of the row; null = no pointer.
  *  Right of the middle the films slide left (more come in from the right), left of it the other way,
- *  faster towards the edge. */
-export function edgeSpeed(ratio: number | null): number {
-  if (ratio === null) return -IDLE_SPEED;
+ *  faster towards the edge. In the middle and without a pointer the row keeps going in direction `dir`. */
+export function edgeSpeed(ratio: number | null, dir = -1): number {
+  if (ratio === null) return dir * IDLE_SPEED;
   const d = (Math.min(Math.max(ratio, 0), 1) - 0.5) * 2; // -1 … 1
   const reach = (Math.abs(d) - DEAD_ZONE) / (1 - DEAD_ZONE);
-  if (reach <= 0) return 0;
-  return -Math.sign(d) * reach * reach * MAX_SPEED;
+  if (reach <= 0) return dir * SLOW_SPEED;
+  return -Math.sign(d) * Math.max(reach * reach * MAX_SPEED, SLOW_SPEED);
 }
 
-/** Matching films in an endless row steered by the mouse: towards an edge it runs fast in that direction,
- *  in the middle it holds still. Hovering a card plays its trailer. */
+/** Matching films in an endless row across the page that always runs through, steered by the mouse: towards an
+ *  edge it runs fast in that direction, in the middle it creeps on. Hovering a card plays its trailer. */
 export default function RelatedRow({ items, onSelect }: { items: RankedMovie[]; onSelect: (m: Movie) => void }) {
   const viewport = useRef<HTMLDivElement | null>(null);
   const track = useRef<HTMLDivElement | null>(null);
@@ -43,6 +44,7 @@ export default function RelatedRow({ items, onSelect }: { items: RankedMovie[]; 
     let last = performance.now();
     let offset = 0;
     let speed = 0;
+    let dir = -1; // keep the last direction, so the row never turns around on its own
     const step = (now: number) => {
       const dt = Math.min(now - last, 64); // a background tab must not teleport the row
       last = now;
@@ -52,7 +54,9 @@ export default function RelatedRow({ items, onSelect }: { items: RankedMovie[]; 
         const first = el.children[0] as HTMLElement | undefined;
         const second = el.children[n] as HTMLElement | undefined;
         const period = first && second ? second.offsetLeft - first.offsetLeft : 0;
-        speed = easeTowards(speed, trailerRef.current ? 0 : edgeSpeed(pointer.current), dt, EASE_MS);
+        const target = edgeSpeed(pointer.current, dir);
+        if (Math.abs(target) > SLOW_SPEED) dir = Math.sign(target);
+        speed = easeTowards(speed, trailerRef.current ? 0 : target, dt, EASE_MS);
         offset = advance(offset, speed * (dt / 1000), period);
         el.style.transform = `translate3d(${offset}px, 0, 0)`;
       }

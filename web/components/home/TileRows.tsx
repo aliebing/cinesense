@@ -1,13 +1,23 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import HoverTrailer from "@/components/media/HoverTrailer";
+import { useActiveTrailer } from "@/lib/useActiveTrailer";
 import { useReducedMotion } from "@/lib/useReducedMotion";
 import type { MoodWorld, Movie, TileRow } from "@/lib/types";
 
-type Props = { rows: TileRow[]; variedSpeed: boolean; worldOrder?: string[] };
+type Props = { rows: TileRow[]; onSelect: (m: Movie) => void; variedSpeed: boolean; worldOrder?: string[] };
 
-const EVEN_SPEED = 120; // px per second: background motion, not something to catch
-const VARIED_SPEEDS = [100, 160, 85, 135];
+const EVEN_SPEED = 54; // px per second
+const VARIED_SPEEDS = [45, 72, 38, 60];
+const POINTING_FACTOR = 0.45; // pointer over the rows: slower, so a tile is easy to catch
+const TRAILER_FACTOR = 0.06; // a trailer plays: the rows crawl on, the tile stays under the pointer
+
+/** Speed factor the rows ease towards; never zero, the rows always keep moving. */
+export function targetFactor(pointing: boolean, trailer: boolean): number {
+  return trailer ? TRAILER_FACTOR : pointing ? POINTING_FACTOR : 1;
+}
+const EASE_MS = 600; // time constant for speed changes
 
 /** Moves an offset and wraps it into (-period, 0] — exactly one loop period, so the seam never jumps. */
 export function advance(offset: number, delta: number, period: number): number {
@@ -30,6 +40,11 @@ export function rowDirection(id: string, order: string[], slot: number): number 
   return (i >= 0 ? i : slot) % 2 ? 1 : -1;
 }
 
+/** Exponential easing of the speed factor towards its target (frame-rate independent). */
+export function easeSpeed(current: number, target: number, dtMs: number): number {
+  return target + (current - target) * Math.exp(-dtMs / EASE_MS);
+}
+
 /** The worlds shown in the rows: the active (hero) world first, then the next ones, wrapping. */
 export function visibleWorlds(active: number, worlds: MoodWorld[], count = 4): MoodWorld[] {
   if (worlds.length === 0) return [];
@@ -50,19 +65,22 @@ function TileImage({ movie }: { movie: Movie }) {
   return <img className="img-cover" src={src} alt="" draggable={false} onError={() => setFailed(true)} />;
 }
 
-/** One row per mood world; neighbouring rows run in opposite directions in seamless loops (spec §4).
- *  Purely a background animation: blurred, see-through and not interactive. */
-export default function TileRows({ rows, variedSpeed, worldOrder = [] }: Props) {
+/** One row per mood world; neighbouring rows run in opposite directions in seamless loops (spec §4). */
+export default function TileRows({ rows, onSelect, variedSpeed, worldOrder = [] }: Props) {
   // state per world (not per row slot): rows reorder when the hero world changes and must not jump
   const rowEls = useRef(new Map<string, HTMLDivElement>());
   const offsets = useRef(new Map<string, number>());
   const directions = useRef(new Map<string, number>());
   const reduced = useReducedMotion();
+  const { activeId } = useActiveTrailer();
+  const slowRef = useRef(false);
+  const pointingRef = useRef(false);
   const variedRef = useRef(variedSpeed);
   const orderRef = useRef<string[]>([]);
   useEffect(() => {
+    slowRef.current = activeId !== null; // a playing trailer must not slide away from under the pointer
     variedRef.current = variedSpeed;
-  }, [variedSpeed]);
+  }, [variedSpeed, activeId]);
   useEffect(() => {
     orderRef.current = rows.map((r) => r.world.id);
     orderRef.current.forEach((id, slot) => {
@@ -75,9 +93,11 @@ export default function TileRows({ rows, variedSpeed, worldOrder = [] }: Props) 
     if (reduced) return;
     let frame = 0;
     let last = performance.now();
+    let factor = 1;
     const step = (now: number) => {
       const dt = Math.min(now - last, 64); // a background tab must not teleport the rows
       last = now;
+      factor = easeSpeed(factor, targetFactor(pointingRef.current, slowRef.current), dt);
       orderRef.current.forEach((id, i) => {
         const el = rowEls.current.get(id);
         if (!el) return;
@@ -87,7 +107,7 @@ export default function TileRows({ rows, variedSpeed, worldOrder = [] }: Props) 
         // distance from the first tile to the first tile of the duplicate set = exact loop length
         const period = first && second ? second.offsetLeft - first.offsetLeft : 0;
         const speed = variedRef.current ? VARIED_SPEEDS[i % VARIED_SPEEDS.length] : EVEN_SPEED;
-        const next = advance(offsets.current.get(id) ?? 0, (directions.current.get(id) ?? -1) * speed * (dt / 1000), period);
+        const next = advance(offsets.current.get(id) ?? 0, (directions.current.get(id) ?? -1) * speed * factor * (dt / 1000), period);
         offsets.current.set(id, next);
         el.style.transform = `translate3d(${next}px, 0, 0)`;
       });
@@ -98,24 +118,41 @@ export default function TileRows({ rows, variedSpeed, worldOrder = [] }: Props) 
   }, [reduced]);
 
   return (
-    <div className="tile-rows" aria-hidden="true">
+    <div
+      className="tile-rows"
+      onPointerEnter={() => {
+        pointingRef.current = true;
+      }}
+      onPointerLeave={() => {
+        pointingRef.current = false;
+      }}
+    >
       {rows.map(({ world, movies }) => (
         <div key={world.id} className="tile-row-wrap" data-world={world.id}>
           <div className="tile-row-viewport">
-            <div
-              className="tile-row"
-              data-testid="tile-row"
-              ref={(el) => {
-                if (el) rowEls.current.set(world.id, el);
-                else rowEls.current.delete(world.id);
-              }}
-            >
-              {[...movies, ...movies].map((m, i) => (
-                <div key={`${m.id}-${i}`} className="tile">
+          <div
+            className="tile-row"
+            data-testid="tile-row"
+            ref={(el) => {
+              if (el) rowEls.current.set(world.id, el);
+              else rowEls.current.delete(world.id);
+            }}
+          >
+            {[...movies, ...movies].map((m, i) => (
+              <HoverTrailer key={`${m.id}-${i}`} movie={m} className="tile-wrap">
+                <button
+                  type="button"
+                  className="tile"
+                  aria-label={m.title}
+                  tabIndex={i < movies.length ? 0 : -1}
+                  aria-hidden={i < movies.length ? undefined : true}
+                  onClick={() => onSelect(m)}
+                >
                   <TileImage movie={m} />
-                </div>
-              ))}
-            </div>
+                </button>
+              </HoverTrailer>
+            ))}
+          </div>
           </div>
         </div>
       ))}

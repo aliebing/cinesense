@@ -17,17 +17,8 @@ import { useSearchState, withNoHorror } from "@/lib/searchState";
 import type { Movie } from "@/lib/types";
 
 /** Chat window. Live mode talks to the agent; its criteria land in the shared search state (the chips),
- *  and the conversation follows the visitor from the homepage into the genre drawer. `showPicks={false}` leaves
- *  the films out of the replies, for the homepage, which deals them as cards beside the chat. */
-export default function ChatPanel({
-  mode,
-  horrorIdx = null,
-  showPicks = true,
-}: {
-  mode: "static" | "live";
-  horrorIdx?: number | null;
-  showPicks?: boolean;
-}) {
+ *  and the conversation follows the visitor from the homepage into the genre drawer. */
+export default function ChatPanel({ mode, horrorIdx = null }: { mode: "static" | "live"; horrorIdx?: number | null }) {
   const live = mode === "live";
   const router = useRouter();
   const [criteria, setCriteria] = useSearchState();
@@ -119,7 +110,7 @@ export default function ChatPanel({
             ) : (
               <div key={i} className={`chat-msg chat-msg--bot${e.error ? " chat-msg--error" : ""}`}>
                 <Reply text={e.text} />
-                {showPicks && i === lastBot && e.results && e.results.length > 0 && <ChatResults results={e.results} onOpen={openMovie} />}
+                {i === lastBot && e.results && e.results.length > 0 && <ChatResults results={e.results} onOpen={openMovie} />}
                 {i === lastBot && (e.proposals ?? []).length > 0 && (
                   <div className="chat-proposals">
                     Also exclude:{" "}

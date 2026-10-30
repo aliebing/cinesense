@@ -27,14 +27,16 @@ it("has no arrow buttons; the mouse steers the row", () => {
   expect(screen.getByText(/move the mouse left or right/)).toBeInTheDocument();
 });
 
-it("edgeSpeed: still in the middle, faster towards the edges, opposite directions, slow drift without a pointer", () => {
-  expect(edgeSpeed(0.5)).toBe(0);
-  expect(edgeSpeed(0.6)).toBe(0); // dead zone: a card can be caught for its trailer
+it("edgeSpeed: creeps on in the middle, faster towards the edges, opposite directions, drifts without a pointer", () => {
+  expect(edgeSpeed(0.5)).toBeLessThan(0); // middle: keeps going in the current direction …
+  expect(Math.abs(edgeSpeed(0.6))).toBeLessThan(20); // … but slowly, so a card can be caught for its trailer
+  expect(edgeSpeed(0.5, 1)).toBeGreaterThan(0);
   expect(edgeSpeed(0.9)).toBeLessThan(0); // right: films slide left, new ones come in from the right
   expect(edgeSpeed(0.1)).toBeGreaterThan(0); // left: the other way
   expect(Math.abs(edgeSpeed(1))).toBeGreaterThan(Math.abs(edgeSpeed(0.85)));
   expect(edgeSpeed(1)).toBeCloseTo(-edgeSpeed(0));
   expect(Math.abs(edgeSpeed(1))).toBeGreaterThan(500);
   expect(edgeSpeed(null)).toBeLessThan(0);
+  expect(edgeSpeed(null, 1)).toBeGreaterThan(0);
   expect(Math.abs(edgeSpeed(null))).toBeLessThan(60);
 });

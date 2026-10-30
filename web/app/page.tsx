@@ -8,13 +8,14 @@ import HeroSlides from "@/components/atmosphere/HeroSlides";
 import CinemaFrame from "@/components/cinema/CinemaFrame";
 import ChatPanel from "@/components/chat/ChatPanel";
 import ProfilePanel from "@/components/profile/ProfilePanel";
-import DealtCards from "@/components/home/DealtCards";
 import FilmTitles from "@/components/home/FilmTitles";
+import TileRows, { visibleWorlds } from "@/components/home/TileRows";
 import WorldLabel from "@/components/home/WorldLabel";
 import SearchChips from "@/components/search/SearchChips";
 import { getHome, getTags, type ApiResult, type Tag } from "@/lib/api";
+import { useSearchRows } from "@/lib/searchRows";
 import { hasAnyCriteria, useSearchState } from "@/lib/searchState";
-import type { HomeData } from "@/lib/types";
+import type { HomeData, Movie } from "@/lib/types";
 import { useActiveTrailer } from "@/lib/useActiveTrailer";
 import { useIsNarrow, useReducedMotion } from "@/lib/useReducedMotion";
 
@@ -24,6 +25,7 @@ export default function HomePage() {
   const narrow = useIsNarrow();
   const [result, setResult] = useState<ApiResult<HomeData> | null>(null);
   const [active, setActive] = useState(0);
+  const [variedSpeed, setVariedSpeed] = useState(false);
   const { activeId } = useActiveTrailer();
   const [criteria, setCriteria] = useSearchState();
   const [tags, setTags] = useState<Tag[]>([]);
@@ -52,6 +54,7 @@ export default function HomePage() {
     }
     return out;
   }, [worlds, data]);
+  const worldIds = useMemo(() => worlds.map((w) => w.id), [worlds]);
   const advance = useCallback(() => setActive((i) => (worlds.length ? (i + 1) % worlds.length : 0)), [worlds.length]);
   const world = worlds[active];
 
@@ -60,6 +63,12 @@ export default function HomePage() {
     setCriteria({ ...criteria, availability });
     router.push("/results");
   };
+  const openMovie = (m: Movie) => router.push(`/world/${m.world_ids[0]}?film=${m.id}`);
+  const rowCount = narrow ? 1 : 4;
+  // a search from the chat (or the chips) takes over the rows: its hits first, then the worlds they belong to
+  const searchRows = useSearchRows(criteria, worlds, rowCount);
+  const rows =
+    searchRows ?? (data ? visibleWorlds(active, worlds, rowCount).map((w) => ({ world: w, movies: data.rows[w.id] ?? [] })) : []);
 
   return (
     <CinemaFrame>
@@ -84,6 +93,9 @@ export default function HomePage() {
           </button>
         </nav>
       </header>
+      <button type="button" className="tempo-toggle" onClick={() => setVariedSpeed((v) => !v)}>
+        Speed: {variedSpeed ? "varied" : "even"}
+      </button>
 
       <main className="home-center">
         <h1 className="home-claim">
@@ -91,7 +103,7 @@ export default function HomePage() {
           <em>Choose a feeling.</em>
         </h1>
         <p className="home-sub">Tell me what you’re in the mood for tonight.</p>
-        <ChatPanel mode="live" showPicks={false} horrorIdx={tags.find((t) => t.tag === "horror")?.idx ?? null} />
+        <ChatPanel mode="live" horrorIdx={tags.find((t) => t.tag === "horror")?.idx ?? null} />
         {result && !result.ok && <p className="home-error">Couldn&apos;t load films</p>}
       </main>
       <div className="side-settings">
@@ -105,7 +117,11 @@ export default function HomePage() {
       </div>
 
       {data && !narrow && <FilmTitles titles={data.titles} />}
-      <DealtCards />
+      {rows.length > 0 && (
+        <div className="home-rows">
+          <TileRows rows={rows.slice(0, rowCount)} onSelect={openMovie} variedSpeed={variedSpeed} worldOrder={worldIds} />
+        </div>
+      )}
       {world && <WorldLabel world={world} href={`/world/${world.id}`} />}
       {showProfile && <ProfilePanel onClose={() => setShowProfile(false)} />}
     </CinemaFrame>

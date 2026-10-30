@@ -38,6 +38,7 @@ class DiscoverRequest(BaseModel):
     criteria: SearchCriteria = Field(default_factory=SearchCriteria)
     offset: int = Field(default=0, ge=0)
     limit: int = Field(default=20, ge=1, le=50)
+    fill_images: bool = True  # False: no Streaming API image lookups (homepage background rows)
 
 
 class DiscoverResponse(BaseModel):
@@ -79,7 +80,7 @@ def create_app(load_env: bool = True) -> FastAPI:
         res = SearchService(provider, streaming, embedder, live).run(req.criteria, req.offset, req.limit, profile)
         if checker is not None:
             checker.filter_known([r.movie for r in res.items])
-        for r in res.items[:IMAGE_FILL]:
+        for r in res.items[: IMAGE_FILL if req.fill_images else 0]:
             _with_images(r.movie, provider, streaming)
         if res.extended_used and tasks is not None:
             from cinesense.ingest.pipeline import enrich_new_films
