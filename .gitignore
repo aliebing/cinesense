@@ -12,3 +12,6 @@ wheels/
 # Secrets and local tooling
 .env
 .superpowers/
+
+# Demo video output (scripts/video)
+scripts/video/out/
