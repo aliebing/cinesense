@@ -122,6 +122,9 @@
   --card-w: 7.4cqw; /* related films on the genre page */
   --card-gap: .9cqw;
   --cards-visible: 6.5; /* width of the related row, in cards */
+  --deal-w: 8.6cqw; /* homepage result cards beside the chat */
+  --deal-gap: .9cqw;
+  --deal-top: 13cqw; /* below the film titles */
 }
 .home-shade {
   position: absolute; inset: 0; z-index: 5; pointer-events: none;
@@ -214,6 +217,61 @@
   left: var(--rows-left, calc(60% + 7.1cqw - 70px)); /* tile rows in the right third */
 }
 .world-label { position: absolute; z-index: 20; left: var(--safe-x); bottom: 1.4cqw; font-size: var(--ui); }
+
+/* ---------- homepage result cards, dealt from a deck (DealtCards) ---------- */
+.deal {
+  position: absolute; z-index: 14; top: var(--deal-top); bottom: 2.4cqw; right: var(--safe-x);
+  left: calc(var(--chat-x) + var(--chat-w) / 2 + 2.4cqw);
+  display: grid; place-items: center; font-size: var(--ui); perspective: 1600px;
+}
+.deal-grid { display: grid; grid-template-columns: repeat(var(--cols, 4), var(--deal-w)); gap: var(--deal-gap); }
+.deal-card { position: relative; width: var(--deal-w); aspect-ratio: 2 / 3; }
+.deal-card__inner { position: absolute; inset: 0; transform-style: preserve-3d; }
+.deal-card__front, .deal-card__back {
+  position: absolute; inset: 0; border-radius: 10px; overflow: hidden; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  box-shadow: 0 14px 34px #000c, 0 0 0 1px #ffffff1f;
+}
+.deal-card__back { transform: rotateY(180deg); }
+.deal-card__front { background: #0b0c12; }
+.deal-card__media.hover-trailer { position: absolute; inset: 0; border-radius: inherit; } /* beats .hover-trailer { relative } */
+.deal-card__media button { position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: 0; background: none; cursor: pointer; }
+.deal-card__media .hover-trailer__player iframe { left: 50%; width: calc(100% * 1.5 * 16 / 9); transform: translateX(-50%); }
+.deal-card__match {
+  position: absolute; z-index: 4; top: .5em; right: .5em; font-style: normal; font-weight: 700; font-size: .85em;
+  padding: .15em .5em; border-radius: 999px; background: #000c; color: var(--gold); pointer-events: none;
+}
+.deal-card__text {
+  position: absolute; z-index: 4; left: 0; right: 0; bottom: 0; padding: 2.2em .7em .6em; pointer-events: none;
+  display: flex; flex-direction: column; gap: .2em; line-height: 1.25; font-size: .9em;
+  background: linear-gradient(transparent, #000000e6 45%); text-shadow: 0 1px 4px #000; transition: opacity .3s;
+}
+.deal-card__text span { color: #f3c76bd9; font-size: .88em; }
+.deal-card__media.is-active ~ .deal-card__text, .deal-card__media.is-active ~ .deal-card__match { opacity: 0; }
+/* card back: gold frame and fine lattice, like a deck of cinema cards */
+.deal-back {
+  border-radius: 10px; background:
+    radial-gradient(circle at 50% 50%, #f3c76b30 0 18%, transparent 19%),
+    repeating-linear-gradient(45deg, #f3c76b1a 0 2px, transparent 2px 9px),
+    repeating-linear-gradient(-45deg, #f3c76b1a 0 2px, transparent 2px 9px),
+    linear-gradient(160deg, #3a0a10, #12060a);
+  box-shadow: inset 0 0 0 .35cqw #12060a, inset 0 0 0 calc(.35cqw + 1px) #f3c76b80, 0 14px 34px #000c;
+}
+.deal-deck { position: absolute; left: 50%; top: 50%; width: var(--deal-w); aspect-ratio: 2 / 3; transform: translate(-50%, -50%);
+  pointer-events: none; opacity: 0; transition: opacity .25s; }
+.deal-deck.is-on { opacity: 1; }
+.deal-deck .deal-back { position: absolute; inset: 0; }
+.deal-deck .deal-back:nth-child(1) { transform: rotate(-4deg) translate(-3%, 1%); }
+.deal-deck .deal-back:nth-child(2) { transform: rotate(3deg) translate(2%, -1%); }
+.deal-deck__hit { position: absolute; inset: 0; }
+.deal-deck.is-shuffling .deal-back:nth-child(1) { animation: dealShuffleA 1.1s ease-in-out infinite; }
+.deal-deck.is-shuffling .deal-back:nth-child(2) { animation: dealShuffleB 1.1s ease-in-out infinite; }
+@keyframes dealShuffleA { 50% { transform: rotate(-9deg) translate(-38%, -2%); } }
+@keyframes dealShuffleB { 50% { transform: rotate(8deg) translate(38%, 2%); } }
+@media (prefers-reduced-motion: reduce) {
+  .deal-deck.is-shuffling .deal-back { animation: none; }
+  .deal-card { animation: dealFade .4s ease both; }
+}
+@keyframes dealFade { from { opacity: 0; } }
 .world-label__kicker { letter-spacing: .25em; text-transform: uppercase; color: var(--gold); font-size: .8em; }
 .world-label b { display: block; font-size: 1.5em; margin: .1em 0; }
 .world-label a { color: #fff; opacity: .85; }
@@ -301,12 +359,17 @@
   }
   .cinema-curtain { display: none; }
   .flare, .streak, .fog--mid { display: none; }
-  .home-top, .tempo-toggle, .home-center, .home-rows, .world-label, .side-settings,
+  .home-top, .tempo-toggle, .home-center, .home-rows, .deal, .world-label, .side-settings,
   .genre-top, .stage, .related, .drawer, .drawer-tab { position: relative; inset: auto; transform: none; z-index: 15; }
   .home-top { order: 0; flex-wrap: wrap; gap: 8px 16px; }
   .tempo-toggle { order: 1; align-self: flex-start; }
   .home-center { order: 2; width: 100%; }
   .home-rows { order: 3; left: auto; right: auto; bottom: auto; -webkit-mask-image: none; mask-image: none; }
+  .deal { order: 3; display: block; }
+  .deal-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+  .deal-card { width: auto; animation: dealFade .4s ease both; }
+  .deal-deck { position: relative; left: auto; top: auto; transform: none; margin: 0 auto; width: 120px; }
+  .deal-deck:not(.is-on) { display: none; }
   .world-label { order: 4; }
   .tile { width: 168px; height: 105px; }
   .tile-row { gap: 8px; }

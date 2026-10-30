@@ -60,6 +60,14 @@ it("shows the status while waiting, then the reply and the top 3 picks", async (
   expect(screen.queryByText("Searching plots…")).toBeNull();
 });
 
+it("leaves the picks out when they are shown elsewhere (homepage cards)", async () => {
+  streamChat.mockResolvedValue(final());
+  render(<ChatPanel mode="live" showPicks={false} />);
+  await send("something dark");
+  expect(await screen.findByText("Here are dark picks.")).toBeInTheDocument();
+  expect(screen.queryByTestId("chat-pick")).toBeNull();
+});
+
 it("writes the agent's criteria into the shared search state", async () => {
   streamChat.mockResolvedValue(final());
   render(

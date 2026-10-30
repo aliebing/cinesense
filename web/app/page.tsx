@@ -8,8 +8,8 @@ import HeroSlides from "@/components/atmosphere/HeroSlides";
 import CinemaFrame from "@/components/cinema/CinemaFrame";
 import ChatPanel from "@/components/chat/ChatPanel";
 import ProfilePanel from "@/components/profile/ProfilePanel";
+import DealtCards from "@/components/home/DealtCards";
 import FilmTitles from "@/components/home/FilmTitles";
-import TileRows, { visibleWorlds } from "@/components/home/TileRows";
 import WorldLabel from "@/components/home/WorldLabel";
 import SearchChips from "@/components/search/SearchChips";
 import { getHome, getTags, type ApiResult, type Tag } from "@/lib/api";
@@ -24,7 +24,6 @@ export default function HomePage() {
   const narrow = useIsNarrow();
   const [result, setResult] = useState<ApiResult<HomeData> | null>(null);
   const [active, setActive] = useState(0);
-  const [variedSpeed, setVariedSpeed] = useState(false);
   const { activeId } = useActiveTrailer();
   const [criteria, setCriteria] = useSearchState();
   const [tags, setTags] = useState<Tag[]>([]);
@@ -53,7 +52,6 @@ export default function HomePage() {
     }
     return out;
   }, [worlds, data]);
-  const worldIds = useMemo(() => worlds.map((w) => w.id), [worlds]);
   const advance = useCallback(() => setActive((i) => (worlds.length ? (i + 1) % worlds.length : 0)), [worlds.length]);
   const world = worlds[active];
 
@@ -86,9 +84,6 @@ export default function HomePage() {
           </button>
         </nav>
       </header>
-      <button type="button" className="tempo-toggle" onClick={() => setVariedSpeed((v) => !v)}>
-        Speed: {variedSpeed ? "varied" : "even"}
-      </button>
 
       <main className="home-center">
         <h1 className="home-claim">
@@ -96,7 +91,7 @@ export default function HomePage() {
           <em>Choose a feeling.</em>
         </h1>
         <p className="home-sub">Tell me what you’re in the mood for tonight.</p>
-        <ChatPanel mode="live" horrorIdx={tags.find((t) => t.tag === "horror")?.idx ?? null} />
+        <ChatPanel mode="live" showPicks={false} horrorIdx={tags.find((t) => t.tag === "horror")?.idx ?? null} />
         {result && !result.ok && <p className="home-error">Couldn&apos;t load films</p>}
       </main>
       <div className="side-settings">
@@ -110,15 +105,7 @@ export default function HomePage() {
       </div>
 
       {data && !narrow && <FilmTitles titles={data.titles} />}
-      {data && (
-        <div className="home-rows">
-          <TileRows
-            rows={visibleWorlds(active, worlds, narrow ? 1 : 4).map((w) => ({ world: w, movies: data.rows[w.id] ?? [] }))}
-            variedSpeed={variedSpeed}
-            worldOrder={worldIds}
-          />
-        </div>
-      )}
+      <DealtCards />
       {world && <WorldLabel world={world} href={`/world/${world.id}`} />}
       {showProfile && <ProfilePanel onClose={() => setShowProfile(false)} />}
     </CinemaFrame>
