@@ -248,7 +248,7 @@ async def main(base: str, api: str, out: Path) -> None:
             like = page.get_by_role("button", name="👍 More like this")
             await click(page, like, 900)
             await asyncio.sleep(1.0)
-            for slot in (0.55, 0.62):  # back to the result row and like two more
+            for slot in (0.36, 0.64):  # back to the result row (it restarts in place) and like two others
                 await page.go_back()
                 await page.locator(RESULT_CARDS).first.wait_for(timeout=30000)
                 await page.wait_for_timeout(800)
