@@ -3,8 +3,8 @@
 import { useReducedMotion } from "@/lib/useReducedMotion";
 
 /**
- * Layered fog and projector light (spec §3a): three fog depths drifting at different speeds,
- * a flickering back-light, a beam passing through the haze, lens flares and a soft downward fade.
+ * Layered fog and light (spec §3a): three fog depths drifting at different speeds and two soft spotlights
+ * shining down from the top corners, their cones swaying slowly through the haze and fading downward.
  */
 export default function FogLight({ tint, reduced = false }: { tint: string; reduced?: boolean }) {
   const prefersReduced = useReducedMotion();
@@ -16,8 +16,8 @@ export default function FogLight({ tint, reduced = false }: { tint: string; redu
         <i />
         <i />
       </div>
-      <div className="backlight" />
-      <div className="beam" />
+      <div className="spot spot--left" />
+      <div className="spot spot--right" />
       <div className="fog fog--mid">
         <i />
         <i />
@@ -28,10 +28,6 @@ export default function FogLight({ tint, reduced = false }: { tint: string; redu
           <i />
         </div>
       )}
-      <div className="flare flare--1" />
-      <div className="flare flare--2" />
-      <div className="flare flare--3" />
-      <div className="streak" />
     </div>
   );
 }

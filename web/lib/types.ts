@@ -63,4 +63,5 @@ export type HomeData = {
   titles: string[];
 };
 
-export type TileRow = { world: MoodWorld; movies: Movie[] };
+/** `picked`: the search hits on the homepage, shown larger with a gold frame (the short list). */
+export type TileRow = { world: MoodWorld; movies: Movie[]; picked?: boolean };

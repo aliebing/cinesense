@@ -8,8 +8,8 @@ import type { MoodWorld, Movie, TileRow } from "@/lib/types";
 
 type Props = { rows: TileRow[]; onSelect: (m: Movie) => void; variedSpeed: boolean; worldOrder?: string[] };
 
-const EVEN_SPEED = 54; // px per second
-const VARIED_SPEEDS = [45, 72, 38, 60];
+const EVEN_SPEED = 40; // px per second, the pace of the genre page's related row
+const VARIED_SPEEDS = [34, 52, 28];
 const POINTING_FACTOR = 0.45; // pointer over the rows: slower, so a tile is easy to catch
 const TRAILER_FACTOR = 0.06; // a trailer plays: the rows crawl on, the tile stays under the pointer
 
@@ -127,8 +127,8 @@ export default function TileRows({ rows, onSelect, variedSpeed, worldOrder = [] 
         pointingRef.current = false;
       }}
     >
-      {rows.map(({ world, movies }) => (
-        <div key={world.id} className="tile-row-wrap" data-world={world.id}>
+      {rows.map(({ world, movies, picked }) => (
+        <div key={world.id} className={`tile-row-wrap${picked ? " tile-row-wrap--picked" : ""}`} data-world={world.id}>
           <div className="tile-row-viewport">
           <div
             className="tile-row"

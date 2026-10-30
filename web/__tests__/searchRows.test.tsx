@@ -35,7 +35,7 @@ it("without criteria there are no search rows (the homepage keeps its world rows
   expect(discover).not.toHaveBeenCalled();
 });
 
-it("first row: the hits; then one row per matching world with the same criteria, no film twice", async () => {
+it("the hits are the short list; plus one row per matching world with the same criteria, no film twice", async () => {
   const criteria = { ...emptyCriteria(), tags: [{ idx: 7, weight: 8, mode: "prefer" as const }] };
   discover.mockImplementation(async (c?: { world_id: string | null }) => ({
     ok: true,
@@ -49,7 +49,8 @@ it("first row: the hits; then one row per matching world with the same criteria,
   const { result } = renderHook(() => useSearchRows(criteria, sampleWorlds, 4));
   await waitFor(() => expect(result.current).not.toBeNull());
   const rows = result.current!;
-  expect(rows[0].world.id).toBe(HITS_ROW_ID);
+  expect(rows[0].world.id).toBe(HITS_ROW_ID); // one other row only: the hits stay on top
+  expect(rows[0].picked).toBe(true);
   expect(rows[0].movies.map((m) => m.id)).toEqual(["h1", "h2", "h3", "h4", "h5"]);
   expect(rows[1].world.id).toBe("action");
   expect(rows[1].movies.map((m) => m.id)).toEqual(["w1", "w2", "w3", "w4"]);
@@ -84,5 +85,5 @@ it("a world whose films lack pictures waits behind worlds with pictures", async 
   }));
   const { result } = renderHook(() => useSearchRows(criteria, sampleWorlds, 3));
   await waitFor(() => expect(result.current).not.toBeNull());
-  expect(result.current!.map((r) => r.world.id)).toEqual([HITS_ROW_ID, "action", "suspense"]);
+  expect(result.current!.map((r) => r.world.id)).toEqual(["action", HITS_ROW_ID, "suspense"]); // hits in the middle
 });

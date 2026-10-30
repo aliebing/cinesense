@@ -27,8 +27,14 @@ export function topWorlds(hits: RankedMovie[], order: string[], n: number): stri
   return [...count.keys()].sort((a, b) => count.get(b)! - count.get(a)! || rank(a) - rank(b)).slice(0, n);
 }
 
-/** Homepage tile rows for the current search (set in the chat or with the chips): first the hits, then one row per
- *  world the hits belong to, with the same criteria and no film twice. `null` while there is no search (or no hit),
+/** The hits (the short list) go in the middle, the other candidates above and below. */
+export function aroundTheShortList(short: TileRow, others: TileRow[]): TileRow[] {
+  const mid = Math.floor(others.length / 2);
+  return [...others.slice(0, mid), short, ...others.slice(mid)];
+}
+
+/** Homepage tile rows for the current search (set in the chat or with the chips): the hits in the middle (larger, gold
+ *  frame), around them one row per world the hits belong to, with the same criteria and no film twice. `null` while there is no search (or no hit),
  *  so the homepage shows its world rows. Uses /api/discover: same ranking, never the paid live search; only the hits
  *  row may look up missing images (like the result page), the world rows use the pictures already known. */
 export function useSearchRows(criteria: Criteria, worlds: MoodWorld[], rowCount: number): TileRow[] | null {
@@ -52,11 +58,12 @@ export function useSearchRows(criteria: Criteria, worlds: MoodWorld[], rowCount:
       const hits = first.ok ? first.data.items : [];
       if (hits.length === 0) return setRows(null);
       const seen = new Set(hits.map((r) => r.movie.id));
-      const out: TileRow[] = [{ world: hitsWorld(), movies: preferPictured(hits.map((r) => r.movie)) }];
+      const short: TileRow = { world: hitsWorld(), movies: preferPictured(hits.map((r) => r.movie)), picked: true };
+      const out: TileRow[] = [];
       // worlds by how many hits they hold; a world whose films have too few pictures waits behind the others
       const fallback: TileRow[] = [];
       for (const id of topWorlds(hits, order.split(","), worlds.length)) {
-        if (out.length >= rowCount) break;
+        if (out.length >= rowCount - 1) break;
         const world = worlds.find((w) => w.id === id);
         if (!world) continue;
         const r = await discover({ ...c, world_id: id }, 0, PER_WORLD + HITS, false); // no image lookups: no budget
@@ -70,12 +77,12 @@ export function useSearchRows(criteria: Criteria, worlds: MoodWorld[], rowCount:
         } else if (fresh.length >= MIN_ROW) fallback.push({ world, movies: fresh.slice(0, PER_WORLD) });
       }
       for (const row of fallback) {
-        if (out.length >= rowCount) break;
+        if (out.length >= rowCount - 1) break;
         const movies = row.movies.filter((m) => !seen.has(m.id));
         movies.forEach((m) => seen.add(m.id));
         if (movies.length >= MIN_ROW) out.push({ ...row, movies });
       }
-      setRows(out);
+      setRows(aroundTheShortList(short, out));
     }, DEBOUNCE_MS);
     return () => {
       live = false;

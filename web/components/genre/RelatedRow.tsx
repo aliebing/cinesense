@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { type ReactNode, useEffect, useRef } from "react";
 import { advance, easeTowards } from "@/components/home/TileRows";
 import HoverTrailer from "@/components/media/HoverTrailer";
 import ImageOrPlaceholder from "@/components/ui/ImageOrPlaceholder";
@@ -27,7 +27,19 @@ export function edgeSpeed(ratio: number | null, dir = -1): number {
 
 /** Matching films in an endless row across the page that always runs through, steered by the mouse: towards an
  *  edge it runs fast in that direction, in the middle it creeps on. Hovering a card plays its trailer. */
-export default function RelatedRow({ items, onSelect }: { items: RankedMovie[]; onSelect: (m: Movie) => void }) {
+export default function RelatedRow({
+  items,
+  onSelect,
+  label = "Also fits your mood",
+  name = "Also fits your mood",
+  showReasons = false,
+}: {
+  items: RankedMovie[];
+  onSelect: (m: Movie) => void;
+  label?: ReactNode;
+  name?: string;
+  showReasons?: boolean;
+}) {
   const viewport = useRef<HTMLDivElement | null>(null);
   const track = useRef<HTMLDivElement | null>(null);
   const pointer = useRef<number | null>(null);
@@ -72,9 +84,9 @@ export default function RelatedRow({ items, onSelect }: { items: RankedMovie[]; 
     if (box && box.width > 0) pointer.current = (e.clientX - box.left) / box.width;
   };
   return (
-    <section className="related" aria-label="Also fits your mood">
+    <section className="related" aria-label={name}>
       <h3 className="related-label">
-        Also fits your mood <span className="related-hint">· move the mouse left or right to browse</span>
+        {label} <span className="related-hint">· move the mouse left or right to browse</span>
       </h3>
       <div
         ref={viewport}
@@ -97,7 +109,10 @@ export default function RelatedRow({ items, onSelect }: { items: RankedMovie[]; 
               >
                 <ImageOrPlaceholder src={r.movie.poster_url} alt="" />
                 <i>{r.match_percent}%</i>
-                <span>{r.movie.title}</span>
+                <span>
+                  {r.movie.title}
+                  {showReasons && r.reasons.length > 0 && <small className="related-why">{r.reasons[0]}</small>}
+                </span>
               </button>
             </HoverTrailer>
           ))}

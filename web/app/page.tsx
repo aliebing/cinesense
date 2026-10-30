@@ -64,8 +64,8 @@ export default function HomePage() {
     router.push("/results");
   };
   const openMovie = (m: Movie) => router.push(`/world/${m.world_ids[0]}?film=${m.id}`);
-  const rowCount = narrow ? 1 : 4;
-  // a search from the chat (or the chips) takes over the rows: its hits first, then the worlds they belong to
+  const rowCount = narrow ? 1 : 3;
+  // a search from the chat (or the chips) takes over the rows: its hits in the middle, the worlds they belong to around
   const searchRows = useSearchRows(criteria, worlds, rowCount);
   const rows =
     searchRows ?? (data ? visibleWorlds(active, worlds, rowCount).map((w) => ({ world: w, movies: data.rows[w.id] ?? [] })) : []);
