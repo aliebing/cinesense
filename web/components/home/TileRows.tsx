@@ -19,6 +19,11 @@ export function advance(offset: number, delta: number, period: number): number {
   return next;
 }
 
+/** Exponential easing towards a target (frame-rate independent); `tauMs` is the time constant. */
+export function easeTowards(current: number, target: number, dtMs: number, tauMs: number): number {
+  return target + (current - target) * Math.exp(-dtMs / tauMs);
+}
+
 /** Neighbouring worlds run in opposite directions; fixed by the world's place in the full list. */
 export function rowDirection(id: string, order: string[], slot: number): number {
   const i = order.indexOf(id);

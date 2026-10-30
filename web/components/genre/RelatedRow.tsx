@@ -1,75 +1,103 @@
 "use client";
 
-import { useState, type CSSProperties } from "react";
+import { useEffect, useRef } from "react";
+import { advance, easeTowards } from "@/components/home/TileRows";
 import HoverTrailer from "@/components/media/HoverTrailer";
 import ImageOrPlaceholder from "@/components/ui/ImageOrPlaceholder";
+import { useActiveTrailer } from "@/lib/useActiveTrailer";
+import { useReducedMotion } from "@/lib/useReducedMotion";
 import type { Movie, RankedMovie } from "@/lib/types";
 
-export const PAGE_SIZE = 6;
+const IDLE_SPEED = 28; // px per second while the pointer is elsewhere: the row keeps drifting
+const MAX_SPEED = 1100; // px per second with the pointer at the very edge
+const DEAD_ZONE = 0.3; // middle share of the row where it stands still, so a card can be caught
+const EASE_MS = 220;
 
-/** Page after `page` (or before it for step -1), wrapping around at both ends. */
-export function turnPage(page: number, step: 1 | -1, pages: number): number {
-  return pages > 0 ? (page + step + pages) % pages : 0;
+/** Row velocity for a pointer at `ratio` (0 = left edge, 1 = right edge) of the row; null = no pointer.
+ *  Right of the middle the films slide left (more come in from the right), left of it the other way,
+ *  faster towards the edge. */
+export function edgeSpeed(ratio: number | null): number {
+  if (ratio === null) return -IDLE_SPEED;
+  const d = (Math.min(Math.max(ratio, 0), 1) - 0.5) * 2; // -1 … 1
+  const reach = (Math.abs(d) - DEAD_ZONE) / (1 - DEAD_ZONE);
+  if (reach <= 0) return 0;
+  return -Math.sign(d) * reach * reach * MAX_SPEED;
 }
 
-/** A few matching films at a time; the gold » slides a completely new set in. Hovering a card plays its trailer. */
+/** Matching films in an endless row steered by the mouse: towards an edge it runs fast in that direction,
+ *  in the middle it holds still. Hovering a card plays its trailer. */
 export default function RelatedRow({ items, onSelect }: { items: RankedMovie[]; onSelect: (m: Movie) => void }) {
-  const [page, setPage] = useState(0);
-  const pages = Math.ceil(items.length / PAGE_SIZE);
-  const listKey = `${items[0]?.movie.id}:${items.length}`;
-  const [seenKey, setSeenKey] = useState(listKey);
-  if (seenKey !== listKey) {
-    // a new list starts at its first page
-    setSeenKey(listKey);
-    setPage(0);
-  }
+  const viewport = useRef<HTMLDivElement | null>(null);
+  const track = useRef<HTMLDivElement | null>(null);
+  const pointer = useRef<number | null>(null);
+  const trailerRef = useRef(false);
+  const reduced = useReducedMotion();
+  const { activeId } = useActiveTrailer();
+  useEffect(() => {
+    trailerRef.current = activeId !== null; // a playing trailer must not slide away from under the pointer
+  }, [activeId]);
+
+  useEffect(() => {
+    if (reduced) return;
+    let frame = 0;
+    let last = performance.now();
+    let offset = 0;
+    let speed = 0;
+    const step = (now: number) => {
+      const dt = Math.min(now - last, 64); // a background tab must not teleport the row
+      last = now;
+      const el = track.current;
+      if (el) {
+        const n = el.children.length / 2;
+        const first = el.children[0] as HTMLElement | undefined;
+        const second = el.children[n] as HTMLElement | undefined;
+        const period = first && second ? second.offsetLeft - first.offsetLeft : 0;
+        speed = easeTowards(speed, trailerRef.current ? 0 : edgeSpeed(pointer.current), dt, EASE_MS);
+        offset = advance(offset, speed * (dt / 1000), period);
+        el.style.transform = `translate3d(${offset}px, 0, 0)`;
+      }
+      frame = requestAnimationFrame(step);
+    };
+    frame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frame);
+  }, [reduced]);
 
   if (items.length === 0) return null;
-  const current = Math.min(page, pages - 1);
+  const onMove = (e: React.PointerEvent) => {
+    const box = viewport.current?.getBoundingClientRect();
+    if (box && box.width > 0) pointer.current = (e.clientX - box.left) / box.width;
+  };
   return (
     <section className="related" aria-label="Also fits your mood">
       <h3 className="related-label">
-        Also fits your mood
-        {pages > 1 && (
-          <span className="related-count">
-            {current + 1} / {pages}
-          </span>
-        )}
+        Also fits your mood <span className="related-hint">· move the mouse left or right to browse</span>
       </h3>
-      <div className="related-carousel">
-        {pages > 1 && (
-          <button type="button" className="related-nav related-nav--prev" aria-label="Previous films" onClick={() => setPage(turnPage(current, -1, pages))}>
-            «
-          </button>
-        )}
-        <div className="related-viewport">
-          <div className="related-track" style={{ "--page": current } as CSSProperties}>
-            {items.map((r, i) => {
-              const visible = Math.floor(i / PAGE_SIZE) === current;
-              return (
-                <HoverTrailer key={r.movie.id} movie={r.movie} className="related-wrap">
-                  <button
-                    type="button"
-                    className="related-card"
-                    aria-label={`${r.movie.title}, ${r.match_percent}% match`}
-                    tabIndex={visible ? 0 : -1}
-                    aria-hidden={visible ? undefined : true}
-                    onClick={() => onSelect(r.movie)}
-                  >
-                    <ImageOrPlaceholder src={r.movie.poster_url} alt="" />
-                    <i>{r.match_percent}%</i>
-                    <span>{r.movie.title}</span>
-                  </button>
-                </HoverTrailer>
-              );
-            })}
-          </div>
+      <div
+        ref={viewport}
+        className={`related-viewport ${reduced ? "is-static" : ""}`}
+        onPointerMove={onMove}
+        onPointerLeave={() => {
+          pointer.current = null;
+        }}
+      >
+        <div ref={track} className="related-track">
+          {(reduced ? items : [...items, ...items]).map((r, i) => (
+            <HoverTrailer key={`${r.movie.id}-${i}`} movie={r.movie} className="related-wrap">
+              <button
+                type="button"
+                className="related-card"
+                aria-label={`${r.movie.title}, ${r.match_percent}% match`}
+                tabIndex={i < items.length ? 0 : -1}
+                aria-hidden={i < items.length ? undefined : true}
+                onClick={() => onSelect(r.movie)}
+              >
+                <ImageOrPlaceholder src={r.movie.poster_url} alt="" />
+                <i>{r.match_percent}%</i>
+                <span>{r.movie.title}</span>
+              </button>
+            </HoverTrailer>
+          ))}
         </div>
-        {pages > 1 && (
-          <button type="button" className="related-nav related-nav--next" aria-label="Next films" onClick={() => setPage(turnPage(current, 1, pages))}>
-            »
-          </button>
-        )}
       </div>
     </section>
   );

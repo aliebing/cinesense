@@ -121,7 +121,7 @@
   --tile-blur: 4px;
   --card-w: 7.4cqw; /* related films on the genre page */
   --card-gap: .9cqw;
-  --cards-per-page: 6; /* keep in sync with PAGE_SIZE in RelatedRow.tsx */
+  --cards-visible: 6.5; /* width of the related row, in cards */
 }
 .home-shade {
   position: absolute; inset: 0; z-index: 5; pointer-events: none;
@@ -264,30 +264,22 @@
 
 .related { position: absolute; z-index: 15; left: calc(var(--safe-x) + var(--panel-w) + 1.4cqw); right: var(--safe-x); bottom: 1cqw; font-size: var(--ui); }
 .related-label { margin: 0 0 .5em; font-size: .85em; font-weight: 400; letter-spacing: .2em; text-transform: uppercase; opacity: .85; }
-.related-count { margin-left: .8em; color: var(--gold); letter-spacing: .1em; }
-.related-carousel { display: flex; align-items: center; gap: 1cqw; }
-/* exactly one page wide; clips sideways only (hovered cards may grow upwards). `clip`, not `hidden`/clip-path:
-   the hidden pages must not make the stage scrollable, or focusing a card would shift the whole page */
-.related-viewport { width: calc(var(--cards-per-page) * var(--card-w) + (var(--cards-per-page) - 1) * var(--card-gap)); overflow-x: clip; }
-.related-track {
-  display: flex; gap: var(--card-gap); width: max-content;
-  transform: translateX(calc(var(--page, 0) * var(--cards-per-page) * -1 * (var(--card-w) + var(--card-gap))));
-  transition: transform .42s cubic-bezier(.7, 0, .2, 1);
+.related-hint { letter-spacing: .05em; text-transform: none; color: var(--muted); }
+/* one row of cards; the mouse steers it (RelatedRow.tsx). `clip`, not `hidden`: the hidden cards must not make
+   the stage scrollable. Soft fade at both ends so the endless row has no hard edge */
+.related-viewport {
+  width: calc(var(--cards-visible) * var(--card-w) + (var(--cards-visible) - 1) * var(--card-gap)); max-width: 100%;
+  overflow-x: clip; padding: .5cqw 0;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
 }
+.related-viewport.is-static { overflow-x: auto; } /* reduced motion: plain scrolling instead */
+.related-track { display: flex; gap: var(--card-gap); width: max-content; will-change: transform; }
 .related-card { position: relative; flex: none; width: var(--card-w); aspect-ratio: 2 / 3; padding: 0; border: 0; border-radius: 8px; overflow: hidden;
   cursor: pointer; background: #0b0c12; color: #fff; outline: 1px solid #ffffff25; box-shadow: 0 10px 30px #000b; transition: transform .3s, filter .3s; }
 .related-card:hover, .related-card:focus-visible { transform: scale(1.05); filter: brightness(1.15); outline: 2px solid var(--gold); }
 .related-card i { position: absolute; top: .4em; right: .5em; font-style: normal; font-size: .75em; background: #000a; border-radius: 999px; padding: .1em .5em; color: var(--gold); }
 .related-card span { position: absolute; left: .5em; right: .5em; bottom: .4em; font-size: .75em; text-align: left; text-shadow: 0 1px 4px #000; }
-.related-nav {
-  flex: none; width: 2.4em; height: 2.4em; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-  font: inherit; font-size: 1.7em; font-weight: 800; line-height: 1; padding-bottom: .12em; cursor: pointer;
-  background: var(--gold); color: #16130c; border: 0; box-shadow: 0 0 0 4px #f3c76b33, 0 0 28px #f3c76b66;
-  transition: transform .15s, box-shadow .15s;
-}
-.related-nav:hover, .related-nav:focus-visible { transform: scale(1.1); box-shadow: 0 0 0 5px #f3c76b55, 0 0 36px #f3c76b99; }
-.related-nav--prev { font-size: 1.3em; background: #0d0d14c4; color: var(--gold); border: 1px solid var(--gold); box-shadow: none; }
-@media (prefers-reduced-motion: reduce) { .related-track { transition: none; } }
 
 .drawer-tab { position: absolute; z-index: 30; right: var(--safe-x); top: 46%; writing-mode: vertical-rl; font: inherit; font-size: var(--ui); font-weight: 600;
   background: #0d0d14d0; color: #fff; border: 1px solid #ffffff30; border-radius: 10px; padding: 1em .6em; cursor: pointer; }
@@ -322,9 +314,7 @@
   .stage-trailer { grid-column: 1 / -1; grid-row: 2; }
   .stage-info { grid-column: 2; grid-row: 1; }
   .side-settings { order: 2; width: 100%; max-height: none; }
-  .related-viewport { width: 100%; overflow-x: auto; }
-  .related-track { transform: none; }
-  .related-nav { display: none; }
+  .related-viewport { width: 100%; }
   .cinema-stage { --card-w: 96px; --card-gap: 10px; }
   .drawer { width: 100%; }
   .drawer-tab { writing-mode: horizontal-tb; align-self: flex-end; }

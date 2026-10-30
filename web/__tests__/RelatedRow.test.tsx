@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, it, vi } from "vitest";
-import RelatedRow, { turnPage } from "@/components/genre/RelatedRow";
+import RelatedRow, { edgeSpeed } from "@/components/genre/RelatedRow";
 import { mockMatchMedia, sampleRanked } from "./fixtures";
 
 beforeEach(() => mockMatchMedia(() => false));
@@ -21,25 +21,20 @@ it("renders a placeholder for a film without poster", () => {
   expect(screen.getAllByTestId("image-placeholder").length).toBeGreaterThan(0);
 });
 
-it("shows six films at a time and » slides a completely new set in", async () => {
+it("has no arrow buttons; the mouse steers the row", () => {
   render(<RelatedRow items={sampleRanked(14)} onSelect={() => {}} />);
-  const visible = () => screen.getAllByRole("button", { name: /Demo-Film/ }).map((b) => b.getAttribute("aria-label")!.split(",")[0]);
-  expect(visible()).toHaveLength(6);
-  expect(screen.getByText("1 / 3")).toBeInTheDocument();
-  const first = visible();
-  await userEvent.click(screen.getByRole("button", { name: "Next films" }));
-  expect(screen.getByText("2 / 3")).toBeInTheDocument();
-  expect(visible().some((t) => first.includes(t))).toBe(false);
-  await userEvent.click(screen.getByRole("button", { name: "Next films" }));
-  expect(visible()).toHaveLength(2); // last page
-  await userEvent.click(screen.getByRole("button", { name: "Next films" }));
-  expect(screen.getByText("1 / 3")).toBeInTheDocument(); // wraps around
-  await userEvent.click(screen.getByRole("button", { name: "Previous films" }));
-  expect(screen.getByText("3 / 3")).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /Next films|Previous films/ })).toBeNull();
+  expect(screen.getByText(/move the mouse left or right/)).toBeInTheDocument();
 });
 
-it("turnPage wraps in both directions", () => {
-  expect(turnPage(2, 1, 3)).toBe(0);
-  expect(turnPage(0, -1, 3)).toBe(2);
-  expect(turnPage(0, 1, 0)).toBe(0);
+it("edgeSpeed: still in the middle, faster towards the edges, opposite directions, slow drift without a pointer", () => {
+  expect(edgeSpeed(0.5)).toBe(0);
+  expect(edgeSpeed(0.6)).toBe(0); // dead zone: a card can be caught for its trailer
+  expect(edgeSpeed(0.9)).toBeLessThan(0); // right: films slide left, new ones come in from the right
+  expect(edgeSpeed(0.1)).toBeGreaterThan(0); // left: the other way
+  expect(Math.abs(edgeSpeed(1))).toBeGreaterThan(Math.abs(edgeSpeed(0.85)));
+  expect(edgeSpeed(1)).toBeCloseTo(-edgeSpeed(0));
+  expect(Math.abs(edgeSpeed(1))).toBeGreaterThan(500);
+  expect(edgeSpeed(null)).toBeLessThan(0);
+  expect(Math.abs(edgeSpeed(null))).toBeLessThan(60);
 });
