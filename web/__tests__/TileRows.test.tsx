@@ -1,6 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { beforeEach, expect, it, vi } from "vitest";
+import { beforeEach, expect, it } from "vitest";
 import TileRows, { visibleWorlds } from "@/components/home/TileRows";
 import { mockMatchMedia, sampleMovies, sampleWorlds } from "./fixtures";
 
@@ -11,19 +10,18 @@ const rows = [
   { world: sampleWorlds[1], movies: sampleMovies(6) },
 ];
 
-it("renders one row per world without a category label and calls onSelect", async () => {
-  const onSelect = vi.fn();
-  render(<TileRows rows={rows} onSelect={onSelect} variedSpeed={false} />);
+it("renders one decorative row per world: no label, no buttons, no trailers", () => {
+  render(<TileRows rows={rows} variedSpeed={false} />);
   expect(screen.getAllByTestId("tile-row")).toHaveLength(2);
   expect(screen.queryByRole("link", { name: "Suspense & Mystery" })).toBeNull();
-  await userEvent.click(screen.getAllByRole("button", { name: "Demo-Film 01" })[0]);
-  expect(onSelect).toHaveBeenCalledWith(expect.objectContaining({ id: "demo-01" }));
+  expect(document.querySelectorAll(".tile-rows button")).toHaveLength(0);
+  expect(screen.queryByTestId("hover-trailer")).toBeNull();
 });
 
 it("uses the title-art poster and falls back to a title card", () => {
   const withArt = sampleMovies(1)[0];
   const noArt = { ...sampleMovies(2)[1], horizontal_poster_url: null, backdrop_url: null, poster_url: null };
-  render(<TileRows rows={[{ world: sampleWorlds[0], movies: [withArt, noArt] }]} onSelect={() => {}} variedSpeed={false} />);
+  render(<TileRows rows={[{ world: sampleWorlds[0], movies: [withArt, noArt] }]} variedSpeed={false} />);
   expect(document.querySelector(`img[src="${withArt.horizontal_poster_url}"]`)).not.toBeNull();
   expect(screen.getAllByTestId("title-card")[0]).toHaveTextContent("Demo-Film 02");
 });

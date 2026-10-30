@@ -20,14 +20,21 @@ beforeEach(() => {
   mockMatchMedia(() => false);
 });
 
-it("shows the claim and navigates to the genre page when a tile is clicked", async () => {
+it("shows the claim; the tile rows are background only (hidden, nothing to click)", async () => {
   getHome.mockResolvedValue({ ok: true, data: sampleHome });
   render(<HomePage />);
   expect(screen.getByText("Don't choose a movie.")).toBeInTheDocument();
   expect(screen.getByText("Choose a feeling.")).toBeInTheDocument();
-  const tile = await screen.findAllByRole("button", { name: "Demo-Film 01" });
-  await userEvent.click(tile[0]);
-  expect(push).toHaveBeenCalledWith("/world/action?film=demo-01");
+  const rows = await screen.findAllByTestId("tile-row");
+  expect(rows[0].closest(".tile-rows")).toHaveAttribute("aria-hidden", "true");
+  expect(screen.queryByRole("button", { name: "Demo-Film 01" })).toBeNull();
+});
+
+it("shows the mood settings panel even before any tag is set", async () => {
+  getHome.mockResolvedValue({ ok: true, data: sampleHome });
+  render(<HomePage />);
+  expect(screen.getByRole("heading", { name: "Your mood settings" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "+ Tag" })).toBeInTheDocument();
 });
 
 it("keeps claim and chat when the backend is unreachable", async () => {
@@ -42,7 +49,7 @@ it("shows one tile strip and no film titles on narrow screens", async () => {
   mockMatchMedia((q) => q.includes("max-width: 759px"));
   getHome.mockResolvedValue({ ok: true, data: sampleHome });
   render(<HomePage />);
-  await screen.findAllByRole("button", { name: "Demo-Film 02" });
+  await screen.findAllByTestId("tile-row");
   expect(screen.getAllByTestId("tile-row")).toHaveLength(1);
   expect(screen.queryByTestId("film-titles")).toBeNull();
 });

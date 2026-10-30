@@ -77,6 +77,7 @@ export default function HoverTrailer({ movie, children, className = "" }: { movi
         </div>
       )}
       {active && !movie.youtube_key && <span className="hover-trailer__note">No trailer available</span>}
+      {active && movie.youtube_key && !key && <span className="hover-trailer__note">Trailer blocked on YouTube</span>}
       {reduced && key && !active && (
         <button
           type="button"

@@ -165,7 +165,7 @@ export default function GenreView({ worldId, filmId }: { worldId: string; filmId
             onFeedback={giveFeedback}
             onSteer={steerSession}
           />
-          <div className="genre-chips">
+          <div className="side-settings side-settings--genre">
             <SearchChips tags={tags} criteria={criteria} onChange={setCriteria} hiddenCount={hidden} />
           </div>
           <RelatedRow items={related.filter((r) => r.movie.id !== movie.id)} onSelect={select} />

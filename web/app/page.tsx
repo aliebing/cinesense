@@ -14,7 +14,7 @@ import WorldLabel from "@/components/home/WorldLabel";
 import SearchChips from "@/components/search/SearchChips";
 import { getHome, getTags, type ApiResult, type Tag } from "@/lib/api";
 import { hasAnyCriteria, useSearchState } from "@/lib/searchState";
-import type { HomeData, Movie } from "@/lib/types";
+import type { HomeData } from "@/lib/types";
 import { useActiveTrailer } from "@/lib/useActiveTrailer";
 import { useIsNarrow, useReducedMotion } from "@/lib/useReducedMotion";
 
@@ -62,7 +62,6 @@ export default function HomePage() {
     setCriteria({ ...criteria, availability });
     router.push("/results");
   };
-  const openMovie = (m: Movie) => router.push(`/world/${m.world_ids[0]}?film=${m.id}`);
 
   return (
     <CinemaFrame>
@@ -98,23 +97,23 @@ export default function HomePage() {
         </h1>
         <p className="home-sub">Tell me what you’re in the mood for tonight.</p>
         <ChatPanel mode="live" horrorIdx={tags.find((t) => t.tag === "horror")?.idx ?? null} />
-        {hasAnyCriteria(criteria) && (
-          <div className="home-chips">
-            <SearchChips tags={tags} criteria={criteria} onChange={setCriteria} />
+        {result && !result.ok && <p className="home-error">Couldn&apos;t load films</p>}
+      </main>
+      <div className="side-settings">
+        <SearchChips tags={tags} criteria={criteria} onChange={setCriteria}>
+          {hasAnyCriteria(criteria) && (
             <button type="button" className="chat-results" onClick={() => router.push("/results")}>
               Show results →
             </button>
-          </div>
-        )}
-        {result && !result.ok && <p className="home-error">Couldn&apos;t load films</p>}
-      </main>
+          )}
+        </SearchChips>
+      </div>
 
       {data && !narrow && <FilmTitles titles={data.titles} />}
       {data && (
         <div className="home-rows">
           <TileRows
             rows={visibleWorlds(active, worlds, narrow ? 1 : 4).map((w) => ({ world: w, movies: data.rows[w.id] ?? [] }))}
-            onSelect={openMovie}
             variedSpeed={variedSpeed}
             worldOrder={worldIds}
           />

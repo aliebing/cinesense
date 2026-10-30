@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { expect, it, vi } from "vitest";
 import SearchChips from "@/components/search/SearchChips";
@@ -17,14 +17,26 @@ function setup(criteria: Partial<Criteria> = {}, hidden = 0) {
   return onChange;
 }
 
-it("mode toggle cycles prefer -> must -> not", async () => {
+it("mode switch shows all three modes, marks the current one and sets the chosen one", async () => {
   const onChange = setup({ tags: [{ idx: 1, weight: 6, mode: "prefer" }] });
-  await userEvent.click(screen.getByRole("button", { name: "Mode for space travel: prefer" }));
+  const group = screen.getByRole("group", { name: "Mode for space travel" });
+  expect(within(group).getByRole("button", { name: "Prefer" })).toHaveAttribute("aria-pressed", "true");
+  await userEvent.click(within(group).getByRole("button", { name: "Must" }));
   expect(onChange.mock.calls[0][0].tags[0].mode).toBe("must");
+  await userEvent.click(within(group).getByRole("button", { name: "Exclude" }));
+  expect(onChange.mock.calls[1][0].tags[0].mode).toBe("not");
 });
 
-it("weight dots set the weight", async () => {
+it("an excluded tag can be switched back to prefer", async () => {
+  const onChange = setup({ tags: [{ idx: 2, weight: 6, mode: "not" }] });
+  const group = screen.getByRole("group", { name: "Mode for horror" });
+  await userEvent.click(within(group).getByRole("button", { name: "Prefer" }));
+  expect(onChange.mock.calls[0][0].tags[0].mode).toBe("prefer");
+});
+
+it("weight stars are labelled and set the weight", async () => {
   const onChange = setup({ tags: [{ idx: 0, weight: 4, mode: "prefer" }] });
+  expect(screen.getByText("Weight")).toBeInTheDocument();
   await userEvent.click(screen.getByRole("button", { name: "Weight 5 of 5 for dark" }));
   expect(onChange.mock.calls[0][0].tags[0].weight).toBe(10);
 });

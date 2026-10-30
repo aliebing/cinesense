@@ -121,7 +121,8 @@ it("an unplayable trailer disappears, is reported and never retried", () => {
   fireEvent.pointerEnter(box);
   act(() => vi.advanceTimersByTime(550));
   expect(document.querySelector("iframe")).toBeNull();
-  expect(screen.queryByText("No trailer available")).toBeNull(); // no note for a film whose trailer just failed
+  expect(screen.queryByText("No trailer available")).toBeNull();
+  expect(screen.getByText("Trailer blocked on YouTube")).toBeInTheDocument(); // the card says why nothing moves
 });
 
 it("ignores messages from other origins", () => {

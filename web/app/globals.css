@@ -57,7 +57,7 @@ body {
   position: relative;
   width: var(--stage-w);
   aspect-ratio: var(--stage-ratio) / 1;
-  overflow: hidden;
+  overflow: clip; /* not hidden: the stage must never scroll when a control near the edge gets focus */
   background: var(--stage);
   color: #fff;
   isolation: isolate;
