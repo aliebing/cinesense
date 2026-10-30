@@ -130,3 +130,27 @@ def test_profile_reasons_stay_linear(make_movie):
     res = combined_rank(movies, SearchCriteria(), sig, limit=5000)
     assert time.perf_counter() - t0 < 1.0
     assert sum("fits your taste" in r.reasons for r in res.items) == 750
+
+
+class FakeStreaming:
+    def __init__(self, streaming_ids):
+        self.streaming_ids = streaming_ids
+        self.lookups = []
+
+    def get_de(self, imdb_id):
+        from cinesense.domain.models import StreamingOption
+
+        self.lookups.append(imdb_id)
+        return [StreamingOption(service="Netflix", type="subscription")] if imdb_id in self.streaming_ids else []
+
+
+def test_stream_filter_fills_the_page_from_further_candidates(make_movie):
+    """The best few films often don't stream: a short page must not come back empty while others do."""
+    from cinesense.search.service import SearchService
+
+    movies = [make_movie(id=f"m{i}", imdb_id=f"tt{i}", ml_rating=4.5 - i / 5) for i in range(6)]
+    streaming = FakeStreaming({"tt3", "tt5"})
+    res = SearchService(FakeProvider(movies), streaming=streaming).run(SearchCriteria(availability="stream"), 0, 1)
+    assert [r.movie.id for r in res.items] == ["m3"]
+    assert streaming.lookups == ["tt0", "tt1", "tt2", "tt3"]  # stops once the page is full
+    assert res.total == 3  # the three known non-streamers no longer count

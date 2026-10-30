@@ -1,10 +1,10 @@
 "use client";
 
 import ImageOrPlaceholder from "@/components/ui/ImageOrPlaceholder";
-import { useRef } from "react";
+import { type ReactNode, useRef, useState } from "react";
 import { useActiveTrailer } from "@/lib/useActiveTrailer";
 import { embedUrl, listenTo, useYouTubeState } from "@/lib/youtubePlayer";
-import type { MoodWorld, Movie } from "@/lib/types";
+import type { MoodWorld, Movie, StreamingOption } from "@/lib/types";
 
 const rating = new Intl.NumberFormat("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 const count = new Intl.NumberFormat("en-US");
@@ -69,19 +69,76 @@ function Trailer({ movie }: { movie: Movie }) {
   );
 }
 
+/** first link per service and type ("Disney+" often comes twice) */
+function offers(options: StreamingOption[], types: StreamingOption["type"][]): StreamingOption[] {
+  const seen = new Set<string>();
+  return options.filter((o) => types.includes(o.type) && !seen.has(o.service) && seen.add(o.service));
+}
+
+function Offer({ o, children }: { o: StreamingOption; children: ReactNode }) {
+  return o.link ? (
+    <a className="stage-offer" href={o.link} target="_blank" rel="noreferrer">
+      {children}
+    </a>
+  ) : (
+    <span>{children}</span>
+  );
+}
+
+/** JustWatch search on the plain title: "Get Out Your Handkerchiefs (Préparez vos mouchoirs)" → the English part */
+function justWatch(title: string): string {
+  return `https://www.justwatch.com/de/Suche?q=${encodeURIComponent(title.replace(/\s*\(.*\)\s*$/, ""))}`;
+}
+
 function Streaming({ movie }: { movie: Movie }) {
   const options = movie.availability.streaming_de;
-  if (options === null) return <span className="stage-tag--muted">Streaming availability unknown</span>;
-  if (options.length === 0) return <span className="stage-tag--muted">Not streaming in Germany</span>;
-  const subs = movie.availability.subscription_services;
-  const others = new Set(options.filter((o) => o.type !== "subscription").map((o) => o.service));
+  const search = (
+    <a className="stage-offer stage-tag--muted" href={justWatch(movie.title)} target="_blank" rel="noreferrer">
+      Find where to watch ↗
+    </a>
+  );
+  if (options === null)
+    return (
+      <>
+        <span className="stage-tag--muted">Streaming availability unknown</span>
+        {search}
+      </>
+    );
+  if (options.length === 0)
+    return (
+      <>
+        <span className="stage-tag--muted">Not streaming in Germany</span>
+        {search}
+      </>
+    );
+  const subs = offers(options, ["subscription", "free"]);
+  const paid = offers(options, ["rent", "buy", "addon"]);
   return (
     <>
-      {subs.map((s) => (
-        <span key={s}>📺 {s}</span>
+      {subs.map((o) => (
+        <Offer key={o.service} o={o}>
+          📺 {o.service}
+        </Offer>
       ))}
-      {others.size > 0 && <span className="stage-tag--muted">+ rent/buy on {others.size} services</span>}
+      {paid.map((o) => (
+        <Offer key={`paid-${o.service}`} o={o}>
+          🛒 {o.type === "addon" ? "Add-on" : "Rent/buy"}: {o.service}
+        </Offer>
+      ))}
     </>
+  );
+}
+
+function Overview({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
+  if (!text) return null;
+  return (
+    <div className={`stage-overview ${open ? "is-open" : ""}`}>
+      <p>{text}</p>
+      <button type="button" className="stage-overview__more" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+        {open ? "Less" : "More"}
+      </button>
+    </div>
   );
 }
 
@@ -114,6 +171,7 @@ export default function StagePanel({ movie, world, why, feedback = 0, onFeedback
         <h2>{movie.title}</h2>
         <p className="stage-meta">{metaLine(movie)}</p>
         {people.length > 0 && <p className="stage-people">{people.join(" · ")}</p>}
+        <Overview key={movie.id} text={movie.overview} />
         <div className="stage-tags">
           {movie.is_placeholder && <span className="stage-tag--placeholder">Placeholder</span>}
           {movie.availability.in_cinema_de && (

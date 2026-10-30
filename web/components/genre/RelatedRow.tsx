@@ -111,7 +111,7 @@ export default function RelatedRow({
                 <i>{r.match_percent}%</i>
                 <span>
                   {r.movie.title}
-                  {showReasons && r.reasons.length > 0 && <small className="related-why">{r.reasons[0]}</small>}
+                  {showReasons && r.reasons.length > 0 && <small className="related-why">{r.reasons.slice(0, 2).join(" · ")}</small>}
                 </span>
               </button>
             </HoverTrailer>

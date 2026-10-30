@@ -71,18 +71,21 @@ class SearchService:
                 movies += fresh
         result = combined_rank(movies, c, sig, hidden_by_tags=hidden, offset=0, limit=len(movies) or 1)
 
+        # a stream filter may drop films that turn out not to stream: rank a few spare ones to fill the page
+        window = limit + STREAM_CHECK_LIMIT if c.availability == "stream" and self.streaming is not None else limit
         if c.has_tags():
-            top_ids = [r.movie.id for r in result.items[: offset + limit]]
+            top_ids = [r.movie.id for r in result.items[: offset + window]]
             vectors = p.tag_vectors(top_ids)
             idxs = [t.idx for t in c.tags]
             sig.tag_relevance = {fid: {i: float(vectors[row][i]) for i in idxs} for row, fid in enumerate(top_ids)}
-        page = combined_rank([r.movie for r in result.items], c, sig, hidden_by_tags=0, offset=offset, limit=limit)
+        page = combined_rank([r.movie for r in result.items], c, sig, hidden_by_tags=0, offset=offset, limit=window)
         page.hidden_by_exclusion = result.hidden_by_exclusion
         for r in page.items:  # callers fill images/streaming on the page; never mutate the shared catalogue
             r.movie = r.movie.model_copy(deep=True)
         page.extended_used = extended_used
         if c.availability == "stream":
-            page = self._resolve_streaming(page)
+            page = self._resolve_streaming(page, limit)
+        page.items = page.items[:limit]
         return page
 
     def _live(self, c: SearchCriteria, sig: Signals) -> list:
@@ -98,17 +101,23 @@ class SearchService:
             hits += found
         return hits
 
-    def _resolve_streaming(self, page: CombinedResult) -> CombinedResult:
+    def _resolve_streaming(self, page: CombinedResult, limit: int) -> CombinedResult:
+        """Look up candidates in rank order until `limit` of them may stream; at most STREAM_CHECK_LIMIT lookups."""
         if self.streaming is None:
             return page
-        kept = []
-        for r in page.items[:STREAM_CHECK_LIMIT]:
+        kept, dropped, lookups, rest = [], 0, 0, list(page.items)
+        while rest and len(kept) < limit and lookups < STREAM_CHECK_LIMIT:
+            r = rest.pop(0)
             m = r.movie
             if m.imdb_id and m.availability.streaming_de is None:
                 m.availability.streaming_de = self.streaming.get_de(m.imdb_id)
+                lookups += 1
             if m.availability.streaming_de is None or m.availability.subscription_services:
                 kept.append(r)  # unknown stays (labelled in the UI); known-not-streaming drops out
-        page.items = kept + page.items[STREAM_CHECK_LIMIT:]
+            else:
+                dropped += 1
+        page.items = kept + rest
+        page.total = max(page.total - dropped, len(page.items))
         return page
 
 

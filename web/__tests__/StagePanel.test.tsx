@@ -48,7 +48,7 @@ it("shows streaming providers, TMDB rating, badge and why text", () => {
   expect(screen.getByText("📺 Netflix")).toBeInTheDocument();
   expect(screen.getByText("📺 Disney+")).toBeInTheDocument();
   expect(screen.getByText("⭐ MovieLens 4.1/5 (12,345 ratings)")).toBeInTheDocument();
-  expect(screen.getByText("Placeholder")).toBeInTheDocument();
+  expect(screen.getByText("Placeholder", { selector: "span" })).toBeInTheDocument();
   expect(screen.getByText("Highly rated")).toBeInTheDocument();
   expect(screen.queryByText("🎬 In cinemas")).toBeNull();
 });
@@ -83,7 +83,44 @@ it("streaming states: unknown, not in Germany, and rent/buy collapsed", () => {
       why="x"
     />,
   );
-  expect(screen.getByText("+ rent/buy on 2 services")).toBeInTheDocument();
+  expect(screen.getByText("🛒 Rent/buy: Apple TV")).toBeInTheDocument();
+  expect(screen.getByText("🛒 Rent/buy: Prime Video")).toBeInTheDocument();
+});
+
+it("links each offer to the provider, once per service, and offers a search when nothing is known", () => {
+  const link = "https://www.amazon.de/gp/video/detail/X";
+  const { rerender } = render(
+    <StagePanel
+      movie={{
+        ...base,
+        availability: {
+          in_cinema_de: false,
+          streaming_de: [
+            { service: "Prime Video", type: "buy", link },
+            { service: "Prime Video", type: "rent", link: "https://other" },
+          ],
+          subscription_services: [],
+        },
+      }}
+      world={world}
+      why="x"
+    />,
+  );
+  expect(screen.getByRole("link", { name: "🛒 Rent/buy: Prime Video" })).toHaveAttribute("href", link);
+  rerender(<StagePanel movie={{ ...base, title: "Get Out Your Handkerchiefs (Préparez vos mouchoirs)", availability: { in_cinema_de: false, streaming_de: [], subscription_services: [] } }} world={world} why="x" />);
+  expect(screen.getByRole("link", { name: "Find where to watch ↗" })).toHaveAttribute(
+    "href",
+    "https://www.justwatch.com/de/Suche?q=Get%20Out%20Your%20Handkerchiefs",
+  );
+});
+
+it("shows the plot, folded to a few lines until opened", async () => {
+  render(<StagePanel movie={{ ...base, overview: "Raoul and his wife Solange are eating in a restaurant." }} world={world} why="x" />);
+  expect(screen.getByText(/Raoul and his wife Solange/)).toBeInTheDocument();
+  const more = screen.getByRole("button", { name: "More" });
+  await userEvent.click(more);
+  expect(more).toHaveAttribute("aria-expanded", "true");
+  expect(more).toHaveTextContent("Less");
 });
 
 it("links to IMDb and Wikipedia and shows people, tags and German cinema release", () => {
