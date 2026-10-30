@@ -173,11 +173,17 @@ class StreamingClient:
         payload = _fresh(self.store.get(imdb_id), IMAGES_TTL) or self._show(imdb_id, limit=self.image_limit)
         return images_from_payload(payload) if payload else None
 
-    def browse(self, genre: str, cursor: str | None = None) -> tuple[list[dict], str | None]:
-        key = f"browse:{genre}:{cursor or ''}"
+    def browse(
+        self, genre: str, cursor: str | None = None, order_by: str = "popularity_1week", year_max: int | None = None
+    ) -> tuple[list[dict], str | None]:
+        key = f"browse:{genre}:{cursor or ''}" + (
+            f":{order_by}:{year_max}" if (order_by, year_max) != ("popularity_1week", None) else ""
+        )
         cached = _fresh(self.store.get(key), BROWSE_TTL)
         if cached is None:
-            params = {"country": "de", "show_type": "movie", "genres": genre, "order_by": "popularity_1week"}
+            params = {"country": "de", "show_type": "movie", "genres": genre, "order_by": order_by}
+            if year_max is not None:
+                params["year_max"] = year_max
             if cursor:
                 params["cursor"] = cursor
             r = self._request("/shows/search/filters", params, self.image_limit)

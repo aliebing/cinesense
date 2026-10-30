@@ -33,7 +33,7 @@ SEGMENTS = [
         "01_intro",
         "Willkommen bei CineSense. Die Idee: Du suchst keinen Film aus einer endlosen Liste aus, "
         "sondern wählst ein Gefühl. Die Startseite ist wie ein Kinosaal gestaltet, mit Leinwand, Vorhang, "
-        "Nebel und Projektorlicht. Im Hintergrund wechseln sechs Stimmungswelten, zum Beispiel Spannung, "
+        "Nebel und zwei Scheinwerfern. Im Hintergrund wechseln sechs Stimmungswelten, zum Beispiel Spannung, "
         "Komödie oder Liebe, und rechts laufen Filmreihen dieser Welten vorbei. Jede Kachel lässt sich anklicken.",
     ),
     Segment(
@@ -52,8 +52,9 @@ SEGMENTS = [
     Segment(
         "04_reply",
         "Die Antwort kommt mit den drei besten Vorschlägen, jeder mit einer kurzen Begründung. Gleichzeitig "
-        "passen sich rechts die Filmreihen an: Oben laufen jetzt die Treffer meiner Suche, darunter weitere "
-        "Filme aus den Genres dieser Treffer, mit denselben Kriterien. Links siehst du, was der Agent "
+        "passen sich rechts die Filmreihen an: In der Mitte stehen jetzt, größer und mit goldenem Rand, die "
+        "Treffer meiner Suche, also die engere Wahl. Darüber und darunter laufen weitere passende Filme aus den "
+        "Genres dieser Treffer, mit denselben Kriterien. Links siehst du, was der Agent "
         "eingestellt hat: Jeder Stimmungs-Tag ist eine Karte mit Gewicht und Modus, also bevorzugen, muss "
         "oder ausschließen.",
     ),
@@ -62,12 +63,13 @@ SEGMENTS = [
         "Über „Search“ sehe ich alle Treffer zu genau diesen Kriterien, denn Chat und Suche "
         "teilen sich denselben Zustand. Unter „Excluded“ steht Horror, als Tag und als Genre, und CineSense "
         "sagt offen, wie viele Filme dadurch ausgeblendet werden. Es wird also nichts heimlich gefiltert. "
-        "Darunter steht der Laufzeitfilter.",
+        "Darunter steht der Laufzeitfilter, und unten laufen die besten Treffer durch, jeder mit einer "
+        "kurzen Begründung.",
     ),
     Segment(
         "06_edit",
         "Alles, was die KI gesetzt hat, kann ich selbst ändern. Ich gebe dem ersten Tag das volle "
-        "Gewicht, und die Ergebnisliste wird sofort neu sortiert.",
+        "Gewicht, und die Trefferreihe wird sofort neu sortiert.",
     ),
     Segment(
         "07_stage",
@@ -97,6 +99,31 @@ SEGMENTS = [
         "technisch funktioniert, zeigt das zweite Video.",
     ),
 ]
+
+
+RESULT_CARDS = "[aria-label='Results'] .related-card"
+
+CARD_AT_JS = """
+([sel, slot]) => {
+  const cards = [...document.querySelectorAll(sel)].map((c) => c.getBoundingClientRect()).filter((r) => r.width > 0);
+  const row = document.querySelector("[aria-label='Results'] .related-viewport").getBoundingClientRect();
+  const x = row.left + row.width * slot;
+  const best = cards.filter((r) => r.left > row.left && r.right < row.right)
+    .sort((a, b) => Math.abs(a.left + a.width / 2 - x) - Math.abs(b.left + b.width / 2 - x))[0];
+  return best ? { x: best.left + best.width / 2, y: best.top + best.height * 0.4 } : null;
+}
+"""
+
+
+async def click_card(page, selector: str, slot: float) -> None:
+    """The result row keeps creeping, so aim at the card nearest to `slot` (share of the row's width, kept inside
+    the row's slow middle) and click it with the pointer right there."""
+    pos = await page.evaluate(CARD_AT_JS, [selector, slot])
+    if pos is None:
+        return
+    await glide(page, pos["x"], pos["y"], 800)
+    await page.mouse.down()
+    await page.mouse.up()
 
 
 async def shot(page, out: Path, name: str) -> None:
@@ -158,11 +185,11 @@ async def main(base: str, api: str, out: Path) -> None:
             for _ in range(8):
                 await page.mouse.wheel(0, 120)
                 await asyncio.sleep(0.3)
-            hits = page.locator('.tile-row-wrap[data-world="search-hits"]')
+            hits = page.locator(".tile-row-wrap--picked")
             await hits.wait_for(timeout=30000)
             await glide_to(page, hits, 1200, dx=0.6)
             await asyncio.sleep(1.5)
-            await glide(page, 1500, 800, 1500)  # over the genre rows below
+            await glide(page, 1500, 820, 1500)  # over the other candidates below
             await asyncio.sleep(1.0)
             await shot(page, out, "chat")
             await glide_to(page, page.locator("[aria-label='Search criteria']"), 1400, dy=0.2)
@@ -172,7 +199,7 @@ async def main(base: str, api: str, out: Path) -> None:
 
         async def results():
             await click(page, page.get_by_role("link", name="🔍 Search"), 900)
-            await page.locator("[data-testid=result-card]").first.wait_for(timeout=30000)
+            await page.locator(RESULT_CARDS).first.wait_for(timeout=30000)
             await glide(page, 1100, 210, 800)
             await asyncio.sleep(1.5)
             excluded = page.locator(".chips-heading", has_text="Excluded")
@@ -187,6 +214,7 @@ async def main(base: str, api: str, out: Path) -> None:
             filters = page.locator(".chips-heading", has_text="Filters")
             if await filters.count():
                 await glide_to(page, filters, 900, dy=2.5)
+            await glide_to(page, page.locator("[aria-label='Results']"), 1200, dx=0.5, dy=0.6)
 
         await narrate(rec, seg["05_results"], results)
 
@@ -198,7 +226,7 @@ async def main(base: str, api: str, out: Path) -> None:
         await narrate(rec, seg["06_edit"], edit)
 
         async def stage():
-            await click(page, page.locator("[aria-label^='Open ']").first, 900)
+            await click_card(page, RESULT_CARDS, 0.45)
             await page.get_by_role("button", name="👍 More like this").wait_for(timeout=30000)
             await page.wait_for_timeout(1200)
             for sel in [".stage-info h2, h1, h2", "text=/streaming|Netflix|unknown|rent/i", "text=Wikipedia"]:
@@ -220,11 +248,11 @@ async def main(base: str, api: str, out: Path) -> None:
             like = page.get_by_role("button", name="👍 More like this")
             await click(page, like, 900)
             await asyncio.sleep(1.0)
-            for n in (1, 2):  # back to the result grid (stable, unlike the drifting row) and like two more
+            for slot in (0.55, 0.62):  # back to the result row and like two more
                 await page.go_back()
-                await page.locator("[aria-label^='Open ']").nth(n).wait_for(timeout=30000)
-                await page.wait_for_timeout(600)
-                await click(page, page.locator("[aria-label^='Open ']").nth(n), 900)
+                await page.locator(RESULT_CARDS).first.wait_for(timeout=30000)
+                await page.wait_for_timeout(800)
+                await click_card(page, RESULT_CARDS, slot)
                 await like.wait_for(timeout=30000)
                 await page.wait_for_timeout(900)
                 await click(page, like, 800)
