@@ -51,9 +51,10 @@ SEGMENTS = [
     ),
     Segment(
         "04_reply",
-        "Die Antwort kommt mit den drei besten Vorschlägen, jeder mit einer kurzen Begründung. Gleichzeitig "
-        "passen sich rechts die Filmreihen an: Die mittlere Reihe läuft jetzt nach rechts und beginnt mit den "
-        "drei Vorschlägen aus dem Chat, groß und golden hervorgehoben, gefolgt von weiteren Treffern. Darüber "
+        "Die Antwort kommt mit drei bis fünf Vorschlägen, je nachdem, wie viele fast gleich gut passen, jeder "
+        "mit einer kurzen Begründung. Gleichzeitig "
+        "passen sich rechts die Filmreihen an: Die mittlere Reihe zeigt jetzt groß die genauesten Treffer und "
+        "läuft nach rechts. Vorne stehen die Vorschläge aus dem Chat, golden hervorgehoben. Darüber "
         "und darunter laufen nach links passende Filme aus den Genres dieser Treffer, mit denselben Kriterien. "
         "Fahre ich über eine Kachel, wächst sie, leuchtet golden und spielt den Trailer. Links siehst du, was "
         "der Agent eingestellt hat: Jeder Stimmungs-Tag ist eine Karte mit Gewicht und Modus, also bevorzugen, muss "
