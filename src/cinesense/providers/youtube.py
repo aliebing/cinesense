@@ -19,6 +19,21 @@ def _norm(text: str) -> str:
     return re.sub(r"[^a-z0-9 ]+", " ", text.lower()).strip()
 
 
+def _plain_title(title: str) -> str:
+    """MovieLens style "Road Home, The (Wo de fu qin mu qin)" -> "The Road Home"."""
+    title = re.sub(r"\s*\([^)]*\)\s*$", "", title).strip()
+    m = re.match(r"^(.*), (The|A|An|Les|Le|La|L'|Die|Der|Das)$", title)
+    return f"{m.group(2)} {m.group(1)}" if m else title
+
+
+def _title_matches(title: str, video_title: str) -> bool:
+    """Most of the title's words (3+ letters or digits) appear in the video title: subtitles like "Episode IV"
+    may be missing, but a different film ("Star Trek" for "Star Wars") is not accepted."""
+    words = [w for w in _norm(title).split() if len(w) > 2 or w.isdigit()] or _norm(title).split()
+    have = set(_norm(video_title).split())
+    return bool(words) and sum(w in have for w in words) >= 0.75 * len(words)
+
+
 class TrailerStore(Protocol):
     def get(self, film_id: str) -> tuple[str | None, datetime] | None: ...
     def put(self, film_id: str, video_id: str | None, checked_at: datetime | None = None) -> None: ...
@@ -113,7 +128,8 @@ class YouTubeTrailerClient:
                 return video_id
         if not self.api_key or self.store.calls_today() >= self.daily_limit:
             return None
-        q = f'"{title}" {year or ""} official trailer'.strip()
+        plain = _plain_title(title)
+        q = f'"{plain}" {year or ""} official trailer'.strip()
         try:
             self.store.add_call()
             r = self.http.get(
@@ -134,12 +150,11 @@ class YouTubeTrailerClient:
         if r.status_code != 200:
             log.warning("youtube search status %s", r.status_code)
             return None
-        want = _norm(title)
         video_id = next(
             (
                 i["id"]["videoId"]
                 for i in r.json().get("items", [])
-                if want in _norm(i["snippet"]["title"]) and "trailer" in i["snippet"]["title"].lower()
+                if _title_matches(plain, i["snippet"]["title"]) and "trailer" in i["snippet"]["title"].lower()
             ),
             None,
         )

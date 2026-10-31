@@ -69,3 +69,17 @@ def test_key_sent_as_header_and_never_logged(caplog):
     assert req.headers["X-goog-api-key"] == "SECRET-KEY"
     assert "SECRET-KEY" not in str(req.url)
     assert "SECRET-KEY" not in caplog.text
+
+
+@respx.mock
+def test_matches_catalogue_titles_loosely():
+    """MovieLens titles carry subtitles, alternate titles and a trailing ", The"; trailers rarely do."""
+    route = respx.get(SEARCH_URL).mock(
+        return_value=httpx.Response(200, json={"items": [item("sw", "STAR WARS: A NEW HOPE - Official Trailer")]})
+    )
+    assert client().find_trailer("ml-260", "Star Wars: Episode IV - A New Hope", 1977) == "sw"
+    route.mock(return_value=httpx.Response(200, json={"items": [item("rh", "The Road Home (1999) Trailer")]}))
+    assert client().find_trailer("ml-1", "Road Home, The (Wo de fu qin mu qin)", 1999) == "rh"
+    assert '"The Road Home"' in str(route.calls.last.request.url.params["q"])
+    route.mock(return_value=httpx.Response(200, json={"items": [item("x", "Star Trek Official Trailer")]}))
+    assert client().find_trailer("ml-2", "Star Wars: Episode IV - A New Hope", 1977) is None
