@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 from typing import Annotated
 
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query
@@ -32,13 +33,14 @@ Checker = Annotated[object, Depends(get_trailer_checker)]
 ROW_SIZE = 16
 IMAGE_FILL = 12  # images fetched per list response (each new film costs one Streaming API request once)
 RELATED_IMAGE_FILL = 24  # the related row shows up to 24 films; no blank tiles
+TRAILER_FILL = 4  # top search hits without a Wikidata trailer ask YouTube (cached 30 days; 95 searches/day)
 
 
 class DiscoverRequest(BaseModel):
     criteria: SearchCriteria = Field(default_factory=SearchCriteria)
     offset: int = Field(default=0, ge=0)
     limit: int = Field(default=20, ge=1, le=50)
-    fill_images: bool = True  # False: no Streaming API image lookups (homepage background rows)
+    fill_images: bool = True  # False: no Streaming API image lookups or YouTube searches (homepage background rows)
 
 
 class DiscoverResponse(BaseModel):
@@ -75,11 +77,27 @@ def create_app(load_env: bool = True) -> FastAPI:
         return [{"idx": i, "tag": t} for i, t in enumerate(provider.list_tags())]
 
     def _discover(
-        req: DiscoverRequest, provider, streaming, embedder, live=None, tasks=None, profile=None, checker=None
+        req: DiscoverRequest,
+        provider,
+        streaming,
+        embedder,
+        live=None,
+        tasks=None,
+        profile=None,
+        checker=None,
+        trailers=None,
     ) -> DiscoverResponse:
         res = SearchService(provider, streaming, embedder, live).run(req.criteria, req.offset, req.limit, profile)
         if checker is not None:
             checker.filter_known([r.movie for r in res.items])
+        if trailers is not None:  # the search rows play trailers on hover, so the best hits should have one
+            top = [r.movie for r in res.items[:TRAILER_FILL] if r.movie.youtube_key is None]
+            with ThreadPoolExecutor(max_workers=TRAILER_FILL) as pool:  # uncached ids cost a round trip each
+                keys = list(pool.map(lambda m: trailers.find_trailer(m.id, m.title, m.year), top))
+            for m, key in zip(top, keys, strict=True):
+                m.youtube_key = key
+            if checker is not None and top:
+                checker.filter_known(top)  # a reported fallback trailer is never offered again
         for r in res.items[: IMAGE_FILL if req.fill_images else 0]:
             _with_images(r.movie, provider, streaming)
         if res.extended_used and tasks is not None:
@@ -102,8 +120,11 @@ def create_app(load_env: bool = True) -> FastAPI:
         embedder: Embedder,
         profile: UserProfile,
         checker: Checker,
+        trailers: Trailers,
     ) -> DiscoverResponse:
-        return _discover(req, provider, streaming, embedder, profile=profile, checker=checker)
+        # background rows (fill_images=False) spend no API budget, neither images nor YouTube searches
+        fallback = trailers if req.fill_images else None
+        return _discover(req, provider, streaming, embedder, profile=profile, checker=checker, trailers=fallback)
 
     @app.post("/api/search")
     def search(
@@ -115,8 +136,9 @@ def create_app(load_env: bool = True) -> FastAPI:
         tasks: BackgroundTasks,
         profile: UserProfile,
         checker: Checker,
+        trailers: Trailers,
     ) -> DiscoverResponse:
-        return _discover(req, provider, streaming, embedder, live, tasks, profile, checker)
+        return _discover(req, provider, streaming, embedder, live, tasks, profile, checker, trailers)
 
     @app.get("/api/worlds/{world_id}/movies")
     def world_movies(

@@ -255,3 +255,44 @@ def test_discover_can_skip_image_lookups():
     assert s.image_calls == 0
     c.post("/api/discover", json=body)
     assert s.image_calls > 0
+
+
+def test_search_fills_youtube_trailers_for_the_top_hits_only():
+    """The search rows play trailers on hover: the top hits without a Wikidata trailer ask YouTube, the rest don't."""
+    from cinesense.api.app import TRAILER_FILL
+
+    asked = []
+
+    class Fallback:
+        def find_trailer(self, film_id, title, year):
+            asked.append(film_id)
+            return f"yt-{film_id}"
+
+    prov = FixtureProvider()
+    for m in prov._movies[::2]:  # half the catalogue without a Wikidata trailer
+        m.youtube_key = None
+    before = client(provider=prov).post("/api/search", json={"limit": 20}).json()["items"]
+    expected = [r["movie"]["id"] for r in before[:TRAILER_FILL] if r["movie"]["youtube_key"] is None]
+    after = client(provider=prov, trailers=Fallback()).post("/api/search", json={"limit": 20}).json()["items"]
+    assert expected and asked == expected
+    assert [r["movie"]["youtube_key"] for r in after[:TRAILER_FILL] if r["movie"]["id"] in expected] == [
+        f"yt-{i}" for i in expected
+    ]
+
+
+def test_discover_hits_get_trailers_but_background_rows_spend_nothing():
+    asked = []
+
+    class Fallback:
+        def find_trailer(self, film_id, title, year):
+            asked.append(film_id)
+            return "yt-fallback"
+
+    prov = FixtureProvider()
+    for m in prov._movies:
+        m.youtube_key = None
+    c = client(provider=prov, trailers=Fallback())
+    c.post("/api/discover", json={"limit": 20, "fill_images": False})
+    assert asked == []
+    c.post("/api/discover", json={"limit": 20})
+    assert asked
