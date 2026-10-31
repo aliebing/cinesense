@@ -40,6 +40,12 @@ export function rowDirection(id: string, order: string[], slot: number): number 
   return (i >= 0 ? i : slot) % 2 ? 1 : -1;
 }
 
+/** During a search the short list runs right and every row around it left; otherwise worlds alternate. */
+export function searchAwareDirection(id: string, picked: boolean, searching: boolean, order: string[], slot: number): number {
+  if (searching) return picked ? 1 : -1;
+  return rowDirection(id, order, slot);
+}
+
 /** Exponential easing of the speed factor towards its target (frame-rate independent). */
 export function easeSpeed(current: number, target: number, dtMs: number): number {
   return target + (current - target) * Math.exp(-dtMs / EASE_MS);
@@ -83,9 +89,10 @@ export default function TileRows({ rows, onSelect, variedSpeed, worldOrder = [] 
   }, [variedSpeed, activeId]);
   useEffect(() => {
     orderRef.current = rows.map((r) => r.world.id);
-    orderRef.current.forEach((id, slot) => {
-      if (!directions.current.has(id)) directions.current.set(id, rowDirection(id, worldOrder, slot));
-      if (!offsets.current.has(id)) offsets.current.set(id, -37 * offsets.current.size);
+    const searching = rows.some((r) => r.picked);
+    rows.forEach(({ world, picked }, slot) => {
+      directions.current.set(world.id, searchAwareDirection(world.id, Boolean(picked), searching, worldOrder, slot));
+      if (!offsets.current.has(world.id)) offsets.current.set(world.id, -37 * offsets.current.size);
     });
   }, [rows, worldOrder]);
 
@@ -127,7 +134,7 @@ export default function TileRows({ rows, onSelect, variedSpeed, worldOrder = [] 
         pointingRef.current = false;
       }}
     >
-      {rows.map(({ world, movies, picked }) => (
+      {rows.map(({ world, movies, picked, featured = [] }) => (
         <div key={world.id} className={`tile-row-wrap${picked ? " tile-row-wrap--picked" : ""}`} data-world={world.id}>
           <div className="tile-row-viewport">
           <div
@@ -139,7 +146,11 @@ export default function TileRows({ rows, onSelect, variedSpeed, worldOrder = [] 
             }}
           >
             {[...movies, ...movies].map((m, i) => (
-              <HoverTrailer key={`${m.id}-${i}`} movie={m} className="tile-wrap">
+              <HoverTrailer
+                key={`${m.id}-${i}`}
+                movie={m}
+                className={`tile-wrap${featured.includes(m.id) ? " tile-wrap--featured" : ""}`}
+              >
                 <button
                   type="button"
                   className="tile"

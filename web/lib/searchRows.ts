@@ -33,15 +33,16 @@ export function aroundTheShortList(short: TileRow, others: TileRow[]): TileRow[]
   return [...others.slice(0, mid), short, ...others.slice(mid)];
 }
 
-/** Homepage tile rows for the current search (set in the chat or with the chips): the hits in the middle (larger, gold
- *  frame), around them one row per world the hits belong to, with the same criteria and no film twice. `null` while there is no search (or no hit),
+/** Homepage tile rows for the current search (set in the chat or with the chips): the hits in the middle, led by the
+ *  chat's picks (`picks`, shown larger), around them one row per world the hits belong to, with the same criteria and no film twice. `null` while there is no search (or no hit),
  *  so the homepage shows its world rows. Uses /api/discover: same ranking, never the paid live search; only the hits
  *  row may look up missing images (like the result page), the world rows use the pictures already known. */
-export function useSearchRows(criteria: Criteria, worlds: MoodWorld[], rowCount: number): TileRow[] | null {
+export function useSearchRows(criteria: Criteria, worlds: MoodWorld[], rowCount: number, picks: Movie[] = []): TileRow[] | null {
   const [rows, setRows] = useState<TileRow[] | null>(null);
   const active = hasAnyCriteria(criteria);
   const key = active ? JSON.stringify({ ...criteria, world_id: null }) : null;
   const order = worlds.map((w) => w.id).join(",");
+  const pickKey = JSON.stringify(picks.slice(0, 3));
 
   useEffect(() => {
     let live = true;
@@ -56,9 +57,14 @@ export function useSearchRows(criteria: Criteria, worlds: MoodWorld[], rowCount:
       const first = await discover(c, 0, HITS);
       if (!live) return;
       const hits = first.ok ? first.data.items : [];
-      if (hits.length === 0) return setRows(null);
-      const seen = new Set(hits.map((r) => r.movie.id));
-      const short: TileRow = { world: hitsWorld(), movies: preferPictured(hits.map((r) => r.movie)), picked: true };
+      const found = new Map(hits.map((r) => [r.movie.id, r.movie]));
+      // the hits carry looked-up pictures, the chat's copies may not
+      const chosen = (JSON.parse(pickKey) as Movie[]).map((m) => found.get(m.id) ?? m);
+      if (hits.length === 0 && chosen.length === 0) return setRows(null);
+      const featured = chosen.map((m) => m.id);
+      const seen = new Set([...featured, ...hits.map((r) => r.movie.id)]);
+      const rest = preferPictured(hits.map((r) => r.movie)).filter((m) => !featured.includes(m.id));
+      const short: TileRow = { world: hitsWorld(), movies: [...chosen, ...rest], picked: true, featured };
       const out: TileRow[] = [];
       // worlds by how many hits they hold; a world whose films have too few pictures waits behind the others
       const fallback: TileRow[] = [];
@@ -88,7 +94,7 @@ export function useSearchRows(criteria: Criteria, worlds: MoodWorld[], rowCount:
       live = false;
       clearTimeout(timer);
     };
-  }, [key, order, rowCount]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [key, order, rowCount, pickKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return rows;
 }

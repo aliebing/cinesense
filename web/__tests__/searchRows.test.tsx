@@ -87,3 +87,23 @@ it("a world whose films lack pictures waits behind worlds with pictures", async 
   await waitFor(() => expect(result.current).not.toBeNull());
   expect(result.current!.map((r) => r.world.id)).toEqual(["action", HITS_ROW_ID, "suspense"]); // hits in the middle
 });
+
+it("the chat's picks lead the short list, featured (larger), and never repeat in the rows around it", async () => {
+  const criteria = { ...emptyCriteria(), tags: [{ idx: 7, weight: 8, mode: "prefer" as const }] };
+  discover.mockImplementation(async (c?: { world_id: string | null }) => ({
+    ok: true,
+    data: {
+      items: c?.world_id ? ranked(["p2", "w1", "w2", "w3", "w4"], c.world_id) : ranked(["h1", "p2", "h3", "h4"], "action"),
+      total: 4,
+      hidden_by_exclusion: 0,
+      extended_used: false,
+    },
+  }));
+  const picks = ranked(["p1", "p2", "p3"], "action").map((r) => r.movie);
+  const { result } = renderHook(() => useSearchRows(criteria, sampleWorlds, 4, picks));
+  await waitFor(() => expect(result.current).not.toBeNull());
+  const [hits, around] = result.current!;
+  expect(hits.movies.map((m) => m.id)).toEqual(["p1", "p2", "p3", "h1", "h3", "h4"]);
+  expect(hits.featured).toEqual(["p1", "p2", "p3"]);
+  expect(around.movies.map((m) => m.id)).toEqual(["w1", "w2", "w3", "w4"]);
+});

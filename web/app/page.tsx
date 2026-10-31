@@ -14,6 +14,7 @@ import TileRows, { visibleWorlds } from "@/components/home/TileRows";
 import WorldLabel from "@/components/home/WorldLabel";
 import SearchChips from "@/components/search/SearchChips";
 import { getHome, getTags, type ApiResult, type Tag } from "@/lib/api";
+import { useChatLog } from "@/lib/chat";
 import { useSearchRows } from "@/lib/searchRows";
 import { hasAnyCriteria, useSearchState } from "@/lib/searchState";
 import type { HomeData, Movie } from "@/lib/types";
@@ -67,7 +68,13 @@ export default function HomePage() {
   const openMovie = (m: Movie) => router.push(`/world/${m.world_ids[0]}?film=${m.id}`);
   const rowCount = narrow ? 1 : 3;
   // a search from the chat (or the chips) takes over the rows: its hits in the middle, the worlds they belong to around
-  const searchRows = useSearchRows(criteria, worlds, rowCount);
+  const [chatLog] = useChatLog();
+  // the films the chat just suggested lead the middle row, shown larger
+  const picks = useMemo(() => {
+    const last = [...chatLog].reverse().find((e) => e.role === "bot" && !("error" in e && e.error));
+    return last && "results" in last ? (last.results ?? []).slice(0, 3).map((r) => r.movie) : [];
+  }, [chatLog]);
+  const searchRows = useSearchRows(criteria, worlds, rowCount, picks);
   const rows =
     searchRows ?? (data ? visibleWorlds(active, worlds, rowCount).map((w) => ({ world: w, movies: data.rows[w.id] ?? [] })) : []);
 

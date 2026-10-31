@@ -25,6 +25,15 @@ it("direction comes from the world's place in the full list, so neighbours alway
   expect(rowDirection("x", [], 3)).toBe(1); // unknown world: by slot
 });
 
+it("during a search the short list runs right and the rows around it left", async () => {
+  const { searchAwareDirection } = await import("@/components/home/TileRows");
+  const order = ["a", "b", "c"];
+  expect(searchAwareDirection("search-hits", true, true, order, 1)).toBe(1);
+  expect(searchAwareDirection("a", false, true, order, 0)).toBe(-1);
+  expect(searchAwareDirection("b", false, true, order, 2)).toBe(-1);
+  expect(searchAwareDirection("b", false, false, order, 1)).toBe(1); // no search: worlds alternate as before
+});
+
 it("the target speed: full, slower while pointing, a crawl while a trailer plays", async () => {
   const { targetFactor } = await import("@/components/home/TileRows");
   expect(targetFactor(false, false)).toBe(1);
