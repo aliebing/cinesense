@@ -178,3 +178,34 @@ it("a blocked stage trailer falls back to the image with a YouTube link and is r
   expect(screen.getByRole("link", { name: "Watch on YouTube" })).toHaveAttribute("href", "https://www.youtube.com/watch?v=blockedDE1");
   expect(reportTrailer).toHaveBeenCalledWith("blockedDE1");
 });
+
+it("a page kept alive in the background (Next keeps visited routes hidden) stops its trailer", async () => {
+  const { Activity } = await import("react");
+  const { act } = await import("@testing-library/react");
+  const { resetActiveTrailer } = await import("@/lib/useActiveTrailer");
+  resetActiveTrailer();
+  const movie = { ...base, youtube_key: "abc123" };
+  const { rerender } = render(
+    <Activity mode="visible">
+      <StagePanel movie={movie} world={world} why="Test" />
+    </Activity>,
+  );
+  await userEvent.click(screen.getByRole("button", { name: /Play trailer/ }));
+  const iframe = screen.getByTitle("Official trailer: Demo-Film 01") as HTMLIFrameElement;
+  act(() =>
+    rerender(
+      <Activity mode="hidden">
+        <StagePanel movie={movie} world={world} why="Test" />
+      </Activity>,
+    ),
+  );
+  expect(iframe.getAttribute("src")).toBe("about:blank"); // silent at once, even before React re-renders it
+  act(() =>
+    rerender(
+      <Activity mode="visible">
+        <StagePanel movie={movie} world={world} why="Test" />
+      </Activity>,
+    ),
+  );
+  expect(screen.getByRole("button", { name: /Play trailer/ })).toBeInTheDocument(); // back: nothing autoplays
+});

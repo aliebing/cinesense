@@ -1,9 +1,9 @@
 "use client";
 
 import ImageOrPlaceholder from "@/components/ui/ImageOrPlaceholder";
-import { type ReactNode, useRef, useState } from "react";
+import { type ReactNode, useLayoutEffect, useRef, useState } from "react";
 import { useActiveTrailer } from "@/lib/useActiveTrailer";
-import { embedUrl, listenTo, useYouTubeState } from "@/lib/youtubePlayer";
+import { embedUrl, listenTo, silence, useYouTubeState } from "@/lib/youtubePlayer";
 import type { MoodWorld, Movie, StreamingOption } from "@/lib/types";
 
 const rating = new Intl.NumberFormat("en-US", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
@@ -21,10 +21,19 @@ function metaLine(m: Movie): string {
 function Trailer({ movie }: { movie: Movie }) {
   // shares the app-wide "one trailer at a time" store with the hover trailers
   const stageId = `stage-${movie.id}`;
-  const { activeId, activate } = useActiveTrailer();
+  const { activeId, activate, deactivate } = useActiveTrailer();
   const playing = activeId === stageId;
   const setPlaying = (on: boolean) => on && activate(stageId);
   const frame = useRef<HTMLIFrameElement | null>(null);
+  // leaving the page (or Next hiding it) stops the trailer; coming back shows the play button again.
+  // A layout effect: its cleanup runs before React detaches the iframe ref, a passive one would find it null.
+  useLayoutEffect(
+    () => () => {
+      silence(frame);
+      deactivate(stageId);
+    },
+    [stageId, deactivate],
+  );
   const raw = movie.youtube_key && movie.youtube_key !== "placeholder" ? movie.youtube_key : null;
   const { failed } = useYouTubeState(playing, raw, frame, stageId);
   const key = movie.youtube_key;

@@ -25,6 +25,12 @@ export function embedUrl(key: string, params: string): string {
   return `${YT_ORIGIN}/embed/${encodeURIComponent(key)}?${params}&enablejsapi=1`;
 }
 
+/** Silences a player at once: Next keeps visited pages alive but hidden (cacheComponents), and a hidden iframe
+ *  would go on playing. Called from effect cleanups, which run when a page is hidden or left. */
+export function silence(frame: RefObject<HTMLIFrameElement | null>) {
+  if (frame.current) frame.current.src = "about:blank";
+}
+
 /** Ask the embedded player to post its state and errors to this page. */
 export function listenTo(frame: RefObject<HTMLIFrameElement | null>, id: string) {
   frame.current?.contentWindow?.postMessage(JSON.stringify({ event: "listening", id, channel: "widget" }), YT_ORIGIN);

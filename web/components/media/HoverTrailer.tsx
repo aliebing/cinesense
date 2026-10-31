@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { useActiveTrailer } from "@/lib/useActiveTrailer";
-import { embedUrl, isBadTrailer, listenTo, useYouTubeState } from "@/lib/youtubePlayer";
+import { embedUrl, isBadTrailer, listenTo, silence, useYouTubeState } from "@/lib/youtubePlayer";
 import { useReducedMotion } from "@/lib/useReducedMotion";
 import type { Movie } from "@/lib/types";
 
@@ -27,8 +27,10 @@ export default function HoverTrailer({ movie, children, className = "" }: { movi
   const { playing, failed } = useYouTubeState(active, candidate, frame, id);
   const key = failed ? null : candidate;
 
-  useEffect(() => () => {
+  // layout effect: its cleanup runs before React detaches the iframe ref (Next hiding a page, or unmount)
+  useLayoutEffect(() => () => {
     if (timer.current) clearTimeout(timer.current);
+    silence(frame); // a page Next keeps hidden must not go on playing
     deactivate(id);
   }, [id, deactivate]);
 
