@@ -290,7 +290,7 @@
 .related-viewport.is-static { overflow-x: auto; } /* reduced motion: plain scrolling instead */
 .related-track { display: flex; gap: var(--card-gap); width: max-content; will-change: transform; }
 .related-card { position: relative; flex: none; width: var(--card-w); aspect-ratio: 2 / 3; padding: 0; border: 0; border-radius: 8px; overflow: hidden;
-  cursor: pointer; background: #0b0c12; color: #fff; outline: 1px solid #ffffff25; box-shadow: 0 10px 30px #000b; transition: transform .3s, filter .3s; }
+  cursor: pointer; background: #0b0c12; color: #fff; outline: 1px solid #ffffff25; box-shadow: 0 10px 30px #000b; transition: transform .3s, filter .3s, width .45s cubic-bezier(.2, .7, .2, 1); }
 .related-card:hover, .related-card:focus-visible, .related-wrap.is-active .related-card { filter: brightness(1.15); }
 /* detail and search pages: the card grows (upwards: the row sits on the stage's bottom edge) with the gold glow */
 .related-wrap { transition: transform .35s cubic-bezier(.2, .7, .2, 1); transform-origin: 50% 100%; }
@@ -361,6 +361,11 @@
 /* portrait card: the 16:9 trailer fills its height and is cropped at the sides */
 .related-wrap .hover-trailer__note { left: 50%; bottom: auto; top: 50%; transform: translate(-50%, -50%); white-space: nowrap; }
 .related-wrap .hover-trailer__player iframe { left: 50%; width: calc(100% * 1.5 * 16 / 9); transform: translateX(-50%); }
+/* a playing trailer opens its card to 16:9 at the normal height; the cards to its right slide aside (the row stands
+   still while a trailer plays), so every other card stays reachable. Without a playable trailer the poster stays. */
+.related-wrap:has(.hover-trailer__player.is-playing) { transform: none; }
+.related-wrap:has(.hover-trailer__player.is-playing) .related-card { width: calc(var(--card-w) * 1.5 * 16 / 9); aspect-ratio: auto; height: calc(var(--card-w) * 1.5); }
+.related-wrap:has(.hover-trailer__player.is-playing) .hover-trailer__player iframe { left: 0; width: 100%; transform: none; }
 .tile-row-wrap { position: relative; display: flex; align-items: center; gap: .6cqw; animation: rowIn .8s ease both; }
 .tile-row-viewport {
   flex: 1; min-width: 0; overflow-x: clip; overflow-y: visible;
