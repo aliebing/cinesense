@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { inspectTurn, type InspectResult } from "@/lib/api";
 import { type Criteria, emptyCriteria } from "@/lib/searchState";
 import { randomId } from "@/lib/user";
@@ -10,7 +10,7 @@ import "./tech.css";
 /** Technical review page: one plain view of what the agent did — reply, criteria, tools, prompts, tokens, cost —
  *  and the ranked films as text. No pictures, trailers or animation. Its own conversation, separate from the app. */
 export default function TechPage() {
-  const [threadId, setThreadId] = useState(() => `tech-${randomId()}`);
+  const threadId = useRef<string | null>(null); // created on the first send: no random value while prerendering
   const [criteria, setCriteria] = useState<Criteria>(emptyCriteria);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
@@ -24,7 +24,8 @@ export default function TechPage() {
     if (!text || busy) return;
     setBusy(true);
     setError(null);
-    const r = await inspectTurn(threadId, text, criteria);
+    threadId.current ??= `tech-${randomId()}`;
+    const r = await inspectTurn(threadId.current, text, criteria);
     setBusy(false);
     if (!r.ok) return setError("The agent is unavailable (no API key, or the backend is down).");
     setTurn(r.data);
@@ -33,7 +34,7 @@ export default function TechPage() {
     setMessage("");
   };
   const reset = () => {
-    setThreadId(`tech-${randomId()}`);
+    threadId.current = null;
     setCriteria(emptyCriteria());
     setTurn(null);
     setAsked("");
