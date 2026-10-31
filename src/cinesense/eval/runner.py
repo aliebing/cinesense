@@ -5,6 +5,7 @@ import time
 import uuid
 from collections.abc import Callable
 
+from cinesense.agent.llm import PRICES, cost_usd  # noqa: F401 — re-exported for the eval entry point
 from cinesense.eval.checks import (
     applies,
     check_availability_claims,
@@ -15,16 +16,6 @@ from cinesense.eval.checks import (
     title_hit,
 )
 from cinesense.eval.scenarios import Scenario
-
-# USD per token, from https://openrouter.ai/api/v1/models (checked 2026-10-29)
-PRICES = {
-    "anthropic/claude-haiku-5.5": (0.10e-6, 0.50e-6),
-    "anthropic/claude-sonnet-5.5": (2.0e-6, 10.0e-6),
-}
-
-
-def cost_usd(usage: dict, price: tuple[float, float]) -> float:
-    return round(usage.get("input_tokens", 0) * price[0] + usage.get("output_tokens", 0) * price[1], 6)
 
 
 def run_scenarios(

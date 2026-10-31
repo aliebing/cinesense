@@ -60,3 +60,41 @@ export const getProfile = () => apiGet<ProfileSummary>("/api/profile");
 export const resetProfile = () => request<ProfileSummary>("/api/profile", { method: "DELETE" });
 /** The embedded player could not play this trailer; the backend stops offering it. */
 export const reportTrailer = (videoId: string) => apiPost<null>("/api/trailers/report", { video_id: videoId });
+
+/** One agent turn with everything behind it, for the technical review page (/tech). */
+export type InspectFilm = {
+  id: string;
+  title: string;
+  year: number | null;
+  match_percent: number | null;
+  score: number | null;
+  reasons: string[];
+  genres: string[];
+  worlds: string[];
+  directors: string[];
+  cast: string[];
+  runtime_min: number | null;
+  ml_rating: number | null;
+  ml_rating_count: number | null;
+  overview: string | null;
+};
+export type InspectResult = {
+  reply: string;
+  picks: number;
+  results: InspectFilm[];
+  criteria: Criteria;
+  criteria_summary: string;
+  tags: { tag: string; weight: number; mode: string }[];
+  proposals: { idx: number; tag: string; mode: string }[];
+  tools: { name: string; args: Record<string, unknown>; result: string | null }[];
+  prompts: { agent?: string; explain?: string; explain_input?: string };
+  model: string;
+  usage: { input_tokens?: number; output_tokens?: number };
+  cost_usd: number;
+  latency_s: number;
+  rounds: number;
+  grounding_fallback: boolean;
+  grounding_reason: string[];
+};
+export const inspectTurn = (threadId: string, message: string, criteria: Criteria) =>
+  apiPost<InspectResult>("/api/inspect", { thread_id: threadId, message, criteria });

@@ -6,6 +6,16 @@ from cinesense.config import Settings
 
 OPENROUTER_BASE = "https://openrouter.ai/api/v1"
 
+# USD per token, from https://openrouter.ai/api/v1/models (checked 2026-10-29)
+PRICES = {
+    "anthropic/claude-haiku-5.5": (0.10e-6, 0.50e-6),
+    "anthropic/claude-sonnet-5.5": (2.0e-6, 10.0e-6),
+}
+
+
+def cost_usd(usage: dict, price: tuple[float, float]) -> float:
+    return round(usage.get("input_tokens", 0) * price[0] + usage.get("output_tokens", 0) * price[1], 6)
+
 
 def make_llm(settings: Settings, *, max_tokens: int = 700, timeout: int = 45) -> ChatOpenAI | None:
     if not settings.openrouter_api_key:

@@ -1,0 +1,19 @@
+/* technical review page: deliberately plain — readable text, no effects */
+.tech { min-height: 100vh; padding: 16px 24px; background: #111; color: #ddd; font: 14px/1.5 system-ui, sans-serif; }
+.tech a, .tech button { color: #f3c76b; background: none; border: 0; padding: 0; font: inherit; cursor: pointer; text-decoration: underline; }
+.tech-head { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
+.tech-ask { display: flex; gap: 8px; margin-bottom: 16px; }
+.tech-ask input { flex: 1; padding: 8px; background: #1b1b1b; color: #eee; border: 1px solid #444; font: inherit; }
+.tech-ask button { padding: 8px 16px; border: 1px solid #444; text-decoration: none; }
+.tech-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; }
+.tech h2 { margin: 18px 0 6px; font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: #999; }
+.tech pre { white-space: pre-wrap; word-break: break-word; margin: 4px 0; padding: 8px; background: #1b1b1b; font: 12px/1.45 ui-monospace, monospace; }
+.tech table { border-collapse: collapse; }
+.tech td { padding: 2px 12px 2px 0; vertical-align: top; }
+.tech ol { margin: 0; padding-left: 20px; }
+.tech li { margin-bottom: 12px; }
+.tech-right li.is-pick strong { color: #f3c76b; }
+.tech-plot { color: #999; font-size: 13px; }
+.tech-result { color: #9fc9a0; }
+.tech-error, .tech-note { color: #ff8a80; }
+@media (max-width: 759px) { .tech-cols { grid-template-columns: 1fr; } }

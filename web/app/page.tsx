@@ -92,7 +92,7 @@ export default function HomePage() {
           <button type="button" onClick={() => browse("stream")}>
             📺 Streaming
           </button>{" "}
-          · <Link href="/credits">Credits</Link> ·{" "}
+          · <Link href="/credits">Credits</Link> · <Link href="/tech">Tech view</Link> ·{" "}
           <button type="button" aria-label="Profile" aria-expanded={showProfile} onClick={() => setShowProfile((v) => !v)}>
             👤
           </button>

@@ -16,3 +16,4 @@ class AgentState(TypedDict, total=False):
     grounding_fallback: bool
     grounding_reason: list[str]  # why the template answer was used
     profile: dict | None  # Profile JSON (👍/👎 taste) used by the deterministic search
+    prompts: dict  # what this turn sent: agent system prompt, explain system prompt and input (for /api/inspect)

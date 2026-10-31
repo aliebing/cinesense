@@ -140,3 +140,12 @@ def test_history_is_trimmed_at_turn_boundaries():
     kept = trim_history(msgs, max_turns=4)
     assert isinstance(kept[0], HumanMessage) and kept[0].content == "q8" and len(kept) == 16
     assert trim_history(msgs[:4], max_turns=4) == msgs[:4]
+
+
+def test_turn_records_tool_calls_and_prompts_for_inspection(make_agent):
+    g = make_agent([ai(calls=[("set_mood_tags", {"tags": [{"name": "space travel", "weight": 9}]})]), ai("Done.")])
+    out = run_turn(g, "t10", "something in space", empty())
+    call = out["tool_trace"][0]
+    assert call["name"] == "set_mood_tags" and call["args"]["tags"][0]["name"] == "space travel"
+    assert call["result"]  # the tool's answer to the model
+    assert "CineSense" in out["prompts"]["agent"] and "Wish: something in space" in out["prompts"]["explain_input"]

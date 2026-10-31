@@ -91,7 +91,8 @@ def build_graph(llm, explain_llm, tools: list, service, provider, checkpointer):
             AGENT_PROMPT.format(criteria=criteria_summary(state.get("criteria"), provider.list_tags()))
         )
         msg = agent_llm.invoke([system, *trim_history(state["messages"])])
-        return {"messages": [msg], "usage": _add_usage(state.get("usage") or {}, msg)}
+        prompts = {**(state.get("prompts") or {}), "agent": str(system.content)}
+        return {"messages": [msg], "usage": _add_usage(state.get("usage") or {}, msg), "prompts": prompts}
 
     def tick(state: AgentState) -> dict:
         return {"rounds": state.get("rounds", 0) + 1}
@@ -158,8 +159,9 @@ def build_graph(llm, explain_llm, tools: list, service, provider, checkpointer):
             f"Results:\n{listing}"
         )
         usage = state.get("usage") or {}
+        system = SystemMessage(EXPLAIN_PROMPT.format(picks=pick_count(results)))
+        prompts = {**(state.get("prompts") or {}), "explain": str(system.content), "explain_input": prompt}
         try:
-            system = SystemMessage(EXPLAIN_PROMPT.format(picks=pick_count(results)))
             msg = explain_llm.invoke([system, HumanMessage(prompt)])
             text, usage = str(msg.content), _add_usage(usage, msg)
             if msg.response_metadata.get("finish_reason") == "length":
@@ -179,8 +181,9 @@ def build_graph(llm, explain_llm, tools: list, service, provider, checkpointer):
                 "grounding_fallback": True,
                 "grounding_reason": bad or ["no usable answer (error or cut off)"],
                 "usage": usage,
+                "prompts": prompts,
             }
-        return {"messages": [AIMessage(text)], "usage": usage}
+        return {"messages": [AIMessage(text)], "usage": usage, "prompts": prompts}
 
     g = StateGraph(AgentState)
     g.add_node("agent", agent)
@@ -232,6 +235,7 @@ def run_turn(
         "usage": {},
         "grounding_fallback": False,
         "grounding_reason": [],
+        "prompts": {},
         "profile": profile.model_dump() if profile is not None else None,
     }
     with _locks_guard:
@@ -243,14 +247,22 @@ def run_turn(
 def _run_locked(graph, config: dict, inputs: dict, on_status) -> dict:
     tools_called: list[str] = []
     tool_errors = 0
+    trace: list[dict] = []  # each tool call with its arguments and (shortened) result, for /api/inspect
+    by_id: dict[str, dict] = {}
     for update in graph.stream(inputs, config, stream_mode="updates"):
         if "agent" in update:
             for call in getattr(update["agent"]["messages"][-1], "tool_calls", None) or []:
                 tools_called.append(call["name"])
+                entry = {"name": call["name"], "args": call.get("args", {}), "result": None}
+                trace.append(entry)
+                by_id[call.get("id", "")] = entry
                 if on_status:
                     on_status(TOOL_STATUS.get(call["name"], "Thinking…"))
         if "tools" in update:
             tool_errors += sum(getattr(m, "status", "") == "error" for m in update["tools"].get("messages", []))
+            for m in update["tools"].get("messages", []):
+                if (entry := by_id.get(getattr(m, "tool_call_id", ""))) is not None:
+                    entry["result"] = str(m.content)[:800]
         if on_status and "present" in update:
             on_status("Ranking films…")
     s = graph.get_state(config).values
@@ -259,6 +271,8 @@ def _run_locked(graph, config: dict, inputs: dict, on_status) -> dict:
         "criteria": s.get("criteria"),
         "results": s.get("results", []),
         "picks": pick_count(s.get("results", [])),  # how many results the reply presents (3-5)
+        "tool_trace": trace,
+        "prompts": s.get("prompts", {}),
         "proposals": s.get("proposals", []),
         "handoff": s.get("handoff"),
         "usage": s.get("usage", {}),

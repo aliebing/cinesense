@@ -15,6 +15,7 @@ from cinesense.api.deps import (
     get_trailers,
 )
 from cinesense.api.images import with_images as _with_images
+from cinesense.api.inspect import router as inspect_router
 from cinesense.api.personal import UserProfile, get_user
 from cinesense.api.personal import router as personal_router
 from cinesense.config import load_env_file
@@ -62,6 +63,7 @@ def create_app(load_env: bool = True) -> FastAPI:
     )
 
     app.include_router(chat_router)
+    app.include_router(inspect_router)
     app.include_router(personal_router)
 
     @app.get("/api/health")
