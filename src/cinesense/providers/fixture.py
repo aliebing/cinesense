@@ -6,6 +6,7 @@ from pathlib import Path
 
 import numpy as np
 
+from cinesense.domain.billing import role_weight
 from cinesense.domain.models import Movie
 from cinesense.recommend.tags import tag_match
 
@@ -29,14 +30,14 @@ class FixtureProvider:
         ]
         self._by_id = {m.id: m for m in self._movies}
         self._vectors: dict[str, np.ndarray] = {}
-        self._people: dict[str, list[tuple[str, str]]] = {}
+        self._people: dict[str, list[tuple[str, str, int | None]]] = {}
         for i in items:
             if sparse := i.get("tag_vector_sparse"):
                 v = np.zeros(1128, dtype=np.float32)
                 for idx, rel in sparse.items():
                     v[int(idx)] = rel
                 self._vectors[i["id"]] = v
-            self._people[i["id"]] = [(p["name"], p["role"]) for p in i.get("people", [])]
+            self._people[i["id"]] = [(p["name"], p["role"], p.get("billing")) for p in i.get("people", [])]
 
     def list_movies(self) -> list[Movie]:
         return [m.model_copy(deep=True) for m in self._movies]
@@ -93,11 +94,12 @@ class FixtureProvider:
     def search_person(self, q: str, role: str = "any", limit: int = 400):
         scores, names = {}, {}
         for film_id, people in self._people.items():
-            for name, r in people:
+            for name, r, billing in people:
                 if role != "any" and r != role:
                     continue
-                s = difflib.SequenceMatcher(None, q.lower(), name.lower()).ratio()
-                if s >= 0.75 and s > scores.get(film_id, 0):
+                sim = difflib.SequenceMatcher(None, q.lower(), name.lower()).ratio()
+                s = sim * role_weight(r, billing)  # a lead or a director counts fully, a small part less
+                if sim >= 0.75 and s > scores.get(film_id, 0):
                     scores[film_id], names[film_id] = s, name
         return scores, names
 

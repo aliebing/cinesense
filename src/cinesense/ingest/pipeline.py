@@ -105,6 +105,7 @@ def _replace_people(conn, film_ids: list[str], rows: list[tuple]) -> None:
     with conn.cursor() as cur:
         cur.execute("delete from film_people where film_id = any(%s)", (film_ids,))
         cur.executemany("insert into film_people (film_id, name, role, ord) values (%s, %s, %s, %s)", rows)
+        cur.execute("update films set billing_checked_at = null where id = any(%s)", (film_ids,))  # new cast rows
     conn.commit()
 
 

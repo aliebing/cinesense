@@ -69,6 +69,9 @@ create table if not exists trailer_cache (film_id text primary key, video_id tex
 create table if not exists youtube_quota (day date primary key, calls int not null default 0);
 
 alter table films add column if not exists plot_checked_at timestamptz;
+-- position in the Wikipedia lead's cast list (1 = top billed, 0 = not named there, null = unknown)
+alter table film_people add column if not exists billing smallint;
+alter table films add column if not exists billing_checked_at timestamptz;
 
 -- 👍/👎 per anonymous browser id (random UUID; no personal data)
 create table if not exists feedback (

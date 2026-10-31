@@ -6,6 +6,7 @@ from datetime import date, timedelta
 
 import numpy as np
 
+from cinesense.domain.billing import role_weight
 from cinesense.domain.models import Availability, Movie
 
 IN_CINEMA_DAYS = 56
@@ -186,7 +187,7 @@ class PostgresProvider:
         )
         sql = (
             "select film_id, name, greatest(similarity(cs_norm(name), cs_norm(%(q)s)), "
-            f"case when {sounds} then 0.6 else 0 end) as s "
+            f"case when {sounds} then 0.6 else 0 end) as s, role, billing "
             f"from film_people where (cs_norm(name) %% cs_norm(%(q)s) or {sounds}) "
             f"{role_sql} order by s desc limit %(limit)s"
         )
@@ -195,10 +196,12 @@ class PostgresProvider:
         scores: dict[str, float] = {}
         names: dict[str, str] = {}
         best = max((float(r[2]) for r in rows), default=0.0)
-        for film_id, name, s in rows:
-            # keep only the best-matching person (a typo of one name shouldn't pull in similar names)
-            if float(s) >= best - 0.15 and film_id not in scores:
-                scores[film_id] = float(s)
+        for film_id, name, s, film_role, billing in rows:
+            # keep only the best-matching person (a typo of one name shouldn't pull in similar names);
+            # a lead or a director counts fully, a small part less
+            score = float(s) * role_weight(film_role, billing)
+            if float(s) >= best - 0.15 and score > scores.get(film_id, 0.0):
+                scores[film_id] = score
                 names[film_id] = name
         return scores, names
 

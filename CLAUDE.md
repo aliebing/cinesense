@@ -42,6 +42,7 @@ make lint                                 # ruff + eslint
 uv run pytest -m db                       # tests against the Supabase catalogue (excluded by default)
 make db-init                              # create/upgrade the cinesense schema
 MOVIELENS_DB_PATH=/home/ali/projects/turing/moviefinder/db/moviedoc.db make ingest  # resumable full ingest
+uv run --env-file .env python -m cinesense.ingest.billing  # cast billing from Wikipedia leads (resumable)
 ```
 
 ## Services (`.env`, see `.env.example`)
