@@ -1,7 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import type { Criteria } from "@/lib/searchState";
+import { type Criteria, emptyCriteria } from "@/lib/searchState";
 import type { RankedMovie } from "@/lib/types";
 import { randomId, USER_HEADER, userId } from "@/lib/user";
 
@@ -26,10 +26,21 @@ export type ChatEntry =
       text: string;
       results?: RankedMovie[];
       picks?: number;
+      criteria?: Criteria; // what this reply set: its picks count only while the search is unchanged
       proposals?: Proposal[];
       handoff?: Handoff | null;
       error?: boolean;
     };
+
+const sameSearch = (a: Criteria, b: Criteria) =>
+  JSON.stringify({ ...emptyCriteria(), ...a, world_id: null }) === JSON.stringify({ ...emptyCriteria(), ...b, world_id: null });
+
+/** The last reply's picks, as long as the criteria are still the ones it set (edited settings drop them). */
+export function currentPicks(entries: ChatEntry[], criteria: Criteria): RankedMovie[] {
+  const last = [...entries].reverse().find((e) => e.role === "bot" && !e.error);
+  if (!last || last.role !== "bot" || !last.criteria || !sameSearch(last.criteria, criteria)) return [];
+  return replyPicks(last);
+}
 
 /** The films a reply presents: its first `picks` results (3 when an older reply doesn't say). */
 export function replyPicks(e: ChatEntry): RankedMovie[] {

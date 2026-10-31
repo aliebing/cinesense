@@ -44,7 +44,7 @@ export default function ChatPanel({ mode, horrorIdx = null }: { mode: "static" |
       setCriteria(out.criteria);
       setEntries([
         ...getChatLog(),
-        { role: "bot", text: out.reply, results: out.results, picks: out.picks, proposals: out.proposals, handoff: out.handoff },
+        { role: "bot", text: out.reply, results: out.results, picks: out.picks, criteria: out.criteria, proposals: out.proposals, handoff: out.handoff },
       ]);
     } catch (e) {
       setEntries([...getChatLog(), { role: "bot", text: e instanceof ChatError ? e.message : String(e), error: true }]);
