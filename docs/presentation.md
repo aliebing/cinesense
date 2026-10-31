@@ -44,17 +44,17 @@ Framing: **SCR** (Situation → Complication → Resolution). Each section is ab
   - tool selection 35/35
   - no unbacked streaming claims 36/36
   - grounding: the model's own explanation was clean in 31/36; the guard replaced the other 5 with the template, so users saw 36/36 grounded replies
-  - median latency 7.8 s
+  - median latency 7.5 s
   - **$0.001 per chat turn**
 - **Ranking comparison** on 21 mood scenarios, with identical criteria and filters:
 
   | | Tag relevance | Tag cosine | LLM judge (Sonnet 5.5) |
   |---|---|---|---|
-  | Filters + Bayesian rating | 0.31 | 0.05 | 1.38 |
-  | movieFinder cosine | 0.79 | 0.20 | 3.48 |
-  | **CineSense** | **0.85** | 0.17 | **3.95** |
+  | Filters + Bayesian rating | 0.34 | 0.05 | 1.52 |
+  | movieFinder cosine | 0.79 | 0.20 | 3.67 |
+  | **CineSense** | **0.84** | 0.16 | **4.05** |
 
-  Each ranker wins on its own metric. The judge prefers CineSense, which also picks better-known films (median 5,781 vs 624 ratings). Caveat: the judge sees titles only.
+  Each ranker wins on its own metric. The judge prefers CineSense, which also picks better-known films (median 10,354 vs 1,118 ratings). Caveat: the judge sees titles only.
 - **Honesty:**
   - The first runs exposed bugs in the checks.
   - An independent review found that a "fix" had weakened the title guard. It was repaired, and everything was re-run.

@@ -103,8 +103,8 @@ SEGMENTS = [
     Segment(
         "t11",
         "Für den Ranking-Vergleich bewertet ein LLM-Judge, Claude Sonnet 5.5, die Top-Ergebnisse von "
-        "drei Verfahren. Nur nach Bewertung sortiert: 1,38 von 5. Die Kosinus-Methode aus movieFinder: 3,48. "
-        "CineSense: 3,95. Ein Chat-Turn kostet rund ein Zehntel Cent, die Median-Latenz liegt bei knapp acht "
+        "drei Verfahren. Nur nach Bewertung sortiert: 1,52 von 5. Die Kosinus-Methode aus movieFinder: 3,67. "
+        "CineSense: 4,05. Ein Chat-Turn kostet rund ein Zehntel Cent, die Median-Latenz liegt bei siebeneinhalb "
         "Sekunden, und die komplette Evaluation hat etwa 22 Cent gekostet.",
     ),
     Segment(

@@ -129,7 +129,7 @@ All sources are credited on the in-app **Credits** page. No unlicensed sources a
 | No streaming claim without known availability | 36 / 36 |
 | Grounding **before** the guard: the model's own explanation named only returned films | 31 / 36 (86%) |
 | Grounding **after** the guard: what the user sees | 36 / 36 (5 template fallbacks) |
-| Latency per scenario, median / p90 | 7.8 s / 12.0 s |
+| Latency per scenario, median / p90 | 7.5 s / 12.3 s |
 | Cost per chat turn (Claude Haiku 5.5) | $0.0011 |
 
 "Tool success 100%" only means that no tool raised an exception. A degraded source (embeddings down) still returns a result, with weaker relevance.
@@ -138,14 +138,14 @@ All sources are credited on the in-app **Credits** page. No unlicensed sources a
 
 | Ranker | Tag relevance@10 | Tag cosine@10 | Median MovieLens rating count | LLM judge 1–5 |
 |---|---|---|---|---|
-| Baseline A: filters + Bayesian rating | 0.31 | 0.05 | 35,000 | 1.38 |
-| Baseline B: movieFinder (tag cosine + rating) | 0.79 | **0.20** | 624 | 3.48 |
-| **CineSense** | **0.85** | 0.17 | 5,781 | **3.95** |
+| Baseline A: filters + Bayesian rating | 0.34 | 0.05 | 35,000 | 1.52 |
+| Baseline B: movieFinder (tag cosine + rating) | 0.79 | **0.20** | 1,118 | 3.67 |
+| **CineSense** | **0.84** | 0.16 | 10,354 | **4.05** |
 
 How to read the comparison:
 - Each ranker wins on its own objective. *Tag relevance* (weighted mean of the requested tags) is what CineSense ranks by. *Tag cosine* is what movieFinder ranks by.
-- The independent signal is the LLM judge (Claude Sonnet 5.5, subjective). It prefers CineSense (3.95 vs 3.48).
-- The judge sees only titles and years, which may favour well-known films. CineSense's picks are clearly better known than movieFinder's (median 5,781 vs 624 ratings).
+- The independent signal is the LLM judge (Claude Sonnet 5.5, subjective). It prefers CineSense (4.05 vs 3.67).
+- The judge sees only titles and years, which may favour well-known films. CineSense's picks are clearly better known than movieFinder's (median 10,354 vs 1,118 ratings).
 - The rating-only baseline ignores the wish.
 - The judge gives the agent's own top 5 a mean of 3.97/5 over 31 scenarios.
 
