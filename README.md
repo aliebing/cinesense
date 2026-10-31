@@ -27,6 +27,10 @@ Cinema and streaming sites show long title lists and genre grids. Combining seve
 
 **Plans 1–5 are done:** the cinema UI runs on a real catalogue of about 20,600 films (≈19,800 from MovieLens incl. documentaries, plus ≈800 German releases since 2021). The chat agent works on the homepage and in the genre drawer. Personalisation works on the genre page and in all rankings. The evaluation results are below; see `docs/superpowers/plans/2026-10-29-cinesense-roadmap.md`.
 
+**For reviewers:** `/tech` (e.g. http://localhost:8080/tech) is a plain technical view of one agent turn: the
+reply, the criteria with tag names, every tool call with its arguments and result, the prompts that were sent, model,
+tokens, cost and latency, and the ranked films as text. It is backed by `POST /api/inspect`.
+
 ## Setup
 
 ### With Docker (quickest)
