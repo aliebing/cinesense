@@ -13,6 +13,7 @@ const api = {
   getMovie: vi.fn(),
   getRelated: vi.fn(),
   discover: vi.fn(),
+  search: vi.fn(),
   getProfile: vi.fn(),
   sendFeedback: vi.fn(),
 };
@@ -22,6 +23,7 @@ vi.mock("@/lib/api", () => ({
   getMovie: (id: string) => api.getMovie(id),
   getRelated: (id: string, worldId?: string) => api.getRelated(id, worldId),
   discover: (...a: unknown[]) => api.discover(...a),
+  search: (...a: unknown[]) => api.search(...a),
   getTags: () => Promise.resolve({ ok: true, data: [{ idx: 0, tag: "dark" }, { idx: 3, tag: "action" }] }),
   getProfile: () => api.getProfile(),
   sendFeedback: (...a: unknown[]) => api.sendFeedback(...a),
@@ -124,4 +126,18 @@ it("a quick double click on 👍 sends one request", async () => {
   await userEvent.click(like);
   expect(api.sendFeedback).toHaveBeenCalledTimes(1);
   resolve({ ok: true, data: { liked: [], disliked: [], taste: [] } });
+});
+
+it("opened from the search, the row holds the other matches of the whole search with their reasons", async () => {
+  const { setSearchState, emptyCriteria } = await import("@/lib/searchState");
+  setSearchState({ ...emptyCriteria(), person: "Gérard Depardieu" });
+  const items = sampleRanked(3).map((r) => ({ ...r, reasons: ["with Gérard Depardieu"] }));
+  api.getMovie.mockResolvedValue({ ok: true, data: items[0].movie });
+  api.search.mockResolvedValue({ ok: true, data: { items, total: 3, hidden_by_exclusion: 0, extended_used: false } });
+  render(<GenreView worldId="action" filmId={items[0].movie.id} fromSearch />);
+  expect(await screen.findByRole("region", { name: "Your other matches" })).toBeInTheDocument();
+  expect(api.search.mock.calls[0][0]).toMatchObject({ person: "Gérard Depardieu" });
+  expect(api.discover).not.toHaveBeenCalled();
+  expect(screen.getByText("with Gérard Depardieu", { selector: ".stage-why span" })).toBeInTheDocument();
+  setSearchState(emptyCriteria());
 });

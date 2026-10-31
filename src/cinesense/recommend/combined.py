@@ -1,12 +1,15 @@
 """Combine whichever search signals are active into one explainable ranking."""
 
+import math
 from dataclasses import dataclass, field
 
 from cinesense.domain.criteria import SearchCriteria
 from cinesense.domain.models import Movie, RankedMovie
 from cinesense.recommend.baseline import DEFAULT_PRIOR_MEAN, bayesian_rating
 
-WEIGHTS = {"tags": 0.4, "plot": 0.3, "people": 0.2, "profile": 0.15, "rating": 0.1}
+WEIGHTS = {"tags": 0.4, "plot": 0.3, "people": 0.2, "profile": 0.15, "rating": 0.1, "popularity": 0.08, "recency": 0.04}
+RECENCY_FROM, RECENCY_TO = 1970, 2025  # a small bonus growing from 1970 to the newest films
+POPULARITY_FULL = 100_000  # MovieLens ratings at which a film counts as fully known (log scale)
 TASTE_REASON = 0.75  # normalised profile match from which "fits your taste" is shown
 
 
@@ -91,13 +94,15 @@ def combined_rank(
         active["profile"] = taste
     rated = [m.ml_rating for m in kept if m.ml_rating is not None]
     prior = sum(rated) / len(rated) if rated else DEFAULT_PRIOR_MEAN
-    total_w = sum(WEIGHTS[k] for k in active) + WEIGHTS["rating"]
+    total_w = sum(WEIGHTS[k] for k in active) + WEIGHTS["rating"] + WEIGHTS["popularity"] + WEIGHTS["recency"]
 
     ranked = []
     for m in kept:
         parts = {k: vals.get(m.id, 0.0) for k, vals in active.items()}
         rating = bayesian_rating(m.ml_rating, m.ml_rating_count, prior) / 5
-        score = (sum(WEIGHTS[k] * v for k, v in parts.items()) + WEIGHTS["rating"] * rating) / total_w
+        base = sum(WEIGHTS[k] * v for k, v in parts.items()) + WEIGHTS["rating"] * rating
+        known = WEIGHTS["popularity"] * _popularity(m.ml_rating_count) + WEIGHTS["recency"] * _recency(m.year)
+        score = (base + known) / total_w
         ranked.append(
             RankedMovie(
                 movie=m,
@@ -108,6 +113,16 @@ def combined_rank(
         )
     ranked.sort(key=lambda r: (r.score, r.movie.ml_rating_count), reverse=True)
     return CombinedResult(items=ranked[offset : offset + limit], total=len(ranked), hidden_by_exclusion=hidden)
+
+
+def _popularity(count: int) -> float:
+    return min(math.log1p(max(count, 0)) / math.log1p(POPULARITY_FULL), 1.0)
+
+
+def _recency(year: int | None) -> float:
+    if year is None:
+        return 0.0
+    return min(max((year - RECENCY_FROM) / (RECENCY_TO - RECENCY_FROM), 0.0), 1.0)
 
 
 def _reasons(m: Movie, c: SearchCriteria, s: Signals, taste: dict[str, float]) -> list[str]:

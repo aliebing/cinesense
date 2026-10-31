@@ -154,3 +154,18 @@ def test_stream_filter_fills_the_page_from_further_candidates(make_movie):
     assert [r.movie.id for r in res.items] == ["m3"]
     assert streaming.lookups == ["tt0", "tt1", "tt2", "tt3"]  # stops once the page is full
     assert res.total == 3  # the three known non-streamers no longer count
+
+
+def test_newer_film_wins_a_tie_but_not_a_clearly_better_match(make_movie):
+    old, new = make_movie(id="old", year=1975), make_movie(id="new", year=2018)
+    tie = combined_rank([old, new], SearchCriteria(), Signals(), offset=0, limit=2)
+    assert [r.movie.id for r in tie.items] == ["new", "old"]
+    better = combined_rank([old, new], SearchCriteria(), Signals(tags={"old": 0.9, "new": 0.5}), offset=0, limit=2)
+    assert [r.movie.id for r in better.items] == ["old", "new"]
+
+
+def test_a_well_known_classic_beats_an_unknown_new_film(make_movie):
+    classic = make_movie(id="classic", year=1986, ml_rating=4.1, ml_rating_count=3670)
+    unknown = make_movie(id="unknown", year=2021, ml_rating=None, ml_rating_count=0)
+    res = combined_rank([unknown, classic], SearchCriteria(), Signals(), offset=0, limit=2)
+    assert [r.movie.id for r in res.items] == ["classic", "unknown"]

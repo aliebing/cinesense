@@ -18,6 +18,7 @@ import {
   getWorldMovies,
   getWorlds,
   type ProfileSummary,
+  search,
   sendFeedback,
   type Tag,
 } from "@/lib/api";
@@ -31,7 +32,14 @@ type State =
   | { kind: "not_found" }
   | { kind: "ready"; world: MoodWorld; movie: Movie };
 
-export default function GenreView({ worldId, filmId }: { worldId: string; filmId: string | null }) {
+type Props = {
+  worldId: string;
+  filmId: string | null;
+  /** opened with "Show results": the row holds the other matches of the whole search, with their reasons */
+  fromSearch?: boolean;
+};
+
+export default function GenreView({ worldId, filmId, fromSearch = false }: Props) {
   const router = useRouter();
   const reduced = useReducedMotion();
   const [state, setState] = useState<State>({ kind: "loading" });
@@ -81,7 +89,16 @@ export default function GenreView({ worldId, filmId }: { worldId: string; filmId
     let cancelled = false;
     const active = JSON.parse(criteriaKey);
     const t = setTimeout(() => {
-      if (hasAnyCriteria(active)) {
+      if (fromSearch && hasAnyCriteria(active)) {
+        search(active, 0, 48).then((r) => {
+          if (cancelled) return;
+          const items = r.ok ? r.data.items : [];
+          setRelated(items);
+          setHidden(r.ok ? r.data.hidden_by_exclusion : 0);
+          const onStage = items.find((x) => x.movie.id === stageId);
+          if (onStage) setStageReasons((s) => s ?? { id: onStage.movie.id, reasons: onStage.reasons });
+        });
+      } else if (hasAnyCriteria(active)) {
         // the chip bar re-ranks the row within this world
         discover({ ...active, world_id: worldId }, 0, 24).then((r) => {
           if (cancelled) return;
@@ -100,7 +117,7 @@ export default function GenreView({ worldId, filmId }: { worldId: string; filmId
       cancelled = true;
       clearTimeout(t);
     };
-  }, [stageId, worldId, criteriaKey, feedbackVersion]);
+  }, [stageId, worldId, criteriaKey, feedbackVersion, fromSearch]);
 
   if (state.kind === "not_found") {
     notFound();
@@ -111,7 +128,7 @@ export default function GenreView({ worldId, filmId }: { worldId: string; filmId
     if (state.kind !== "ready") return;
     setStageReasons({ id: m.id, reasons: related.find((r) => r.movie.id === m.id)?.reasons ?? [] });
     setState({ ...state, movie: m });
-    router.replace(`/world/${worldId}?film=${m.id}`, { scroll: false });
+    router.replace(`/world/${worldId}?film=${m.id}${fromSearch ? "&from=search" : ""}`, { scroll: false });
   };
 
   const feedbackFor = (id: string) =>
@@ -168,7 +185,17 @@ export default function GenreView({ worldId, filmId }: { worldId: string; filmId
           <div className="side-settings side-settings--genre">
             <SearchChips tags={tags} criteria={criteria} onChange={setCriteria} hiddenCount={hidden} />
           </div>
-          <RelatedRow items={related.filter((r) => r.movie.id !== movie.id)} onSelect={select} />
+          {fromSearch ? (
+            <RelatedRow
+              items={related.filter((r) => r.movie.id !== movie.id)}
+              onSelect={select}
+              label="Your other matches"
+              name="Your other matches"
+              showReasons
+            />
+          ) : (
+            <RelatedRow items={related.filter((r) => r.movie.id !== movie.id)} onSelect={select} />
+          )}
           <ChatDrawer horrorIdx={tags.find((t) => t.tag === "horror")?.idx ?? null} />
         </>
       )}

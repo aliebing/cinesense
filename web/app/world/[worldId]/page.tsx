@@ -4,13 +4,13 @@ import GenreView from "@/components/genre/GenreView";
 
 type RouteProps = {
   params: Promise<{ worldId: string }>;
-  searchParams: Promise<{ film?: string | string[] }>;
+  searchParams: Promise<{ film?: string | string[]; from?: string | string[] }>;
 };
 
 async function GenreRoute({ params, searchParams }: RouteProps) {
   const { worldId } = await params;
-  const { film } = await searchParams;
-  return <GenreView worldId={worldId} filmId={typeof film === "string" ? film : null} />;
+  const { film, from } = await searchParams;
+  return <GenreView worldId={worldId} filmId={typeof film === "string" ? film : null} fromSearch={from === "search"} />;
 }
 
 // Runtime params are read inside <Suspense> so the frame can be prerendered (Next 16 instant navigation).

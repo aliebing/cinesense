@@ -8,11 +8,13 @@ const push = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push, replace: vi.fn() }) }));
 const getHome = vi.fn();
 const discover = vi.fn();
+const search = vi.fn();
 vi.mock("@/lib/api", () => ({
   getHome: () => getHome(),
   getTags: () => Promise.resolve({ ok: true, data: [] }),
   getProfile: () => Promise.resolve({ ok: true, data: { liked: [], disliked: [], taste: [] } }),
   discover: (...a: unknown[]) => discover(...a),
+  search: (...a: unknown[]) => search(...a),
 }));
 
 import HomePage from "@/app/page";
@@ -21,6 +23,7 @@ beforeEach(() => {
   push.mockReset();
   getHome.mockReset();
   discover.mockReset();
+  search.mockReset();
   setSearchState(emptyCriteria());
   mockMatchMedia(() => false);
 });
@@ -101,4 +104,18 @@ it("nav shortcuts open the results pre-filtered and 👤 opens the profile", asy
   expect(JSON.parse(window.sessionStorage.getItem("cinesense.search") ?? "{}").availability).toBe("stream");
   await userEvent.click(within(nav).getByRole("button", { name: "Profile" }));
   expect(await screen.findByRole("dialog", { name: "Your profile" })).toBeInTheDocument();
+});
+
+it("Show results puts the best match on stage, or opens the list when nothing matches", async () => {
+  getHome.mockResolvedValue({ ok: true, data: sampleHome });
+  discover.mockResolvedValue({ ok: true, data: { items: sampleRanked(3), total: 3, hidden_by_exclusion: 0, extended_used: false } });
+  search.mockResolvedValue({ ok: true, data: { items: sampleRanked(1), total: 1, hidden_by_exclusion: 0, extended_used: false } });
+  setSearchState({ ...emptyCriteria(), tags: [{ idx: 7, weight: 8, mode: "prefer" }] });
+  render(<HomePage />);
+  await userEvent.click(await screen.findByRole("button", { name: "Show results →" }));
+  const best = sampleRanked(1)[0].movie;
+  await waitFor(() => expect(push).toHaveBeenCalledWith(`/world/${best.world_ids[0]}?film=${best.id}&from=search`));
+  search.mockResolvedValue({ ok: true, data: { items: [], total: 0, hidden_by_exclusion: 0, extended_used: false } });
+  await userEvent.click(screen.getByRole("button", { name: "Show results →" }));
+  await waitFor(() => expect(push).toHaveBeenLastCalledWith("/results"));
 });
