@@ -26,6 +26,12 @@ export function edgeSpeed(ratio: number | null, dir = -1): number {
   return -Math.sign(d) * Math.max(reach * reach * MAX_SPEED, SLOW_SPEED);
 }
 
+/** Keeps the card under the pointer in place when the layout shifts (a wide trailer card before it shrinks or
+ *  grows): its layout position moved from `before` to `now`, so the row's offset moves the other way. */
+export function anchored(offset: number, before: number | null, now: number): number {
+  return before === null ? offset : offset - (now - before);
+}
+
 /** Matching films in an endless row across the page that always runs through, steered by the mouse: towards an
  *  edge it runs fast in that direction, in the middle it creeps on. Hovering a card plays its trailer. */
 export default function RelatedRow({
@@ -44,6 +50,7 @@ export default function RelatedRow({
   const viewport = useRef<HTMLDivElement | null>(null);
   const track = useRef<HTMLDivElement | null>(null);
   const pointer = useRef<number | null>(null);
+  const anchor = useRef<HTMLElement | null>(null); // the card under the pointer
   const trailerRef = useRef(false);
   const reduced = useReducedMotion();
   const { activeId } = useActiveTrailer();
@@ -58,6 +65,8 @@ export default function RelatedRow({
     let offset = 0;
     let speed = 0;
     let dir = -1; // keep the last direction, so the row never turns around on its own
+    let anchorEl: HTMLElement | null = null;
+    let anchorLeft: number | null = null; // its layout position (offsetLeft ignores our transform)
     const step = (now: number) => {
       const dt = Math.min(now - last, 64); // a background tab must not teleport the row
       last = now;
@@ -67,6 +76,14 @@ export default function RelatedRow({
         const first = el.children[0] as HTMLElement | undefined;
         const second = el.children[n] as HTMLElement | undefined;
         const period = first && second ? second.offsetLeft - first.offsetLeft : 0;
+        if (anchor.current !== anchorEl) {
+          anchorEl = anchor.current;
+          anchorLeft = null;
+        }
+        if (anchorEl) {
+          offset = anchored(offset, anchorLeft, anchorEl.offsetLeft);
+          anchorLeft = anchorEl.offsetLeft;
+        }
         const target = edgeSpeed(pointer.current, dir);
         if (Math.abs(target) > SLOW_SPEED) dir = Math.sign(target);
         speed = easeTowards(speed, trailerRef.current ? 0 : target, dt, EASE_MS);
@@ -85,6 +102,7 @@ export default function RelatedRow({
   const onMove = (e: React.PointerEvent) => {
     const box = viewport.current?.getBoundingClientRect();
     if (box && box.width > 0) pointer.current = (e.clientX - box.left) / box.width;
+    anchor.current = (e.target as HTMLElement).closest?.(".related-wrap, .related-card--empty") ?? null;
   };
   return (
     <section className="related" aria-label={name}>
@@ -97,6 +115,7 @@ export default function RelatedRow({
         onPointerMove={onMove}
         onPointerLeave={() => {
           pointer.current = null;
+          anchor.current = null;
         }}
       >
         <div ref={track} className="related-track">

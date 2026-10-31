@@ -125,6 +125,7 @@
   --glow: 0 0 1.4cqw #f3c76bcc, 0 0 .4cqw #f3c76b, 0 1cqw 2.4cqw #000c;
   --tile-lift: .6cqw; /* room above and below each homepage row for the hover glow */
   --card-hover-scale: 1.25; /* film cards on the detail and search pages grow this much on hover */
+  --card-shrink-delay: .9s; /* a wide trailer card stays open this long after its trailer stops */
   --spot-opacity: .8; /* the two spotlights from the top corners (FogLight) */
   --spot-blur: .9cqw;
   --card-w: 7.4cqw; /* related films on the genre page */
@@ -289,8 +290,8 @@
 }
 .related-viewport.is-static { overflow-x: auto; } /* reduced motion: plain scrolling instead */
 .related-track { display: flex; gap: var(--card-gap); width: max-content; will-change: transform; }
-.related-card { position: relative; flex: none; width: var(--card-w); aspect-ratio: 2 / 3; padding: 0; border: 0; border-radius: 8px; overflow: hidden;
-  cursor: pointer; background: #0b0c12; color: #fff; outline: 1px solid #ffffff25; box-shadow: 0 10px 30px #000b; transition: transform .3s, filter .3s, width .45s cubic-bezier(.2, .7, .2, 1); }
+.related-card { position: relative; flex: none; width: var(--card-w); height: calc(var(--card-w) * 1.5); padding: 0; border: 0; border-radius: 8px; overflow: hidden;
+  cursor: pointer; background: #0b0c12; color: #fff; outline: 1px solid #ffffff25; box-shadow: 0 10px 30px #000b; transition: transform .3s, filter .3s, width .45s cubic-bezier(.2, .7, .2, 1) var(--card-shrink-delay); }
 .related-card:hover, .related-card:focus-visible, .related-wrap.is-active .related-card { filter: brightness(1.15); }
 /* empty box: fills the loop when only a few films match (grey, red cross; not clickable) */
 .related-card--empty { flex: none; cursor: default; background: #24252c; outline-color: #ffffff14; box-shadow: none; filter: none !important; }
@@ -369,7 +370,8 @@
 /* a playing trailer opens its card to 16:9 at the normal height; the cards to its right slide aside (the row stands
    still while a trailer plays), so every other card stays reachable. Without a playable trailer the poster stays. */
 .related-wrap:has(.hover-trailer__player.is-playing) { transform: none; }
-.related-wrap:has(.hover-trailer__player.is-playing) .related-card { width: calc(var(--card-w) * 1.5 * 16 / 9); aspect-ratio: auto; height: calc(var(--card-w) * 1.5); }
+.related-wrap:has(.hover-trailer__player.is-playing) .related-card { width: calc(var(--card-w) * 1.5 * 16 / 9);
+  transition-delay: 0s; } /* opens at once; the base rule's delay holds it open a moment after the trailer stops */
 .related-wrap:has(.hover-trailer__player.is-playing) .hover-trailer__player iframe { left: 0; width: 100%; transform: none; }
 .tile-row-wrap { position: relative; display: flex; align-items: center; gap: .6cqw; animation: rowIn .8s ease both; }
 .tile-row-viewport {

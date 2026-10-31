@@ -55,3 +55,11 @@ it("enough films: no empty boxes", async () => {
   const { container } = render(<RelatedRow items={sampleRanked(MIN_SLOTS)} onSelect={() => {}} />);
   expect(container.querySelectorAll(".related-card--empty")).toHaveLength(0);
 });
+
+it("a card that changes width never moves the card under the pointer: the row offset absorbs the shift", async () => {
+  const { anchored } = await import("@/components/genre/RelatedRow");
+  // the hovered card's layout position moved 160 px left (a wide card before it shrank): the row moves right by 160
+  expect(anchored(-500, 900, 740)).toBe(-340);
+  expect(anchored(-500, 900, 900)).toBe(-500); // nothing moved
+  expect(anchored(-500, null, 740)).toBe(-500); // a new card under the pointer: nothing to compare yet
+});
