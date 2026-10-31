@@ -4,11 +4,11 @@ import ImageOrPlaceholder from "@/components/ui/ImageOrPlaceholder";
 import HoverTrailer from "@/components/media/HoverTrailer";
 import type { Movie, RankedMovie } from "@/lib/types";
 
-/** The agent's top 3 picks under its reply: hover plays the trailer, click opens the stage. */
+/** The agent's picks (3-5) under its reply: hover plays the trailer, click opens the stage. */
 export default function ChatResults({ results, onOpen }: { results: RankedMovie[]; onOpen: (m: Movie) => void }) {
   return (
     <div className="chat-picks">
-      {results.slice(0, 3).map((r) => (
+      {results.map((r) => (
         <article key={r.movie.id} className="chat-pick" data-testid="chat-pick">
           <HoverTrailer movie={r.movie} className="chat-pick-media">
             <button type="button" aria-label={`Open ${r.movie.title}`} onClick={() => onOpen(r.movie)}>

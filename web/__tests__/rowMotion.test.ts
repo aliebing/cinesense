@@ -50,3 +50,13 @@ it("easeTowards approaches any target smoothly (used by the related row)", () =>
   for (let i = 0; i < 200; i++) s = easeTowards(s, 100, 16, 220);
   expect(s).toBeCloseTo(100, 2);
 });
+
+it("new chat picks start in view: the first tile lands at the given share of the viewport", async () => {
+  const { featuredStart, advance } = await import("@/components/home/TileRows");
+  const period = 4000; // one set of tiles; the duplicate set's first tile sits at period + offset
+  const offset = featuredStart(700, period, 0.45);
+  expect(offset).toBeLessThanOrEqual(0);
+  expect(offset).toBeGreaterThan(-period);
+  expect(period + offset).toBeCloseTo(315); // 45 % of a 700 px viewport
+  expect(advance(offset, 0, period)).toBe(offset); // already wrapped
+});

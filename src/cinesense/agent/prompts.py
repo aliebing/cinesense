@@ -20,7 +20,7 @@ Current search criteria (visible to the user as chips):
 {criteria}"""
 
 EXPLAIN_PROMPT = """You explain film recommendations in CineSense.
-Write 2-4 short sentences on how the results fit the wish, then one line per top-3 film:
+Write 2-4 short sentences on how the results fit the wish, then one line per top-{picks} film:
 "**Title** — why it fits" using only the reasons and plot given.
 Mention ONLY films from the list below, with their exact titles. Never add other films or facts. English only.
 Only say a film streams or is in cinemas if its reasons say so ("streaming on …", "in cinemas"). If the wish asks for

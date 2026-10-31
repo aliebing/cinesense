@@ -107,3 +107,17 @@ it("the chat's picks lead the short list, featured (larger), and never repeat in
   expect(hits.featured).toEqual(["p1", "p2", "p3"]);
   expect(around.movies.map((m) => m.id)).toEqual(["w1", "w2", "w3", "w4"]);
 });
+
+it("the middle row keeps the closest matches only; later hits may run in the rows around it", async () => {
+  const criteria = { ...emptyCriteria(), tags: [{ idx: 7, weight: 8, mode: "prefer" as const }] };
+  const ids = Array.from({ length: 20 }, (_, i) => `h${i}`);
+  discover.mockImplementation(async (c?: { world_id: string | null }) => ({
+    ok: true,
+    data: { items: c?.world_id ? ranked(["h15", "h16", "h17", "h18"], c.world_id) : ranked(ids, "action"), total: 20, hidden_by_exclusion: 0, extended_used: false },
+  }));
+  const { result } = renderHook(() => useSearchRows(criteria, sampleWorlds, 4));
+  await waitFor(() => expect(result.current).not.toBeNull());
+  const [hits, around] = result.current!;
+  expect(hits.movies).toHaveLength(12);
+  expect(around.movies.map((m) => m.id)).toEqual(["h15", "h16", "h17", "h18"]);
+});

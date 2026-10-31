@@ -18,6 +18,7 @@ export function targetFactor(pointing: boolean, trailer: boolean): number {
   return trailer ? TRAILER_FACTOR : pointing ? POINTING_FACTOR : 1;
 }
 const EASE_MS = 600; // time constant for speed changes
+const FEATURED_AT = 0.45; // new chat picks start here (share of the row's width), clear of the fade on the left
 
 /** Moves an offset and wraps it into (-period, 0] — exactly one loop period, so the seam never jumps. */
 export function advance(offset: number, delta: number, period: number): number {
@@ -27,6 +28,11 @@ export function advance(offset: number, delta: number, period: number): number {
     while (next > 0) next -= period;
   }
   return next;
+}
+
+/** Offset that puts the first tile of the duplicate set at `share` of the viewport, wrapped into (-period, 0]. */
+export function featuredStart(viewportWidth: number, period: number, share: number): number {
+  return advance(0, viewportWidth * share - period, period);
 }
 
 /** Exponential easing towards a target (frame-rate independent); `tauMs` is the time constant. */
@@ -83,6 +89,8 @@ export default function TileRows({ rows, onSelect, variedSpeed, worldOrder = [] 
   const pointingRef = useRef(false);
   const variedRef = useRef(variedSpeed);
   const orderRef = useRef<string[]>([]);
+  const featuredKeys = useRef(new Map<string, string>());
+  const toAlign = useRef(new Set<string>()); // rows whose new chat picks must be brought into view
   useEffect(() => {
     slowRef.current = activeId !== null; // a playing trailer must not slide away from under the pointer
     variedRef.current = variedSpeed;
@@ -90,8 +98,11 @@ export default function TileRows({ rows, onSelect, variedSpeed, worldOrder = [] 
   useEffect(() => {
     orderRef.current = rows.map((r) => r.world.id);
     const searching = rows.some((r) => r.picked);
-    rows.forEach(({ world, picked }, slot) => {
+    rows.forEach(({ world, picked, featured = [] }, slot) => {
       directions.current.set(world.id, searchAwareDirection(world.id, Boolean(picked), searching, worldOrder, slot));
+      const key = featured.join(",");
+      if (key && featuredKeys.current.get(world.id) !== key) toAlign.current.add(world.id);
+      featuredKeys.current.set(world.id, key);
       if (!offsets.current.has(world.id)) offsets.current.set(world.id, -37 * offsets.current.size);
     });
   }, [rows, worldOrder]);
@@ -113,6 +124,10 @@ export default function TileRows({ rows, onSelect, variedSpeed, worldOrder = [] 
         const second = el.children[n] as HTMLElement | undefined;
         // distance from the first tile to the first tile of the duplicate set = exact loop length
         const period = first && second ? second.offsetLeft - first.offsetLeft : 0;
+        if (toAlign.current.has(id) && period > 0) {
+          offsets.current.set(id, featuredStart(el.parentElement?.clientWidth ?? 0, period, FEATURED_AT));
+          toAlign.current.delete(id);
+        }
         const speed = variedRef.current ? VARIED_SPEEDS[i % VARIED_SPEEDS.length] : EVEN_SPEED;
         const next = advance(offsets.current.get(id) ?? 0, (directions.current.get(id) ?? -1) * speed * factor * (dt / 1000), period);
         offsets.current.set(id, next);

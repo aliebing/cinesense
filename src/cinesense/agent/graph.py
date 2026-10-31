@@ -11,7 +11,7 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, Tool
 from langgraph.graph import END, START, StateGraph
 from langgraph.types import Command
 
-from cinesense.agent.grounding import template_answer, user_named_titles, validate_titles
+from cinesense.agent.grounding import pick_count, template_answer, user_named_titles, validate_titles
 from cinesense.agent.prompts import AGENT_PROMPT, EXPLAIN_PROMPT
 from cinesense.agent.state import AgentState
 from cinesense.domain.criteria import SearchCriteria
@@ -159,7 +159,8 @@ def build_graph(llm, explain_llm, tools: list, service, provider, checkpointer):
         )
         usage = state.get("usage") or {}
         try:
-            msg = explain_llm.invoke([SystemMessage(EXPLAIN_PROMPT), HumanMessage(prompt)])
+            system = SystemMessage(EXPLAIN_PROMPT.format(picks=pick_count(results)))
+            msg = explain_llm.invoke([system, HumanMessage(prompt)])
             text, usage = str(msg.content), _add_usage(usage, msg)
             if msg.response_metadata.get("finish_reason") == "length":
                 text = ""  # cut off mid-sentence
@@ -257,6 +258,7 @@ def _run_locked(graph, config: dict, inputs: dict, on_status) -> dict:
         "reply": str(s["messages"][-1].content).strip() or FALLBACK_REPLY,
         "criteria": s.get("criteria"),
         "results": s.get("results", []),
+        "picks": pick_count(s.get("results", [])),  # how many results the reply presents (3-5)
         "proposals": s.get("proposals", []),
         "handoff": s.get("handoff"),
         "usage": s.get("usage", {}),

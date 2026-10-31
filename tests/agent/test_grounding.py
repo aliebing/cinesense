@@ -72,3 +72,22 @@ def test_single_word_title_named_by_the_user_is_allowed():
     reply = '**Alien** (1979): the computer, "Mother", wakes the crew.'
     assert validate_titles(reply, named, cat)[0]
     assert not validate_titles("Also watch **Heat**.", named, cat)[0]
+
+
+def test_pick_count_shows_three_to_five_close_matches():
+    from cinesense.agent.grounding import pick_count
+
+    def rs(*pcts):
+        return [{"movie": {"title": f"F{i}"}, "match_percent": p} for i, p in enumerate(pcts)]
+
+    assert pick_count(rs(94, 92, 92, 90, 90)) == 3  # the 4th is 4 points behind the best
+    assert pick_count(rs(91, 90, 90, 90, 89, 89)) == 5  # all close: at most five
+    assert pick_count(rs(93, 93, 90, 89)) == 3
+    assert pick_count(rs(95, 94, 92, 92, 91)) == 4
+    assert pick_count(rs(90, 60)) == 2  # fewer results than three
+    assert pick_count([]) == 0
+
+
+def test_template_answer_lists_the_close_matches():
+    rs = [{"movie": {"title": f"Film {i}", "year": 2000}, "reasons": [], "match_percent": 90} for i in range(8)]
+    assert template_answer(rs).count("**") == 2 * 5

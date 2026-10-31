@@ -7,6 +7,7 @@ import type { MoodWorld, Movie, RankedMovie, TileRow } from "@/lib/types";
 
 export const HITS_ROW_ID = "search-hits";
 const HITS = 24;
+const MIDDLE_MAX = 12; // the middle row runs large tiles: the closest matches only, so a loop stays short
 const PER_WORLD = 24;
 const MIN_ROW = 4; // fewer films than this would loop visibly
 const DEBOUNCE_MS = 400; // chips can change in quick succession
@@ -42,7 +43,7 @@ export function useSearchRows(criteria: Criteria, worlds: MoodWorld[], rowCount:
   const active = hasAnyCriteria(criteria);
   const key = active ? JSON.stringify({ ...criteria, world_id: null }) : null;
   const order = worlds.map((w) => w.id).join(",");
-  const pickKey = JSON.stringify(picks.slice(0, 3));
+  const pickKey = JSON.stringify(picks.slice(0, 5));
 
   useEffect(() => {
     let live = true;
@@ -62,9 +63,10 @@ export function useSearchRows(criteria: Criteria, worlds: MoodWorld[], rowCount:
       const chosen = (JSON.parse(pickKey) as Movie[]).map((m) => found.get(m.id) ?? m);
       if (hits.length === 0 && chosen.length === 0) return setRows(null);
       const featured = chosen.map((m) => m.id);
-      const seen = new Set([...featured, ...hits.map((r) => r.movie.id)]);
       const rest = preferPictured(hits.map((r) => r.movie)).filter((m) => !featured.includes(m.id));
-      const short: TileRow = { world: hitsWorld(), movies: [...chosen, ...rest], picked: true, featured };
+      const middle = [...chosen, ...rest].slice(0, Math.max(MIDDLE_MAX, chosen.length));
+      const short: TileRow = { world: hitsWorld(), movies: middle, picked: true, featured };
+      const seen = new Set(middle.map((m) => m.id)); // hits past the middle row may still run in the rows around it
       const out: TileRow[] = [];
       // worlds by how many hits they hold; a world whose films have too few pictures waits behind the others
       const fallback: TileRow[] = [];

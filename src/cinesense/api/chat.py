@@ -66,7 +66,7 @@ def chat(
             if kind == "status":
                 yield _sse("status", {"text": payload})
             elif kind == "final":
-                keys = ("reply", "criteria", "results", "proposals", "handoff", "usage")
+                keys = ("reply", "criteria", "results", "picks", "proposals", "handoff", "usage")
                 yield _sse("final", {k: payload.get(k) for k in keys})
                 return
             else:

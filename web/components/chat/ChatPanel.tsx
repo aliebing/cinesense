@@ -6,6 +6,7 @@ import ChatResults from "@/components/chat/ChatResults";
 import {
   ChatError,
   getChatLog,
+  replyPicks,
   type Proposal,
   setChatStatus,
   streamChat,
@@ -43,7 +44,7 @@ export default function ChatPanel({ mode, horrorIdx = null }: { mode: "static" |
       setCriteria(out.criteria);
       setEntries([
         ...getChatLog(),
-        { role: "bot", text: out.reply, results: out.results, proposals: out.proposals, handoff: out.handoff },
+        { role: "bot", text: out.reply, results: out.results, picks: out.picks, proposals: out.proposals, handoff: out.handoff },
       ]);
     } catch (e) {
       setEntries([...getChatLog(), { role: "bot", text: e instanceof ChatError ? e.message : String(e), error: true }]);
@@ -110,7 +111,7 @@ export default function ChatPanel({ mode, horrorIdx = null }: { mode: "static" |
             ) : (
               <div key={i} className={`chat-msg chat-msg--bot${e.error ? " chat-msg--error" : ""}`}>
                 <Reply text={e.text} />
-                {i === lastBot && e.results && e.results.length > 0 && <ChatResults results={e.results} onOpen={openMovie} />}
+                {i === lastBot && e.results && e.results.length > 0 && <ChatResults results={replyPicks(e)} onOpen={openMovie} />}
                 {i === lastBot && (e.proposals ?? []).length > 0 && (
                   <div className="chat-proposals">
                     Also exclude:{" "}

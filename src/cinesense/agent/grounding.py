@@ -70,11 +70,24 @@ def validate_titles(
     return not bad, bad
 
 
+PICKS_MIN, PICKS_MAX, PICKS_MARGIN = 3, 5, 3  # the chat names 3-5 films: all within 3 points of the best
+
+
+def pick_count(results: list[dict]) -> int:
+    """How many of the ranked results the chat presents as its picks: at least three, up to five when the fourth
+    and fifth match nearly as well as the best (match_percent at most PICKS_MARGIN points lower)."""
+    if not results:
+        return 0
+    best = results[0].get("match_percent", 0)
+    close = sum(1 for r in results[:PICKS_MAX] if r.get("match_percent", 0) >= best - PICKS_MARGIN)
+    return min(len(results), max(PICKS_MIN, close))
+
+
 def template_answer(results: list[dict]) -> str:
     if not results:
         return "No films match all of these wishes — try removing a must tag or a filter."
     lines = []
-    for r in results[:5]:
+    for r in results[: pick_count(results)]:
         m = r["movie"]
         year = f" ({m['year']})" if m.get("year") else ""
         why = ", ".join(r.get("reasons", [])[:2])

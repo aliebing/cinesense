@@ -14,7 +14,7 @@ import TileRows, { visibleWorlds } from "@/components/home/TileRows";
 import WorldLabel from "@/components/home/WorldLabel";
 import SearchChips from "@/components/search/SearchChips";
 import { getHome, getTags, type ApiResult, type Tag } from "@/lib/api";
-import { useChatLog } from "@/lib/chat";
+import { replyPicks, useChatLog } from "@/lib/chat";
 import { useSearchRows } from "@/lib/searchRows";
 import { hasAnyCriteria, useSearchState } from "@/lib/searchState";
 import type { HomeData, Movie } from "@/lib/types";
@@ -72,7 +72,7 @@ export default function HomePage() {
   // the films the chat just suggested lead the middle row, shown larger
   const picks = useMemo(() => {
     const last = [...chatLog].reverse().find((e) => e.role === "bot" && !("error" in e && e.error));
-    return last && "results" in last ? (last.results ?? []).slice(0, 3).map((r) => r.movie) : [];
+    return last ? replyPicks(last).map((r) => r.movie) : [];
   }, [chatLog]);
   const searchRows = useSearchRows(criteria, worlds, rowCount, picks);
   const rows =

@@ -14,13 +14,27 @@ export type ChatFinal = {
   reply: string;
   criteria: Criteria;
   results: RankedMovie[];
+  picks?: number; // how many results the reply presents (3-5)
   proposals: Proposal[];
   handoff: Handoff | null;
   usage: Record<string, number>;
 };
 export type ChatEntry =
   | { role: "user"; text: string }
-  | { role: "bot"; text: string; results?: RankedMovie[]; proposals?: Proposal[]; handoff?: Handoff | null; error?: boolean };
+  | {
+      role: "bot";
+      text: string;
+      results?: RankedMovie[];
+      picks?: number;
+      proposals?: Proposal[];
+      handoff?: Handoff | null;
+      error?: boolean;
+    };
+
+/** The films a reply presents: its first `picks` results (3 when an older reply doesn't say). */
+export function replyPicks(e: ChatEntry): RankedMovie[] {
+  return e.role === "bot" && e.results ? e.results.slice(0, e.picks ?? 3) : [];
+}
 
 export class ChatError extends Error {}
 

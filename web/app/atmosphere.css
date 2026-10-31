@@ -110,12 +110,14 @@
 }
 .tile-row-wrap:hover, .tile-row-wrap:focus-within { z-index: 6; } /* the grown tile lies over the next row */
 .tile-row-wrap:last-child .tile-wrap { transform-origin: 50% 100%; } /* the bottom row grows upwards, clear of the stage edge */
-/* the short list after a search (middle row): fully opaque; the chat's picks in it larger and lit, as if hovered */
+/* the short list after a search (middle row): every tile large and opaque; the chat's picks lead it, lit as if hovered */
 .tile-row-wrap--picked .tile { opacity: 1; }
+.tile-row-wrap--picked .tile { width: calc(8.4cqw * var(--featured-scale)); height: calc(5.25cqw * var(--featured-scale)); }
+.tile-row-wrap--picked .tile-wrap:hover, .tile-row-wrap--picked .tile-wrap:focus-within, .tile-row-wrap--picked .tile-wrap.is-active {
+  transform: scale(var(--featured-hover-scale));
+}
 .tile-wrap--featured { outline: var(--glow-width) solid var(--gold); box-shadow: var(--glow); z-index: 4; }
-.tile-wrap--featured .tile { width: calc(8.4cqw * var(--featured-scale)); height: calc(5.25cqw * var(--featured-scale)); opacity: 1;
-  filter: brightness(1.25) saturate(1.2); }
-.tile-wrap--featured:hover, .tile-wrap--featured:focus-within, .tile-wrap--featured.is-active { transform: scale(var(--featured-hover-scale)); }
+.tile-wrap--featured .tile { filter: brightness(1.25) saturate(1.2); }
 
 /* ---------- homepage layout (proportions from the approved mockup at ~2400px) ---------- */
 .cinema-stage {
@@ -125,7 +127,7 @@
   --ui: clamp(12px, 0.62cqw, 16px);
   --panel-w: clamp(190px, 15cqw, 330px); /* settings panel on the left */
   --tile-hover-scale: 1.45; /* homepage tiles grow this much on hover */
-  --featured-scale: 1.45; /* the chat's picks in the middle row: drawn this much larger, lit like a hovered tile */
+  --featured-scale: 1.45; /* tiles of the middle row (the closest matches) are drawn this much larger */
   --featured-hover-scale: 1.12; /* ... and grow a little more on hover */
   --glow-width: 3px; /* hover frame on every tile and card */
   --glow: 0 0 1.4cqw #f3c76bcc, 0 0 .4cqw #f3c76b, 0 1cqw 2.4cqw #000c;
