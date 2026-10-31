@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { notFound, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import FogLight from "@/components/atmosphere/FogLight";
@@ -8,6 +7,7 @@ import CinemaFrame from "@/components/cinema/CinemaFrame";
 import ChatDrawer from "@/components/genre/ChatDrawer";
 import RelatedRow from "@/components/genre/RelatedRow";
 import StagePanel from "@/components/genre/StagePanel";
+import Breadcrumb, { type Crumb } from "@/components/nav/Breadcrumb";
 import SearchChips from "@/components/search/SearchChips";
 import {
   discover,
@@ -167,8 +167,7 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
       />
       <FogLight tint={world?.tint ?? "#1b4a6b"} reduced={reduced} />
       <header className="genre-top">
-        <Link href="/">CineSense &nbsp;← Back to home</Link>
-        {world && <span className="genre-world">World: {world.title}</span>}
+        <Breadcrumb items={crumbs(world, movie, fromSearch)} />
       </header>
       {state.kind === "error" && <p className="genre-error">Couldn&apos;t load films</p>}
       {state.kind === "loading" && <p className="genre-loading">Loading …</p>}
@@ -201,4 +200,11 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
       )}
     </CinemaFrame>
   );
+}
+
+/** Opened from the search: Search › film; otherwise the world it belongs to › film. */
+function crumbs(world: MoodWorld | null, movie: Movie | null, fromSearch: boolean): Crumb[] {
+  const out: Crumb[] = fromSearch ? [{ label: "Search", href: "/results" }] : world ? [{ label: world.title, href: `/world/${world.id}` }] : [];
+  if (movie) out.push({ label: movie.title });
+  return out;
 }

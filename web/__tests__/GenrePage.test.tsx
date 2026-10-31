@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, expect, it, vi } from "vitest";
 import { mockMatchMedia, sampleMovies, sampleRanked, sampleWorlds } from "./fixtures";
 
@@ -46,7 +46,9 @@ it("puts the requested film on stage", async () => {
   api.getMovie.mockResolvedValue({ ok: true, data: sampleMovies(3)[2] });
   render(<GenreView worldId="action" filmId="demo-03" />);
   expect(await screen.findByRole("heading", { name: "Demo-Film 03" })).toBeInTheDocument();
-  expect(screen.getByText("World: Action & Adrenaline")).toBeInTheDocument();
+  const crumbs = screen.getByRole("navigation", { name: "Breadcrumb" });
+  expect(within(crumbs).getByRole("link", { name: "Action & Adrenaline" })).toHaveAttribute("href", "/world/action");
+  expect(within(crumbs).getByText("Demo-Film 03")).toHaveAttribute("aria-current", "page");
 });
 
 it("falls back to the top-ranked film without a film param", async () => {
@@ -139,5 +141,7 @@ it("opened from the search, the row holds the other matches of the whole search 
   expect(api.search.mock.calls[0][0]).toMatchObject({ person: "Gérard Depardieu" });
   expect(api.discover).not.toHaveBeenCalled();
   expect(screen.getByText("with Gérard Depardieu", { selector: ".stage-why span" })).toBeInTheDocument();
+  const crumbs = screen.getByRole("navigation", { name: "Breadcrumb" });
+  expect(within(crumbs).getByRole("link", { name: "Search" })).toHaveAttribute("href", "/results"); // back to the overview
   setSearchState(emptyCriteria());
 });

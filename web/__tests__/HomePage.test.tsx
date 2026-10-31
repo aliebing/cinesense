@@ -106,16 +106,18 @@ it("nav shortcuts open the results pre-filtered and 👤 opens the profile", asy
   expect(await screen.findByRole("dialog", { name: "Your profile" })).toBeInTheDocument();
 });
 
-it("Show results puts the best match on stage, or opens the list when nothing matches", async () => {
+it("Show results opens the search overview", async () => {
   getHome.mockResolvedValue({ ok: true, data: sampleHome });
   discover.mockResolvedValue({ ok: true, data: { items: sampleRanked(3), total: 3, hidden_by_exclusion: 0, extended_used: false } });
-  search.mockResolvedValue({ ok: true, data: { items: sampleRanked(1), total: 1, hidden_by_exclusion: 0, extended_used: false } });
   setSearchState({ ...emptyCriteria(), tags: [{ idx: 7, weight: 8, mode: "prefer" }] });
   render(<HomePage />);
   await userEvent.click(await screen.findByRole("button", { name: "Show results →" }));
-  const best = sampleRanked(1)[0].movie;
-  await waitFor(() => expect(push).toHaveBeenCalledWith(`/world/${best.world_ids[0]}?film=${best.id}&from=search`));
-  search.mockResolvedValue({ ok: true, data: { items: [], total: 0, hidden_by_exclusion: 0, extended_used: false } });
-  await userEvent.click(screen.getByRole("button", { name: "Show results →" }));
-  await waitFor(() => expect(push).toHaveBeenLastCalledWith("/results"));
+  expect(push).toHaveBeenCalledWith("/results");
+});
+
+it("shows where you are: the home page in the breadcrumb", async () => {
+  getHome.mockResolvedValue({ ok: true, data: sampleHome });
+  render(<HomePage />);
+  const crumbs = screen.getByRole("navigation", { name: "Breadcrumb" });
+  expect(within(crumbs).getByText("Home")).toHaveAttribute("aria-current", "page");
 });

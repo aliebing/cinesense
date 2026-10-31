@@ -52,28 +52,28 @@ SEGMENTS = [
     Segment(
         "04_reply",
         "Die Antwort kommt mit den drei besten Vorschlägen, jeder mit einer kurzen Begründung. Gleichzeitig "
-        "passen sich rechts die Filmreihen an: In der Mitte stehen jetzt, größer und mit goldenem Rand, die "
-        "Treffer meiner Suche, also die engere Wahl. Darüber und darunter laufen weitere passende Filme aus den "
-        "Genres dieser Treffer, mit denselben Kriterien. Links siehst du, was der Agent "
+        "passen sich rechts die Filmreihen an: In der Mitte stehen jetzt die Treffer meiner Suche, also die "
+        "engere Wahl. Fahre ich darüber, wächst die Kachel und leuchtet golden. Darüber und darunter laufen "
+        "weitere passende Filme aus den Genres dieser Treffer, mit denselben Kriterien. Links siehst du, was der Agent "
         "eingestellt hat: Jeder Stimmungs-Tag ist eine Karte mit Gewicht und Modus, also bevorzugen, muss "
         "oder ausschließen.",
     ),
     Segment(
-        "05_best",
-        "Mit „Show results“ springt CineSense direkt zum besten Treffer. Die Rangfolge berücksichtigt alle "
-        "Kriterien: wie gut der Film zur Suche passt, seine Bewertung, wie bekannt er ist und, etwas schwächer, "
-        "wie neu er ist. Auf der Bühne stehen Poster, wenn vorhanden der offizielle Trailer, Regie, Besetzung "
-        "und eine kurze Inhaltsangabe aus Wikipedia. Darunter steht, wo man den Film in Deutschland streamen, "
-        "leihen oder kaufen kann, mit direktem Link zum Anbieter. Ist das nicht bekannt, steht dort ehrlich "
-        "„unbekannt“, statt dass geraten wird. Unten laufen meine übrigen Treffer durch, jeder mit Begründung. "
-        "Mit der Maus am rechten oder linken Rand werden sie schneller.",
+        "05_results",
+        "„Show results“ öffnet die Übersicht aller Treffer. Oben zeigt mir die Brotkrumen-Navigation, wo ich "
+        "bin: CineSense, Search. Chat und Suche teilen sich denselben Zustand. Unter „Excluded“ steht Horror, "
+        "als Tag und als Genre, und CineSense sagt offen, wie viele Filme dadurch ausgeblendet werden. Es wird "
+        "also nichts heimlich gefiltert. Die Rangfolge berücksichtigt alle Kriterien: wie gut der Film passt, "
+        "seine Bewertung, wie bekannt er ist und, etwas schwächer, wie neu er ist.",
     ),
     Segment(
-        "06_results",
-        "Über „Search“ sehe ich alle Treffer als Übersicht, denn Chat und Suche teilen sich denselben "
-        "Zustand. Unter „Excluded“ steht Horror, als Tag und als Genre, und CineSense sagt offen, wie viele "
-        "Filme dadurch ausgeblendet werden. Es wird also nichts heimlich gefiltert. Darunter steht der "
-        "Laufzeitfilter, und unten laufen alle Treffer durch.",
+        "06_best",
+        "Ein Klick auf eine Karte holt den Film auf die Bühne, und die Navigation zeigt jetzt Search und den "
+        "Filmtitel. Auf der Bühne stehen Poster, wenn vorhanden der offizielle Trailer, Regie, Besetzung und "
+        "eine kurze Inhaltsangabe aus Wikipedia. Darunter steht, wo man den Film in Deutschland streamen, "
+        "leihen oder kaufen kann, mit direktem Link zum Anbieter. Ist das nicht bekannt, steht dort ehrlich "
+        "„unbekannt“, statt dass geraten wird. Unten laufen meine übrigen Treffer durch, jeder mit Begründung. "
+        "Über „Search“ geht es zurück zur Übersicht.",
     ),
     Segment(
         "07_edit",
@@ -198,10 +198,30 @@ async def main(base: str, api: str, out: Path) -> None:
 
         await narrate(rec, seg["04_reply"], reply)
 
-        async def best():
+        async def results():
             await click(page, page.get_by_role("button", name="Show results →"), 1000)
+            await page.locator(RESULT_CARDS).first.wait_for(timeout=30000)
+            await glide_to(page, page.get_by_role("navigation", name="Breadcrumb"), 1100)
+            await asyncio.sleep(2.0)
+            excluded = page.locator(".chips-heading", has_text="Excluded")
+            if await excluded.count():
+                await glide_to(page, excluded, 1200)
+                await asyncio.sleep(2.5)
+            hidden = page.locator(".chips-hidden")
+            if await hidden.count():
+                await glide_to(page, hidden, 900)
+                await asyncio.sleep(3)
+            await shot(page, out, "results")
+            await glide_to(page, page.locator("[aria-label='Results']"), 1200, dx=0.5, dy=0.6)
+
+        await narrate(rec, seg["05_results"], results)
+
+        async def best():
+            await click_card(page, RESULT_CARDS, 0.3)
             await page.get_by_role("button", name="👍 More like this").wait_for(timeout=30000)
             await page.wait_for_timeout(1500)
+            await glide_to(page, page.get_by_role("navigation", name="Breadcrumb"), 900)
+            await asyncio.sleep(1.5)
             await shot(page, out, "stage")
             for sel, pause in [(".stage-info h2", 2.0), (".stage-people", 1.6), (".stage-overview", 3.5),
                                (".stage-tags", 3.0), (".stage-why", 2.0)]:  # fmt: skip
@@ -212,35 +232,11 @@ async def main(base: str, api: str, out: Path) -> None:
             row = page.locator("[aria-label='Your other matches']")
             await glide_to(page, row, 1000, dx=0.5, dy=0.6)
             await asyncio.sleep(2.0)
-            await glide_to(page, row, 1200, dx=0.96, dy=0.6)  # right edge: runs fast
-            await asyncio.sleep(1.8)
-            await glide_to(page, row, 1600, dx=0.04, dy=0.6)  # left edge: fast the other way
-            await asyncio.sleep(1.5)
-
-        await narrate(rec, seg["05_best"], best)
-
-        async def results():
-            await click(page, page.get_by_role("link", name="Back to home").first, 900)
-            await page.wait_for_timeout(1200)
-            await click(page, page.get_by_role("link", name="🔍 Search"), 900)
+            crumbs = page.get_by_role("navigation", name="Breadcrumb")
+            await click(page, crumbs.get_by_role("link", name="Search"), 900)
             await page.locator(RESULT_CARDS).first.wait_for(timeout=30000)
-            await glide(page, 1100, 210, 800)
-            await asyncio.sleep(1.0)
-            excluded = page.locator(".chips-heading", has_text="Excluded")
-            if await excluded.count():
-                await glide_to(page, excluded, 1200)
-                await asyncio.sleep(2.5)
-            hidden = page.locator(".chips-hidden")
-            if await hidden.count():
-                await glide_to(page, hidden, 900)
-                await asyncio.sleep(3)
-            await shot(page, out, "results")
-            filters = page.locator(".chips-heading", has_text="Filters")
-            if await filters.count():
-                await glide_to(page, filters, 900, dy=2.5)
-            await glide_to(page, page.locator("[aria-label='Results']"), 1200, dx=0.5, dy=0.6)
 
-        await narrate(rec, seg["06_results"], results)
+        await narrate(rec, seg["06_best"], best)
 
         async def edit():
             await click(page, page.locator("[aria-label^='Weight 5 of 5 for']").first, 900)
@@ -265,7 +261,7 @@ async def main(base: str, api: str, out: Path) -> None:
         await narrate(rec, seg["08_feedback"], feedback)
 
         async def profile():
-            await click(page, page.get_by_role("link", name="Back to home").first, 900)
+            await click(page, page.get_by_role("link", name="CineSense").first, 900)
             await page.wait_for_timeout(1800)
             await click(page, page.get_by_label("Profile").first, 800)
             await page.wait_for_timeout(1200)

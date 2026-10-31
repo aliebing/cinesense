@@ -1,6 +1,6 @@
-import Link from "next/link";
 import FogLight from "@/components/atmosphere/FogLight";
 import CinemaFrame from "@/components/cinema/CinemaFrame";
+import Breadcrumb from "@/components/nav/Breadcrumb";
 
 const SOURCES = [
   {
@@ -48,7 +48,7 @@ export default function CreditsPage() {
       <FogLight tint="#1b4a6b" reduced />
       <div className="results-page credits">
         <header className="genre-top results-top">
-          <Link href="/">CineSense &nbsp;← Back to home</Link>
+          <Breadcrumb items={[{ label: "Credits" }]} />
         </header>
         <h1>Credits &amp; data sources</h1>
         <p>

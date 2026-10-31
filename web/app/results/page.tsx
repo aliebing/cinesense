@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import FogLight from "@/components/atmosphere/FogLight";
 import CinemaFrame from "@/components/cinema/CinemaFrame";
+import Breadcrumb from "@/components/nav/Breadcrumb";
 import ResultList from "@/components/results/ResultList";
 import AdvancedSearch from "@/components/search/AdvancedSearch";
 import SearchChips from "@/components/search/SearchChips";
@@ -23,14 +23,14 @@ export default function ResultsPage() {
     getTags().then((r) => r.ok && setTags(r.data));
   }, []);
   const onMeta = useCallback((m: { hidden_by_exclusion: number }) => setHidden(m.hidden_by_exclusion), []);
-  const open = (m: Movie) => router.push(`/world/${m.world_ids[0] ?? "suspense"}?film=${m.id}`);
+  const open = (m: Movie) => router.push(`/world/${m.world_ids[0] ?? "suspense"}?film=${m.id}&from=search`); // the row below the stage keeps the other matches
 
   return (
     <CinemaFrame>
       <FogLight tint="#1b4a6b" reduced />
       <div className="results-page">
         <header className="genre-top results-top">
-          <Link href="/">CineSense &nbsp;← Back to home</Link>
+          <Breadcrumb items={[{ label: "Search" }]} />
           <button type="button" className="results-toggle" onClick={() => setShowAdvanced((v) => !v)}>
             {showAdvanced ? "Hide advanced search" : "Advanced search"}
           </button>

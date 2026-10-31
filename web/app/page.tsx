@@ -7,12 +7,13 @@ import FogLight from "@/components/atmosphere/FogLight";
 import HeroSlides from "@/components/atmosphere/HeroSlides";
 import CinemaFrame from "@/components/cinema/CinemaFrame";
 import ChatPanel from "@/components/chat/ChatPanel";
+import Breadcrumb from "@/components/nav/Breadcrumb";
 import ProfilePanel from "@/components/profile/ProfilePanel";
 import FilmTitles from "@/components/home/FilmTitles";
 import TileRows, { visibleWorlds } from "@/components/home/TileRows";
 import WorldLabel from "@/components/home/WorldLabel";
 import SearchChips from "@/components/search/SearchChips";
-import { getHome, getTags, search, type ApiResult, type Tag } from "@/lib/api";
+import { getHome, getTags, type ApiResult, type Tag } from "@/lib/api";
 import { useSearchRows } from "@/lib/searchRows";
 import { hasAnyCriteria, useSearchState } from "@/lib/searchState";
 import type { HomeData, Movie } from "@/lib/types";
@@ -64,13 +65,6 @@ export default function HomePage() {
     router.push("/results");
   };
   const openMovie = (m: Movie) => router.push(`/world/${m.world_ids[0]}?film=${m.id}`);
-  // "Show results" puts the best match on stage straight away; the other matches run in the row below it
-  const showBest = async () => {
-    const r = await search(criteria, 0, 1);
-    const best = r.ok ? r.data.items[0]?.movie : undefined;
-    if (!best) return router.push("/results");
-    router.push(`/world/${best.world_ids[0] ?? worlds[0]?.id ?? "suspense"}?film=${best.id}&from=search`);
-  };
   const rowCount = narrow ? 1 : 3;
   // a search from the chat (or the chips) takes over the rows: its hits in the middle, the worlds they belong to around
   const searchRows = useSearchRows(criteria, worlds, rowCount);
@@ -84,7 +78,7 @@ export default function HomePage() {
       <div className="home-shade" aria-hidden="true" />
 
       <header className="home-top">
-        <span className="home-logo">CineSense</span>
+        <Breadcrumb items={[{ label: "Home" }]} />
         <nav aria-label="Main navigation" className="home-nav">
           <Link href="/results">🔍 Search</Link> ·{" "}
           <button type="button" onClick={() => browse("cinema")}>
@@ -116,7 +110,7 @@ export default function HomePage() {
       <div className="side-settings">
         <SearchChips tags={tags} criteria={criteria} onChange={setCriteria}>
           {hasAnyCriteria(criteria) && (
-            <button type="button" className="chat-results" onClick={showBest}>
+            <button type="button" className="chat-results" onClick={() => router.push("/results")}>
               Show results →
             </button>
           )}
