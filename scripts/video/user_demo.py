@@ -59,31 +59,32 @@ SEGMENTS = [
         "oder ausschließen.",
     ),
     Segment(
-        "05_results",
-        "Über „Search“ sehe ich alle Treffer zu genau diesen Kriterien, denn Chat und Suche "
-        "teilen sich denselben Zustand. Unter „Excluded“ steht Horror, als Tag und als Genre, und CineSense "
-        "sagt offen, wie viele Filme dadurch ausgeblendet werden. Es wird also nichts heimlich gefiltert. "
-        "Darunter steht der Laufzeitfilter, und unten laufen die besten Treffer durch, jeder mit einer "
-        "kurzen Begründung.",
+        "05_best",
+        "Mit „Show results“ springt CineSense direkt zum besten Treffer. Die Rangfolge berücksichtigt alle "
+        "Kriterien: wie gut der Film zur Suche passt, seine Bewertung, wie bekannt er ist und, etwas schwächer, "
+        "wie neu er ist. Auf der Bühne stehen Poster, wenn vorhanden der offizielle Trailer, Regie, Besetzung "
+        "und eine kurze Inhaltsangabe aus Wikipedia. Darunter steht, wo man den Film in Deutschland streamen, "
+        "leihen oder kaufen kann, mit direktem Link zum Anbieter. Ist das nicht bekannt, steht dort ehrlich "
+        "„unbekannt“, statt dass geraten wird. Unten laufen meine übrigen Treffer durch, jeder mit Begründung. "
+        "Mit der Maus am rechten oder linken Rand werden sie schneller.",
     ),
     Segment(
-        "06_edit",
+        "06_results",
+        "Über „Search“ sehe ich alle Treffer als Übersicht, denn Chat und Suche teilen sich denselben "
+        "Zustand. Unter „Excluded“ steht Horror, als Tag und als Genre, und CineSense sagt offen, wie viele "
+        "Filme dadurch ausgeblendet werden. Es wird also nichts heimlich gefiltert. Darunter steht der "
+        "Laufzeitfilter, und unten laufen alle Treffer durch.",
+    ),
+    Segment(
+        "07_edit",
         "Alles, was die KI gesetzt hat, kann ich selbst ändern. Ich gebe dem ersten Tag das volle "
         "Gewicht, und die Trefferreihe wird sofort neu sortiert.",
     ),
     Segment(
-        "07_stage",
-        "Ein Klick holt einen Film auf die Bühne: Poster, wenn vorhanden der offizielle Trailer, "
-        "Regie und Besetzung, Stimmungs-Tags, Links zu IMDb und Wikipedia, "
-        "und wo man den Film in Deutschland streamen kann. "
-        "Ist das nicht bekannt, steht dort ehrlich „unbekannt“, statt dass geraten wird. Darunter laufen "
-        "weitere passende Filme durch. Mit der Maus am rechten oder linken Rand werden sie schneller.",
-    ),
-    Segment(
         "08_feedback",
-        "Mit Daumen hoch oder Daumen runter bringe ich CineSense meinen Geschmack bei. Ich "
-        "markiere ein paar Filme, die mir gefallen. „More action“ und „Funnier“ steuern dagegen nur die "
-        "aktuelle Sitzung.",
+        "Mit Daumen hoch oder Daumen runter bringe ich CineSense meinen Geschmack bei. Ein Klick auf eine "
+        "Karte holt den Film auf die Bühne, und ich markiere ein paar Filme, die mir gefallen. „More action“ "
+        "und „Funnier“ steuern dagegen nur die aktuelle Sitzung.",
     ),
     Segment(
         "09_profile",
@@ -197,11 +198,34 @@ async def main(base: str, api: str, out: Path) -> None:
 
         await narrate(rec, seg["04_reply"], reply)
 
+        async def best():
+            await click(page, page.get_by_role("button", name="Show results →"), 1000)
+            await page.get_by_role("button", name="👍 More like this").wait_for(timeout=30000)
+            await page.wait_for_timeout(1500)
+            await shot(page, out, "stage")
+            for sel, pause in [(".stage-info h2", 2.0), (".stage-people", 1.6), (".stage-overview", 3.5),
+                               (".stage-tags", 3.0), (".stage-why", 2.0)]:  # fmt: skip
+                loc = page.locator(sel).first
+                if await loc.count():
+                    await glide_to(page, loc, 1000, dx=0.3)
+                    await asyncio.sleep(pause)
+            row = page.locator("[aria-label='Your other matches']")
+            await glide_to(page, row, 1000, dx=0.5, dy=0.6)
+            await asyncio.sleep(2.0)
+            await glide_to(page, row, 1200, dx=0.96, dy=0.6)  # right edge: runs fast
+            await asyncio.sleep(1.8)
+            await glide_to(page, row, 1600, dx=0.04, dy=0.6)  # left edge: fast the other way
+            await asyncio.sleep(1.5)
+
+        await narrate(rec, seg["05_best"], best)
+
         async def results():
+            await click(page, page.get_by_role("link", name="Back to home").first, 900)
+            await page.wait_for_timeout(1200)
             await click(page, page.get_by_role("link", name="🔍 Search"), 900)
             await page.locator(RESULT_CARDS).first.wait_for(timeout=30000)
             await glide(page, 1100, 210, 800)
-            await asyncio.sleep(1.5)
+            await asyncio.sleep(1.0)
             excluded = page.locator(".chips-heading", has_text="Excluded")
             if await excluded.count():
                 await glide_to(page, excluded, 1200)
@@ -216,40 +240,18 @@ async def main(base: str, api: str, out: Path) -> None:
                 await glide_to(page, filters, 900, dy=2.5)
             await glide_to(page, page.locator("[aria-label='Results']"), 1200, dx=0.5, dy=0.6)
 
-        await narrate(rec, seg["05_results"], results)
+        await narrate(rec, seg["06_results"], results)
 
         async def edit():
             await click(page, page.locator("[aria-label^='Weight 5 of 5 for']").first, 900)
             await asyncio.sleep(2.5)
             await glide(page, 1500, 300, 1200)
 
-        await narrate(rec, seg["06_edit"], edit)
-
-        async def stage():
-            await click_card(page, RESULT_CARDS, 0.45)
-            await page.get_by_role("button", name="👍 More like this").wait_for(timeout=30000)
-            await page.wait_for_timeout(1200)
-            for sel in [".stage-info h2, h1, h2", "text=/streaming|Netflix|unknown|rent/i", "text=Wikipedia"]:
-                loc = page.locator(sel).first
-                if await loc.count():
-                    await glide_to(page, loc, 1100)
-                    await asyncio.sleep(1.6)
-            row = page.locator("[aria-label='Also fits your mood']")
-            await glide_to(page, row, 1000, dx=0.5, dy=0.6)
-            await asyncio.sleep(1.0)
-            await glide_to(page, row, 1200, dx=0.96, dy=0.6)  # right edge: runs fast
-            await asyncio.sleep(1.8)
-            await glide_to(page, row, 1600, dx=0.04, dy=0.6)  # left edge: fast the other way
-            await asyncio.sleep(1.5)
-
-        await narrate(rec, seg["07_stage"], stage)
+        await narrate(rec, seg["07_edit"], edit)
 
         async def feedback():
             like = page.get_by_role("button", name="👍 More like this")
-            await click(page, like, 900)
-            await asyncio.sleep(1.0)
-            for slot in (0.36, 0.64):  # back to the result row (it restarts in place) and like two others
-                await page.go_back()
+            for slot in (0.3, 0.5, 0.7):  # open three films from the result row and like each
                 await page.locator(RESULT_CARDS).first.wait_for(timeout=30000)
                 await page.wait_for_timeout(800)
                 await click_card(page, RESULT_CARDS, slot)
@@ -257,6 +259,8 @@ async def main(base: str, api: str, out: Path) -> None:
                 await page.wait_for_timeout(900)
                 await click(page, like, 800)
                 await asyncio.sleep(0.8)
+                if slot != 0.7:
+                    await page.go_back()  # the result row restarts in place
 
         await narrate(rec, seg["08_feedback"], feedback)
 

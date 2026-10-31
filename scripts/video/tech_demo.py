@@ -84,7 +84,9 @@ SEGMENTS = [
     Segment(
         "t09",
         "Das Ranking kombiniert gewichtete Tag-Relevanz, die Ähnlichkeit der Handlung, Personen und "
-        "eine Bayes'sche Bewertung, die wenig bewertete Filme dämpft. Als fünftes Signal kommt der Geschmack "
+        "eine Bayes'sche Bewertung, die wenig bewertete Filme dämpft. Schwach gewichtet zählen außerdem die "
+        "Bekanntheit, gemessen an der Zahl der Bewertungen, und ein kleiner Bonus für neuere Filme. "
+        "Als weiteres Signal kommt der Geschmack "
         "dazu. Aus den Filmen mit Daumen hoch bildet CineSense den mittleren Tag-Genome-Vektor, minus den "
         "Katalog-Durchschnitt. Abgelehnte Filme zählen dagegen. Übrig bleiben die acht stärksten Tags. Das "
         "Signal hat nur das Gewicht 0,15, damit Stimmung, Handlung und Personen führend bleiben.",
