@@ -13,6 +13,7 @@ const SLOW_SPEED = 14; // px per second in the middle: still moving, but a card 
 const MAX_SPEED = 1100; // px per second with the pointer at the very edge
 const DEAD_ZONE = 0.3; // middle share of the row where it only creeps on
 const EASE_MS = 220;
+export const MIN_SLOTS = 14; // a loop set narrower than the row would show gaps and its jump: empty boxes fill it
 
 /** Row velocity for a pointer at `ratio` (0 = left edge, 1 = right edge) of the row; null = no pointer.
  *  Right of the middle the films slide left (more come in from the right), left of it the other way,
@@ -79,6 +80,8 @@ export default function RelatedRow({
   }, [reduced]);
 
   if (items.length === 0) return null;
+  const empty = reduced ? 0 : Math.max(0, MIN_SLOTS - items.length);
+  const slots: (RankedMovie | null)[] = [...items, ...Array<null>(empty).fill(null)];
   const onMove = (e: React.PointerEvent) => {
     const box = viewport.current?.getBoundingClientRect();
     if (box && box.width > 0) pointer.current = (e.clientX - box.left) / box.width;
@@ -97,14 +100,17 @@ export default function RelatedRow({
         }}
       >
         <div ref={track} className="related-track">
-          {(reduced ? items : [...items, ...items]).map((r, i) => (
+          {(reduced ? slots : [...slots, ...slots]).map((r, i) =>
+            r === null ? (
+              <div key={`empty-${i}`} className="related-card related-card--empty" aria-hidden="true" />
+            ) : (
             <HoverTrailer key={`${r.movie.id}-${i}`} movie={r.movie} className="related-wrap">
               <button
                 type="button"
                 className="related-card"
                 aria-label={`${r.movie.title}, ${r.match_percent}% match`}
-                tabIndex={i < items.length ? 0 : -1}
-                aria-hidden={i < items.length ? undefined : true}
+                tabIndex={i < slots.length ? 0 : -1}
+                aria-hidden={i < slots.length ? undefined : true}
                 onClick={() => onSelect(r.movie)}
               >
                 <ImageOrPlaceholder src={r.movie.poster_url} alt="" />
@@ -115,7 +121,8 @@ export default function RelatedRow({
                 </span>
               </button>
             </HoverTrailer>
-          ))}
+            ),
+          )}
         </div>
       </div>
     </section>

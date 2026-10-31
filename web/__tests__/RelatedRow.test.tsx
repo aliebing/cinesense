@@ -40,3 +40,18 @@ it("edgeSpeed: creeps on in the middle, faster towards the edges, opposite direc
   expect(edgeSpeed(null, 1)).toBeGreaterThan(0);
   expect(Math.abs(edgeSpeed(null))).toBeLessThan(60);
 });
+
+it("few films: empty boxes fill each loop set, so the row never shows gaps or jumps", async () => {
+  const { MIN_SLOTS } = await import("@/components/genre/RelatedRow");
+  const { container } = render(<RelatedRow items={sampleRanked(4)} onSelect={() => {}} />);
+  const empty = container.querySelectorAll(".related-card--empty");
+  expect(empty).toHaveLength(2 * (MIN_SLOTS - 4)); // both copies of the loop
+  expect([...empty].every((e) => e.getAttribute("aria-hidden") === "true")).toBe(true);
+  expect(screen.getAllByRole("button", { name: /Demo-Film/ }).filter((b) => !b.closest("[aria-hidden]"))).toHaveLength(4);
+});
+
+it("enough films: no empty boxes", async () => {
+  const { MIN_SLOTS } = await import("@/components/genre/RelatedRow");
+  const { container } = render(<RelatedRow items={sampleRanked(MIN_SLOTS)} onSelect={() => {}} />);
+  expect(container.querySelectorAll(".related-card--empty")).toHaveLength(0);
+});
