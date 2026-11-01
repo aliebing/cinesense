@@ -63,6 +63,14 @@ def get_trailers():
     return YouTubeTrailerClient(s.youtube_api_key, store, daily_limit=s.youtube_daily_limit)
 
 
+def agent_search_service():
+    """The agent's search, the same as the results page's: titles outside the catalogue (e.g. "Winnetou") are
+    looked up live (1 Streaming Availability call per new title, cached a day) and imported lazily."""
+    from cinesense.search.service import SearchService
+
+    return SearchService(get_provider(), get_streaming(), get_embedder(), get_live())
+
+
 @lru_cache
 def get_agent():
     """Chat runner (thread_id, message, criteria, on_status) -> dict, or None without an OpenRouter key."""
@@ -76,10 +84,9 @@ def get_agent():
 
     from cinesense.agent.graph import build_graph, run_turn
     from cinesense.agent.tools import ToolKit, make_tools
-    from cinesense.search.service import SearchService
 
     provider, streaming = get_provider(), get_streaming()
-    service = SearchService(provider, streaming, get_embedder())
+    service = agent_search_service()
     graph = build_graph(
         llm,
         make_llm(s, max_tokens=1500),  # reasoning tokens count against the limit

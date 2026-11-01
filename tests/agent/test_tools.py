@@ -91,3 +91,53 @@ def test_not_horror_keeps_the_weight_it_reports(kit):
 def test_find_person_without_matches_changes_nothing(kit):
     upd, msg = kit.find_person(state(), "Zzyzx Qwertyuiop")
     assert upd == {} and "not found" in msg.lower()
+
+
+class StubLive:
+    """Live title search: one film that is not in the catalogue."""
+
+    def search_title(self, q):
+        from cinesense.domain.models import Movie
+
+        return [Movie(id="imdb-tt0057687", imdb_id="tt0057687", title="Apache Gold", year=1963, world_ids=["action"])]
+
+    def search_person(self, q):
+        return q, []
+
+
+def test_find_title_finds_films_outside_the_catalogue_live():
+    p = FixtureProvider()
+    kit = ToolKit(SearchService(p, None, None, StubLive()), p, StubStreaming())
+    upd, msg = kit.find_title(state(), "Winnetou")
+    assert upd["criteria"]["title"] == "Winnetou"
+    assert "Apache Gold (1963)" in msg
+    assert p.get_movie("imdb-tt0057687") is not None  # imported, so the stage and film facts find it later
+
+
+def test_find_title_without_matches_says_so(kit):
+    upd, msg = kit.find_title(state(), "Zzyzx Qwertyuiop")
+    assert upd == {} and "no film" in msg.lower()
+
+
+def test_the_agent_gets_the_find_title_tool(kit):
+    from cinesense.agent.tools import make_tools
+
+    assert "find_title" in [t.name for t in make_tools(kit)]
+
+
+def test_a_live_hit_never_lowers_a_better_catalogue_title_match():
+    from cinesense.search.service import SearchService
+
+    p = FixtureProvider()
+    film = p.list_movies()[0]
+
+    class EchoLive:
+        def search_title(self, q):
+            return [film]
+
+    service = SearchService(p, None, None, EchoLive())
+    from cinesense.search.service import Signals
+
+    sig = Signals(title={film.id: 1.0})
+    service._live(SearchCriteria(title=film.title), sig)
+    assert sig.title[film.id] == 1.0

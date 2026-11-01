@@ -92,7 +92,8 @@ class SearchService:
         hits = []
         if c.title:
             found = self.live.search_title(c.title)
-            sig.title = {**(sig.title or {}), **{m.id: 0.8 for m in found}}
+            known = sig.title or {}
+            sig.title = {**known, **{m.id: max(0.8, known.get(m.id, 0.0)) for m in found}}  # never lower a match
             hits += found
         if c.person:
             name, found = self.live.search_person(c.person)

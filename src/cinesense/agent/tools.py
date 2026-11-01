@@ -107,6 +107,18 @@ class ToolKit:
             "criteria_changed": True,
         }, f"Person set to {resolved}: {len(scores)} films in the catalogue."
 
+    def find_title(self, state: dict, title: str) -> tuple[dict, str]:
+        """A film asked for by name. The search also looks the title up live when the catalogue has no good match
+        (e.g. "Winnetou": no Tag Genome data, so not in the catalogue) and imports what it finds."""
+        hits = self.service.run(SearchCriteria(title=title), 0, 5).items
+        if not hits:
+            return {}, f"No film found for '{title}'; criteria unchanged."
+        c = self._criteria(state).model_copy(update={"title": title})
+        lines = [f"- {r.movie.title} ({r.movie.year})" for r in hits]
+        return {"criteria": c.model_dump(), "criteria_changed": True}, "Title search set. Top matches:\n" + "\n".join(
+            lines
+        )
+
     def similar_to(self, state: dict, title: str) -> tuple[dict, str]:
         film = self._find_film(title)
         if film is None:
@@ -210,6 +222,14 @@ def make_tools(kit: ToolKit) -> list:
         return wrap(*kit.search_plot(state, query), tool_call_id)
 
     @tool
+    def find_title(
+        title: str, state: Annotated[dict, InjectedState], tool_call_id: Annotated[str, InjectedToolCallId]
+    ) -> Command:
+        """Find a film the user names (typo-tolerant), also films outside the catalogue, which are looked up live,
+        e.g. 'Winnetou'. Sets the title as a search criterion."""
+        return wrap(*kit.find_title(state, title), tool_call_id)
+
+    @tool
     def find_person(
         name: str,
         state: Annotated[dict, InjectedState],
@@ -261,6 +281,7 @@ def make_tools(kit: ToolKit) -> list:
         set_mood_tags,
         set_filters,
         search_plot,
+        find_title,
         find_person,
         similar_to,
         check_streaming,

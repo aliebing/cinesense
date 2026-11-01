@@ -87,7 +87,9 @@ class FixtureProvider:
         out = {}
         for m in self._movies:
             s = difflib.SequenceMatcher(None, q.lower(), m.title.lower()).ratio()
-            if s >= 0.6 or q.lower() in m.title.lower():
+            if q.lower() in m.title.lower():
+                out[m.id] = max(s, 0.85)  # contains the query: as the Postgres search
+            elif s >= 0.6:
                 out[m.id] = max(s, 0.5)
         return dict(sorted(out.items(), key=lambda x: x[1], reverse=True)[:limit])
 

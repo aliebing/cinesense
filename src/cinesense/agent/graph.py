@@ -204,6 +204,7 @@ TOOL_STATUS = {
     "set_mood_tags": "Setting mood tags…",
     "set_filters": "Applying filters…",
     "search_plot": "Searching plots…",
+    "find_title": "Looking up the title…",
     "find_person": "Looking up people…",
     "similar_to": "Finding similar moods…",
     "check_streaming": "Checking streaming in Germany…",

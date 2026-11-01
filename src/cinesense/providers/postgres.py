@@ -170,7 +170,9 @@ class PostgresProvider:
         )
         sql = (
             "select id, greatest(similarity(cs_norm(title), cs_norm(%(q)s)), "
-            f"case when {sounds} then 0.6 else 0 end) as s "
+            f"case when {sounds} then 0.6 else 0 end, "
+            # a title that contains the query ("The Matrix", "Winnetou - A New World") beats one that only sounds alike
+            "case when cs_norm(title) like '%%' || cs_norm(%(ql)s) || '%%' escape '\\' then 0.85 else 0 end) as s "
             f"from films where cs_norm(title) %% cs_norm(%(q)s) or {sounds} "
             "or cs_norm(title) like '%%' || cs_norm(%(ql)s) || '%%' escape '\\' "
             "order by s desc, ml_rating_count desc limit %(limit)s"

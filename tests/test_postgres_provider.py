@@ -61,3 +61,10 @@ def test_feedback_store_roundtrip_and_profile(provider, db_url):
 def test_title_search_treats_wildcards_literally(provider):
     assert len(provider.search_title("%")) < 50
     assert len(provider.search_title("_")) < 50
+
+
+def test_title_search_ranks_titles_containing_the_query_above_sound_alikes(provider):
+    s = provider.search_title("Matrix")
+    assert s["ml-2571"] >= 0.85  # "The Matrix" contains the query
+    sound_alikes = [v for k, v in provider.search_title("Revenant").items() if k not in ("ml-139385", "ml-91947")]
+    assert all(v < provider.search_title("Revenant")["ml-139385"] for v in sound_alikes)
