@@ -27,7 +27,6 @@ export default function HomePage() {
   const narrow = useIsNarrow();
   const [result, setResult] = useState<ApiResult<HomeData> | null>(null);
   const [active, setActive] = useState(0);
-  const [variedSpeed, setVariedSpeed] = useState(false);
   const { activeId } = useActiveTrailer();
   const [criteria, setCriteria] = useSearchState();
   const [tags, setTags] = useState<Tag[]>([]);
@@ -98,9 +97,6 @@ export default function HomePage() {
           </button>
         </nav>
       </header>
-      <button type="button" className="tempo-toggle" onClick={() => setVariedSpeed((v) => !v)}>
-        Speed: {variedSpeed ? "varied" : "even"}
-      </button>
 
       <main className="home-center">
         <h1 className="home-claim">
@@ -124,7 +120,7 @@ export default function HomePage() {
       {data && !narrow && <FilmTitles titles={data.titles} />}
       {rows.length > 0 && (
         <div className="home-rows">
-          <TileRows rows={rows.slice(0, rowCount)} onSelect={openMovie} variedSpeed={variedSpeed} worldOrder={worldIds} />
+          <TileRows rows={rows.slice(0, rowCount)} onSelect={openMovie} worldOrder={worldIds} />
         </div>
       )}
       {world && <WorldLabel world={world} href={`/world/${world.id}`} />}

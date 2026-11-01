@@ -149,10 +149,6 @@
 .breadcrumb .breadcrumb__brand { font-weight: 800; font-size: 1.15em; opacity: 1; }
 .breadcrumb [aria-current="page"] { color: var(--gold); font-weight: 600; }
 .home-nav { opacity: .85; text-shadow: 0 2px 8px #000; }
-.tempo-toggle {
-  position: absolute; z-index: 20; top: 1cqw; right: var(--safe-x); font: inherit; font-size: calc(var(--ui) * .85);
-  background: #000a; color: #fff; border: 1px solid #ffffff30; border-radius: 999px; padding: .4em 1em; cursor: pointer;
-}
 .home-center {
   position: absolute; z-index: 15; left: var(--chat-x); top: 50%; transform: translate(-50%, -50%);
   width: var(--chat-w); text-align: center; font-size: 1.08em;
@@ -327,10 +323,9 @@
   }
   .cinema-curtain { display: none; }
   .fog--mid { display: none; }
-  .home-top, .tempo-toggle, .home-center, .home-rows, .world-label, .side-settings,
+  .home-top, .home-center, .home-rows, .world-label, .side-settings,
   .genre-top, .stage, .related { position: relative; inset: auto; transform: none; z-index: 15; }
   .home-top { order: 0; flex-wrap: wrap; gap: 8px 16px; }
-  .tempo-toggle { order: 1; align-self: flex-start; }
   .home-center { order: 2; width: 100%; }
   .home-rows { order: 3; left: auto; right: auto; bottom: auto; -webkit-mask-image: none; mask-image: none; }
   .world-label { order: 4; }
