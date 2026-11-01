@@ -169,3 +169,11 @@ it("opened from a search with no other matches, the row shows the related films 
   await waitFor(() => expect(screen.queryByRole("region", { name: "Your other matches" })).toBeNull());
   setSearchState(emptyCriteria());
 });
+
+it("has no chat; a button leads back to the start page with the results", async () => {
+  render(<GenreView worldId="action" filmId={null} />);
+  await screen.findByRole("heading", { name: "Demo-Film 01" });
+  expect(screen.getByRole("link", { name: "← Back to results" })).toHaveAttribute("href", "/");
+  expect(screen.queryByRole("button", { name: /Chat/ })).toBeNull();
+  expect(screen.queryByRole("complementary", { name: "Chat" })).toBeNull();
+});

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import FogLight from "@/components/atmosphere/FogLight";
 import CinemaFrame from "@/components/cinema/CinemaFrame";
+import BackHome from "@/components/nav/BackHome";
 import Breadcrumb from "@/components/nav/Breadcrumb";
 import ResultList from "@/components/results/ResultList";
 import AdvancedSearch from "@/components/search/AdvancedSearch";
@@ -31,9 +32,12 @@ export default function ResultsPage() {
       <div className="results-page">
         <header className="genre-top results-top">
           <Breadcrumb items={[{ label: "Search" }]} />
-          <button type="button" className="results-toggle" onClick={() => setShowAdvanced((v) => !v)}>
-            {showAdvanced ? "Hide advanced search" : "Advanced search"}
-          </button>
+          <div className="results-actions">
+            <button type="button" className="results-toggle" onClick={() => setShowAdvanced((v) => !v)}>
+              {showAdvanced ? "Hide advanced search" : "Advanced search"}
+            </button>
+            <BackHome />
+          </div>
         </header>
         {showAdvanced && (
           <AdvancedSearch

@@ -313,11 +313,7 @@
 .related-card i { position: absolute; top: .4em; right: .5em; font-style: normal; font-size: .75em; background: #000a; border-radius: 999px; padding: .1em .5em; color: var(--gold); }
 .related-card span { position: absolute; left: .5em; right: .5em; bottom: .4em; font-size: .75em; text-align: left; text-shadow: 0 1px 4px #000; }
 
-.drawer-tab { position: absolute; z-index: 30; right: var(--safe-x); top: 46%; writing-mode: vertical-rl; font: inherit; font-size: var(--ui); font-weight: 600;
   background: #0d0d14d0; color: #fff; border: 1px solid #ffffff30; border-radius: 10px; padding: 1em .6em; cursor: pointer; }
-.drawer { position: absolute; z-index: 30; right: var(--safe-x); top: 3.4cqw; bottom: 1cqw; width: var(--chat-w); display: flex; flex-direction: column; font-size: var(--ui); }
-.drawer-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: .5em; font-weight: 600; text-shadow: 0 2px 8px #000; }
-.drawer-head button { font: inherit; font-size: 1.4em; line-height: 1; background: none; border: 0; color: #fff; cursor: pointer; }
 
 .not-found { position: absolute; z-index: 15; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .6em; text-align: center; font-size: var(--ui); }
 .not-found h1 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: clamp(40px, 4cqw, 96px); letter-spacing: .04em; }
@@ -334,7 +330,7 @@
   .cinema-curtain { display: none; }
   .fog--mid { display: none; }
   .home-top, .tempo-toggle, .home-center, .home-rows, .world-label, .side-settings,
-  .genre-top, .stage, .related, .drawer, .drawer-tab { position: relative; inset: auto; transform: none; z-index: 15; }
+  .genre-top, .stage, .related { position: relative; inset: auto; transform: none; z-index: 15; }
   .home-top { order: 0; flex-wrap: wrap; gap: 8px 16px; }
   .tempo-toggle { order: 1; align-self: flex-start; }
   .home-center { order: 2; width: 100%; }
@@ -348,8 +344,6 @@
   .side-settings { order: 2; width: 100%; max-height: none; }
   .related-viewport { width: 100%; }
   .cinema-stage { --card-w: 96px; --card-gap: 10px; }
-  .drawer { width: 100%; }
-  .drawer-tab { writing-mode: horizontal-tb; align-self: flex-end; }
 }
 
 /* ---------- hover trailers ---------- */
@@ -528,3 +522,11 @@
 .profile-reset { margin-top: 1em; font: inherit; font-size: .9em; padding: .4em 1em; border-radius: 999px; border: 1px solid #ff6b6b80;
   background: #ff6b6b1a; color: #ffb3b3; cursor: pointer; }
 @media (max-width: 759px) { .profile-panel { position: fixed; inset: 16px; width: auto; max-height: none; } }
+
+/* back to the start page (search hits and conversation stay): replaces the chat on the stage and results pages */
+.genre-top .back-home, .back-home {
+  flex: none; align-self: flex-start; padding: .35em .9em; border: 1px solid #f3c76b88; border-radius: 999px;
+  background: #07080cb3; color: #fff; opacity: 1; font-weight: 600; text-decoration: none;
+}
+.genre-top .back-home:hover, .genre-top .back-home:focus-visible { border-color: var(--gold); color: var(--gold); text-decoration: none; }
+.results-actions { display: flex; gap: .8em; align-items: flex-start; }
