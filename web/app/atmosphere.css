@@ -97,7 +97,7 @@
 .tile-rows { display: flex; flex-direction: column; gap: .6cqw; overflow-x: clip; overflow-y: visible; } /* a hovered tile may grow over the rows */
 .tile-row { display: flex; align-items: center; gap: .6cqw; width: max-content; will-change: transform; }
 .tile {
-  position: relative; flex: none; width: 8.4cqw; height: 5.25cqw; padding: 0; border: 0; cursor: pointer; overflow: hidden;
+  position: relative; flex: none; width: 8.4cqw; aspect-ratio: 16 / 9; /* the title-art posters are 16:9: any other ratio crops letters at the edges */ padding: 0; border: 0; cursor: pointer; overflow: hidden;
   border-radius: 4px; background: #0b0c12; outline: 1px solid #ffffff30;
   box-shadow: 0 0 0 1px #0008, 0 .5cqw 1.5cqw #000a;
   filter: brightness(1.12) contrast(1.1) saturate(1.15); transition: filter .3s, outline-color .3s, opacity .3s;
@@ -111,7 +111,7 @@
 .tile-row-wrap:hover, .tile-row-wrap:focus-within { z-index: 6; } /* the glow lies over the next row */
 /* the short list after a search (middle row): every tile large and opaque; the chat's picks lead it, lit as if hovered */
 .tile-row-wrap--picked .tile { opacity: 1; }
-.tile-row-wrap--picked .tile { width: calc(8.4cqw * var(--featured-scale)); height: calc(5.25cqw * var(--featured-scale)); }
+.tile-row-wrap--picked .tile { width: calc(8.4cqw * var(--featured-scale)); }
 .tile-wrap--featured { outline: var(--glow-width) solid var(--gold); box-shadow: var(--glow); z-index: 4; }
 .tile-wrap--featured .tile { filter: brightness(1.25) saturate(1.2); }
 
@@ -334,7 +334,7 @@
   .home-center { order: 2; width: 100%; }
   .home-rows { order: 3; left: auto; right: auto; bottom: auto; -webkit-mask-image: none; mask-image: none; }
   .world-label { order: 4; }
-  .tile { width: 168px; height: 105px; }
+  .tile { width: 168px; }
   .tile-row { gap: 8px; }
   .stage { grid-template-columns: 96px minmax(0, 1fr); gap: 12px; }
   .stage-trailer { grid-column: 1 / -1; grid-row: 2; }
