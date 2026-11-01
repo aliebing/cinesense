@@ -117,6 +117,25 @@
   .tight .card h3 { font-size: 27px; margin-bottom: 4px; }
   .tight .card p { font-size: 23px; }
   .formula { font: 600 27px "JetBrains Mono"; background: #101117; border: 1px solid var(--line); border-radius: 14px; padding: 22px 26px; line-height: 1.6; }
+  /* code slides: real excerpts from the repository (code_snippets.py), highlighted by Pygments */
+  .code-slide { padding: 70px 60px 50px; }
+  .code-slide h2 { font-size: 64px; margin: 8px 0 26px; }
+  .panels { display: grid; gap: 28px; align-items: start; }
+  .panel { background: #0d0e13; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; box-shadow: 0 30px 80px rgba(0,0,0,.6); }
+  .codehead { font: 600 21px "JetBrains Mono", monospace; color: var(--gold); padding: 14px 22px; border-bottom: 1px solid var(--line); background: rgba(243,199,107,.06); }
+  .codehead span { color: var(--muted); font-weight: 400; }
+  .src pre { margin: 0; padding: 14px 0; font: 400 var(--fs, 22px)/1.45 "JetBrains Mono", monospace; color: #e6e3dc; white-space: pre; overflow: hidden; font-variant-ligatures: none; }
+  .src .linenos { display: inline-block; width: 3.6em; padding-right: 1em; text-align: right; color: #5c5a57; user-select: none; }
+  .src .hll { display: block; background: rgba(243,199,107,.13); box-shadow: inset 4px 0 0 var(--gold); }
+  .src .k, .src .kn, .src .kd, .src .kc, .src .ow { color: #ff9e7a; }
+  .src .nf, .src .fm, .src .nc { color: #8fc7ff; }
+  .src .s, .src .s1, .src .s2, .src .sa, .src .si, .src .se { color: #b9dc8a; }
+  .src .sd { color: #9a9890; font-style: italic; }
+  .src .c, .src .c1, .src .cm { color: #8a8780; font-style: italic; }
+  .src .mi, .src .mf { color: #e8b86b; }
+  .src .nb, .src .bp { color: #c7a5ff; }
+  .src .nd { color: var(--gold); }
+  .src .o, .src .p { color: #cfcac0; }
 </style>
 </head>
 <body>
@@ -177,9 +196,16 @@
     <div class="card b" style="--d:1s"><h3>Semantische Plot-Suche (RAG)</h3><p>Wikipedia-Handlungen in Abschnitten → Embeddings über OpenRouter → 1.536-dim. Vektoren, HNSW-Index in pgvector.</p></div>
     <div class="card b" style="--d:11s"><h3>Gewichtete Stimmungs-Tags</h3><p>Tag-Genome-Relevanz, gewichtet und als bevorzugen / muss / ausschließen, direkt in Postgres berechnet.</p></div>
     <div class="card b" style="--d:16s"><h3>Titel &amp; Personen</h3><p>Tippfehler- und klangtolerant (pg_trgm), für Schauspieler und Regie.</p></div>
-    <div class="card b" style="--d:20s"><h3>Erweiterte Live-Suche</h3><p>Neuere Filme über die Streaming Availability API und Wikidata-Filmografien.</p></div>
+    <div class="card b" style="--d:20s"><h3>Live-Suche</h3><p>Filme außerhalb des Katalogs (neue Filme, Winnetou …) über die Streaming Availability API und Wikidata-Filmografien, danach importiert.</p></div>
   </div>
 </section>
+
+<section id="c05" class="code-slide">
+  <div class="kicker b">Im Code · Retrieval</div>
+  <h2 class="b" style="--d:.3s">Vektorsuche in pgvector</h2>
+  <div class="panels" data-code="c05"></div>
+</section>
+
 
 <section id="t06">
   <div class="kicker b">Der Agent</div>
@@ -208,6 +234,13 @@
   <p class="muted b" style="--d:19s; font-size:22px">Standardmodell Claude Haiku 5.5 über OpenRouter · Fortschritt per Server-Sent Events · ein Gesprächsthread pro Browser-Tab</p>
 </section>
 
+<section id="c06" class="code-slide">
+  <div class="kicker b">Im Code · Agent</div>
+  <h2 class="b" style="--d:.3s">Der Graph in LangGraph</h2>
+  <div class="panels" data-code="c06"></div>
+</section>
+
+
 <section id="t07">
   <div class="kicker b">Arbeitsteilung</div>
   <h2 class="b" style="--d:.3s">Das Modell entscheidet <span class="gold">was</span>, der Code <span class="gold">wie</span></h2>
@@ -216,7 +249,7 @@
       <li><code>set_mood_tags</code> Gewicht &amp; Modus</li>
       <li><code>set_filters</code> Laufzeit, Sprache, Jahre…</li>
       <li><code>search_plot</code> RAG über Plots</li>
-      <li><code>find_person</code> · <code>similar_to</code></li>
+      <li><code>find_title</code> · <code>find_person</code> · <code>similar_to</code></li>
       <li><code>check_streaming</code> · <code>film_facts</code></li>
       <li><code>propose_exclusions</code> nur Vorschlag</li>
       <li><code>show_on_stage</code> Übergabe an die Bühne</li></ul></div>
@@ -229,6 +262,13 @@
       <li>„kein Horror“ schließt auch das Genre aus</li></ul></div>
   </div>
 </section>
+
+<section id="c07" class="code-slide">
+  <div class="kicker b">Im Code · Tools</div>
+  <h2 class="b" style="--d:.3s">Ein Tool: find_title</h2>
+  <div class="panels" data-code="c07"></div>
+</section>
+
 
 <section id="t08">
   <div class="kicker b">Grounding</div>
@@ -245,6 +285,13 @@
   </div>
 </section>
 
+<section id="c08" class="code-slide">
+  <div class="kicker b">Im Code · Grounding</div>
+  <h2 class="b" style="--d:.3s">Der Grounding-Check</h2>
+  <div class="panels" data-code="c08"></div>
+</section>
+
+
 <section id="t09">
   <div class="kicker b">Ranking &amp; Personalisierung</div>
   <h2 class="b" style="--d:.3s">Sieben Signale, eines davon dein Geschmack</h2>
@@ -256,6 +303,13 @@
     <img class="shot b" style="--d:12s" src="out/shots/profile.jpg">
   </div>
 </section>
+
+<section id="c09" class="code-slide">
+  <div class="kicker b">Im Code · Ranking</div>
+  <h2 class="b" style="--d:.3s">Score und Geschmacksprofil</h2>
+  <div class="panels" data-code="c09"></div>
+</section>
+
 
 <section id="t10">
   <div class="kicker b">Evaluation</div>
@@ -297,7 +351,7 @@
     <div class="cards">
       <div class="card b" style="--d:3s"><h3>Kriterien &amp; Tools</h3><p>Die gesetzten Tags mit Gewicht und Modus, jeder Tool-Aufruf mit Argumenten und Rückgabe.</p></div>
       <div class="card b" style="--d:8s"><h3>Prompts &amp; Kosten</h3><p>Die tatsächlich gesendeten Prompts, Modell, Tokens, Kosten und Latenz des Turns.</p></div>
-      <div class="card b" style="--d:13s"><h3>Rangliste als Text</h3><p>Score, Begründung und Daten jedes Films, die Vorschläge der Antwort markiert.</p></div>
+      <div class="card b" style="--d:13s"><h3>Filme als Liste</h3><p>Titel mit Link zu IMDb, kurze Inhaltsangabe, Score und Begründung zum Aufklappen; die Vorschläge golden.</p></div>
     </div>
     <img class="shot b" style="--d:1.5s" src="out/shots/tech.jpg">
   </div>
@@ -335,6 +389,24 @@
 </section>
 
 <script>
+  // tech_demo.py fills the code slides with real excerpts; panel n builds in after n × 1.2 s
+  window.fillCode = (code) => {
+    for (const [key, panels] of Object.entries(code)) {
+      const box = document.querySelector(`[data-code="${key}"]`);
+      box.innerHTML = panels.map((html, n) => `<div class="panel b" style="--d:${1 + n * 1.2}s">${html}</div>`).join("");
+      // shrink the code until it fits the slide in height and width (measured while invisibly shown)
+      const sec = box.closest("section");
+      const wasOn = sec.classList.contains("on");
+      sec.classList.add("on");
+      sec.style.visibility = "hidden";
+      let fs = 22;
+      const fits = () => box.getBoundingClientRect().bottom <= 1030 && [...box.querySelectorAll("pre")].every((p) => p.scrollWidth <= p.clientWidth + 1);
+      box.style.setProperty("--fs", `${fs}px`);
+      while (fs > 14 && !fits()) box.style.setProperty("--fs", `${--fs}px`);
+      if (!wasOn) sec.classList.remove("on");
+      sec.style.visibility = "";
+    }
+  };
   const slides = [...document.querySelectorAll("section")];
   window.go = (id) => slides.forEach(s => s.classList.toggle("on", s.id === id));
   go(location.hash.slice(1) || "t01");

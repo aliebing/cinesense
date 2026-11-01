@@ -10,6 +10,7 @@ import argparse
 import asyncio
 from pathlib import Path
 
+from code_snippets import Snippet, render_slides
 from playwright.async_api import async_playwright
 from recorder import H, Screencast, Segment, W, narrate, render, synthesize
 
@@ -53,7 +54,15 @@ SEGMENTS = [
         "fünfzehnhundertsechsunddreißig Dimensionen und HNSW-Index in pgvector gespeichert. So findet eine "
         "beschriebene Handlung passende Filme, auch ohne Titel. Zweitens über gewichtete Stimmungs-Tags aus "
         "dem Tag Genome. Drittens tippfehler- und klangtolerant nach Titeln und Personen. Und viertens über "
-        "eine erweiterte Live-Suche für neuere Filme.",
+        "eine Live-Suche für Filme, die nicht im Katalog stehen, etwa neuere Filme oder Winnetou, der keine "
+        "Tag-Genome-Daten hat. Was sie findet, wird nachträglich in den Katalog übernommen.",
+    ),
+    Segment(
+        "c05",
+        "Hier die Plot-Suche im Code. Die Frage wird eingebettet, dann sucht Postgres mit dem Operator für den "
+        "Kosinus-Abstand über den HNSW-Index die nächsten Handlungsabschnitte. Den Suchumfang ef_search habe "
+        "ich von vierzig auf vierhundert erhöht, sonst bleiben zu wenige Filme übrig. Pro Film zählt nur der "
+        "beste Abschnitt, und genau der wird später als Begründung angezeigt.",
     ),
     Segment(
         "t06",
@@ -65,13 +74,28 @@ SEGMENTS = [
         "Der Fortschritt wird per Server-Sent Events ins Frontend gestreamt.",
     ),
     Segment(
+        "c06",
+        "So sieht der Graph im Code aus. Fünf Knoten: agent, tick als Rundenzähler, tools, present und explain."
+        " Nach dem Agenten entscheidet eine Routing-Funktion: weitere Tools, die Suche, oder bei einer "
+        "Rückfrage direkt das Ende. Der Checkpointer speichert den Gesprächsverlauf pro Thread, deshalb "
+        "versteht der Agent auch Folgefragen.",
+    ),
+    Segment(
         "t07",
         "Die Arbeitsteilung ist klar geregelt: Das Modell entscheidet, wonach gesucht wird. Es setzt "
-        "Stimmungs-Tags mit Gewicht und Modus, Filter wie Laufzeit oder Sprache, durchsucht Handlungen, findet "
-        "Personen oder ähnliche Filme und prüft Streaming und Fakten. Vage Abneigungen schlägt es nur als "
-        "Ausschluss vor, angewendet wird nichts heimlich. Alles, was reproduzierbar sein muss, ist "
+        "Stimmungs-Tags mit Gewicht und Modus, Filter wie Laufzeit oder Sprache, durchsucht Handlungen, sucht "
+        "Filme beim Namen, findet Personen oder ähnliche Filme und prüft Streaming und Fakten. Vage "
+        "Abneigungen schlägt es nur als Ausschluss vor, angewendet wird nichts heimlich. Alles, was "
+        "reproduzierbar sein muss, ist "
         "deterministischer Code: das Ranking, die harten Filter und die Zählung ausgeblendeter Filme, die "
         "finale Suche, die API-Budgets und der Grounding-Check.",
+    ),
+    Segment(
+        "c07",
+        "Ein Tool ist schlicht Python. find_title zum Beispiel lässt die echte Suche laufen. Findet der Katalog"
+        " keinen guten Treffer, sucht sie live weiter. Erst danach wird der Titel als Kriterium gesetzt. Zurück"
+        " ans Modell geht nur eine kurze Textzusammenfassung. Der Docstring unten ist genau die Beschreibung, "
+        "nach der das Modell entscheidet, wann es dieses Tool benutzt.",
     ),
     Segment(
         "t08",
@@ -82,6 +106,14 @@ SEGMENTS = [
         "Satz ab, wird sie durch eine Template-Antwort aus den echten Daten ersetzt.",
     ),
     Segment(
+        "c08",
+        "Und so prüft der Grounding-Check. Erlaubt sind die Titel aus den Suchergebnissen und Titel, die der "
+        "Nutzer selbst genannt hat. Jeder hervorgehobene Name in der Antwort, der wie ein Filmtitel aussieht "
+        "oder im Katalog steht, aber nicht erlaubt ist, landet in der Liste bad. Ist sie nicht leer, oder ist "
+        "die Antwort leer oder abgeschnitten, ersetzt eine Template-Antwort aus den echten Daten den Text des "
+        "Modells.",
+    ),
+    Segment(
         "t09",
         "Das Ranking kombiniert gewichtete Tag-Relevanz, die Ähnlichkeit der Handlung, Personen und "
         "eine Bayes'sche Bewertung, die wenig bewertete Filme dämpft. Schwach gewichtet zählen außerdem die "
@@ -90,6 +122,13 @@ SEGMENTS = [
         "dazu. Aus den Filmen mit Daumen hoch bildet CineSense den mittleren Tag-Genome-Vektor, minus den "
         "Katalog-Durchschnitt. Abgelehnte Filme zählen dagegen. Übrig bleiben die acht stärksten Tags. Das "
         "Signal hat nur das Gewicht 0,15, damit Stimmung, Handlung und Personen führend bleiben.",
+    ),
+    Segment(
+        "c09",
+        "Das Ranking im Code: Jedes aktive Signal wird auf null bis eins normiert und mit seinem Gewicht "
+        "multipliziert, dazu kommen Bayes-Rating, Bekanntheit und Neuheit. Geteilt durch die Summe der aktiven "
+        "Gewichte ergibt das den Match-Prozentwert. Darunter das Geschmacksprofil: Durchschnitt der gemochten "
+        "Filme minus Katalog-Durchschnitt, abgelehnte Filme ziehen ab, und die acht stärksten Tags bleiben.",
     ),
     Segment(
         "t10",
@@ -112,8 +151,9 @@ SEGMENTS = [
         "Für die Prüfung gibt es eine eigene, schlichte Seite: slash tech. Sie zeigt einen Agent-Turn ohne "
         "Bilder und Animationen. Links stehen die gesetzten Stimmungs-Tags mit Gewicht und Modus, jeder "
         "Tool-Aufruf mit seinen Argumenten und der Rückgabe an das Modell, die tatsächlich gesendeten Prompts "
-        "sowie Modell, Tokens, Kosten und Latenz. Rechts steht die Rangliste als Text, mit Score, Begründung "
-        "und Daten jedes Films. Die Vorschläge der Antwort sind markiert.",
+        "sowie Modell, Tokens, Kosten und Latenz. Rechts stehen die gefundenen Filme als einfache Liste: der "
+        "Titel als Link zur IMDb-Seite, eine kurze Inhaltsangabe, und Score, Begründung und Daten zum "
+        "Aufklappen. Die Vorschläge der Antwort sind golden markiert.",
     ),
     Segment(
         "t12",
@@ -132,6 +172,24 @@ SEGMENTS = [
         "einen Film zu finden, und lokale Kino-Spielzeiten. Danke fürs Zuschauen.",
     ),
 ]
+
+
+CODE = {  # code slide -> its panels, read from the repository at recording time
+    "c05": [Snippet("src/cinesense/providers/postgres.py", "PostgresProvider.semantic_search",
+                    mark=["ef_search", "<=>", "best[film_id]"])],
+    "c06": [Snippet("src/cinesense/agent/graph.py", start="g = StateGraph(AgentState)", end="return g.compile",
+                    mark=["add_conditional_edges", "checkpointer"])],
+    "c07": [Snippet("src/cinesense/agent/tools.py", "ToolKit.find_title", mark=["self.service.run", "model_copy"]),
+            Snippet("src/cinesense/agent/tools.py", "make_tools.find_title", mark=["@tool", '"""'])],
+    "c08": [Snippet("src/cinesense/agent/graph.py", start='allowed = [r["movie"]["title"]', end="grounding_fallback",
+                    mark=["validate_titles", "template_answer", "grounding_fallback"]),
+            Snippet("src/cinesense/agent/grounding.py", start="    bad: list[str] = []", end="return not bad, bad",
+                    mark=["bad.append"])],
+    "c09": [Snippet("src/cinesense/recommend/combined.py", start="    ranked = []", end="ranked.sort(",
+                    mark=["WEIGHTS[k] * v", "score = "]),
+            Snippet("src/cinesense/personal/profile.py", start="like_vec = avg(liked)", end="taste = {",
+                    mark=["lift = like_vec - mean", "lift -=", "TASTE_TAGS"])],
+}  # fmt: skip
 
 
 async def tech_shot(browser, base: str, out: Path) -> None:
@@ -159,6 +217,7 @@ async def main(out: Path, base: str) -> None:
         page = await browser.new_page(viewport={"width": W, "height": H})
         await page.goto(slides.as_uri())
         await page.wait_for_load_state("networkidle")
+        await page.evaluate("fillCode", render_slides(CODE))
         await page.wait_for_timeout(1500)
         rec = Screencast(page, work / "frames")
         await page.evaluate("go('none')")

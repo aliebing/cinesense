@@ -56,7 +56,7 @@ SEGMENTS = [
         "passen sich rechts die Filmreihen an: Die mittlere Reihe zeigt jetzt groß die genauesten Treffer und "
         "läuft nach rechts. Vorne stehen die Vorschläge aus dem Chat, golden hervorgehoben. Darüber "
         "und darunter laufen nach links passende Filme aus den Genres dieser Treffer, mit denselben Kriterien. "
-        "Fahre ich über eine Kachel, leuchtet sie golden und spielt den Trailer. Links siehst du, was "
+        "Fahre ich über eine Kachel, leuchtet sie golden, ein Klick holt den Film auf die Bühne. Links siehst du, was "
         "der Agent eingestellt hat: Jeder Stimmungs-Tag ist eine Karte mit Gewicht und Modus, also bevorzugen, muss "
         "oder ausschließen.",
     ),
