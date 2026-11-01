@@ -3,7 +3,7 @@
 Two narrated videos for the capstone review, both with a German synthetic voice (edge-tts, `de-DE-FlorianMultilingualNeural`):
 
 - `user_demo.py` records **how a user works with CineSense**. It is a real screen recording of the running app: chat → criteria chips → search → stage → 👍/👎 → taste profile. It writes `out/cinesense-bedienung.mp4`.
-- `tech_demo.py` explains **the AI parts** on animated slides (`slides.html`): data, RAG, the LangGraph agent, grounding, personalisation, evaluation, ethics. It writes `out/cinesense-technik.mp4`. It uses screenshots that `user_demo.py` saves to `out/shots/`, so run that first.
+- `tech_demo.py` explains **the AI parts** on animated slides (`slides.html`): data, RAG, the LangGraph agent, grounding, personalisation, evaluation, the technical view `/tech`, ethics. It writes `out/cinesense-technik.mp4`. It uses screenshots that `user_demo.py` saves to `out/shots/`, so run that first, and it screenshots `/tech` after one real agent turn of its own.
 
 `out/` is git-ignored.
 

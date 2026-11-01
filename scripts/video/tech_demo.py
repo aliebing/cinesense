@@ -1,7 +1,7 @@
 """Video 2: how CineSense's AI parts work (German voice-over over animated slides).
 
-Uses the screenshots that user_demo.py saves to out/shots/. Usage:
-    python scripts/video/tech_demo.py [--out scripts/video/out]
+Uses the screenshots that user_demo.py saves to out/shots/ and takes one of /tech from the running app. Usage:
+    python scripts/video/tech_demo.py [--out scripts/video/out] [--base http://localhost:3100]
 """
 
 from __future__ import annotations
@@ -108,6 +108,14 @@ SEGMENTS = [
         "Sekunden, und die komplette Evaluation hat etwa 22 Cent gekostet.",
     ),
     Segment(
+        "t11t",
+        "Für die Prüfung gibt es eine eigene, schlichte Seite: slash tech. Sie zeigt einen Agent-Turn ohne "
+        "Bilder und Animationen. Links stehen die gesetzten Stimmungs-Tags mit Gewicht und Modus, jeder "
+        "Tool-Aufruf mit seinen Argumenten und der Rückgabe an das Modell, die tatsächlich gesendeten Prompts "
+        "sowie Modell, Tokens, Kosten und Latenz. Rechts steht die Rangliste als Text, mit Score, Begründung "
+        "und Daten jedes Films. Die Vorschläge der Antwort sind markiert.",
+    ),
+    Segment(
         "t12",
         "Zur Ethik: Es gibt kein Konto und keine persönlichen Daten, nur eine zufällige ID im Browser, "
         "und das Profil ist mit einem Klick gelöscht. Jede Entscheidung der KI ist als Chip sichtbar und "
@@ -126,7 +134,19 @@ SEGMENTS = [
 ]
 
 
-async def main(out: Path) -> None:
+async def tech_shot(browser, base: str, out: Path) -> None:
+    """Screenshot of the technical view after one real agent turn (about $0.001), for slide t11t."""
+    page = await browser.new_page(viewport={"width": 1600, "height": 900})
+    await page.goto(f"{base}/tech")
+    await page.get_by_label("Message").fill("something funny or action, Marvel welcome, no horror")
+    await page.get_by_role("button", name="send").click()
+    await page.wait_for_selector(".is-pick", timeout=60_000)
+    (out / "shots").mkdir(parents=True, exist_ok=True)
+    await page.screenshot(path=str(out / "shots" / "tech.jpg"), quality=92, type="jpeg")
+    await page.close()
+
+
+async def main(out: Path, base: str) -> None:
     work = out / "work-tech"
     await synthesize(SEGMENTS, work / "voice")
     slides = (Path(__file__).parent / "slides.html").resolve()
@@ -135,6 +155,7 @@ async def main(out: Path) -> None:
 
     async with async_playwright() as p:
         browser = await p.chromium.launch()
+        await tech_shot(browser, base, out)
         page = await browser.new_page(viewport={"width": W, "height": H})
         await page.goto(slides.as_uri())
         await page.wait_for_load_state("networkidle")
@@ -155,4 +176,6 @@ async def main(out: Path) -> None:
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", type=Path, default=Path(__file__).parent / "out")
-    asyncio.run(main(ap.parse_args().out.resolve()))
+    ap.add_argument("--base", default="http://localhost:3100", help="running web app, for the /tech screenshot")
+    args = ap.parse_args()
+    asyncio.run(main(args.out.resolve(), args.base))
