@@ -32,3 +32,14 @@ it("visibleWorlds wraps around from the active world", () => {
   const ws = ["a", "b", "c", "d", "e", "f"].map((id) => ({ ...sampleWorlds[0], id }));
   expect(visibleWorlds(4, ws).map((w) => w.id)).toEqual(["e", "f", "a", "b"]);
 });
+
+it("never starts a trailer on the home tiles, however long the pointer rests", async () => {
+  vi.useFakeTimers({ shouldAdvanceTime: true });
+  const movies = sampleMovies(2).map((m) => ({ ...m, youtube_key: "abc123" }));
+  render(<TileRows rows={[{ world: sampleWorlds[0], movies }]} onSelect={() => {}} variedSpeed={false} />);
+  await userEvent.hover(screen.getAllByRole("button", { name: "Demo-Film 01" })[0]);
+  await vi.advanceTimersByTimeAsync(2000);
+  expect(screen.queryByTestId("hover-trailer")).toBeNull();
+  expect(document.querySelector("iframe")).toBeNull();
+  vi.useRealTimers();
+});

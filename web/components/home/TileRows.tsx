@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import HoverTrailer from "@/components/media/HoverTrailer";
 import { useActiveTrailer } from "@/lib/useActiveTrailer";
 import { useReducedMotion } from "@/lib/useReducedMotion";
 import type { MoodWorld, Movie, TileRow } from "@/lib/types";
@@ -77,7 +76,8 @@ function TileImage({ movie }: { movie: Movie }) {
   return <img className="img-cover" src={src} alt="" draggable={false} onError={() => setFailed(true)} />;
 }
 
-/** One row per mood world; neighbouring rows run in opposite directions in seamless loops (spec §4). */
+/** One row per mood world; neighbouring rows run in opposite directions in seamless loops (spec §4).
+ *  No hover trailers here: the home tiles only open the film; trailers play on the genre page and under chat picks. */
 export default function TileRows({ rows, onSelect, variedSpeed, worldOrder = [] }: Props) {
   // state per world (not per row slot): rows reorder when the hero world changes and must not jump
   const rowEls = useRef(new Map<string, HTMLDivElement>());
@@ -161,11 +161,7 @@ export default function TileRows({ rows, onSelect, variedSpeed, worldOrder = [] 
             }}
           >
             {[...movies, ...movies].map((m, i) => (
-              <HoverTrailer
-                key={`${m.id}-${i}`}
-                movie={m}
-                className={`tile-wrap${featured.includes(m.id) ? " tile-wrap--featured" : ""}`}
-              >
+              <div key={`${m.id}-${i}`} className={`tile-wrap${featured.includes(m.id) ? " tile-wrap--featured" : ""}`}>
                 <button
                   type="button"
                   className="tile"
@@ -176,7 +172,7 @@ export default function TileRows({ rows, onSelect, variedSpeed, worldOrder = [] 
                 >
                   <TileImage movie={m} />
                 </button>
-              </HoverTrailer>
+              </div>
             ))}
           </div>
           </div>
