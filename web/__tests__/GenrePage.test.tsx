@@ -145,3 +145,27 @@ it("opened from the search, the row holds the other matches of the whole search 
   expect(within(crumbs).getByRole("link", { name: "Search" })).toHaveAttribute("href", "/results"); // back to the overview
   setSearchState(emptyCriteria());
 });
+
+it("a title search that finds only the film on stage falls back to its related films", async () => {
+  const { setSearchState, emptyCriteria } = await import("@/lib/searchState");
+  setSearchState({ ...emptyCriteria(), title: "Demo-Film 01" });
+  const only = sampleRanked(1);
+  api.discover.mockResolvedValue({ ok: true, data: { items: only, total: 1, hidden_by_exclusion: 0, extended_used: false } });
+  render(<GenreView worldId="action" filmId={null} />);
+  await screen.findByRole("heading", { name: "Demo-Film 01" });
+  await waitFor(() => expect(api.getRelated).toHaveBeenCalledWith("demo-01", "action"));
+  expect(await screen.findAllByRole("button", { name: /Demo-Film 0[234]/ })).not.toHaveLength(0);
+  setSearchState(emptyCriteria());
+});
+
+it("opened from a search with no other matches, the row shows the related films under the usual label", async () => {
+  const { setSearchState, emptyCriteria } = await import("@/lib/searchState");
+  setSearchState({ ...emptyCriteria(), title: "Demo-Film 01" });
+  const only = sampleRanked(1);
+  api.getMovie.mockResolvedValue({ ok: true, data: only[0].movie });
+  api.search.mockResolvedValue({ ok: true, data: { items: only, total: 1, hidden_by_exclusion: 0, extended_used: false } });
+  render(<GenreView worldId="action" filmId={only[0].movie.id} fromSearch />);
+  await waitFor(() => expect(api.getRelated).toHaveBeenCalled());
+  await waitFor(() => expect(screen.queryByRole("region", { name: "Your other matches" })).toBeNull());
+  setSearchState(emptyCriteria());
+});

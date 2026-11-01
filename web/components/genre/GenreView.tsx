@@ -47,6 +47,7 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
   const [criteria, setCriteria] = useSearchState();
   const [tags, setTags] = useState<Tag[]>([]);
   const [hidden, setHidden] = useState(0);
+  const [rowFromSearch, setRowFromSearch] = useState(fromSearch);
   const criteriaKey = JSON.stringify(criteria);
 
   const [profile, setProfile] = useState<ProfileSummary | null>(null);
@@ -88,29 +89,40 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
     if (!stageId) return;
     let cancelled = false;
     const active = JSON.parse(criteriaKey);
+    // the stage film's own neighbours: also the fallback when a search leaves nothing else to show
+    // (a title search finds just the film on stage, and the row would stay empty)
+    const loadRelated = () =>
+      getRelated(stageId, worldId).then((r) => {
+        if (cancelled) return;
+        setRelated(r.ok ? r.data : []);
+        setRowFromSearch(false);
+        setHidden(0);
+      });
+    const others = (items: RankedMovie[]) => items.some((x) => x.movie.id !== stageId);
     const t = setTimeout(() => {
       if (fromSearch && hasAnyCriteria(active)) {
         search(active, 0, 48).then((r) => {
           if (cancelled) return;
           const items = r.ok ? r.data.items : [];
-          setRelated(items);
-          setHidden(r.ok ? r.data.hidden_by_exclusion : 0);
           const onStage = items.find((x) => x.movie.id === stageId);
           if (onStage) setStageReasons((s) => s ?? { id: onStage.movie.id, reasons: onStage.reasons });
+          if (!others(items)) return loadRelated();
+          setRelated(items);
+          setRowFromSearch(true);
+          setHidden(r.ok ? r.data.hidden_by_exclusion : 0);
         });
       } else if (hasAnyCriteria(active)) {
         // the chip bar re-ranks the row within this world
         discover({ ...active, world_id: worldId }, 0, 24).then((r) => {
           if (cancelled) return;
-          setRelated(r.ok ? r.data.items : []);
+          const items = r.ok ? r.data.items : [];
+          if (!others(items)) return loadRelated();
+          setRelated(items);
+          setRowFromSearch(false);
           setHidden(r.ok ? r.data.hidden_by_exclusion : 0);
         });
       } else {
-        getRelated(stageId, worldId).then((r) => {
-          if (cancelled) return;
-          setRelated(r.ok ? r.data : []);
-          setHidden(0);
-        });
+        loadRelated();
       }
     }, 300);
     return () => {
@@ -184,7 +196,7 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
           <div className="side-settings side-settings--genre">
             <SearchChips tags={tags} criteria={criteria} onChange={setCriteria} hiddenCount={hidden} />
           </div>
-          {fromSearch ? (
+          {fromSearch && rowFromSearch ? (
             <RelatedRow
               items={related.filter((r) => r.movie.id !== movie.id)}
               onSelect={select}
