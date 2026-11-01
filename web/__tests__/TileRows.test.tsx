@@ -43,3 +43,55 @@ it("never starts a trailer on the home tiles, however long the pointer rests", a
   expect(document.querySelector("iframe")).toBeNull();
   vi.useRealTimers();
 });
+
+it("measures each row's loop length once, not on every frame (a layout read per frame made typing lag)", () => {
+  const frames: FrameRequestCallback[] = [];
+  vi.spyOn(window, "requestAnimationFrame").mockImplementation((cb) => {
+    frames.push(cb);
+    return frames.length;
+  });
+  vi.spyOn(window, "cancelAnimationFrame").mockImplementation(() => {});
+  const reads = vi
+    .spyOn(HTMLElement.prototype, "offsetLeft", "get")
+    .mockImplementation(function (this: HTMLElement) {
+      return Array.from(this.parentElement?.children ?? []).indexOf(this) * 100;
+    });
+  render(<TileRows rows={rows} onSelect={() => {}} variedSpeed={false} />);
+  const run = (n: number) => {
+    for (let i = 0; i < n; i++) frames.shift()?.(performance.now() + i * 16);
+  };
+  run(2);
+  const afterFirst = reads.mock.calls.length;
+  run(30);
+  expect(reads.mock.calls.length).toBe(afterFirst);
+  vi.restoreAllMocks();
+});
+
+it("stands still at once while the visitor types in the chat and moves again afterwards", async () => {
+  const { noteTyping, stopTyping } = await import("@/lib/typingPause");
+  const frames: FrameRequestCallback[] = [];
+  vi.spyOn(window, "requestAnimationFrame").mockImplementation((cb) => {
+    frames.push(cb);
+    return frames.length;
+  });
+  vi.spyOn(window, "cancelAnimationFrame").mockImplementation(() => {});
+  vi.spyOn(HTMLElement.prototype, "offsetLeft", "get").mockImplementation(function (this: HTMLElement) {
+    return Array.from(this.parentElement?.children ?? []).indexOf(this) * 100;
+  });
+  render(<TileRows rows={rows} onSelect={() => {}} variedSpeed={false} />);
+  let t = 0;
+  const run = (n: number) => {
+    for (let i = 0; i < n; i++) frames.shift()?.((t += 16));
+  };
+  const row = screen.getAllByTestId("tile-row")[0];
+  run(5);
+  noteTyping();
+  run(1);
+  const held = row.style.transform;
+  run(20);
+  expect(row.style.transform).toBe(held);
+  stopTyping();
+  run(20);
+  expect(row.style.transform).not.toBe(held);
+  vi.restoreAllMocks();
+});

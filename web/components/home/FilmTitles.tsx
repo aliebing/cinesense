@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { isTyping } from "@/lib/typingPause";
 import { useReducedMotion } from "@/lib/useReducedMotion";
 
 const INTERVAL_MS = 3700;
@@ -18,6 +19,7 @@ export default function FilmTitles({ titles }: { titles: string[] }) {
     if (reduced || titles.length === 0) return;
     const timeouts: ReturnType<typeof setTimeout>[] = [];
     const spawn = () => {
+      if (isTyping()) return; // no new title while the visitor types in the chat
       const n = counter.current++;
       const item: Shown = { key: n, text: titles[n % titles.length], slot: n % 2 === 0 ? "upper" : "lower" };
       setShown((prev) => [...prev, item]);

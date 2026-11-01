@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useActiveTrailer } from "@/lib/useActiveTrailer";
+import { isTyping } from "@/lib/typingPause";
 import { useReducedMotion } from "@/lib/useReducedMotion";
 import type { MoodWorld, Movie, TileRow } from "@/lib/types";
 
@@ -12,7 +13,7 @@ const VARIED_SPEEDS = [34, 52, 28];
 const POINTING_FACTOR = 0.45; // pointer over the rows: slower, so a tile is easy to catch
 const TRAILER_FACTOR = 0.06; // a trailer plays: the rows crawl on, the tile stays under the pointer
 
-/** Speed factor the rows ease towards; never zero, the rows always keep moving. */
+/** Speed factor the rows ease towards; never zero, the rows keep moving (they only stand while the chat is typed in). */
 export function targetFactor(pointing: boolean, trailer: boolean): number {
   return trailer ? TRAILER_FACTOR : pointing ? POINTING_FACTOR : 1;
 }
@@ -91,6 +92,9 @@ export default function TileRows({ rows, onSelect, variedSpeed, worldOrder = [] 
   const orderRef = useRef<string[]>([]);
   const featuredKeys = useRef(new Map<string, string>());
   const toAlign = useRef(new Set<string>()); // rows whose new chat picks must be brought into view
+  // loop length per row, measured once and again only when the row resizes: reading layout on every frame
+  // forced a full page layout each frame and made typing in the chat lag
+  const periods = useRef(new Map<string, number>());
   useEffect(() => {
     slowRef.current = activeId !== null; // a playing trailer must not slide away from under the pointer
     variedRef.current = variedSpeed;
@@ -108,6 +112,18 @@ export default function TileRows({ rows, onSelect, variedSpeed, worldOrder = [] 
   }, [rows, worldOrder]);
 
   useEffect(() => {
+    // tiles change size with the stage (cqw) or when the row's films change: measure the loop length again
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        for (const [id, el] of rowEls.current) if (el === entry.target) periods.current.delete(id);
+      }
+    });
+    rowEls.current.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, [rows]);
+
+  useEffect(() => {
     if (reduced) return;
     let frame = 0;
     let last = performance.now();
@@ -115,15 +131,25 @@ export default function TileRows({ rows, onSelect, variedSpeed, worldOrder = [] 
     const step = (now: number) => {
       const dt = Math.min(now - last, 64); // a background tab must not teleport the rows
       last = now;
+      if (isTyping()) {
+        // stop at once (no easing): any moving pixel delays the keystrokes; on resume the rows ease back up from 0
+        factor = 0;
+        frame = requestAnimationFrame(step);
+        return;
+      }
       factor = easeSpeed(factor, targetFactor(pointingRef.current, slowRef.current), dt);
       orderRef.current.forEach((id, i) => {
         const el = rowEls.current.get(id);
         if (!el) return;
-        const n = el.children.length / 2;
-        const first = el.children[0] as HTMLElement | undefined;
-        const second = el.children[n] as HTMLElement | undefined;
-        // distance from the first tile to the first tile of the duplicate set = exact loop length
-        const period = first && second ? second.offsetLeft - first.offsetLeft : 0;
+        let period = periods.current.get(id) ?? 0;
+        if (period <= 0) {
+          const n = el.children.length / 2;
+          const first = el.children[0] as HTMLElement | undefined;
+          const second = el.children[n] as HTMLElement | undefined;
+          // distance from the first tile to the first tile of the duplicate set = exact loop length
+          period = first && second ? second.offsetLeft - first.offsetLeft : 0;
+          if (period > 0) periods.current.set(id, period);
+        }
         if (toAlign.current.has(id) && period > 0) {
           offsets.current.set(id, featuredStart(el.parentElement?.clientWidth ?? 0, period, FEATURED_AT));
           toAlign.current.delete(id);
@@ -158,6 +184,7 @@ export default function TileRows({ rows, onSelect, variedSpeed, worldOrder = [] 
             ref={(el) => {
               if (el) rowEls.current.set(world.id, el);
               else rowEls.current.delete(world.id);
+              periods.current.delete(world.id); // new or changed row: measure again
             }}
           >
             {[...movies, ...movies].map((m, i) => (

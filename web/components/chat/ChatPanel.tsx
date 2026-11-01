@@ -15,6 +15,7 @@ import {
   useChatStatus,
 } from "@/lib/chat";
 import { useSearchState, withNoHorror } from "@/lib/searchState";
+import { noteTyping, stopTyping } from "@/lib/typingPause";
 import type { Movie } from "@/lib/types";
 
 /** Chat window. Live mode talks to the agent; its criteria land in the shared search state (the chips),
@@ -36,6 +37,7 @@ export default function ChatPanel({ mode, horrorIdx = null }: { mode: "static" |
   const send = async () => {
     const text = draft.trim();
     if (!text || busy) return;
+    stopTyping();
     setDraft("");
     setEntries([...getChatLog(), { role: "user", text }]);
     setChatStatus("Thinking…");
@@ -151,7 +153,11 @@ export default function ChatPanel({ mode, horrorIdx = null }: { mode: "static" |
           disabled={!live}
           maxLength={1000}
           value={draft}
-          onChange={(e) => setDraft(e.target.value)}
+          onChange={(e) => {
+            noteTyping(); // hold the page's motion while typing, so every keystroke shows at once
+            setDraft(e.target.value);
+          }}
+          onBlur={stopTyping}
         />
         <button type="submit" aria-label="Send" disabled={!live || busy}>
           ➤

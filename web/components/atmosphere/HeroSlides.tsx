@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { isTyping } from "@/lib/typingPause";
 import { useReducedMotion } from "@/lib/useReducedMotion";
 import type { MoodWorld } from "@/lib/types";
 
@@ -20,7 +21,9 @@ export default function HeroSlides({ worlds, images, activeIndex, onAdvance, pau
 
   useEffect(() => {
     if (reduced || paused || worlds.length < 2) return;
-    const id = setInterval(onAdvance, ADVANCE_MS);
+    const id = setInterval(() => {
+      if (!isTyping()) onAdvance(); // no cross-fade while the visitor types in the chat
+    }, ADVANCE_MS);
     return () => clearInterval(id);
   }, [reduced, paused, worlds.length, onAdvance]);
 

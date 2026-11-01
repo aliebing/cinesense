@@ -155,3 +155,11 @@ it("appends the reply to the latest log instead of an old snapshot", async () =>
   expect(await screen.findByText("Here are dark picks.")).toBeInTheDocument();
   expect(screen.getByText("note added meanwhile")).toBeInTheDocument();
 });
+
+it("typing in the chat pauses the page's motion; leaving the field resumes it", async () => {
+  render(<ChatPanel mode="live" />);
+  await userEvent.type(screen.getByRole("textbox", { name: "Message CineSense" }), "funny");
+  expect(document.documentElement.hasAttribute("data-typing")).toBe(true);
+  await userEvent.tab();
+  expect(document.documentElement.hasAttribute("data-typing")).toBe(false);
+});

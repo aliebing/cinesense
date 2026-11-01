@@ -90,6 +90,8 @@
 }
 @keyframes spotSway { from { transform: rotate(-3deg); } to { transform: rotate(3.5deg); } }
 @media (prefers-reduced-motion: reduce) { .spot { animation: none; } }
+/* while the visitor types in the chat (lib/typingPause.ts) the stage holds still, so every keystroke shows at once */
+:root[data-typing] :is(.fog i, .spot, .hero-img, .film-title) { animation-play-state: paused; }
 
 /* ---------- tile rows ---------- */
 .tile-rows { display: flex; flex-direction: column; gap: .6cqw; overflow-x: clip; overflow-y: visible; } /* a hovered tile may grow over the rows */

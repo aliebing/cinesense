@@ -60,3 +60,4 @@ it("new chat picks start in view: the first tile lands at the given share of the
   expect(period + offset).toBeCloseTo(315); // 45 % of a 700 px viewport
   expect(advance(offset, 0, period)).toBe(offset); // already wrapped
 });
+
