@@ -47,7 +47,7 @@ class SearchCriteria(BaseModel):
     def has_text_signal(self) -> bool:
         return bool(self.plot_query or self.title or self.person)
 
-    def with_no_horror(self, horror_idx: int) -> "SearchCriteria":
+    def with_no_horror(self, horror_idx: int, weight: int = 5) -> "SearchCriteria":
         genres = self.exclude_genres if "Horror" in self.exclude_genres else [*self.exclude_genres, "Horror"]
-        tags = [t for t in self.tags if t.idx != horror_idx] + [TagCriterion(idx=horror_idx, mode="not")]
+        tags = [t for t in self.tags if t.idx != horror_idx] + [TagCriterion(idx=horror_idx, weight=weight, mode="not")]
         return self.model_copy(update={"exclude_genres": genres, "tags": tags})

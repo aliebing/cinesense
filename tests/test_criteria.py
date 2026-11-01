@@ -31,3 +31,4 @@ def test_with_no_horror_adds_genre_and_tag():
     assert "Horror" in c.exclude_genres
     assert c.not_tags() == [7]
     assert c.with_no_horror(horror_idx=7).not_tags() == [7]  # idempotent
+    assert c.with_no_horror(horror_idx=7, weight=9).tags[0].weight == 9

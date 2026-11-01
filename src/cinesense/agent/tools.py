@@ -66,8 +66,10 @@ class ToolKit:
             current = [t for t in current if t["idx"] != idx] + [{"idx": idx, "weight": spec.weight, "mode": spec.mode}]
             added.append(f"{tag} ({spec.mode}, {spec.weight})")
         c = SearchCriteria(**{**c.model_dump(), "tags": current[-12:]})
-        if any(t == "horror" and s.mode == "not" for s, (t, _) in zip(specs_ok, resolved, strict=True)):
-            c = c.with_no_horror(next(i for t, i in resolved if t == "horror"))  # same as the chip: tag + genre
+        no_horror = [(s, i) for s, (t, i) in zip(specs_ok, resolved, strict=True) if t == "horror" and s.mode == "not"]
+        if no_horror:  # same as the chip: tag + genre
+            spec, idx = no_horror[0]
+            c = c.with_no_horror(idx, spec.weight)
         msg = f"Mood tags now: {', '.join(added) or 'unchanged'}."
         if unresolved:
             msg += f" Not found as tags: {', '.join(unresolved)} — use plot search for those."

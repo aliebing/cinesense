@@ -83,6 +83,11 @@ def test_not_horror_also_excludes_the_genre(kit):
     assert upd["criteria"]["exclude_genres"] == ["Horror"]
 
 
+def test_not_horror_keeps_the_weight_it_reports(kit):
+    upd, msg = kit.set_mood_tags(state(), [{"name": "horror", "mode": "not", "weight": 9}])
+    assert [t["weight"] for t in upd["criteria"]["tags"]] == [9] and "horror (not, 9)" in msg
+
+
 def test_find_person_without_matches_changes_nothing(kit):
     upd, msg = kit.find_person(state(), "Zzyzx Qwertyuiop")
     assert upd == {} and "not found" in msg.lower()

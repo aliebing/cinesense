@@ -41,6 +41,8 @@ it("shows the reply, criteria, tools, cost and the films as plain text", async (
   expect(screen.getByText("1200")).toBeInTheDocument();
   expect(screen.getByText(/Deadpool/).closest("li")).toHaveClass("is-pick");
   expect(screen.getByText(/Kick-Ass/).closest("li")).not.toHaveClass("is-pick");
+  expect(screen.getByText("directed by Tim Miller · with Ryan Reynolds")).toBeInTheDocument();
+  expect(screen.queryByText(/with \?|directed by \?/)).toBeNull(); // Kick-Ass has no credits: no line
   expect(document.querySelector("img, iframe, video")).toBeNull();
   expect(inspectTurn.mock.calls[0][1]).toBe("something funny");
 });

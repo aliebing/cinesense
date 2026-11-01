@@ -2,10 +2,20 @@
 
 import Link from "next/link";
 import { useRef, useState } from "react";
-import { inspectTurn, type InspectResult } from "@/lib/api";
+import { type InspectFilm, inspectTurn, type InspectResult } from "@/lib/api";
 import { type Criteria, emptyCriteria } from "@/lib/searchState";
 import { randomId } from "@/lib/user";
 import "./tech.css";
+
+/** "directed by … · with …", leaving out what the catalogue doesn't know. */
+function credits(f: InspectFilm): string {
+  return [
+    f.directors.length ? `directed by ${f.directors.join(", ")}` : "",
+    f.cast.length ? `with ${f.cast.slice(0, 4).join(", ")}` : "",
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
 
 /** Technical review page: one plain view of what the agent did — reply, criteria, tools, prompts, tokens, cost —
  *  and the ranked films as text. No pictures, trailers or animation. Its own conversation, separate from the app. */
@@ -134,9 +144,7 @@ export default function TechPage() {
                     {f.runtime_min ? ` · ${f.runtime_min} min` : ""}
                     {f.ml_rating ? ` · MovieLens ${f.ml_rating.toFixed(2)} (${f.ml_rating_count} ratings)` : ""}
                   </div>
-                  <div>
-                    directed by {f.directors.join(", ") || "?"} · with {f.cast.slice(0, 4).join(", ") || "?"}
-                  </div>
+                  {credits(f) && <div>{credits(f)}</div>}
                   {f.overview && <div className="tech-plot">{f.overview}</div>}
                 </li>
               ))}
