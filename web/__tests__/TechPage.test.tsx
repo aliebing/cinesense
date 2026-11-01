@@ -46,3 +46,27 @@ it("shows the reply, criteria, tools, cost and the films as plain text", async (
   expect(document.querySelector("img, iframe, video")).toBeNull();
   expect(inspectTurn.mock.calls[0][1]).toBe("something funny");
 });
+
+it("lists the films simply: a linked title and a short description; the numbers fold away", async () => {
+  const long = "A mercenary with a twisted sense of humour hunts the man who nearly destroyed his life, ".repeat(4).trim();
+  inspectTurn.mockResolvedValue({
+    ok: true,
+    data: {
+      reply: "r", picks: 1,
+      results: [
+        { id: "ml-1", title: "Deadpool", year: 2016, match_percent: 94, score: 0.94, reasons: ["funny 98%"], genres: ["Action"], worlds: ["comedy"], directors: [], cast: [], runtime_min: null, ml_rating: null, ml_rating_count: null, overview: long },
+      ],
+      criteria: { tags: [] }, criteria_summary: "", tags: [], proposals: [], tools: [], prompts: {},
+      model: "m", usage: {}, cost_usd: 0, latency_s: 1, rounds: 1, grounding_fallback: false, grounding_reason: [],
+    },
+  });
+  render(<TechPage />);
+  await userEvent.type(screen.getByLabelText("Message"), "x");
+  await userEvent.click(screen.getByRole("button", { name: "send" }));
+  const link = await screen.findByRole("link", { name: "Deadpool (2016)" });
+  expect(link).toHaveAttribute("href", "/world/comedy?film=ml-1");
+  const short = screen.getByTestId("tech-short");
+  expect(short.textContent!.length).toBeLessThanOrEqual(181);
+  expect(short.textContent!.endsWith("…")).toBe(true);
+  expect(screen.getByText(/94% match/).closest("details")).not.toBeNull();
+});

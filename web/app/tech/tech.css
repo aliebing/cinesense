@@ -12,7 +12,10 @@
 .tech td { padding: 2px 12px 2px 0; vertical-align: top; }
 .tech ol { margin: 0; padding-left: 20px; }
 .tech li { margin-bottom: 12px; }
-.tech-right li.is-pick strong { color: #f3c76b; }
+.tech .tech-film { font-weight: 600; font-size: 15px; color: #eee; }
+.tech-right li.is-pick .tech-film { color: #f3c76b; }
+.tech-film-details { margin-top: 2px; color: #888; font-size: 12px; }
+.tech-film-details summary { cursor: pointer; }
 .tech-plot { color: #999; font-size: 13px; }
 .tech-result { color: #9fc9a0; }
 .tech-error, .tech-note { color: #ff8a80; }

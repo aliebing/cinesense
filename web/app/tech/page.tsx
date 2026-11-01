@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRef, useState } from "react";
 import { type InspectFilm, inspectTurn, type InspectResult } from "@/lib/api";
 import { type Criteria, emptyCriteria } from "@/lib/searchState";
+import { shorten } from "@/lib/text";
 import { randomId } from "@/lib/user";
 import "./tech.css";
 
@@ -129,23 +130,32 @@ export default function TechPage() {
             </details>
           </section>
           <section className="tech-right" aria-label="Films">
-            <h2>Ranked films ({turn.results.length}; the first {turn.picks} are the reply&apos;s picks)</h2>
+            <h2>Films ({turn.results.length}; the first {turn.picks} are the reply&apos;s picks) · click a title for its page</h2>
             <ol>
               {turn.results.map((f, i) => (
                 <li key={f.id} className={i < turn.picks ? "is-pick" : ""}>
-                  <strong>
+                  <Link href={`/world/${f.worlds[0] ?? "suspense"}?film=${f.id}`} className="tech-film">
                     {f.title}
                     {f.year ? ` (${f.year})` : ""}
-                  </strong>{" "}
-                  — {f.match_percent}% match, score {f.score?.toFixed(3)}
-                  <div>why: {f.reasons.join(" · ") || "—"}</div>
-                  <div>
-                    {f.genres.join(", ")} · worlds: {f.worlds.join(", ")}
-                    {f.runtime_min ? ` · ${f.runtime_min} min` : ""}
-                    {f.ml_rating ? ` · MovieLens ${f.ml_rating.toFixed(2)} (${f.ml_rating_count} ratings)` : ""}
-                  </div>
-                  {credits(f) && <div>{credits(f)}</div>}
-                  {f.overview && <div className="tech-plot">{f.overview}</div>}
+                  </Link>
+                  {f.overview && (
+                    <div className="tech-plot" data-testid="tech-short">
+                      {shorten(f.overview)}
+                    </div>
+                  )}
+                  <details className="tech-film-details">
+                    <summary>details</summary>
+                    <div>
+                      {f.match_percent}% match, score {f.score?.toFixed(3)}
+                    </div>
+                    <div>why: {f.reasons.join(" · ") || "—"}</div>
+                    <div>
+                      {f.genres.join(", ")} · worlds: {f.worlds.join(", ")}
+                      {f.runtime_min ? ` · ${f.runtime_min} min` : ""}
+                      {f.ml_rating ? ` · MovieLens ${f.ml_rating.toFixed(2)} (${f.ml_rating_count} ratings)` : ""}
+                    </div>
+                    {credits(f) && <div>{credits(f)}</div>}
+                  </details>
                 </li>
               ))}
             </ol>
