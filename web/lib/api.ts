@@ -64,6 +64,7 @@ export const reportTrailer = (videoId: string) => apiPost<null>("/api/trailers/r
 /** One agent turn with everything behind it, for the technical review page (/tech). */
 export type InspectFilm = {
   id: string;
+  imdb_id?: string | null;
   title: string;
   year: number | null;
   match_percent: number | null;

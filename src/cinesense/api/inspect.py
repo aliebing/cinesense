@@ -20,6 +20,7 @@ def _film(r: dict) -> dict:
     m = r["movie"]
     return {
         "id": m["id"],
+        "imdb_id": m.get("imdb_id"),
         "title": m["title"],
         "year": m.get("year"),
         "match_percent": r.get("match_percent"),

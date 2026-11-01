@@ -54,6 +54,8 @@ def test_inspect_returns_the_whole_turn_as_text():
     assert d["tags"][0]["tag"] and d["tags"][0]["weight"] == 7
     assert "criteria_summary" in d and d["usage"]["input_tokens"] == 1_000_000
     assert d["cost_usd"] >= 0 and d["latency_s"] >= 0 and d["model"]
+    film = FixtureProvider().list_movies()[0]
+    assert d["results"][0]["imdb_id"] == film.imdb_id  # the reviewer's list links each title to IMDb
 
 
 def test_inspect_without_an_llm_key_says_so():

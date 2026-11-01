@@ -130,14 +130,21 @@ export default function TechPage() {
             </details>
           </section>
           <section className="tech-right" aria-label="Films">
-            <h2>Films ({turn.results.length}; the first {turn.picks} are the reply&apos;s picks) · click a title for its page</h2>
+            <h2>Films ({turn.results.length}; the first {turn.picks} are the reply&apos;s picks) · click a title for its IMDb page</h2>
             <ol>
               {turn.results.map((f, i) => (
                 <li key={f.id} className={i < turn.picks ? "is-pick" : ""}>
-                  <Link href={`/world/${f.worlds[0] ?? "suspense"}?film=${f.id}`} className="tech-film">
-                    {f.title}
-                    {f.year ? ` (${f.year})` : ""}
-                  </Link>
+                  {f.imdb_id ? (
+                    <a href={`https://www.imdb.com/de/title/${f.imdb_id}/`} target="_blank" rel="noreferrer" className="tech-film">
+                      {f.title}
+                      {f.year ? ` (${f.year})` : ""}
+                    </a>
+                  ) : (
+                    <Link href={`/world/${f.worlds[0] ?? "suspense"}?film=${f.id}`} className="tech-film">
+                      {f.title}
+                      {f.year ? ` (${f.year})` : ""}
+                    </Link>
+                  )}
                   {f.overview && (
                     <div className="tech-plot" data-testid="tech-short">
                       {shorten(f.overview)}

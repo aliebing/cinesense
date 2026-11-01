@@ -64,9 +64,29 @@ it("lists the films simply: a linked title and a short description; the numbers 
   await userEvent.type(screen.getByLabelText("Message"), "x");
   await userEvent.click(screen.getByRole("button", { name: "send" }));
   const link = await screen.findByRole("link", { name: "Deadpool (2016)" });
-  expect(link).toHaveAttribute("href", "/world/comedy?film=ml-1");
+  expect(link).toHaveAttribute("href", "/world/comedy?film=ml-1"); // no IMDb id: our own film page
   const short = screen.getByTestId("tech-short");
   expect(short.textContent!.length).toBeLessThanOrEqual(181);
   expect(short.textContent!.endsWith("…")).toBe(true);
   expect(screen.getByText(/94% match/).closest("details")).not.toBeNull();
+});
+
+it("links a title to its German IMDb page when the IMDb id is known", async () => {
+  inspectTurn.mockResolvedValue({
+    ok: true,
+    data: {
+      reply: "r", picks: 1,
+      results: [
+        { id: "ml-139385", imdb_id: "tt1663202", title: "The Revenant", year: 2015, match_percent: 90, score: 0.9, reasons: [], genres: [], worlds: ["suspense"], directors: [], cast: [], runtime_min: null, ml_rating: null, ml_rating_count: null, overview: null },
+      ],
+      criteria: { tags: [] }, criteria_summary: "", tags: [], proposals: [], tools: [], prompts: {},
+      model: "m", usage: {}, cost_usd: 0, latency_s: 1, rounds: 1, grounding_fallback: false, grounding_reason: [],
+    },
+  });
+  render(<TechPage />);
+  await userEvent.type(screen.getByLabelText("Message"), "x");
+  await userEvent.click(screen.getByRole("button", { name: "send" }));
+  const link = await screen.findByRole("link", { name: "The Revenant (2015)" });
+  expect(link).toHaveAttribute("href", "https://www.imdb.com/de/title/tt1663202/");
+  expect(link).toHaveAttribute("target", "_blank");
 });
