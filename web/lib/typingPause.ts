@@ -2,7 +2,7 @@
 // any moving pixel makes the browser redraw the stage, and on a busy stage every keystroke then appeared ~0.1 s late.
 // Marked on <html data-typing> so CSS can pause animations; the tile rows ask isTyping() each frame.
 
-const RESUME_MS = 1500;
+const RESUME_MS = 4000; // long enough that a pause to think does not restart the stage (each restart costs the next keystroke)
 let timer: ReturnType<typeof setTimeout> | null = null;
 
 function mark(on: boolean) {
@@ -13,7 +13,7 @@ export function isTyping(): boolean {
   return timer !== null;
 }
 
-/** A keystroke: pause now, resume 1.5 s after the last one. */
+/** Focus or a keystroke: pause now, resume 4 s after the last one. */
 export function noteTyping() {
   if (timer) clearTimeout(timer);
   timer = setTimeout(stopTyping, RESUME_MS);

@@ -157,6 +157,7 @@ export default function ChatPanel({ mode, horrorIdx = null }: { mode: "static" |
             noteTyping(); // hold the page's motion while typing, so every keystroke shows at once
             setDraft(e.target.value);
           }}
+          onFocus={noteTyping} // stop the stage on the click into the field, so the first letter already meets a still page
           onBlur={stopTyping}
         />
         <button type="submit" aria-label="Send" disabled={!live || busy}>

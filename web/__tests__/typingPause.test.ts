@@ -6,16 +6,16 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-it("a keystroke pauses the motion until 1.5 s after the last one", () => {
+it("a keystroke pauses the motion until 4 s after the last one", () => {
   vi.useFakeTimers();
   noteTyping();
   expect(isTyping()).toBe(true);
   expect(document.documentElement.hasAttribute("data-typing")).toBe(true);
-  vi.advanceTimersByTime(1000);
+  vi.advanceTimersByTime(3000);
   noteTyping(); // still typing: the pause is extended
-  vi.advanceTimersByTime(1000);
-  expect(isTyping()).toBe(true);
-  vi.advanceTimersByTime(600);
+  vi.advanceTimersByTime(3900);
+  expect(isTyping()).toBe(true); // a short pause to think does not restart the stage
+  vi.advanceTimersByTime(200);
   expect(isTyping()).toBe(false);
   expect(document.documentElement.hasAttribute("data-typing")).toBe(false);
 });

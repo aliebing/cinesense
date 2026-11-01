@@ -163,3 +163,10 @@ it("typing in the chat pauses the page's motion; leaving the field resumes it", 
   await userEvent.tab();
   expect(document.documentElement.hasAttribute("data-typing")).toBe(false);
 });
+
+it("clicking into the chat field already pauses the motion, before the first letter", async () => {
+  render(<ChatPanel mode="live" />);
+  await userEvent.click(screen.getByRole("textbox", { name: "Message CineSense" }));
+  expect(document.documentElement.hasAttribute("data-typing")).toBe(true);
+  await userEvent.tab();
+});

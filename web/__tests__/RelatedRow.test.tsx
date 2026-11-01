@@ -63,3 +63,32 @@ it("a card that changes width never moves the card under the pointer: the row of
   expect(anchored(-500, 900, 900)).toBe(-500); // nothing moved
   expect(anchored(-500, null, 740)).toBe(-500); // a new card under the pointer: nothing to compare yet
 });
+
+it("holds still while the visitor types in the chat drawer", async () => {
+  const { noteTyping, stopTyping } = await import("@/lib/typingPause");
+  const frames: FrameRequestCallback[] = [];
+  vi.spyOn(window, "requestAnimationFrame").mockImplementation((cb) => {
+    frames.push(cb);
+    return frames.length;
+  });
+  vi.spyOn(window, "cancelAnimationFrame").mockImplementation(() => {});
+  vi.spyOn(HTMLElement.prototype, "offsetLeft", "get").mockImplementation(function (this: HTMLElement) {
+    return Array.from(this.parentElement?.children ?? []).indexOf(this) * 100;
+  });
+  const { container } = render(<RelatedRow items={sampleRanked(14)} onSelect={() => {}} />);
+  const track = container.querySelector(".related-track") as HTMLElement;
+  let t = 0;
+  const run = (n: number) => {
+    for (let i = 0; i < n; i++) frames.shift()?.((t += 16));
+  };
+  run(30);
+  noteTyping();
+  run(1);
+  const held = track.style.transform;
+  run(30);
+  expect(track.style.transform).toBe(held);
+  stopTyping();
+  run(30);
+  expect(track.style.transform).not.toBe(held);
+  vi.restoreAllMocks();
+});

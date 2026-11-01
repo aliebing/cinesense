@@ -2,6 +2,7 @@
 
 import { type ReactNode, useEffect, useRef } from "react";
 import { advance, easeTowards } from "@/components/home/TileRows";
+import { isTyping } from "@/lib/typingPause";
 import HoverTrailer from "@/components/media/HoverTrailer";
 import ImageOrPlaceholder from "@/components/ui/ImageOrPlaceholder";
 import { useActiveTrailer } from "@/lib/useActiveTrailer";
@@ -71,7 +72,9 @@ export default function RelatedRow({
       const dt = Math.min(now - last, 64); // a background tab must not teleport the row
       last = now;
       const el = track.current;
-      if (el) {
+      if (isTyping()) {
+        speed = 0; // hold still while the visitor types in the chat drawer; ease back up afterwards
+      } else if (el) {
         const n = el.children.length / 2;
         const first = el.children[0] as HTMLElement | undefined;
         const second = el.children[n] as HTMLElement | undefined;
