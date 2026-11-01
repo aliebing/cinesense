@@ -103,10 +103,10 @@ def create_app(load_env: bool = True) -> FastAPI:
         for r in res.items[: IMAGE_FILL if req.fill_images else 0]:
             _with_images(r.movie, provider, streaming)
         if res.extended_used and tasks is not None:
-            from cinesense.ingest.pipeline import enrich_new_films
+            from cinesense.api.deps import enrich_live_imports
 
             new_ids = [r.movie.id for r in res.items if r.movie.id.startswith(("wd-", "imdb-"))]
-            tasks.add_task(enrich_new_films, new_ids)
+            tasks.add_task(enrich_live_imports, new_ids, provider)
         return DiscoverResponse(
             items=res.items,
             total=res.total,

@@ -149,9 +149,14 @@ def build_graph(llm, explain_llm, tools: list, service, provider, checkpointer):
         wish = _last_human(state["messages"])
         if not results:
             return {"messages": [AIMessage(template_answer([]))]}
+
+        def german(m: dict) -> str:  # German users may know a film only by its German title ("Winnetou 1. Teil")
+            de = m.get("title_de")
+            return f" [German title: {de}]" if de and de != m["title"] else ""
+
         listing = "\n".join(
-            f"- {r['movie']['title']} ({r['movie'].get('year')}): {'; '.join(r.get('reasons', []))}. "
-            f"Plot: {(r['movie'].get('overview') or '')[:220]}"
+            f"- {r['movie']['title']}{german(r['movie'])} ({r['movie'].get('year')}): "
+            f"{'; '.join(r.get('reasons', []))}. Plot: {(r['movie'].get('overview') or '')[:220]}"
             for r in results
         )
         prompt = (
@@ -170,6 +175,7 @@ def build_graph(llm, explain_llm, tools: list, service, provider, checkpointer):
             text = ""
         titles = catalogue_titles()
         allowed = [r["movie"]["title"] for r in results] + user_named_titles(wish, titles)
+        allowed += [r["movie"]["title_de"] for r in results if r["movie"].get("title_de")]
         names = provider.list_tags()
         tag_spans = [names[t["idx"]] for t in (state.get("criteria") or {}).get("tags", []) if t["idx"] < len(names)]
         tag_spans += [p["tag"] for p in state.get("proposals") or []]

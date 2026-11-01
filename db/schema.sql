@@ -72,6 +72,8 @@ alter table films add column if not exists plot_checked_at timestamptz;
 -- position in the Wikipedia lead's cast list (1 = top billed, 0 = not named there, null = unknown)
 alter table film_people add column if not exists billing smallint;
 alter table films add column if not exists billing_checked_at timestamptz;
+alter table films add column if not exists title_de text;
+create index if not exists films_title_de_trgm on films using gin (cs_norm(title_de) gin_trgm_ops);
 
 -- 👍/👎 per anonymous browser id (random UUID; no personal data)
 create table if not exists feedback (

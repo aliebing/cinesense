@@ -141,3 +141,13 @@ def test_a_live_hit_never_lowers_a_better_catalogue_title_match():
     sig = Signals(title={film.id: 1.0})
     service._live(SearchCriteria(title=film.title), sig)
     assert sig.title[film.id] == 1.0
+
+
+def test_the_search_reports_films_it_imported_live():
+    p = FixtureProvider()
+    imported = []
+    service = SearchService(p, None, None, StubLive(), on_import=imported.extend)
+    service.run(SearchCriteria(title="Winnetou"), 0, 5)
+    assert imported == ["imdb-tt0057687"]
+    service.run(SearchCriteria(title="Winnetou"), 0, 5)
+    assert imported == ["imdb-tt0057687"]  # already in the catalogue: not reported again

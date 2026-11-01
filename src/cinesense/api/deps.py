@@ -63,12 +63,32 @@ def get_trailers():
     return YouTubeTrailerClient(s.youtube_api_key, store, daily_limit=s.youtube_daily_limit)
 
 
+def enrich_live_imports(ids: list[str], provider) -> None:
+    """Films imported live get their German title, Wikipedia plot and embeddings; then the catalogue cache is
+    reloaded so the next search sees them."""
+    from cinesense.ingest.pipeline import enrich_new_films
+
+    enrich_new_films(ids)
+    if hasattr(provider, "refresh"):
+        provider.refresh()
+
+
 def agent_search_service():
     """The agent's search, the same as the results page's: titles outside the catalogue (e.g. "Winnetou") are
-    looked up live (1 Streaming Availability call per new title, cached a day) and imported lazily."""
+    looked up live (1 Streaming Availability call per new title, cached a day), imported lazily and enriched in a
+    background thread, so the reply doesn't wait."""
+    import threading
+
     from cinesense.search.service import SearchService
 
-    return SearchService(get_provider(), get_streaming(), get_embedder(), get_live())
+    provider = get_provider()
+
+    def on_import(ids: list[str]) -> None:
+        threading.Thread(
+            target=enrich_live_imports, args=(ids, provider), name="enrich-live-imports", daemon=True
+        ).start()
+
+    return SearchService(provider, get_streaming(), get_embedder(), get_live(), on_import=on_import)
 
 
 @lru_cache

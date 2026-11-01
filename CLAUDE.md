@@ -43,6 +43,8 @@ uv run pytest -m db                       # tests against the Supabase catalogue
 make db-init                              # create/upgrade the cinesense schema
 MOVIELENS_DB_PATH=/home/ali/projects/turing/moviefinder/db/moviedoc.db make ingest  # resumable full ingest
 uv run --env-file .env python -m cinesense.ingest.billing  # cast billing from Wikipedia leads (resumable)
+uv run --env-file .env python -m cinesense.ingest.pipeline --no-films --no-plots --german-titles  # German titles from Wikidata
+uv run --env-file .env python -m cinesense.ingest.pipeline --no-films --no-plots --enrich-live    # Wikidata + plots for live imports
 ```
 
 ## Services (`.env`, see `.env.example`)

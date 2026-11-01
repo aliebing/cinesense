@@ -30,6 +30,7 @@ class Availability(BaseModel):
 class Movie(BaseModel):
     id: str
     title: str
+    title_de: str | None = None  # German title from Wikidata (live imports), searchable and shown on the stage
     kind: Literal["film", "documentary"] = "film"
     year: int | None = None
     runtime_min: int | None = None

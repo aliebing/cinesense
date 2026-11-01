@@ -169,3 +169,34 @@ def test_a_well_known_classic_beats_an_unknown_new_film(make_movie):
     unknown = make_movie(id="unknown", year=2021, ml_rating=None, ml_rating_count=0)
     res = combined_rank([unknown, classic], SearchCriteria(), Signals(), offset=0, limit=2)
     assert [r.movie.id for r in res.items] == ["classic", "unknown"]
+
+
+def test_a_title_search_gives_no_bonus_for_newer_films(make_movie):
+    old = make_movie(id="old", year=1963, ml_rating=None, ml_rating_count=0)
+    new = make_movie(id="new", year=2016, ml_rating=None, ml_rating_count=0)
+    sig = Signals(title={"old": 0.9, "new": 0.88})
+    res = combined_rank([new, old], SearchCriteria(title="Winnetou"), sig)
+    assert [r.movie.id for r in res.items] == ["old", "new"]  # the closer title wins, not the newer film
+
+
+def test_a_title_search_drops_sound_alikes_when_titles_contain_the_query(make_movie):
+    from cinesense.search.service import SearchService
+
+    class Prov(FakeProvider):
+        def search_title(self, q, limit=200):
+            return {"winnetou1": 0.9, "winwin": 0.6, "wind": 0.6}
+
+    movies = [make_movie(id=i, title=i) for i in ("winnetou1", "winwin", "wind")]
+    res = SearchService(Prov(movies)).run(SearchCriteria(title="Winnetou"), 0, 20)
+    assert [r.movie.id for r in res.items] == ["winnetou1"]
+
+
+def test_a_title_search_keeps_sound_alikes_when_nothing_better_matches(make_movie):
+    from cinesense.search.service import SearchService
+
+    class Prov(FakeProvider):
+        def search_title(self, q, limit=200):
+            return {"incep": 0.6}
+
+    res = SearchService(Prov([make_movie(id="incep", title="Inception")])).run(SearchCriteria(title="Incepshun"), 0, 20)
+    assert [r.movie.id for r in res.items] == ["incep"]  # a typo still finds the film

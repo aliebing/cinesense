@@ -271,6 +271,7 @@
   background: #0d0d14c4; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: 0 20px 50px #000a;
 }
 .stage-info h2 { margin: .15em 0 .25em; font-size: 1.7em; line-height: 1.15; text-wrap: balance; }
+.stage-title-de { margin: -.15em 0 .35em; color: var(--muted, #a29f99); font-style: italic; }
 .stage-meta { margin: 0 0 .6em; opacity: .85; font-size: .9em; }
 .stage-tags { display: flex; flex-wrap: wrap; gap: .4em; }
 .stage-tags span { font-size: .8em; padding: .25em .7em; border-radius: 999px; border: 1px solid #ffffff40; }

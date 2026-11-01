@@ -68,3 +68,9 @@ def test_title_search_ranks_titles_containing_the_query_above_sound_alikes(provi
     assert s["ml-2571"] >= 0.85  # "The Matrix" contains the query
     sound_alikes = [v for k, v in provider.search_title("Revenant").items() if k not in ("ml-139385", "ml-91947")]
     assert all(v < provider.search_title("Revenant")["ml-139385"] for v in sound_alikes)
+
+
+def test_title_search_matches_the_german_title_of_live_imports(provider):
+    """Needs the Winnetou backfill (python -m cinesense.ingest.pipeline --no-films --no-plots --enrich-live)."""
+    assert provider.search_title("Winnetou").get("imdb-tt0057687", 0) >= 0.85  # Apache Gold = Winnetou 1. Teil
+    assert provider.get_movie("imdb-tt0057687").title_de

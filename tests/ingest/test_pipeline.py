@@ -3,7 +3,7 @@ from datetime import date
 import numpy as np
 
 from cinesense.ingest.movielens import MovieLensFilm
-from cinesense.ingest.pipeline import film_row, people_rows
+from cinesense.ingest.pipeline import FILM_COLUMNS, film_row, people_rows
 from cinesense.ingest.wikidata import WikidataFilm
 
 
@@ -20,6 +20,7 @@ def test_film_row_from_sources():
         original_language="en",
         release_date_de=date(2014, 11, 6),
         wikipedia_title="Interstellar (film)",
+        title_de="Interstellar (Film)",
         directors=["Christopher Nolan"],
         cast=[f"Actor {i}" for i in range(8)],
     )
@@ -30,6 +31,7 @@ def test_film_row_from_sources():
     assert row["cast_top"] == [f"Actor {i}" for i in range(5)]
     assert row["imdb_id"] == "tt0816692" and row["release_date_de"] == date(2014, 11, 6)
     assert row["tag_vector"].shape == (1128,)
+    assert row["title_de"] == "Interstellar (Film)" and "title_de" in FILM_COLUMNS
 
 
 def test_people_rows_cast_and_directors():
@@ -118,3 +120,82 @@ def test_ingest_plots_limits_to_given_ids():
     asyncio.run(ingest_plots(Conn(), None, None, ids=["wd-Q1", "imdb-tt2"]))
     assert "id = any(%s)" in seen["sql"]
     assert seen["params"] == (["wd-Q1", "imdb-tt2"],)
+
+
+def test_link_wikidata_fills_german_title_article_and_trailer_of_live_imports(monkeypatch):
+    import asyncio
+
+    from cinesense.ingest import pipeline
+    from cinesense.ingest.wikidata import WikidataFilm
+
+    async def fake_fetch(imdb_ids, client):
+        assert imdb_ids == ["tt0057687"]
+        return {
+            "tt0057687": WikidataFilm(
+                movielens_id=None, wikidata_id="Q571904", imdb_id="tt0057687", title_de="Winnetou 1. Teil",
+                wikipedia_title="Apache Gold", youtube_key="abc123", original_language="de",
+            )
+        }  # fmt: skip
+
+    monkeypatch.setattr(pipeline, "fetch_by_imdb", fake_fetch)
+    executed = []
+
+    class Conn:
+        def execute(self, sql, params=()):
+            executed.append((sql, params))
+
+            class R:
+                def fetchall(self):
+                    return [("imdb-tt0057687", "tt0057687")]
+
+            return R()
+
+        def commit(self):
+            executed.append(("commit", ()))
+
+    linked = asyncio.run(pipeline.link_wikidata(Conn(), ["imdb-tt0057687"]))
+    assert linked == 1
+    update = next(p for sql, p in executed if sql.startswith("update films"))
+    assert {"Q571904", "Winnetou 1. Teil", "Apache Gold", "abc123", "de", "imdb-tt0057687"} <= set(update)
+    assert executed[-1][0] == "commit"
+
+
+def test_backfill_german_titles_fills_only_missing_ones(monkeypatch):
+    import asyncio
+
+    from cinesense.ingest import pipeline
+
+    async def fake(qids, client):
+        assert qids == ["Q1", "Q2"]
+        return {"Q1": "Der Schuh des Manitu"}  # Q2 has no German label
+
+    monkeypatch.setattr(pipeline, "fetch_german_titles", fake)
+    executed = []
+
+    class Conn:
+        def execute(self, sql, params=()):
+            class R:
+                def fetchall(self):
+                    return [("ml-173627", "Q1"), ("ml-2", "Q2")]
+
+            return R()
+
+        def cursor(self):
+            class C:
+                def __enter__(self):
+                    return self
+
+                def __exit__(self, *a):
+                    return False
+
+                def executemany(self, sql, rows):
+                    executed.append((sql, rows))
+
+            return C()
+
+        def commit(self):
+            pass
+
+    assert asyncio.run(pipeline.backfill_german_titles(Conn())) == 1
+    sql, rows = executed[0]
+    assert "title_de is null" in sql and rows == [("Der Schuh des Manitu", "ml-173627")]

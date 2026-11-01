@@ -26,7 +26,7 @@ from cinesense.ingest.movielens import (
     read_films,
     read_genome_tags,
 )
-from cinesense.ingest.wikidata import WikidataFilm, fetch_wikidata
+from cinesense.ingest.wikidata import WikidataFilm, fetch_by_imdb, fetch_german_titles, fetch_wikidata
 from cinesense.ingest.wikipedia import chunk_text, fetch_plot
 from cinesense.ingest.worlds_map import assign_worlds, top_tags
 
@@ -39,6 +39,7 @@ FILM_COLUMNS = [
     "imdb_id",
     "kind",
     "title",
+    "title_de",
     "year",
     "runtime_min",
     "original_language",
@@ -66,6 +67,7 @@ def film_row(ml: MovieLensFilm, wd: WikidataFilm, tags: list[str]) -> dict:
         "imdb_id": wd.imdb_id,
         "kind": kind,
         "title": ml.title,
+        "title_de": wd.title_de,
         "year": ml.year,
         "runtime_min": wd.runtime_min,
         "original_language": wd.original_language,
@@ -246,6 +248,8 @@ def main() -> None:
     parser.add_argument("--no-plots", action="store_true")
     parser.add_argument("--limit", type=int, default=None, help="only the N most-rated genome films (test runs)")
     parser.add_argument("--plots", type=int, default=None, help="only N plots this run")
+    parser.add_argument("--enrich-live", action="store_true", help="link live imports to Wikidata, load their plots")
+    parser.add_argument("--german-titles", action="store_true", help="German titles from Wikidata for the catalogue")
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     load_env_file()
@@ -255,6 +259,11 @@ def main() -> None:
     if args.init_schema:
         init_schema(s.database_url)
         log.info("Schema ready")
+    if args.enrich_live:
+        enrich_new_films(None)
+    if args.german_titles:
+        with connect(s.database_url) as conn:
+            asyncio.run(backfill_german_titles(conn))
     with connect(s.database_url) as conn:
         if not args.no_films:
             if not s.movielens_db_path:
@@ -267,16 +276,70 @@ def main() -> None:
                 log.info("Embedding usage: %d tokens, $%.4f", embedder.total_tokens, embedder.total_cost)
 
 
-if __name__ == "__main__":
-    main()
+async def backfill_german_titles(conn) -> int:
+    """German titles from Wikidata for every film that has a Wikidata id but no German title yet (one-off; new
+    catalogue ingests fetch them directly)."""
+    todo = conn.execute(
+        "select id, wikidata_id from films where title_de is null and wikidata_id is not null"
+    ).fetchall()
+    async with httpx.AsyncClient() as client:
+        found = await fetch_german_titles([q for _, q in todo], client)
+    rows = [(found[q], film_id) for film_id, q in todo if q in found]
+    with conn.cursor() as cur:
+        cur.executemany("update films set title_de = %s where id = %s and title_de is null", rows)
+    conn.commit()
+    log.info("German titles: %d of %d films", len(rows), len(todo))
+    return len(rows)
 
 
-def enrich_new_films(ids: list[str]) -> None:
-    """Background task for lazily imported films: plots, chunks and embeddings."""
+async def link_wikidata(conn, ids: list[str] | None = None) -> int:
+    """Films imported live carry only an IMDb id. Look them up in Wikidata for the German title (searchable),
+    the English Wikipedia article (for the plot), the official trailer and the original language.
+    `ids=None`: every live import not linked yet (the one-off backfill)."""
+    where = "id like 'imdb-%%' and wikidata_id is null and imdb_id is not null"
+    params: tuple = ()
+    if ids is not None:
+        where += " and id = any(%s)"
+        params = (ids,)
+    todo = dict(conn.execute(f"select id, imdb_id from films where {where}", params).fetchall())
+    if not todo:
+        return 0
+    async with httpx.AsyncClient() as client:
+        found = await fetch_by_imdb(list(todo.values()), client)
+    linked = 0
+    for film_id, imdb in todo.items():
+        wd = found.get(imdb)
+        if wd is None:
+            continue
+        # wikidata_id is unique: an item the catalogue already holds (as ml-…) is left on that film
+        conn.execute(
+            "update films set wikidata_id = case when exists (select 1 from films f where f.wikidata_id = %s) "
+            "then wikidata_id else %s end, title_de = coalesce(title_de, %s), "
+            "wikipedia_title = coalesce(wikipedia_title, %s), youtube_key = coalesce(youtube_key, %s), "
+            "original_language = coalesce(original_language, %s) where id = %s",
+            (wd.wikidata_id, wd.wikidata_id, wd.title_de, wd.wikipedia_title, wd.youtube_key,
+             wd.original_language, film_id),
+        )  # fmt: skip
+        linked += 1
+    conn.commit()
+    log.info("Linked %d of %d live imports to Wikidata", linked, len(todo))
+    return linked
+
+
+def enrich_new_films(ids: list[str] | None) -> None:
+    """Background task for lazily imported films: Wikidata link (German title, Wikipedia article, trailer), then
+    plots, chunks and embeddings. `ids=None` enriches every live import not linked yet."""
     load_env_file()
     s = get_settings()
-    if not s.database_url or not ids:
+    if not s.database_url or ids == []:
         return
     embedder = EmbeddingClient(s.openrouter_api_key) if s.openrouter_api_key else None
     with connect(s.database_url) as conn:
+        asyncio.run(link_wikidata(conn, ids))
+        if ids is None:  # the films the backfill just linked
+            ids = [r[0] for r in conn.execute("select id from films where id like 'imdb-%%'").fetchall()]
         asyncio.run(ingest_plots(conn, embedder, None, ids=ids))
+
+
+if __name__ == "__main__":
+    main()

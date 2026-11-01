@@ -86,11 +86,12 @@ class FixtureProvider:
     def search_title(self, q: str, limit: int = 200) -> dict[str, float]:
         out = {}
         for m in self._movies:
-            s = difflib.SequenceMatcher(None, q.lower(), m.title.lower()).ratio()
-            if q.lower() in m.title.lower():
-                out[m.id] = max(s, 0.85)  # contains the query: as the Postgres search
-            elif s >= 0.6:
-                out[m.id] = max(s, 0.5)
+            for title in filter(None, (m.title, m.title_de)):  # the German title counts as well
+                s = difflib.SequenceMatcher(None, q.lower(), title.lower()).ratio()
+                if q.lower() in title.lower():
+                    out[m.id] = max(out.get(m.id, 0), s, 0.85 + 0.1 * s)  # contains the query: as in Postgres
+                elif s >= 0.6:
+                    out[m.id] = max(out.get(m.id, 0), s, 0.5)
         return dict(sorted(out.items(), key=lambda x: x[1], reverse=True)[:limit])
 
     def search_person(self, q: str, role: str = "any", limit: int = 400):

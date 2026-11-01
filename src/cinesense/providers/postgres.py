@@ -11,7 +11,7 @@ from cinesense.domain.models import Availability, Movie
 
 IN_CINEMA_DAYS = 56
 _FIELDS = (
-    "id, title, kind, year, runtime_min, original_language, genres, world_ids, top_tags, overview, "
+    "id, title, title_de, kind, year, runtime_min, original_language, genres, world_ids, top_tags, overview, "
     "directors, cast_top, movielens_id, imdb_id, wikidata_id, wikipedia_title, release_date_de, poster_url, "
     "horizontal_poster_url, backdrop_url, youtube_key, ml_rating, ml_rating_count"
 )
@@ -165,16 +165,28 @@ class PostgresProvider:
 
     # --- title / people (typo, accent and sound-alike tolerant) ----------
     def search_title(self, q: str, limit: int = 200) -> dict[str, float]:
-        sounds = (  # an input without letters sounds like nothing and must not match every such title
-            "(metaphone(cs_norm(%(q)s), 24) <> '' and metaphone(cs_norm(title), 24) = metaphone(cs_norm(%(q)s), 24))"
-        )
+        def sounds(col: str) -> str:  # an input without letters sounds like nothing and must not match every title
+            q_sound = "metaphone(cs_norm(%(q)s), 24)"
+            return f"({q_sound} <> '' and metaphone(cs_norm({col}), 24) = {q_sound})"
+
+        def contains(col: str) -> str:
+            return f"cs_norm({col}) like '%%' || cs_norm(%(ql)s) || '%%' escape '\\'"
+
+        def score(col: str) -> str:
+            # a title that contains the query beats one that sounds alike; the closer one ranks higher
+            sim = f"similarity(cs_norm({col}), cs_norm(%(q)s))"
+            return (
+                f"greatest({sim}, case when {sounds(col)} then 0.6 else 0 end, "
+                f"case when {contains(col)} then 0.85 + 0.1 * {sim} else 0 end)"
+            )
+
+        def matches(col: str) -> str:
+            return f"(cs_norm({col}) %% cs_norm(%(q)s) or {sounds(col)} or {contains(col)})"
+
+        # the German title (live imports, from Wikidata) counts as well: "Winnetou" finds "Apache Gold"
         sql = (
-            "select id, greatest(similarity(cs_norm(title), cs_norm(%(q)s)), "
-            f"case when {sounds} then 0.6 else 0 end, "
-            # a title that contains the query ("The Matrix", "Winnetou - A New World") beats one that only sounds alike
-            "case when cs_norm(title) like '%%' || cs_norm(%(ql)s) || '%%' escape '\\' then 0.85 else 0 end) as s "
-            f"from films where cs_norm(title) %% cs_norm(%(q)s) or {sounds} "
-            "or cs_norm(title) like '%%' || cs_norm(%(ql)s) || '%%' escape '\\' "
+            f"select id, greatest({score('title')}, coalesce({score('title_de')}, 0)) as s from films "
+            f"where {matches('title')} or (title_de is not null and {matches('title_de')}) "
             "order by s desc, ml_rating_count desc limit %(limit)s"
         )
         with self._conn() as c:
@@ -207,6 +219,11 @@ class PostgresProvider:
                 names[film_id] = name
         return scores, names
 
+    def refresh(self) -> None:
+        """Reload the catalogue on the next access (films were enriched in the background)."""
+        with self._lock:
+            self._movies = None
+
     # --- lazy import of live search hits ----------------------------------
     def upsert_live(self, movies: list[Movie]) -> None:
         rows = [
@@ -216,6 +233,7 @@ class PostgresProvider:
                 m.imdb_id,
                 m.kind,
                 m.title,
+                m.title_de,
                 m.year,
                 m.runtime_min,
                 m.genres,
@@ -234,10 +252,10 @@ class PostgresProvider:
         with self._conn() as c:
             with c.cursor() as cur:
                 cur.executemany(
-                    "insert into films (id, wikidata_id, imdb_id, kind, title, year, runtime_min, genres, "
+                    "insert into films (id, wikidata_id, imdb_id, kind, title, title_de, year, runtime_min, genres, "
                     "directors, cast_top, world_ids, youtube_key, wikipedia_title, overview, poster_url, "
                     "horizontal_poster_url, backdrop_url) values "
-                    "(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) "
+                    "(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) "
                     "on conflict do nothing",
                     rows,
                 )

@@ -11,11 +11,12 @@ STREAM_CHECK_LIMIT = 30  # streaming lookups per search (free plan budget)
 
 
 class SearchService:
-    def __init__(self, provider, streaming=None, embedder=None, live=None) -> None:
+    def __init__(self, provider, streaming=None, embedder=None, live=None, on_import=None) -> None:
         self.provider = provider
         self.streaming = streaming
         self.embedder = embedder
         self.live = live
+        self.on_import = on_import  # called with the ids of films just imported live (to enrich them)
 
     def _embed(self, text: str) -> list[float] | None:
         if self.embedder is None:
@@ -67,8 +68,13 @@ class SearchService:
                 imdb_known = {m.imdb_id for m in p.list_movies() if m.imdb_id}
                 fresh = [m for m in live_hits if m.id not in known and m.imdb_id not in imdb_known]
                 if fresh and hasattr(p, "upsert_live"):
-                    p.upsert_live(fresh)  # lazy import; plots/embeddings follow in the background
+                    p.upsert_live(fresh)  # lazy import; German title, plots and embeddings follow in the background
+                    if self.on_import is not None:
+                        self.on_import([m.id for m in fresh])
                 movies += fresh
+        if c.title and sig.title:
+            sig.title = _without_sound_alikes(sig.title)
+            movies = [m for m in movies if m.id in sig.title]
         result = combined_rank(movies, c, sig, hidden_by_tags=hidden, offset=0, limit=len(movies) or 1)
 
         # a stream filter may drop films that turn out not to stream: rank a few spare ones to fill the page
@@ -123,6 +129,17 @@ class SearchService:
 
 
 _taste_cache: dict[tuple, dict[str, float] | None] = {}
+
+
+STRONG_TITLE, WEAK_TITLE = 0.8, 0.7
+
+
+def _without_sound_alikes(scores: dict[str, float]) -> dict[str, float]:
+    """When some titles really match ("Winnetou 1. Teil" contains "Winnetou"), titles that only sound alike
+    ("Win Win", "Wind") are noise. Without a strong match they stay: a typo must still find the film."""
+    if max(scores.values()) < STRONG_TITLE:
+        return scores
+    return {k: v for k, v in scores.items() if v >= WEAK_TITLE}
 
 
 def _taste_scores(provider, profile) -> dict[str, float] | None:

@@ -178,6 +178,7 @@ export default function StagePanel({ movie, world, why, feedback = 0, onFeedback
       <div className="stage-info">
         <div className="stage-kicker">{movie.genres.join(" · ") || world.title}</div>
         <h2>{movie.title}</h2>
+        {movie.title_de && movie.title_de !== movie.title && <p className="stage-title-de">{movie.title_de}</p>}
         <p className="stage-meta">{metaLine(movie)}</p>
         {people.length > 0 && <p className="stage-people">{people.join(" · ")}</p>}
         <Overview key={movie.id} text={movie.overview} />

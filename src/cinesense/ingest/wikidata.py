@@ -1,4 +1,5 @@
-"""Wikidata (CC0) enrichment by MovieLens id (P14449): ids, trailer, runtime, language, people, DE release."""
+"""Wikidata (CC0) enrichment by MovieLens id (P14449): ids, trailer, runtime, language, people, DE release.
+Films imported live (no MovieLens id) are looked up by IMDb id (P345) instead: German title, Wikipedia article."""
 
 import asyncio
 from dataclasses import dataclass, field
@@ -20,6 +21,23 @@ SELECT ?ml ?film ?imdb ?yt ?runtime ?lang ?deDate ?enwiki WHERE {
   OPTIONAL { ?film wdt:P2047 ?runtime }
   OPTIONAL { ?film wdt:P364 ?l . ?l wdt:P218 ?lang }
   OPTIONAL { ?film p:P577 ?st . ?st ps:P577 ?deDate ; pq:P291 wd:Q183 }
+  OPTIONAL { ?enwiki schema:about ?film ; schema:isPartOf <https://en.wikipedia.org/> }
+  OPTIONAL { ?film rdfs:label ?deLabel FILTER(LANG(?deLabel) = "de") }
+}"""
+
+_GERMAN = """
+SELECT ?film ?deLabel WHERE {
+  VALUES ?film { %s }
+  ?film rdfs:label ?deLabel FILTER(LANG(?deLabel) = "de")
+}"""
+
+_BY_IMDB = """
+SELECT ?imdb ?film ?deLabel ?yt ?lang ?enwiki WHERE {
+  VALUES ?imdb { %s }
+  ?film wdt:P345 ?imdb .
+  OPTIONAL { ?film rdfs:label ?deLabel FILTER(LANG(?deLabel) = "de") }
+  OPTIONAL { ?film wdt:P1651 ?yt }
+  OPTIONAL { ?film wdt:P364 ?l . ?l wdt:P218 ?lang }
   OPTIONAL { ?enwiki schema:about ?film ; schema:isPartOf <https://en.wikipedia.org/> }
 }"""
 
@@ -45,6 +63,7 @@ class WikidataFilm:
     release_date_de: date | None = None
     wikipedia_title: str | None = None
     title: str | None = None
+    title_de: str | None = None
     year: int | None = None
     directors: list[str] = field(default_factory=list)
     cast: list[str] = field(default_factory=list)
@@ -95,6 +114,8 @@ def fold_bindings(rows: list[dict], key: str = "ml") -> dict:
             f.release_date_de = min(f.release_date_de, pd) if f.release_date_de else pd
         if yt := _v(row, "yt"):
             trailers.setdefault(k, set()).add(yt)
+        f.imdb_id = f.imdb_id or (k if key == "imdb" else None)
+        f.title_de = f.title_de or _v(row, "deLabel")
         if (t := _v(row, "filmLabel")) and not f.title:
             f.title = t
         if (y := _v(row, "year")) and f.year is None:
@@ -139,4 +160,32 @@ async def fetch_wikidata(
         out.update(fold_bindings(rows))
 
     await asyncio.gather(*(one(movielens_ids[i : i + batch]) for i in range(0, len(movielens_ids), batch)))
+    return out
+
+
+async def fetch_by_imdb(imdb_ids: list[str], client: httpx.AsyncClient, batch: int = 150) -> dict[str, WikidataFilm]:
+    """Films imported live from the Streaming API carry only an IMDb id: find their Wikidata item, German title,
+    English Wikipedia article (for the plot), official trailer and original language."""
+    out: dict[str, WikidataFilm] = {}
+    for i in range(0, len(imdb_ids), batch):
+        values = " ".join(f'"{x}"' for x in imdb_ids[i : i + batch] if x.startswith("tt") and x[2:].isdigit())
+        if values:
+            out.update(fold_bindings(await _sparql(client, _BY_IMDB % values), key="imdb"))
+    return out
+
+
+async def fetch_german_titles(qids: list[str], client: httpx.AsyncClient, batch: int = 400) -> dict[str, str]:
+    """German titles (rdfs:label @de) of catalogue films, so a German title finds the film ("Der Schuh des Manitu"
+    is "Manitou's Shoe" in MovieLens)."""
+    valid = [q for q in qids if q.startswith("Q") and q[1:].isdigit()]
+    out: dict[str, str] = {}
+    sem = asyncio.Semaphore(3)
+
+    async def one(chunk: list[str]) -> None:
+        async with sem:
+            rows = await _sparql(client, _GERMAN % " ".join(f"wd:{q}" for q in chunk))
+        for row in rows:
+            out.setdefault(_qid(_v(row, "film")), _v(row, "deLabel"))
+
+    await asyncio.gather(*(one(valid[i : i + batch]) for i in range(0, len(valid), batch)))
     return out

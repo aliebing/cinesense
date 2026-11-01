@@ -28,3 +28,12 @@ def test_fixture_contains_edge_cases():
     assert any(m.youtube_key is None for m in movies)
     assert any(m.availability.streaming_de is None for m in movies)
     assert any(m.availability.streaming_de is not None for m in movies)
+
+
+def test_title_search_also_matches_the_german_title():
+    from cinesense.domain.models import Movie
+    from cinesense.providers.fixture import FixtureProvider
+
+    p = FixtureProvider()
+    p.upsert_live([Movie(id="imdb-tt0057687", title="Apache Gold", title_de="Winnetou 1. Teil", year=1963)])
+    assert p.search_title("Winnetou").get("imdb-tt0057687", 0) >= 0.85

@@ -94,14 +94,16 @@ def combined_rank(
         active["profile"] = taste
     rated = [m.ml_rating for m in kept if m.ml_rating is not None]
     prior = sum(rated) / len(rated) if rated else DEFAULT_PRIOR_MEAN
-    total_w = sum(WEIGHTS[k] for k in active) + WEIGHTS["rating"] + WEIGHTS["popularity"] + WEIGHTS["recency"]
+    # a film asked for by name: no bonus for newer films (that is for browsing moods), the closer title decides
+    recency_w = 0.0 if criteria.title else WEIGHTS["recency"]
+    total_w = sum(WEIGHTS[k] for k in active) + WEIGHTS["rating"] + WEIGHTS["popularity"] + recency_w
 
     ranked = []
     for m in kept:
         parts = {k: vals.get(m.id, 0.0) for k, vals in active.items()}
         rating = bayesian_rating(m.ml_rating, m.ml_rating_count, prior) / 5
         base = sum(WEIGHTS[k] * v for k, v in parts.items()) + WEIGHTS["rating"] * rating
-        known = WEIGHTS["popularity"] * _popularity(m.ml_rating_count) + WEIGHTS["recency"] * _recency(m.year)
+        known = WEIGHTS["popularity"] * _popularity(m.ml_rating_count) + recency_w * _recency(m.year)
         score = (base + known) / total_w
         ranked.append(
             RankedMovie(

@@ -15,6 +15,7 @@ export type Availability = {
 export type Movie = {
   id: string;
   title: string;
+  title_de?: string | null; // German title from Wikidata (films imported live)
   kind: "film" | "documentary";
   year: number | null;
   runtime_min: number | null;

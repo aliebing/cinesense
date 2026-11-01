@@ -68,3 +68,42 @@ async def test_fetch_wikidata_batches():
         out = await fetch_wikidata(list(range(1, 302)), client, batch=150)
     assert route.call_count == 6  # 3 batches x (scalars + people)
     assert 109487 in out
+
+
+@respx.mock
+async def test_fetch_by_imdb_gives_the_german_title_and_the_wikipedia_article():
+    from cinesense.ingest.wikidata import fetch_by_imdb
+
+    rows = [
+        b(
+            imdb="tt0057687",
+            film="http://www.wikidata.org/entity/Q571904",
+            deLabel="Winnetou 1. Teil",
+            enwiki="https://en.wikipedia.org/wiki/Apache_Gold",
+            yt="abc123",
+            lang="de",
+        )
+    ]
+    route = respx.post(SPARQL_URL).mock(return_value=httpx.Response(200, json={"results": {"bindings": rows}}))
+    async with httpx.AsyncClient() as client:
+        out = await fetch_by_imdb(["tt0057687"], client)
+    assert route.call_count == 1
+    f = out["tt0057687"]
+    assert (f.wikidata_id, f.title_de, f.wikipedia_title) == ("Q571904", "Winnetou 1. Teil", "Apache Gold")
+    assert (f.youtube_key, f.original_language, f.imdb_id) == ("abc123", "de", "tt0057687")
+    assert '"tt0057687"' in route.calls[0].request.content.decode().replace("%22", '"')
+
+
+@respx.mock
+async def test_fetch_german_titles_by_wikidata_id():
+    from cinesense.ingest.wikidata import fetch_german_titles
+
+    rows = [b(film="http://www.wikidata.org/entity/Q1", deLabel="Der Schuh des Manitu")]
+    route = respx.post(SPARQL_URL).mock(return_value=httpx.Response(200, json={"results": {"bindings": rows}}))
+    async with httpx.AsyncClient() as client:
+        out = await fetch_german_titles(["Q1", "Q2", "not-a-qid"], client)
+    assert out == {"Q1": "Der Schuh des Manitu"} and route.call_count == 1
+    assert (
+        "wd%3AQ2" in route.calls[0].request.content.decode()
+        and "not-a-qid" not in route.calls[0].request.content.decode()
+    )

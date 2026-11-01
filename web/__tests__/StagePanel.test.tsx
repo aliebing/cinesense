@@ -209,3 +209,13 @@ it("a page kept alive in the background (Next keeps visited routes hidden) stops
   );
   expect(screen.getByRole("button", { name: /Play trailer/ })).toBeInTheDocument(); // back: nothing autoplays
 });
+
+it("shows the German title under the title when Wikidata knows one", () => {
+  render(<StagePanel movie={{ ...base, title: "Apache Gold", title_de: "Winnetou 1. Teil" }} world={world} why="Test" />);
+  expect(screen.getByText("Winnetou 1. Teil")).toHaveClass("stage-title-de");
+});
+
+it("shows no German line when it equals the title", () => {
+  render(<StagePanel movie={{ ...base, title: "Old Shatterhand", title_de: "Old Shatterhand" }} world={world} why="Test" />);
+  expect(document.querySelector(".stage-title-de")).toBeNull();
+});

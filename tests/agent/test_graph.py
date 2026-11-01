@@ -149,3 +149,26 @@ def test_turn_records_tool_calls_and_prompts_for_inspection(make_agent):
     assert call["name"] == "set_mood_tags" and call["args"]["tags"][0]["name"] == "space travel"
     assert call["result"]  # the tool's answer to the model
     assert "CineSense" in out["prompts"]["agent"] and "Wish: something in space" in out["prompts"]["explain_input"]
+
+
+def test_the_explanation_may_name_a_film_by_its_german_title():
+    from langchain_core.messages import AIMessage
+    from langgraph.checkpoint.memory import MemorySaver
+
+    from cinesense.agent.graph import build_graph
+    from cinesense.agent.tools import ToolKit, make_tools
+    from cinesense.domain.models import Movie
+    from cinesense.providers.fixture import FixtureProvider
+    from cinesense.search.service import SearchService
+
+    from .conftest import FakeToolLLM
+
+    p = FixtureProvider()
+    p.upsert_live([Movie(id="imdb-tt0057687", title="Apache Gold", title_de="Winnetou 1. Teil", year=1963)])
+    service = SearchService(p)
+    agent = FakeToolLLM(messages=iter([ai(calls=[("find_title", {"title": "Winnetou"})]), ai("Done.")]))
+    explain = FakeToolLLM(messages=iter([AIMessage("**Winnetou 1. Teil** (1963) — the first part of the trilogy.")]))
+    g = build_graph(agent, explain, make_tools(ToolKit(service, p, None)), service, p, MemorySaver())
+    out = run_turn(g, "t-de", "Winnetou", empty())
+    assert "German title: Winnetou 1. Teil" in out["prompts"]["explain_input"]
+    assert not out.get("grounding_fallback") and "Winnetou 1. Teil" in out["reply"]
