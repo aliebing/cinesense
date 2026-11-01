@@ -304,6 +304,8 @@
 .related-wrap { transition: transform .35s cubic-bezier(.2, .7, .2, 1); transform-origin: 50% 100%; }
 .related-wrap:hover, .related-wrap:focus-within, .related-wrap.is-active { transform: scale(var(--card-hover-scale)); z-index: 5;
   outline: var(--glow-width) solid var(--gold); box-shadow: var(--glow); }
+/* posters come as 2:3 or 3:4: show them whole (a slim dark band on 3:4), cropping cut letters off the title art */
+.stage-poster .img-cover, .related-card .img-cover { object-fit: contain; background: #07080c; }
 .related-card i { position: absolute; top: .4em; right: .5em; font-style: normal; font-size: .75em; background: #000a; border-radius: 999px; padding: .1em .5em; color: var(--gold); }
 .related-card span { position: absolute; left: .5em; right: .5em; bottom: .4em; font-size: .75em; text-align: left; text-shadow: 0 1px 4px #000; }
 
