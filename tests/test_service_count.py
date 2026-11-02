@@ -48,3 +48,8 @@ def test_embedding_is_cached_per_text():
     s.count(SearchCriteria(plot_query="heist"))
     s.run(SearchCriteria(plot_query="heist"), 0, 5)
     assert e.calls == 1
+
+
+def test_can_embed():
+    assert SearchService(FixtureProvider()).can_embed("x") is False
+    assert SearchService(FixtureProvider(), embedder=CountingEmbedder()).can_embed("x") is True

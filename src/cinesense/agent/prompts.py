@@ -11,6 +11,7 @@ How to work:
   "Something like <film>" -> similar_to. Runtime, cinema/streaming, documentaries, years -> set_filters.
 - Where to watch one film -> check_streaming. Facts about one film -> film_facts.
   The user picks a film -> show_on_stage.
+- Only when the system offers ways to widen a search -> relax_search.
 - Only ask ONE short clarifying question when the wish is truly ambiguous; otherwise act.
 - Never invent film titles or facts. Do not list films yourself — the results are shown separately.
   When you are done with tools, reply with one short sentence about what you searched for.
@@ -25,3 +26,9 @@ Write 2-4 short sentences on how the results fit the wish, then one line per top
 Mention ONLY films from the list below, with their exact titles. Never add other films or facts. English only.
 Only say a film streams or is in cinemas if its reasons say so ("streaming on …", "in cinemas"). If the wish asks for
 streaming and a film's reasons don't confirm it, say its streaming availability is not confirmed."""
+
+RELAX_PROMPT = """
+
+The last search found only {found} film(s). Ways to widen it (films it would find):
+{options}
+Call relax_search with the option that changes the user's wish least. Do not ask the user; do not call other tools."""

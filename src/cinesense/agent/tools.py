@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 from cinesense.agent.tags import resolve_tags
 from cinesense.domain.criteria import SearchCriteria
 from cinesense.domain.models import Movie
+from cinesense.search import relax
 
 STREAMING_PER_TURN = 3
 FILTER_FIELDS = (
@@ -170,6 +171,19 @@ class ToolKit:
         ]
         return {"proposals": proposals}, f"Proposed (not applied): {', '.join(t for t, _ in resolved) or 'none'}."
 
+    def relax_search(self, state: dict, option_id: str) -> tuple[dict, str]:
+        """Apply one of the relaxations the verify step offered (never one it did not offer)."""
+        offered = {o["id"] for o in state.get("relax_options") or []}
+        opt = relax.apply(self._criteria(state), option_id, self.provider.list_tags()) if option_id in offered else None
+        if opt is None:
+            return {}, f"Option '{option_id}' is not available."
+        return {
+            "criteria": opt.criteria.model_dump(),
+            "criteria_changed": True,
+            "relaxed": [*(state.get("relaxed") or []), opt.label],
+            "relax_options": [],
+        }, f"Search widened: {opt.label}."
+
     def show_on_stage(self, state: dict, title: str) -> tuple[dict, str]:
         film = self._find_film(title)
         if film is None:
@@ -277,6 +291,13 @@ def make_tools(kit: ToolKit) -> list:
         """When the user picks or confirms a film, show it on the genre stage."""
         return wrap(*kit.show_on_stage(state, title), tool_call_id)
 
+    @tool
+    def relax_search(
+        option_id: str, state: Annotated[dict, InjectedState], tool_call_id: Annotated[str, InjectedToolCallId]
+    ) -> Command:
+        """Widen a search that found too few films, with one of the options the system offered (by its id)."""
+        return wrap(*kit.relax_search(state, option_id), tool_call_id)
+
     return [
         set_mood_tags,
         set_filters,
@@ -288,4 +309,5 @@ def make_tools(kit: ToolKit) -> list:
         film_facts,
         propose_exclusions,
         show_on_stage,
+        relax_search,
     ]

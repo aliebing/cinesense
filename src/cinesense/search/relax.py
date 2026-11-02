@@ -68,6 +68,9 @@ def probe(service, c: SearchCriteria, tag_names: list[str], current: int) -> lis
     """The options that find more films than `current`, with their counts, in the original order."""
     kept = []
     for opt in relaxation_options(c, tag_names):
+        can_embed = getattr(service, "can_embed", None)
+        if opt.id == "tags-to-plot" and can_embed is not None and not can_embed(opt.criteria.plot_query):
+            continue  # without embeddings the "plot search" would silently drop the mood
         try:
             opt.count = service.count(opt.criteria)
         except Exception as exc:  # noqa: BLE001 — an option we cannot count is not offered

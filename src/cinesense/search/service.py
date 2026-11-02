@@ -30,6 +30,10 @@ class SearchService:
                 self._embed_cache[text] = None
         return self._embed_cache[text]
 
+    def can_embed(self, text: str) -> bool:
+        """Whether a plot search for this text would really search plots (embeddings configured and working)."""
+        return self._embed(text) is not None
+
     def count(self, c: SearchCriteria) -> int:
         """How many films a search would rank — a cheap probe: no live import, no streaming lookups, no profile."""
         return self._candidates(c, None, offset=0, allow_live=False)[0].total

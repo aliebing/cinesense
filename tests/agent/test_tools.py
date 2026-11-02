@@ -151,3 +151,20 @@ def test_the_search_reports_films_it_imported_live():
     assert imported == ["imdb-tt0057687"]
     service.run(SearchCriteria(title="Winnetou"), 0, 5)
     assert imported == ["imdb-tt0057687"]  # already in the catalogue: not reported again
+
+
+def test_relax_search_rejects_unoffered_option(kit):
+    upd, msg = kit.relax_search({"criteria": SearchCriteria().model_dump(), "relax_options": []}, "runtime")
+    assert upd == {} and "not available" in msg
+
+
+def test_relax_search_applies_offered_option(kit):
+    state = {
+        "criteria": SearchCriteria(max_runtime_min=60).model_dump(),
+        "relax_options": [{"id": "runtime", "label": "Allow up to 90 min", "count": 2}],
+        "relaxed": [],
+    }
+    upd, msg = kit.relax_search(state, "runtime")
+    assert upd["criteria"]["max_runtime_min"] == 90
+    assert upd["relaxed"] == ["Allow up to 90 min"] and upd["relax_options"] == []
+    assert upd["criteria_changed"] is True

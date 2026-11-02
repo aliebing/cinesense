@@ -12,11 +12,13 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.types import Command
 
 from cinesense.agent.grounding import pick_count, template_answer, user_named_titles, validate_titles
-from cinesense.agent.prompts import AGENT_PROMPT, EXPLAIN_PROMPT
+from cinesense.agent.prompts import AGENT_PROMPT, EXPLAIN_PROMPT, RELAX_PROMPT
 from cinesense.agent.state import AgentState
 from cinesense.domain.criteria import SearchCriteria
+from cinesense.search import relax
 
 MAX_ROUNDS = 6
+MAX_RELAX_ROUNDS = 2  # offers to widen a thin search per turn
 FALLBACK_REPLY = "Sorry, I didn’t get that — could you say it differently?"
 _thread_locks: defaultdict[str, threading.Lock] = defaultdict(threading.Lock)
 _locks_guard = threading.Lock()
@@ -87,9 +89,11 @@ def build_graph(llm, explain_llm, tools: list, service, provider, checkpointer):
         return catalogue
 
     def agent(state: AgentState) -> dict:
-        system = SystemMessage(
-            AGENT_PROMPT.format(criteria=criteria_summary(state.get("criteria"), provider.list_tags()))
-        )
+        text = AGENT_PROMPT.format(criteria=criteria_summary(state.get("criteria"), provider.list_tags()))
+        if options := state.get("relax_options"):
+            lines = "\n".join(f"- {o['id']}: {o['label']} ({o['count']})" for o in options)
+            text += RELAX_PROMPT.format(found=len(state.get("results") or []), options=lines)
+        system = SystemMessage(text)
         msg = agent_llm.invoke([system, *trim_history(state["messages"])])
         prompts = {**(state.get("prompts") or {}), "agent": str(system.content)}
         return {"messages": [msg], "usage": _add_usage(state.get("usage") or {}, msg), "prompts": prompts}
@@ -124,6 +128,8 @@ def build_graph(llm, explain_llm, tools: list, service, provider, checkpointer):
 
     def route(state: AgentState) -> str:
         last = state["messages"][-1]
+        if state.get("relax_options") and not getattr(last, "tool_calls", None):
+            return "auto_relax"  # offered a relaxation but the model did not pick one
         if getattr(last, "tool_calls", None):
             # round limit reached: present with the current criteria (it also answers the open calls)
             return "tick" if state.get("rounds", 0) < MAX_ROUNDS else "present"
@@ -143,6 +149,46 @@ def build_graph(llm, explain_llm, tools: list, service, provider, checkpointer):
             log.exception("present: search failed")
             update["results"] = []
         return update
+
+    def verify(state: AgentState) -> dict:
+        """Too few films: work out which constraints could be widened and how many films each would find."""
+        results = state.get("results") or []
+        rounds = state.get("relax_rounds", 0)
+        if len(results) >= relax.MIN_RESULTS or rounds >= MAX_RELAX_ROUNDS:
+            return {"relax_options": []}
+        try:
+            c = SearchCriteria(**(state.get("criteria") or {}))
+            options = relax.probe(service, c, provider.list_tags(), current=len(results))
+        except Exception:  # noqa: BLE001 — no options; explain answers with what was found
+            log.exception("verify: probing relaxations failed")
+            options = []
+        if not options:
+            return {"relax_options": []}
+        return {
+            "relax_options": [{"id": o.id, "label": o.label, "count": o.count} for o in options],
+            "relax_rounds": rounds + 1,
+        }
+
+    def after_verify(state: AgentState) -> str:
+        return "agent" if state.get("relax_options") else "explain"
+
+    def auto_relax(state: AgentState) -> dict:
+        """Deterministic choice when the model did not pick: the least intrusive option that finds enough."""
+        offered = [relax.Relaxation(o["id"], o["label"], SearchCriteria(), o["count"]) for o in state["relax_options"]]
+        best = relax.pick_auto(offered)
+        opt = (
+            relax.apply(SearchCriteria(**(state.get("criteria") or {})), best.id, provider.list_tags())
+            if best
+            else None
+        )
+        if opt is None:
+            return {"relax_options": []}
+        return {
+            "criteria": opt.criteria.model_dump(),
+            "criteria_changed": True,
+            "relaxed": [*(state.get("relaxed") or []), opt.label],
+            "relax_options": [],
+        }
 
     def explain(state: AgentState) -> dict:
         results = state.get("results") or []
@@ -196,12 +242,16 @@ def build_graph(llm, explain_llm, tools: list, service, provider, checkpointer):
     g.add_node("tick", tick)
     g.add_node("tools", run_tools)
     g.add_node("present", present)
+    g.add_node("verify", verify)
+    g.add_node("auto_relax", auto_relax)
     g.add_node("explain", explain)
     g.add_edge(START, "agent")
-    g.add_conditional_edges("agent", route, ["tick", "present", END])
+    g.add_conditional_edges("agent", route, ["tick", "present", "auto_relax", END])
     g.add_edge("tick", "tools")
     g.add_edge("tools", "agent")
-    g.add_edge("present", "explain")
+    g.add_edge("present", "verify")
+    g.add_conditional_edges("verify", after_verify, ["agent", "explain"])
+    g.add_edge("auto_relax", "present")
     g.add_edge("explain", END)
     return g.compile(checkpointer=checkpointer)
 
@@ -217,6 +267,7 @@ TOOL_STATUS = {
     "film_facts": "Reading film facts…",
     "propose_exclusions": "Suggesting exclusions…",
     "show_on_stage": "Preparing the stage…",
+    "relax_search": "Widening the search…",
 }
 
 
@@ -229,7 +280,7 @@ def run_turn(
     profile=None,
 ) -> dict:
     """One chat turn. The UI's chips are the truth: they seed the criteria; per-turn fields are reset."""
-    config = {"configurable": {"thread_id": thread_id}, "recursion_limit": 4 * MAX_ROUNDS + 10}
+    config = {"configurable": {"thread_id": thread_id}, "recursion_limit": 4 * MAX_ROUNDS + 30}
     inputs = {
         "messages": [HumanMessage(message)],
         "criteria": SearchCriteria(**(ui_criteria or {})).model_dump(),
@@ -244,6 +295,9 @@ def run_turn(
         "grounding_reason": [],
         "prompts": {},
         "profile": profile.model_dump() if profile is not None else None,
+        "relax_rounds": 0,
+        "relax_options": [],
+        "relaxed": [],
     }
     with _locks_guard:
         lock = _thread_locks[thread_id]
@@ -286,6 +340,7 @@ def _run_locked(graph, config: dict, inputs: dict, on_status) -> dict:
         "rounds": s.get("rounds", 0),
         "grounding_fallback": s.get("grounding_fallback", False),
         "grounding_reason": s.get("grounding_reason", []),
+        "relaxed": s.get("relaxed", []),
         "history_len": len(s["messages"]),
         "tools_called": tools_called,
         "tool_errors": tool_errors,

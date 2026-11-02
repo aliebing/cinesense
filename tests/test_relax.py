@@ -114,3 +114,15 @@ def test_pick_auto_prefers_order_then_count():
 def test_apply():
     assert apply(SearchCriteria(), "runtime", TAGS) is None
     assert apply(SearchCriteria(max_runtime_min=60), "runtime", TAGS).criteria.max_runtime_min == 90
+
+
+def test_probe_skips_plot_search_when_embeddings_are_down():
+    class Service:
+        def can_embed(self, text):
+            return False
+
+        def count(self, c):
+            return 10
+
+    c = SearchCriteria(tags=[TagCriterion(idx=7)], availability="cinema")
+    assert ids(probe(Service(), c, TAGS, current=0)) == ["availability"]

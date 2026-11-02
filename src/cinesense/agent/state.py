@@ -17,3 +17,6 @@ class AgentState(TypedDict, total=False):
     grounding_reason: list[str]  # why the template answer was used
     profile: dict | None  # Profile JSON (👍/👎 taste) used by the deterministic search
     prompts: dict  # what this turn sent: agent system prompt, explain system prompt and input (for /api/inspect)
+    relax_rounds: int  # how often this turn offered to widen a thin search
+    relax_options: list[dict]  # {id, label, count} offered to the model right now; empty when none pending
+    relaxed: list[str]  # labels of the relaxations applied this turn, in order
