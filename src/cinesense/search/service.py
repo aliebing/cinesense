@@ -2,12 +2,14 @@
 
 import asyncio
 import logging
+from collections import OrderedDict
 
 from cinesense.domain.criteria import MUST_THRESHOLD, NOT_THRESHOLD, SearchCriteria
 from cinesense.recommend.combined import CombinedResult, Signals, combined_rank
 
 log = logging.getLogger(__name__)
 STREAM_CHECK_LIMIT = 30  # streaming lookups per search (free plan budget)
+EMBED_CACHE_SIZE = 256  # plot-query embeddings kept per service (the chat agent's service lives for the process)
 
 
 class SearchService:
@@ -17,18 +19,23 @@ class SearchService:
         self.embedder = embedder
         self.live = live
         self.on_import = on_import  # called with the ids of films just imported live (to enrich them)
-        self._embed_cache: dict[str, list[float] | None] = {}  # one embedding per text (probes reuse it)
+        self._embed_cache: OrderedDict[str, list[float]] = OrderedDict()  # probes reuse the search's embedding
 
     def _embed(self, text: str) -> list[float] | None:
         if self.embedder is None:
             return None
-        if text not in self._embed_cache:
-            try:
-                self._embed_cache[text] = asyncio.run(self.embedder.embed([text]))[0]
-            except Exception as exc:  # noqa: BLE001 — degrade to no plot signal
-                log.warning("embedding failed: %s", exc)
-                self._embed_cache[text] = None
-        return self._embed_cache[text]
+        if text in self._embed_cache:
+            self._embed_cache.move_to_end(text)
+            return self._embed_cache[text]
+        try:
+            vec = asyncio.run(self.embedder.embed([text]))[0]
+        except Exception as exc:  # noqa: BLE001 — degrade to no plot signal; a failure is not cached (retry later)
+            log.warning("embedding failed: %s", exc)
+            return None
+        self._embed_cache[text] = vec
+        if len(self._embed_cache) > EMBED_CACHE_SIZE:
+            self._embed_cache.popitem(last=False)
+        return vec
 
     def can_embed(self, text: str) -> bool:
         """Whether a plot search for this text would really search plots (embeddings configured and working)."""
@@ -64,8 +71,11 @@ class SearchService:
         sig = Signals(tag_names=dict(enumerate(p.list_tags())) if c.has_tags() else {})
         restrict: set[str] | None = None
         hidden = 0
+        # only exclusions ("no horror") next to a text search: filter its hits, do not replace them with the
+        # catalogue's best-known films (a tag search without weights)
+        exclusions_only = c.has_tags() and not c.prefer_weights() and c.has_text_signal()
 
-        if c.has_tags():
+        if c.has_tags() and not exclusions_only:
             hits, hidden = p.tag_search(c.prefer_weights(), c.must_tags(), c.not_tags(), MUST_THRESHOLD, NOT_THRESHOLD)
             sig.tags = dict(hits)
             restrict = set(sig.tags)
@@ -86,6 +96,16 @@ class SearchService:
                 restrict = set(sig.plot)
             elif not (c.has_tags() or c.person or c.title):
                 restrict |= set(sig.plot)
+
+        if exclusions_only and restrict:
+            ids = sorted(restrict)
+            vectors = p.tag_vectors(ids)
+            # NaN (no Tag Genome data) compares False: such films stay, the genre exclusion still applies
+            excluded = {
+                fid for row, fid in enumerate(ids) if any(vectors[row][t] >= NOT_THRESHOLD for t in c.not_tags())
+            }
+            restrict -= excluded
+            hidden += len(excluded)
 
         if profile is not None:
             sig.disliked = set(profile.disliked)

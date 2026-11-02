@@ -72,3 +72,65 @@ def test_cinema_plot_search_ranks_only_cinema_films():
     assert p.only == ["ml-1265"]
     s.count(SearchCriteria(plot_query="funny"))
     assert p.only is None
+
+
+class PlotProvider(FixtureProvider):
+    """Plot search finds Groundhog Day (comedy), Alien (horror) and Toy Story; Groundhog Day is in cinemas
+    and has no Tag Genome vector."""
+
+    def __init__(self):
+        super().__init__()
+        self._by_id["ml-1265"].availability.in_cinema_de = True
+        self._vectors.pop("ml-1265")
+
+    def semantic_search(self, query_embedding, k=20, only_ids=None):
+        ids = ["ml-1265", "ml-1214", "ml-1"]
+        if only_ids is not None:
+            ids = [i for i in ids if i in only_ids]
+        return [(self._by_id[i], 0.5, "chunk") for i in ids]
+
+
+def _no_horror(p):
+    from cinesense.domain.criteria import TagCriterion
+
+    return [TagCriterion(idx=p.list_tags().index("horror"), mode="not")]
+
+
+def test_not_tags_filter_plot_hits_instead_of_replacing_them():
+    p = PlotProvider()
+    s = SearchService(p, embedder=CountingEmbedder())
+    res = s.run(SearchCriteria(plot_query="funny", tags=_no_horror(p)), 0, 10)
+    assert {r.movie.id for r in res.items} == {"ml-1265", "ml-1"}  # Alien is horror; no unrelated films
+    assert res.hidden_by_exclusion >= 1
+
+
+def test_not_tags_keep_cinema_plot_hits():
+    p = PlotProvider()
+    s = SearchService(p, embedder=CountingEmbedder())
+    assert s.count(SearchCriteria(plot_query="funny", tags=_no_horror(p), availability="cinema")) == 1
+
+
+class FlakyEmbedder:
+    def __init__(self):
+        self.calls = 0
+
+    async def embed(self, texts):
+        self.calls += 1
+        if self.calls == 1:
+            raise RuntimeError("timeout")
+        return [[0.0] * 4 for _ in texts]
+
+
+def test_a_failed_embedding_is_retried_not_cached():
+    s = SearchService(FixtureProvider(), embedder=FlakyEmbedder())
+    assert s.can_embed("heist") is False
+    assert s.can_embed("heist") is True
+
+
+def test_embedding_cache_is_bounded():
+    from cinesense.search.service import EMBED_CACHE_SIZE
+
+    s = SearchService(FixtureProvider(), embedder=CountingEmbedder())
+    for i in range(EMBED_CACHE_SIZE + 10):
+        s.can_embed(f"q{i}")
+    assert len(s._embed_cache) == EMBED_CACHE_SIZE

@@ -39,3 +39,17 @@ def test_semantic_search_only_ids(provider, service):
     cinema = [m.id for m in provider.list_movies() if m.availability.in_cinema_de]
     hits = provider.semantic_search(service._embed("a family comedy"), k=10, only_ids=cinema)
     assert hits and {m.id for m, _, _ in hits} <= set(cinema)
+
+
+def test_cinema_mood_with_no_horror_still_has_a_way_out(provider, service):
+    from cinesense.domain.criteria import SearchCriteria, TagCriterion
+    from cinesense.search.relax import probe
+
+    tags = provider.list_tags()
+    c = SearchCriteria(
+        tags=[TagCriterion(idx=tags.index("funny")), TagCriterion(idx=tags.index("horror"), mode="not")],
+        exclude_genres=["Horror"],
+        availability="cinema",
+    )
+    opts = {o.id: o for o in probe(service, c, tags, current=service.count(c))}
+    assert 0 < opts["tags-to-plot"].count <= 31

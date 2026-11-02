@@ -103,3 +103,24 @@ it("passes the label along when a relaxation is chosen", async () => {
   await userEvent.click(await screen.findByRole("button", { name: "Allow up to 90 min · 2 films" }));
   expect(onRelax).toHaveBeenCalledWith(wider, "Allow up to 90 min");
 });
+
+it("hides old relaxation buttons as soon as the criteria change", async () => {
+  const wider = { ...emptyCriteria(), max_runtime_min: 90 };
+  search.mockResolvedValueOnce({
+    ok: true,
+    data: {
+      items: [],
+      total: 0,
+      hidden_by_exclusion: 0,
+      extended_used: false,
+      relaxations: [{ id: "runtime", label: "Allow up to 90 min", count: 2, criteria: wider }],
+    },
+  });
+  search.mockReturnValueOnce(new Promise(() => {})); // the next search is still loading
+  const { rerender } = render(
+    <ResultList criteria={{ ...emptyCriteria(), max_runtime_min: 60 }} onOpen={() => {}} onRelax={() => {}} />,
+  );
+  expect(await screen.findByRole("button", { name: "Allow up to 90 min · 2 films" })).toBeInTheDocument();
+  rerender(<ResultList criteria={wider} onOpen={() => {}} onRelax={() => {}} />);
+  expect(screen.queryByRole("button", { name: /Allow up to 90 min/ })).toBeNull();
+});

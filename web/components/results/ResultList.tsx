@@ -23,7 +23,8 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
   const [items, setItems] = useState<RankedMovie[]>([]);
   const [total, setTotal] = useState<number | null>(null);
   const [extended, setExtended] = useState(false);
-  const [relaxations, setRelaxations] = useState<Relaxation[]>([]);
+  // the options belong to the search they were computed for; while the next one loads they are stale
+  const [relaxFor, setRelaxFor] = useState<{ key: string; options: Relaxation[] }>({ key: "", options: [] });
   const [error, setError] = useState(false);
   const key = JSON.stringify(criteria);
   const fromKey = widened ? JSON.stringify(widened.from) : "";
@@ -39,7 +40,7 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
       setItems(r.data.items);
       setTotal(r.data.total);
       setExtended(r.data.extended_used);
-      setRelaxations(r.data.relaxations ?? []);
+      setRelaxFor({ key, options: r.data.relaxations ?? [] });
       onMeta?.({ total: r.data.total, hidden_by_exclusion: r.data.hidden_by_exclusion, extended_used: r.data.extended_used });
     }, 300);
     return () => {
@@ -50,6 +51,7 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
 
   if (error) return <p className="results-error">Couldn&apos;t load films</p>;
   if (total === null) return null;
+  const relaxations = relaxFor.key === key ? relaxFor.options : [];
   const widen =
     onRelax && relaxations.length > 0 ? (
       <div className="results-relax-bar">
