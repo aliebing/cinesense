@@ -10,6 +10,7 @@ ROWS = [
     ("tool_selection", "Tool selection — an expected tool was called (scenarios that name tools)"),
     ("reply_checks", "Factual reply checks — expected fact in the answer"),
     ("availability_claims", "No streaming claim without known availability"),
+    ("relaxation", "Search widening — widened exactly when the scenario expects it"),
     ("grounding", "Grounding after the guard — reply names only returned or user-named films"),
 ]
 

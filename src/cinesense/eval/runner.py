@@ -11,6 +11,7 @@ from cinesense.eval.checks import (
     check_availability_claims,
     check_constraints,
     check_grounding,
+    check_relaxed,
     check_reply,
     check_tools,
     title_hit,
@@ -65,6 +66,7 @@ def run_scenarios(
             "grounding": check_grounding(reply, results, catalogue_titles, " ".join(s.turns), _spans(last, tag_names)),
             "availability_claims": check_availability_claims(reply, results),
             "reply": check_reply(reply, s.expect),
+            "relaxed": check_relaxed(last.get("relaxed", []), s.expect),
         }
         res.update(
             reply=reply,
@@ -73,6 +75,7 @@ def run_scenarios(
             criteria=criteria,
             grounding_fallback=last.get("grounding_fallback", False),
             grounding_reason=last.get("grounding_reason", []),
+            relaxed=last.get("relaxed", []),
             checks={k: {"ok": ok, "why": why, "applies": applies(k, s.expect)} for k, (ok, why) in checks.items()},
             title_hit=title_hit(results, s.expect),
             passed=res["error"] is None and all(ok for ok, _ in checks.values()),
@@ -116,6 +119,7 @@ def summarise(results: list[dict]) -> dict:
         "grounding_fallbacks": sum(bool(r.get("grounding_fallback")) for r in ok),
         "reply_checks": _rate([r["checks"]["reply"]["ok"] for r in ok if r["checks"]["reply"]["applies"]]),
         "availability_claims": _rate([r["checks"]["availability_claims"]["ok"] for r in ok]),
+        "relaxation": _rate([r["checks"]["relaxed"]["ok"] for r in ok if r["checks"]["relaxed"]["applies"]]),
         "grounding_raw": _rate([r["checks"]["grounding"]["ok"] and not r.get("grounding_fallback") for r in ok]),
         "counts": {
             "constraint_satisfaction": _count(ok, "constraints"),
@@ -123,6 +127,7 @@ def summarise(results: list[dict]) -> dict:
             "reply_checks": _count(ok, "reply"),
             "grounding": _count(ok, "grounding"),
             "availability_claims": _count(ok, "availability_claims"),
+            "relaxation": _count(ok, "relaxed"),
         },
         "title_hit_rate": _rate(hits),
         "latency_median_s": round(statistics.median(lat), 2) if lat else None,

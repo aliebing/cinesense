@@ -82,6 +82,12 @@ def check_availability_claims(reply: str, results: list[dict]) -> Check:
     return True, []
 
 
+def check_relaxed(relaxed: list[str], e: Expect) -> Check:
+    if e.relaxed is None or bool(relaxed) == e.relaxed:
+        return True, []
+    return False, ["expected a widened search" if e.relaxed else "widened without need"]
+
+
 def applies(kind: str, e: Expect) -> bool:
     """Whether a check has anything to test in this scenario (for honest k/n reporting)."""
     if kind == "constraints":
@@ -90,4 +96,6 @@ def applies(kind: str, e: Expect) -> bool:
         return bool(e.tools_any or e.tools_none)
     if kind == "reply":
         return bool(e.reply_contains_any)
+    if kind == "relaxed":
+        return e.relaxed is not None
     return True

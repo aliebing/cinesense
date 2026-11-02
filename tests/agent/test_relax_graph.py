@@ -167,3 +167,69 @@ def test_original_criteria_reset_each_turn(make_agent):
     out = run_turn(g, "r12", "up to 150 minutes", crit(max_runtime_min=120))
     assert out["relaxed"] == []
     assert out["results"] and all(r["misses"] == [] for r in out["results"])
+
+
+SEEN: list = []
+
+
+class RecordingLLM(FakeToolLLM):
+    """Like the real provider: a request may not end with an assistant message (Anthropic rejects it with 400)."""
+
+    def invoke(self, input, config=None, **kwargs):
+        SEEN.append(list(input))
+        return super().invoke(input, config, **kwargs)
+
+
+def test_relax_offer_never_ends_the_request_with_an_assistant_message():
+    from langchain_core.messages import HumanMessage
+
+    SEEN.clear()
+    p = FixtureProvider()
+    service = SearchService(p)
+    script = [ai(calls=[("set_filters", {"max_runtime_min": 60})]), ai("Done."), *HMM]
+    g = build_graph(
+        RecordingLLM(messages=iter(script)),
+        FakeToolLLM(messages=iter([AIMessage("Here.")])),
+        make_tools(ToolKit(service, p, None)),
+        service,
+        p,
+        MemorySaver(),
+    )
+    out = run_turn(g, "r13", "very short film", crit())
+    assert out["relaxed"]
+    offers = [m for m in SEEN if "Ways to widen it" in str(m[-1].content)]
+    assert offers and all(isinstance(m[-1], HumanMessage) for m in offers)
+    assert all(not isinstance(m[-1], AIMessage) for m in SEEN)
+    # the note is sent, not stored: the next turn's history has no such user message
+    history = g.get_state({"configurable": {"thread_id": "r13"}}).values["messages"]
+    assert not any("Ways to widen it" in str(m.content) for m in history)
+
+
+def test_after_a_relaxation_the_search_runs_before_the_model_can_undo_it(make_agent):
+    g = make_agent(
+        [
+            ai(calls=[("set_filters", {"max_runtime_min": 60})]),
+            ai("Done."),
+            ai(calls=[("relax_search", {"option_id": "runtime"})]),  # 90 min: 2 films, offered again
+            ai(calls=[("set_filters", {"max_runtime_min": 60})]),  # tries to undo the widening
+            ai("Done."),
+            *HMM,
+        ]
+    )
+    out = run_turn(g, "r14", "very short film", crit())
+    assert out["relaxed"] == ["Allow up to 90 min", "Allow up to 120 min"]
+    assert out["criteria"]["max_runtime_min"] == 120
+
+
+def test_other_tools_wait_while_a_relaxation_is_offered(make_agent):
+    g = make_agent(
+        [
+            ai(calls=[("set_filters", {"max_runtime_min": 60})]),
+            ai("Done."),
+            ai(calls=[("set_filters", {"year_from": 2020})]),  # ignores the offer
+            *HMM,
+        ]
+    )
+    out = run_turn(g, "r15", "very short film", crit())
+    assert out["criteria"]["year_from"] is None
+    assert out["relaxed"]

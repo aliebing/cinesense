@@ -22,6 +22,7 @@ class Expect(BaseModel):
     results_required: bool = True
     titles_any: list[str] = Field(default_factory=list)  # informative "hit" check, not a constraint
     reply_contains_any: list[str] = Field(default_factory=list)
+    relaxed: bool | None = None  # True: the search must be widened; False: it must not be
 
 
 class Scenario(BaseModel):

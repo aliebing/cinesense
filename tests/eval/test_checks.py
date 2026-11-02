@@ -92,3 +92,15 @@ def test_streaming_claim_needs_known_availability():
     assert check_availability_claims("Streaming availability is not confirmed for these.", unknown)[0]
     assert check_availability_claims("You can stream it on Netflix.", [r(streaming=[{}], subs=["Netflix"])])[0]
     assert check_availability_claims("A dark space film.", unknown)[0]
+
+
+def test_check_relaxed():
+    from cinesense.eval.checks import applies, check_relaxed
+    from cinesense.eval.scenarios import Expect
+
+    assert check_relaxed(["Allow up to 90 min"], Expect(relaxed=True)) == (True, [])
+    assert check_relaxed([], Expect(relaxed=True)) == (False, ["expected a widened search"])
+    assert check_relaxed(["x"], Expect(relaxed=False)) == (False, ["widened without need"])
+    assert check_relaxed(["x"], Expect()) == (True, [])
+    assert applies("relaxed", Expect()) is False
+    assert applies("relaxed", Expect(relaxed=False)) is True

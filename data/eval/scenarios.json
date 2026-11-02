@@ -34,5 +34,17 @@
   {"id": "fail-01", "category": "failure", "failure": "streaming_down", "turns": ["Where can I stream Inception in Germany?"], "expect": {"tools_any": ["check_streaming"], "results_required": false, "reply_contains_any": ["unknown", "couldn't", "can't", "unable", "not confirmed", "not available"]}},
   {"id": "fail-02", "category": "availability", "turns": ["Dark science fiction that I can stream"], "expect": {"tools_any": ["set_mood_tags", "set_filters"], "availability": "stream"}},
   {"id": "fail-03", "category": "failure", "failure": "embeddings_down", "turns": ["A story about a robot who falls in love"], "expect": {"tools_any": ["search_plot", "set_mood_tags"], "results_required": false}},
-  {"id": "fail-04", "category": "failure", "turns": ["Films with Mirela Vondrakowska"], "expect": {"tools_any": ["find_person"], "results_required": false}}
+  {"id": "fail-04", "category": "failure", "turns": ["Films with Mirela Vondrakowska"], "expect": {"tools_any": ["find_person"], "results_required": false}},
+  {"id": "relax-01", "category": "relaxation", "turns": ["Something funny"], "ui_criteria": {"availability": "cinema"}, "expect": {"relaxed": true}},
+  {"id": "relax-02", "category": "relaxation", "turns": ["Something dark, but no horror"], "ui_criteria": {"availability": "cinema"}, "expect": {"relaxed": true, "exclude_genres": ["Horror"]}},
+  {"id": "relax-03", "category": "relaxation", "turns": ["A cosy medieval comedy under 70 minutes"], "expect": {"max_runtime": 70}},
+  {"id": "relax-04", "category": "relaxation", "turns": ["A German-language space film from before 1960"], "expect": {"relaxed": true}},
+  {"id": "relax-05", "category": "relaxation", "turns": ["A documentary about heists, but no violence"], "expect": {"kind": "documentary"}},
+  {"id": "relax-06", "category": "relaxation", "turns": ["Something dark and set in space"], "expect": {"relaxed": false}},
+  {"id": "less-01", "category": "like_x_less_y", "turns": ["Like Blade Runner 2049, but less gloomy"], "expect": {"tools_any": ["similar_to"]}},
+  {"id": "less-02", "category": "like_x_less_y", "turns": ["Like Se7en, but less violent"], "expect": {"tools_any": ["similar_to"]}},
+  {"id": "less-03", "category": "like_x_less_y", "turns": ["Like Interstellar, but shorter and less complicated"], "expect": {"tools_any": ["similar_to"], "max_runtime": 130}},
+  {"id": "less-04", "category": "like_x_less_y", "turns": ["Like Amelie, but less quirky"], "expect": {"tools_any": ["similar_to"]}},
+  {"id": "less-05", "category": "like_x_less_y", "turns": ["Like The Dark Knight, but more funny"], "expect": {"tools_any": ["similar_to"]}},
+  {"id": "less-06", "category": "like_x_less_y", "turns": ["Like Alien, but no horror"], "expect": {"tools_any": ["similar_to"], "exclude_genres": ["Horror"]}}
 ]

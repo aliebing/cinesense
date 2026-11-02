@@ -89,12 +89,17 @@ def build_graph(llm, explain_llm, tools: list, service, provider, checkpointer):
         return catalogue
 
     def agent(state: AgentState) -> dict:
-        text = AGENT_PROMPT.format(criteria=criteria_summary(state.get("criteria"), provider.list_tags()))
+        system = SystemMessage(
+            AGENT_PROMPT.format(criteria=criteria_summary(state.get("criteria"), provider.list_tags()))
+        )
+        messages = [system, *trim_history(state["messages"])]
         if options := state.get("relax_options"):
+            # sent, not stored: the request must end with a user message (the provider rejects a trailing
+            # assistant message), but the offer is no wish of the user's and stays out of the history
             lines = "\n".join(f"- {o['id']}: {o['label']} ({o['count']})" for o in options)
-            text += RELAX_PROMPT.format(found=len(state.get("results") or []), options=lines)
-        system = SystemMessage(text)
-        msg = agent_llm.invoke([system, *trim_history(state["messages"])])
+            note = RELAX_PROMPT.format(found=len(state.get("results") or []), options=lines).strip()
+            messages.append(HumanMessage(f"[CineSense system note] {note}"))
+        msg = agent_llm.invoke(messages)
         prompts = {**(state.get("prompts") or {}), "agent": str(system.content)}
         return {"messages": [msg], "usage": _add_usage(state.get("usage") or {}, msg), "prompts": prompts}
 
@@ -109,6 +114,11 @@ def build_graph(llm, explain_llm, tools: list, service, provider, checkpointer):
         current = dict(state)
         update: dict = {"messages": []}
         for call in state["messages"][-1].tool_calls:
+            if current.get("relax_options") and call["name"] != "relax_search":
+                # an offered widening is decided first; other changes would mix into (or undo) it
+                note = "Not run: first choose one of the offered options with relax_search."
+                update["messages"].append(ToolMessage(note, tool_call_id=call["id"]))
+                continue
             injected = {**call, "type": "tool_call", "args": {**call["args"], "state": current}}
             try:
                 result = by_name[call["name"]].invoke(injected)
@@ -125,6 +135,12 @@ def build_graph(llm, explain_llm, tools: list, service, provider, checkpointer):
             current.update(changes)
             update.update(changes)
         return update
+
+    def after_tools(state: AgentState) -> str:
+        """A widening goes straight to the search: back at the model, it tends to tighten the criteria again."""
+        last_ai = next(m for m in reversed(state["messages"]) if isinstance(m, AIMessage))
+        widened = any(c["name"] == "relax_search" for c in last_ai.tool_calls) and not state.get("relax_options")
+        return "present" if widened else "agent"
 
     def route(state: AgentState) -> str:
         last = state["messages"][-1]
@@ -248,7 +264,7 @@ def build_graph(llm, explain_llm, tools: list, service, provider, checkpointer):
     g.add_edge(START, "agent")
     g.add_conditional_edges("agent", route, ["tick", "present", "auto_relax", END])
     g.add_edge("tick", "tools")
-    g.add_edge("tools", "agent")
+    g.add_conditional_edges("tools", after_tools, ["agent", "present"])
     g.add_edge("present", "verify")
     g.add_conditional_edges("verify", after_verify, ["agent", "explain"])
     g.add_edge("auto_relax", "present")

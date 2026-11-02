@@ -121,3 +121,24 @@ def test_raw_grounding_counts_fallbacks_and_zero_tokens_flag_usage():
     s = summarise(res)
     assert res[0]["usage_missing"] and res[0]["grounding_reason"] == ["Titanic"]
     assert s["grounding"] == 1.0 and s["grounding_raw"] == 0.0
+
+
+def test_relaxation_rate_counts_only_scenarios_with_a_rule():
+    res = run_scenarios(
+        [
+            Scenario(id="r1", category="relaxation", turns=["q"], expect=Expect(relaxed=True)),
+            Scenario(id="r2", category="relaxation", turns=["q"], expect=Expect(relaxed=False)),
+            Scenario(id="m", category="mood", turns=["q"]),
+        ],
+        ok_runner,
+        {"Film q"},
+    )
+    s = summarise(res)
+    assert s["relaxation"] == 0.5 and s["counts"]["relaxation"] == [1, 2]
+    assert res[0]["relaxed"] == [] and res[0]["checks"]["relaxed"]["why"] == ["expected a widened search"]
+
+
+def test_report_lists_the_relaxation_row():
+    from cinesense.eval.report import ROWS
+
+    assert ("relaxation", "Search widening — widened exactly when the scenario expects it") in ROWS
