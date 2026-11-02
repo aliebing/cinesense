@@ -33,7 +33,14 @@ export function apiPost<T>(path: string, body: unknown): Promise<ApiResult<T>> {
 }
 
 export type Tag = { idx: number; tag: string };
-export type DiscoverResult = { items: RankedMovie[]; total: number; hidden_by_exclusion: number; extended_used: boolean };
+export type Relaxation = { id: string; label: string; count: number; criteria: Criteria };
+export type DiscoverResult = {
+  items: RankedMovie[];
+  total: number;
+  hidden_by_exclusion: number;
+  extended_used: boolean;
+  relaxations?: Relaxation[];
+};
 
 export const getTags = () => apiGet<Tag[]>("/api/tags");
 /** `fillImages: false` skips the Streaming API image lookups (homepage background rows spend no budget). */

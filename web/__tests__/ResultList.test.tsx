@@ -37,3 +37,39 @@ it("shows reasons and the streaming state on cards", async () => {
   render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} />);
   expect((await screen.findAllByText("dark 91% · streaming on Netflix"))[0]).toBeInTheDocument();
 });
+
+it("offers ways to widen a search that finds too little", async () => {
+  const onRelax = vi.fn();
+  const wider = { ...emptyCriteria(), availability: "any" as const };
+  search.mockResolvedValue({
+    ok: true,
+    data: {
+      items: [],
+      total: 0,
+      hidden_by_exclusion: 0,
+      extended_used: false,
+      relaxations: [{ id: "availability", label: "Not only in cinemas", count: 12, criteria: wider }],
+    },
+  });
+  render(<ResultList criteria={{ ...emptyCriteria(), availability: "cinema" }} onOpen={() => {}} onRelax={onRelax} />);
+  expect(await screen.findByText("No matches in the CineSense catalogue")).toBeInTheDocument();
+  expect(screen.getByText("Nothing matches every wish. Try:")).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: "Not only in cinemas · 12 films" }));
+  expect(onRelax).toHaveBeenCalledWith(wider);
+});
+
+it("shows no relaxation buttons without onRelax", async () => {
+  search.mockResolvedValue({
+    ok: true,
+    data: {
+      items: sampleRanked(1),
+      total: 1,
+      hidden_by_exclusion: 0,
+      extended_used: false,
+      relaxations: [{ id: "runtime", label: "Allow up to 90 min", count: 2, criteria: emptyCriteria() }],
+    },
+  });
+  render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} />);
+  expect(await screen.findByText(/1 matches in the CineSense catalogue/)).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /Allow up to 90 min/ })).toBeNull();
+});

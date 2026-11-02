@@ -296,3 +296,21 @@ def test_discover_hits_get_trailers_but_background_rows_spend_nothing():
     assert asked == []
     c.post("/api/discover", json={"limit": 20})
     assert asked
+
+
+def test_search_offers_relaxations_when_thin():
+    r = client().post("/api/search", json={"criteria": {"max_runtime_min": 60}}).json()
+    assert r["total"] < 3
+    assert [o["id"] for o in r["relaxations"]] == ["runtime"]
+    assert r["relaxations"][0]["label"] == "Allow up to 90 min"
+    assert r["relaxations"][0]["count"] > r["total"]
+    assert r["relaxations"][0]["criteria"]["max_runtime_min"] == 90
+
+
+def test_search_without_relaxations_when_enough():
+    assert client().post("/api/search", json={"criteria": {}}).json()["relaxations"] == []
+
+
+def test_search_offers_no_relaxations_on_later_pages():
+    r = client().post("/api/search", json={"criteria": {"max_runtime_min": 60}, "offset": 20}).json()
+    assert r["relaxations"] == []

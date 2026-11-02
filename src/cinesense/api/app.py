@@ -22,6 +22,7 @@ from cinesense.config import load_env_file
 from cinesense.domain.criteria import SearchCriteria
 from cinesense.domain.models import MoodWorld, Movie, RankedMovie
 from cinesense.domain.worlds import WORLDS, get_world
+from cinesense.search import relax
 from cinesense.search.service import SearchService
 
 Provider = Annotated[object, Depends(get_provider)]
@@ -44,11 +45,19 @@ class DiscoverRequest(BaseModel):
     fill_images: bool = True  # False: no Streaming API image lookups or YouTube searches (homepage background rows)
 
 
+class RelaxationOut(BaseModel):
+    id: str
+    label: str
+    count: int
+    criteria: SearchCriteria
+
+
 class DiscoverResponse(BaseModel):
     items: list[RankedMovie]
     total: int
     hidden_by_exclusion: int = 0
     extended_used: bool = False
+    relaxations: list[RelaxationOut] = Field(default_factory=list)  # ways to widen a thin search (/api/search)
 
 
 def create_app(load_env: bool = True) -> FastAPI:
@@ -140,7 +149,15 @@ def create_app(load_env: bool = True) -> FastAPI:
         checker: Checker,
         trailers: Trailers,
     ) -> DiscoverResponse:
-        return _discover(req, provider, streaming, embedder, live, tasks, profile, checker, trailers)
+        res = _discover(req, provider, streaming, embedder, live, tasks, profile, checker, trailers)
+        if req.offset == 0 and res.total < relax.MIN_RESULTS:
+            # probes never use the Streaming API or the live search
+            probe_service = SearchService(provider, None, embedder)
+            options = relax.probe(probe_service, req.criteria, provider.list_tags(), res.total)
+            res.relaxations = [
+                RelaxationOut(id=o.id, label=o.label, count=o.count, criteria=o.criteria) for o in options
+            ]
+        return res
 
     @app.get("/api/worlds/{world_id}/movies")
     def world_movies(

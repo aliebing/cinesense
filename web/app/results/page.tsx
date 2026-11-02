@@ -49,7 +49,7 @@ export default function ResultsPage() {
           />
         )}
         <SearchChips tags={tags} criteria={criteria} onChange={setCriteria} hiddenCount={hidden} />
-        <ResultList criteria={criteria} onOpen={open} onMeta={onMeta} />
+        <ResultList criteria={criteria} onOpen={open} onMeta={onMeta} onRelax={setCriteria} />
       </div>
     </CinemaFrame>
   );

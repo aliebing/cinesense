@@ -454,6 +454,12 @@
 .results-toggle { background: #0d0d14c4; color: #fff; border: 1px solid #ffffff30; }
 .results-head { margin: 0; font-size: 1.05em; font-weight: 600; }
 .results-extended { color: var(--gold); font-weight: 400; }
+.results-relax-bar { display: flex; flex-wrap: wrap; align-items: center; gap: .5em .7em; text-shadow: 0 1px 3px #000; }
+.results-relax {
+  font: inherit; cursor: pointer; border-radius: 999px; padding: .4em 1em;
+  background: #0d0d14d9; color: #fff; border: 1px solid var(--gold);
+}
+.results-relax:hover, .results-relax:focus-visible { background: var(--gold); color: #16130c; }
 /* the matches run in one row at the bottom, like "Also fits your mood" on the genre page */
 .results-page .related { position: static; margin-top: auto; }
 .related-why { display: block; margin-top: .2em; font-size: .9em; color: #f3c76bd9; }
