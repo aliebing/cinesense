@@ -15,3 +15,7 @@ wheels/
 
 # Demo video output (scripts/video)
 scripts/video/out/
+
+# Personal prompt drafts (not part of the project)
+prompt.txt
+prompt improve app.txt
