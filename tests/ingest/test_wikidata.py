@@ -107,3 +107,8 @@ async def test_fetch_german_titles_by_wikidata_id():
         "wd%3AQ2" in route.calls[0].request.content.decode()
         and "not-a-qid" not in route.calls[0].request.content.decode()
     )
+
+
+def test_fold_rows_choose_the_same_language_whatever_the_row_order():
+    rows = [b(ml="1", film="http://www.wikidata.org/entity/Q1", lang=x) for x in ("it", "de")]
+    assert fold_bindings(rows)[1].original_language == fold_bindings(rows[::-1])[1].original_language == "de"

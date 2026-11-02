@@ -67,7 +67,11 @@ def test_duplicate_wikidata_items_keep_first(monkeypatch):
     async def fake_fetch(ids, client):
         return {i: WikidataFilm(i, "Q1") for i in ids}
 
+    async def no_tie(qids, client):
+        return {}
+
     monkeypatch.setattr(pipeline, "fetch_wikidata", fake_fetch)
+    monkeypatch.setattr(pipeline, "fetch_languages", no_tie)
     upserted = []
     monkeypatch.setattr(pipeline, "_upsert_films", lambda conn, rows: upserted.extend(rows))
     monkeypatch.setattr(pipeline, "_replace_people", lambda conn, ids, rows: None)
@@ -137,7 +141,11 @@ def test_link_wikidata_fills_german_title_article_and_trailer_of_live_imports(mo
             )
         }  # fmt: skip
 
+    async def no_tie(qids, client):
+        return {}
+
     monkeypatch.setattr(pipeline, "fetch_by_imdb", fake_fetch)
+    monkeypatch.setattr(pipeline, "fetch_languages", no_tie)
     executed = []
 
     class Conn:
@@ -199,3 +207,43 @@ def test_backfill_german_titles_fills_only_missing_ones(monkeypatch):
     assert asyncio.run(pipeline.backfill_german_titles(Conn())) == 1
     sql, rows = executed[0]
     assert "title_de is null" in sql and rows == [("Der Schuh des Manitu", "ml-173627")]
+
+
+def test_backfill_languages_corrects_only_changed_films(monkeypatch):
+    import asyncio
+
+    from cinesense.ingest import pipeline
+
+    async def fake(qids, client):
+        assert qids == ["Q19355", "Q2", "Q3"]
+        return {"Q19355": "it", "Q2": "en"}  # Q3: Wikidata names no language, the old one stays
+
+    monkeypatch.setattr(pipeline, "fetch_languages", fake)
+    executed = []
+
+    class Conn:
+        def execute(self, sql, params=()):
+            class R:
+                def fetchall(self):
+                    return [("ml-2324", "Q19355", "de"), ("ml-2", "Q2", "en"), ("ml-3", "Q3", "fr")]
+
+            return R()
+
+        def cursor(self):
+            class C:
+                def __enter__(self):
+                    return self
+
+                def __exit__(self, *a):
+                    return False
+
+                def executemany(self, sql, rows):
+                    executed.append((sql, rows))
+
+            return C()
+
+        def commit(self):
+            pass
+
+    assert asyncio.run(pipeline.backfill_languages(Conn())) == [("ml-2324", "de", "it")]
+    assert executed == [("update films set original_language = %s where id = %s", [("it", "ml-2324")])]

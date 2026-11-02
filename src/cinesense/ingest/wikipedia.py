@@ -79,3 +79,47 @@ def chunk_text(text: str, max_chars: int = 900, overlap: int = 120) -> list[str]
     if current:
         chunks.append(current)
     return chunks
+
+
+_INFOBOX_LANGUAGE = re.compile(r"^\s*\|\s*language\s*=(.*?)(?=^\s*\||^\s*\}\})", re.M | re.S | re.I)
+
+
+def infobox_language(wikitext: str) -> str | None:
+    """The first language in a film infobox ("| language = {{Plainlist|* German * Polish}}" -> "German"). The
+    infobox lists the primary language first (Template:Infobox film: "only the primary language")."""
+    m = _INFOBOX_LANGUAGE.search(wikitext)
+    if not m:
+        return None
+    value = re.sub(r"<!--.*?-->|<ref[^>]*/>|<ref.*?</ref>", "", m.group(1), flags=re.S)
+    value = re.sub(r"\[\[(?:[^|\]]*\|)?([^\]]*)\]\]", r"\1", value)  # [[Hindi language|Hindi]] -> Hindi
+    value = re.sub(r"\{\{\s*(?:plain ?list|ubl|unbulleted list|flatlist|hlist)\s*\|", "", value, flags=re.I)
+    for part in re.split(r"<br\s*/?>|\n|\*|\||,|\band\b|/", value):
+        name = re.sub(r"[{}()\[\]]", "", part).strip()
+        if name and re.fullmatch(r"[A-Za-z][A-Za-z \-']*", name):
+            return name.removesuffix(" language").strip()
+    return None
+
+
+async def fetch_infobox_language(title: str, client: httpx.AsyncClient, retries: int = 4) -> str | None:
+    """The primary language named in an English Wikipedia film article's infobox, or None."""
+    params = {
+        "action": "query",
+        "prop": "revisions",
+        "rvprop": "content",
+        "rvslots": "main",
+        "rvsection": "0",
+        "redirects": "1",
+        "titles": title,
+        "format": "json",
+        "formatversion": "2",
+    }
+    for attempt in range(retries):
+        r = await client.get(API_URL, params=params, headers={"User-Agent": USER_AGENT}, timeout=30)
+        if r.status_code in (429, 500, 502, 503, 504):
+            await asyncio.sleep(2**attempt * 2)
+            continue
+        r.raise_for_status()
+        page = (r.json().get("query", {}).get("pages") or [{}])[0]
+        text = (page.get("revisions") or [{}])[0].get("slots", {}).get("main", {}).get("content", "")
+        return infobox_language(text)
+    return None  # still failing: no hint, the other rules decide

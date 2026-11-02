@@ -20,13 +20,19 @@ from cinesense.config import get_settings, load_env_file
 from cinesense.db import connect, init_schema
 from cinesense.ingest.embeddings import EmbeddingClient
 from cinesense.ingest.extra_titles import fetch_recent_de_releases
+from cinesense.ingest.languages import fetch_languages
 from cinesense.ingest.movielens import (
     MovieLensFilm,
     read_documentaries_without_genome,
     read_films,
     read_genome_tags,
 )
-from cinesense.ingest.wikidata import WikidataFilm, fetch_by_imdb, fetch_german_titles, fetch_wikidata
+from cinesense.ingest.wikidata import (
+    WikidataFilm,
+    fetch_by_imdb,
+    fetch_german_titles,
+    fetch_wikidata,
+)
 from cinesense.ingest.wikipedia import chunk_text, fetch_plot
 from cinesense.ingest.worlds_map import assign_worlds, top_tags
 
@@ -128,6 +134,7 @@ async def ingest_catalogue(conn, ml_path, limit: int | None, with_extras: bool) 
     async with httpx.AsyncClient() as client:
         wd = await fetch_wikidata([f.movielens_id for f in films], client)
         log.info("Wikidata matches: %d", len(wd))
+        await settle_languages(list(wd.values()), client)
         rows, people = [], []
         # one row per Wikidata item: MovieLens has a few duplicates; films are ordered most-rated first
         taken = dict(conn.execute("select wikidata_id, id from films where wikidata_id is not null").fetchall())
@@ -250,6 +257,7 @@ def main() -> None:
     parser.add_argument("--plots", type=int, default=None, help="only N plots this run")
     parser.add_argument("--enrich-live", action="store_true", help="link live imports to Wikidata, load their plots")
     parser.add_argument("--german-titles", action="store_true", help="German titles from Wikidata for the catalogue")
+    parser.add_argument("--languages", action="store_true", help="recheck original languages (country of origin)")
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     load_env_file()
@@ -264,6 +272,9 @@ def main() -> None:
     if args.german_titles:
         with connect(s.database_url) as conn:
             asyncio.run(backfill_german_titles(conn))
+    if args.languages:
+        with connect(s.database_url) as conn:
+            asyncio.run(backfill_languages(conn))
     with connect(s.database_url) as conn:
         if not args.no_films:
             if not s.movielens_db_path:
@@ -292,6 +303,27 @@ async def backfill_german_titles(conn) -> int:
     return len(rows)
 
 
+async def settle_languages(films: list[WikidataFilm], client) -> None:
+    """Of several original languages, keep the primary one (see cinesense.ingest.languages)."""
+    settled = await fetch_languages([f.wikidata_id for f in films], client)
+    for f in films:
+        f.original_language = settled.get(f.wikidata_id, f.original_language)
+
+
+async def backfill_languages(conn) -> list[tuple[str, str | None, str]]:
+    """Recheck the original language of every film with a Wikidata id (the first ingest took whichever of several
+    languages came first: Life Is Beautiful was German). Returns (film id, old, new) for each change."""
+    todo = conn.execute("select id, wikidata_id, original_language from films where wikidata_id is not null").fetchall()
+    async with httpx.AsyncClient() as client:
+        settled = await fetch_languages([q for _, q, _ in todo], client)
+    changes = [(film_id, old, settled[q]) for film_id, q, old in todo if settled.get(q) and settled[q] != old]
+    with conn.cursor() as cur:
+        cur.executemany("update films set original_language = %s where id = %s", [(new, i) for i, _, new in changes])
+    conn.commit()
+    log.info("Original language: %d of %d films corrected", len(changes), len(todo))
+    return changes
+
+
 async def link_wikidata(conn, ids: list[str] | None = None) -> int:
     """Films imported live carry only an IMDb id. Look them up in Wikidata for the German title (searchable),
     the English Wikipedia article (for the plot), the official trailer and the original language.
@@ -306,6 +338,7 @@ async def link_wikidata(conn, ids: list[str] | None = None) -> int:
         return 0
     async with httpx.AsyncClient() as client:
         found = await fetch_by_imdb(list(todo.values()), client)
+        await settle_languages(list(found.values()), client)
     linked = 0
     for film_id, imdb in todo.items():
         wd = found.get(imdb)

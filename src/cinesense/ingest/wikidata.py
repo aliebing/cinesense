@@ -93,6 +93,7 @@ def fold_bindings(rows: list[dict], key: str = "ml") -> dict:
     films: dict = {}
     trailers: dict = {}
     cast_rows: dict = {}
+    langs: dict = {}
     for row in rows:
         k = _v(row, key)
         if k is None:
@@ -107,7 +108,8 @@ def fold_bindings(rows: list[dict], key: str = "ml") -> dict:
                 f.runtime_min = round(float(rt))
             except ValueError:
                 pass
-        f.original_language = f.original_language or _v(row, "lang")
+        if lang := _v(row, "lang"):
+            langs.setdefault(k, set()).add(lang)
         if (url := _v(row, "enwiki")) and not f.wikipedia_title:
             f.wikipedia_title = _wiki_title(url)
         if (d := _v(row, "deDate")) and (pd := _parse_date(d)):
@@ -128,6 +130,8 @@ def fold_bindings(rows: list[dict], key: str = "ml") -> dict:
             cast_rows.setdefault(k, {}).setdefault(name, order)
     for k, ids in trailers.items():
         films[k].youtube_key = sorted(ids)[0]
+    for k, found in langs.items():  # a stable first guess; languages.fetch_languages settles ties
+        films[k].original_language = sorted(found)[0]
     for k, names in cast_rows.items():
         # by explicit ordinal, then first-seen order (dicts keep insertion order)
         films[k].cast = [n for n, _ in sorted(names.items(), key=lambda kv: kv[1])]

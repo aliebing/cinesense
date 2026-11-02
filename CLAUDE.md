@@ -45,6 +45,7 @@ MOVIELENS_DB_PATH=/home/ali/projects/turing/moviefinder/db/moviedoc.db make inge
 uv run --env-file .env python -m cinesense.ingest.billing  # cast billing from Wikipedia leads (resumable)
 uv run --env-file .env python -m cinesense.ingest.pipeline --no-films --no-plots --german-titles  # German titles from Wikidata
 uv run --env-file .env python -m cinesense.ingest.pipeline --no-films --no-plots --enrich-live    # Wikidata + plots for live imports
+uv run --env-file .env python -m cinesense.ingest.pipeline --no-films --no-plots --languages      # recheck original languages (~7 min)
 ```
 
 ## Services (`.env`, see `.env.example`)
