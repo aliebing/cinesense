@@ -17,17 +17,45 @@ class SearchService:
         self.embedder = embedder
         self.live = live
         self.on_import = on_import  # called with the ids of films just imported live (to enrich them)
+        self._embed_cache: dict[str, list[float] | None] = {}  # one embedding per text (probes reuse it)
 
     def _embed(self, text: str) -> list[float] | None:
         if self.embedder is None:
             return None
-        try:
-            return asyncio.run(self.embedder.embed([text]))[0]
-        except Exception as exc:  # noqa: BLE001 — degrade to no plot signal
-            log.warning("embedding failed: %s", exc)
-            return None
+        if text not in self._embed_cache:
+            try:
+                self._embed_cache[text] = asyncio.run(self.embedder.embed([text]))[0]
+            except Exception as exc:  # noqa: BLE001 — degrade to no plot signal
+                log.warning("embedding failed: %s", exc)
+                self._embed_cache[text] = None
+        return self._embed_cache[text]
+
+    def count(self, c: SearchCriteria) -> int:
+        """How many films a search would rank — a cheap probe: no live import, no streaming lookups, no profile."""
+        return self._candidates(c, None, offset=0, allow_live=False)[0].total
 
     def run(self, c: SearchCriteria, offset: int = 0, limit: int = 20, profile=None) -> CombinedResult:
+        result, sig, extended_used = self._candidates(c, profile, offset, allow_live=True)
+        p = self.provider
+        # a stream filter may drop films that turn out not to stream: rank a few spare ones to fill the page
+        window = limit + STREAM_CHECK_LIMIT if c.availability == "stream" and self.streaming is not None else limit
+        if c.has_tags():
+            top_ids = [r.movie.id for r in result.items[: offset + window]]
+            vectors = p.tag_vectors(top_ids)
+            idxs = [t.idx for t in c.tags]
+            sig.tag_relevance = {fid: {i: float(vectors[row][i]) for i in idxs} for row, fid in enumerate(top_ids)}
+        page = combined_rank([r.movie for r in result.items], c, sig, hidden_by_tags=0, offset=offset, limit=window)
+        page.hidden_by_exclusion = result.hidden_by_exclusion
+        for r in page.items:  # callers fill images/streaming on the page; never mutate the shared catalogue
+            r.movie = r.movie.model_copy(deep=True)
+        page.extended_used = extended_used
+        if c.availability == "stream":
+            page = self._resolve_streaming(page, limit)
+        page.items = page.items[:limit]
+        return page
+
+    def _candidates(self, c: SearchCriteria, profile, offset: int, allow_live: bool):
+        """Candidate generation per signal and the first ranking over all candidates."""
         p = self.provider
         sig = Signals(tag_names=dict(enumerate(p.list_tags())) if c.has_tags() else {})
         restrict: set[str] | None = None
@@ -60,7 +88,7 @@ class SearchService:
             movies = [m for m in movies if m.id in restrict]
         extended_used = False
         # live search only on the first page (later pages reuse the lazily imported films)
-        if self.live is not None and offset == 0 and (c.title or c.person) and (c.extended or len(movies) < 5):
+        if allow_live and self.live is not None and offset == 0 and (c.title or c.person) and (c.extended or len(movies) < 5):
             live_hits = self._live(c, sig)
             if live_hits:
                 extended_used = True
@@ -76,23 +104,7 @@ class SearchService:
             sig.title = _without_sound_alikes(sig.title)
             movies = [m for m in movies if m.id in sig.title]
         result = combined_rank(movies, c, sig, hidden_by_tags=hidden, offset=0, limit=len(movies) or 1)
-
-        # a stream filter may drop films that turn out not to stream: rank a few spare ones to fill the page
-        window = limit + STREAM_CHECK_LIMIT if c.availability == "stream" and self.streaming is not None else limit
-        if c.has_tags():
-            top_ids = [r.movie.id for r in result.items[: offset + window]]
-            vectors = p.tag_vectors(top_ids)
-            idxs = [t.idx for t in c.tags]
-            sig.tag_relevance = {fid: {i: float(vectors[row][i]) for i in idxs} for row, fid in enumerate(top_ids)}
-        page = combined_rank([r.movie for r in result.items], c, sig, hidden_by_tags=0, offset=offset, limit=window)
-        page.hidden_by_exclusion = result.hidden_by_exclusion
-        for r in page.items:  # callers fill images/streaming on the page; never mutate the shared catalogue
-            r.movie = r.movie.model_copy(deep=True)
-        page.extended_used = extended_used
-        if c.availability == "stream":
-            page = self._resolve_streaming(page, limit)
-        page.items = page.items[:limit]
-        return page
+        return result, sig, extended_used
 
     def _live(self, c: SearchCriteria, sig: Signals) -> list:
         hits = []
