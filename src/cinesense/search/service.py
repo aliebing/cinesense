@@ -88,7 +88,8 @@ class SearchService:
             movies = [m for m in movies if m.id in restrict]
         extended_used = False
         # live search only on the first page (later pages reuse the lazily imported films)
-        if allow_live and self.live is not None and offset == 0 and (c.title or c.person) and (c.extended or len(movies) < 5):
+        wants_live = (c.title or c.person) and (c.extended or len(movies) < 5)
+        if allow_live and self.live is not None and offset == 0 and wants_live:
             live_hits = self._live(c, sig)
             if live_hits:
                 extended_used = True
