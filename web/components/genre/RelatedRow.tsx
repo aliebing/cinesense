@@ -14,7 +14,7 @@ const SLOW_SPEED = 14; // px per second in the middle: still moving, but a card 
 const MAX_SPEED = 1100; // px per second with the pointer at the very edge
 const DEAD_ZONE = 0.3; // middle share of the row where it only creeps on
 const EASE_MS = 220;
-export const MIN_SLOTS = 14; // a loop set narrower than the row would show gaps and its jump: empty boxes fill it
+export const MIN_SLOTS = 14; // fewer films than this don't fill the row: they stand still instead of looping
 
 /** Row velocity for a pointer at `ratio` (0 = left edge, 1 = right edge) of the row; null = no pointer.
  *  Right of the middle the films slide left (more come in from the right), left of it the other way,
@@ -54,13 +54,15 @@ export default function RelatedRow({
   const anchor = useRef<HTMLElement | null>(null); // the card under the pointer
   const trailerRef = useRef(false);
   const reduced = useReducedMotion();
+  // a short list stands still, left-aligned: looping it would need empty boxes (the row looked empty with 2 hits)
+  const still = reduced || items.length < MIN_SLOTS;
   const { activeId } = useActiveTrailer();
   useEffect(() => {
     trailerRef.current = activeId !== null; // a playing trailer must not slide away from under the pointer
   }, [activeId]);
 
   useEffect(() => {
-    if (reduced) return;
+    if (still) return;
     let frame = 0;
     let last = performance.now();
     let offset = 0;
@@ -97,24 +99,23 @@ export default function RelatedRow({
     };
     frame = requestAnimationFrame(step);
     return () => cancelAnimationFrame(frame);
-  }, [reduced]);
+  }, [still]);
 
   if (items.length === 0) return null;
-  const empty = reduced ? 0 : Math.max(0, MIN_SLOTS - items.length);
-  const slots: (RankedMovie | null)[] = [...items, ...Array<null>(empty).fill(null)];
+  const slots = items;
   const onMove = (e: React.PointerEvent) => {
     const box = viewport.current?.getBoundingClientRect();
     if (box && box.width > 0) pointer.current = (e.clientX - box.left) / box.width;
-    anchor.current = (e.target as HTMLElement).closest?.(".related-wrap, .related-card--empty") ?? null;
+    anchor.current = (e.target as HTMLElement).closest?.(".related-wrap") ?? null;
   };
   return (
     <section className="related" aria-label={name}>
       <h3 className="related-label">
-        {label} <span className="related-hint">· move the mouse left or right to browse</span>
+        {label} {!still && <span className="related-hint">· move the mouse left or right to browse</span>}
       </h3>
       <div
         ref={viewport}
-        className={`related-viewport ${reduced ? "is-static" : ""}`}
+        className={`related-viewport ${still ? "is-static" : ""}`}
         onPointerMove={onMove}
         onPointerLeave={() => {
           pointer.current = null;
@@ -122,10 +123,7 @@ export default function RelatedRow({
         }}
       >
         <div ref={track} className="related-track">
-          {(reduced ? slots : [...slots, ...slots]).map((r, i) =>
-            r === null ? (
-              <div key={`empty-${i}`} className="related-card related-card--empty" aria-hidden="true" />
-            ) : (
+          {(still ? slots : [...slots, ...slots]).map((r, i) => (
             <HoverTrailer key={`${r.movie.id}-${i}`} movie={r.movie} className="related-wrap">
               <button
                 type="button"
@@ -143,8 +141,7 @@ export default function RelatedRow({
                 </span>
               </button>
             </HoverTrailer>
-            ),
-          )}
+          ))}
         </div>
       </div>
     </section>

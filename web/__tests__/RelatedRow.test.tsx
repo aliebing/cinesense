@@ -41,19 +41,18 @@ it("edgeSpeed: creeps on in the middle, faster towards the edges, opposite direc
   expect(Math.abs(edgeSpeed(null))).toBeLessThan(60);
 });
 
-it("few films: empty boxes fill each loop set, so the row never shows gaps or jumps", async () => {
-  const { MIN_SLOTS } = await import("@/components/genre/RelatedRow");
-  const { container } = render(<RelatedRow items={sampleRanked(4)} onSelect={() => {}} />);
-  const empty = container.querySelectorAll(".related-card--empty");
-  expect(empty).toHaveLength(2 * (MIN_SLOTS - 4)); // both copies of the loop
-  expect([...empty].every((e) => e.getAttribute("aria-hidden") === "true")).toBe(true);
-  expect(screen.getAllByRole("button", { name: /Demo-Film/ }).filter((b) => !b.closest("[aria-hidden]"))).toHaveLength(4);
+it("few films stand still, once each, without empty boxes or the browse hint", async () => {
+  const { container } = render(<RelatedRow items={sampleRanked(2)} onSelect={() => {}} />);
+  expect(container.querySelectorAll(".related-card")).toHaveLength(2);
+  expect(container.querySelector(".related-viewport")).toHaveClass("is-static");
+  expect(container.textContent).not.toContain("move the mouse");
 });
 
-it("enough films: no empty boxes", async () => {
+it("enough films: the row loops (two copies) and invites browsing", async () => {
   const { MIN_SLOTS } = await import("@/components/genre/RelatedRow");
   const { container } = render(<RelatedRow items={sampleRanked(MIN_SLOTS)} onSelect={() => {}} />);
-  expect(container.querySelectorAll(".related-card--empty")).toHaveLength(0);
+  expect(container.querySelectorAll(".related-card")).toHaveLength(2 * MIN_SLOTS);
+  expect(container.textContent).toContain("move the mouse");
 });
 
 it("a card that changes width never moves the card under the pointer: the row offset absorbs the shift", async () => {
