@@ -55,7 +55,7 @@ it("offers ways to widen a search that finds too little", async () => {
   expect(await screen.findByText("No matches in the CineSense catalogue")).toBeInTheDocument();
   expect(screen.getByText("Nothing matches every wish. Try:")).toBeInTheDocument();
   await userEvent.click(screen.getByRole("button", { name: "Not only in cinemas · 12 films" }));
-  expect(onRelax).toHaveBeenCalledWith(wider);
+  expect(onRelax).toHaveBeenCalledWith(wider, "Not only in cinemas");
 });
 
 it("shows no relaxation buttons without onRelax", async () => {
@@ -72,4 +72,34 @@ it("shows no relaxation buttons without onRelax", async () => {
   render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} />);
   expect(await screen.findByText(/1 matches in the CineSense catalogue/)).toBeInTheDocument();
   expect(screen.queryByRole("button", { name: /Allow up to 90 min/ })).toBeNull();
+});
+
+it("sends what the search was widened from, says so, and marks misses on cards", async () => {
+  const items = sampleRanked(1).map((r) => ({ ...r, misses: ["not in cinemas"] }));
+  search.mockResolvedValue({ ok: true, data: { items, total: 1, hidden_by_exclusion: 0, extended_used: false } });
+  const from = { ...emptyCriteria(), availability: "cinema" as const };
+  render(
+    <ResultList criteria={emptyCriteria()} onOpen={() => {}} widened={{ from, labels: ["Not only in cinemas"] }} />,
+  );
+  expect(await screen.findByText(/Widened: Not only in cinemas/)).toBeInTheDocument();
+  expect(search.mock.calls[0][3]).toEqual(from);
+  expect((await screen.findAllByText("≠ not in cinemas"))[0]).toBeInTheDocument();
+});
+
+it("passes the label along when a relaxation is chosen", async () => {
+  const onRelax = vi.fn();
+  const wider = { ...emptyCriteria(), max_runtime_min: 90 };
+  search.mockResolvedValue({
+    ok: true,
+    data: {
+      items: [],
+      total: 0,
+      hidden_by_exclusion: 0,
+      extended_used: false,
+      relaxations: [{ id: "runtime", label: "Allow up to 90 min", count: 2, criteria: wider }],
+    },
+  });
+  render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} onRelax={onRelax} />);
+  await userEvent.click(await screen.findByRole("button", { name: "Allow up to 90 min · 2 films" }));
+  expect(onRelax).toHaveBeenCalledWith(wider, "Allow up to 90 min");
 });

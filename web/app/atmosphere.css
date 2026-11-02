@@ -459,6 +459,8 @@
   font: inherit; cursor: pointer; border-radius: 999px; padding: .4em 1em;
   background: #0d0d14d9; color: #fff; border: 1px solid var(--gold);
 }
+.results-widened { margin: 0; color: var(--miss); text-shadow: 0 1px 3px #000; }
+.result-miss { display: block; margin-top: .15em; font-size: .85em; color: var(--miss); }
 .results-relax:hover, .results-relax:focus-visible { background: var(--gold); color: #16130c; }
 /* the matches run in one row at the bottom, like "Also fits your mood" on the genre page */
 .results-page .related { position: static; margin-top: auto; }

@@ -314,3 +314,24 @@ def test_search_without_relaxations_when_enough():
 def test_search_offers_no_relaxations_on_later_pages():
     r = client().post("/api/search", json={"criteria": {"max_runtime_min": 60}, "offset": 20}).json()
     assert r["relaxations"] == []
+
+
+def test_search_marks_misses_against_relaxed_from():
+    body = {"criteria": {"max_runtime_min": 90}, "relaxed_from": {"max_runtime_min": 60}}
+    items = {i["movie"]["title"]: i["misses"] for i in client().post("/api/search", json=body).json()["items"]}
+    assert items == {"Shrek": ["90 min, longer than 60"], "Toy Story": ["80 min, longer than 60"]}
+
+
+def test_search_without_relaxed_from_has_no_misses():
+    items = client().post("/api/search", json={"criteria": {"max_runtime_min": 90}}).json()["items"]
+    assert items and all(i["misses"] == [] for i in items)
+
+
+def test_misses_name_moods_the_film_has_no_data_for():
+    p = FixtureProvider()
+    p._vectors.pop("ml-4306")  # Shrek without Tag Genome data
+    funny = p.list_tags().index("funny")
+    body = {"criteria": {"max_runtime_min": 90}, "relaxed_from": {"tags": [{"idx": funny}], "max_runtime_min": 90}}
+    res = client(provider=p).post("/api/search", json=body).json()["items"]
+    items = {i["movie"]["title"]: i["misses"] for i in res}
+    assert items["Shrek"] == ["no mood data for 'funny'"] and items["Toy Story"] == []

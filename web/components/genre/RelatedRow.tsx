@@ -138,6 +138,12 @@ export default function RelatedRow({
                 <span>
                   {r.movie.title}
                   {showReasons && r.reasons.length > 0 && <small className="related-why">{r.reasons.slice(0, 2).join(" · ")}</small>}
+                  {showReasons &&
+                    r.misses?.map((m) => (
+                      <small key={m} className="result-miss">
+                        ≠ {m}
+                      </small>
+                    ))}
                 </span>
               </button>
             </HoverTrailer>

@@ -80,3 +80,4 @@ class RankedMovie(BaseModel):
     score: float
     match_percent: int
     reasons: list[str] = Field(default_factory=list)
+    misses: list[str] = Field(default_factory=list)  # parts of the original wish a widened search's film misses

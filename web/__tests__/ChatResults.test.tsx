@@ -14,4 +14,10 @@ describe("ChatResults", () => {
     expect(screen.getByTestId("chat-pick")).toBeInTheDocument();
     expect(screen.queryByTestId("hover-trailer")).toBeNull();
   });
+
+  it("marks what a widened search's film misses", () => {
+    render(<ChatResults results={[{ ...pick, misses: ["not in cinemas", "101 min, longer than 90"] }]} onOpen={vi.fn()} />);
+    expect(screen.getByText("≠ not in cinemas")).toBeInTheDocument();
+    expect(screen.getByText("≠ 101 min, longer than 90")).toBeInTheDocument();
+  });
 });

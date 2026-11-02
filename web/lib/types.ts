@@ -55,6 +55,7 @@ export type RankedMovie = {
   score: number;
   match_percent: number;
   reasons: string[];
+  misses?: string[]; // after a widened search: the parts of the original wish this film misses
 };
 
 export type HomeData = {

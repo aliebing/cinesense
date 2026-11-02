@@ -96,7 +96,7 @@ class CinemaProvider(FixtureProvider):
         m.availability.in_cinema_de = True
         self._vectors.pop("ml-1265")
 
-    def semantic_search(self, query_embedding, k: int = 20):
+    def semantic_search(self, query_embedding, k: int = 20, only_ids=None):
         return [(self._by_id["ml-1265"], 0.8, "A weatherman relives the same day.")]
 
 
@@ -143,3 +143,27 @@ def test_explain_input_names_the_widening(make_agent):
     g = make_agent([ai(calls=[("set_filters", {"max_runtime_min": 60})]), ai("Done."), *HMM])
     out = run_turn(g, "r9", "very short film", crit())
     assert "Widened: Allow up to 90 min" in out["prompts"]["explain_input"]
+
+
+def test_widened_results_carry_misses(make_agent):
+    g = make_agent([ai(calls=[("set_filters", {"max_runtime_min": 60})]), ai("Done."), *HMM])
+    out = run_turn(g, "r10", "very short film", crit())
+    assert out["results"]
+    for r in out["results"]:
+        assert r["misses"] == [f"{r['movie']['runtime_min']} min, longer than 60"]
+
+
+def test_unwidened_results_have_no_misses(make_agent):
+    g = make_agent([ai(calls=[("set_mood_tags", {"tags": [{"name": "space travel"}]})]), ai("Done.")])
+    out = run_turn(g, "r11", "space", crit())
+    assert out["results"] and all(r["misses"] == [] for r in out["results"])
+
+
+def test_original_criteria_reset_each_turn(make_agent):
+    first = [ai(calls=[("set_filters", {"max_runtime_min": 60})]), ai("Done."), ai("Hmm."), ai("Hmm.")]
+    second = [ai(calls=[("set_filters", {"max_runtime_min": 150})]), ai("Done.")]
+    g = make_agent(first + second, [AIMessage("A."), AIMessage("B.")])
+    assert run_turn(g, "r12", "very short film", crit())["relaxed"]
+    out = run_turn(g, "r12", "up to 150 minutes", crit(max_runtime_min=120))
+    assert out["relaxed"] == []
+    assert out["results"] and all(r["misses"] == [] for r in out["results"])

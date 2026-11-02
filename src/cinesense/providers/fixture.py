@@ -80,7 +80,7 @@ class FixtureProvider:
         ranked = sorted(zip(ids, sims.tolist(), strict=True), key=lambda x: x[1], reverse=True)[:limit]
         return ranked, len(hidden)
 
-    def semantic_search(self, query_embedding, k: int = 20):
+    def semantic_search(self, query_embedding, k: int = 20, only_ids=None):
         return []
 
     def search_title(self, q: str, limit: int = 200) -> dict[str, float]:

@@ -20,3 +20,4 @@ class AgentState(TypedDict, total=False):
     relax_rounds: int  # how often this turn offered to widen a thin search
     relax_options: list[dict]  # {id, label, count} offered to the model right now; empty when none pending
     relaxed: list[str]  # labels of the relaxations applied this turn, in order
+    original_criteria: dict | None  # the criteria before the first relaxation (to mark what results miss)

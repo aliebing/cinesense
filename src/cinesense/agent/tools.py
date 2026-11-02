@@ -177,12 +177,7 @@ class ToolKit:
         opt = relax.apply(self._criteria(state), option_id, self.provider.list_tags()) if option_id in offered else None
         if opt is None:
             return {}, f"Option '{option_id}' is not available."
-        return {
-            "criteria": opt.criteria.model_dump(),
-            "criteria_changed": True,
-            "relaxed": [*(state.get("relaxed") or []), opt.label],
-            "relax_options": [],
-        }, f"Search widened: {opt.label}."
+        return relax.applied_update(state, opt), f"Search widened: {opt.label}."
 
     def show_on_stage(self, state: dict, title: str) -> tuple[dict, str]:
         film = self._find_film(title)

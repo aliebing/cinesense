@@ -147,15 +147,25 @@ class PostgresProvider:
         return [(r[0], float(r[1])) for r in rows], int(hidden)
 
     # --- plots (RAG) ---------------------------------------------------
-    def semantic_search(self, query_embedding: list[float], k: int = 20) -> list[tuple[Movie, float, str]]:
+    def semantic_search(
+        self, query_embedding: list[float], k: int = 20, only_ids: list[str] | None = None
+    ) -> list[tuple[Movie, float, str]]:
+        """only_ids: rank among these films only (an exact scan; for small pools like the films in cinemas)."""
         vec = np.asarray(query_embedding, dtype=np.float32)
         with self._conn() as c:
-            c.execute("set local hnsw.ef_search = 400")  # default 40 caps HNSW recall at ~40 chunks
-            rows = c.execute(
-                "select film_id, text, 1 - (embedding <=> %s) as sim from plot_chunks "
-                "order by embedding <=> %s limit %s",
-                (vec, vec, k * 4),
-            ).fetchall()
+            if only_ids is not None:
+                rows = c.execute(
+                    "select film_id, text, 1 - (embedding <=> %s) as sim from plot_chunks "
+                    "where film_id = any(%s) order by embedding <=> %s limit %s",
+                    (vec, only_ids, vec, k * 4),
+                ).fetchall()
+            else:
+                c.execute("set local hnsw.ef_search = 400")  # default 40 caps HNSW recall at ~40 chunks
+                rows = c.execute(
+                    "select film_id, text, 1 - (embedding <=> %s) as sim from plot_chunks "
+                    "order by embedding <=> %s limit %s",
+                    (vec, vec, k * 4),
+                ).fetchall()
         best: dict[str, tuple[float, str]] = {}
         for film_id, text, sim in rows:
             if film_id not in best:

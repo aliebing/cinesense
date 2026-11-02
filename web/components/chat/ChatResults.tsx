@@ -21,6 +21,11 @@ export default function ChatResults({ results, onOpen }: { results: RankedMovie[
               {r.movie.year ? ` (${r.movie.year})` : ""}
             </strong>
             {r.reasons.length > 0 && <span>{r.reasons.slice(0, 2).join(" · ")}</span>}
+            {r.misses?.map((m) => (
+              <small key={m} className="result-miss">
+                ≠ {m}
+              </small>
+            ))}
           </div>
         </article>
       ))}

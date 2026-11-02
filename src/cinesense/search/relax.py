@@ -6,7 +6,8 @@ Never loosened: not-tags and excluded genres (the user's hard limits), person, t
 import logging
 from dataclasses import dataclass
 
-from cinesense.domain.criteria import SearchCriteria
+from cinesense.domain.criteria import MUST_THRESHOLD, SearchCriteria
+from cinesense.domain.models import Movie
 
 log = logging.getLogger(__name__)
 
@@ -91,3 +92,56 @@ def pick_auto(options: list[Relaxation]) -> Relaxation | None:
 
 def apply(c: SearchCriteria, option_id: str, tag_names: list[str]) -> Relaxation | None:
     return next((o for o in relaxation_options(c, tag_names) if o.id == option_id), None)
+
+
+def misses(
+    movie: Movie, original: SearchCriteria, tag_names: list[str], tag_relevance: dict[int, float] | None = None
+) -> list[str]:
+    """What part of the original wish a film from a widened search does not meet — only the relaxable fields
+    (exclusions are never widened, so a film never misses them). Unknown values are not reported as misses."""
+    out = []
+    if original.max_runtime_min and movie.runtime_min and movie.runtime_min > original.max_runtime_min:
+        out.append(f"{movie.runtime_min} min, longer than {original.max_runtime_min}")
+    lo, hi = original.year_from, original.year_to
+    if movie.year and ((lo and movie.year < lo) or (hi and movie.year > hi)):
+        out.append(f"from {movie.year}, outside {lo or '…'}–{hi or '…'}")
+    if original.original_language and movie.original_language and movie.original_language != original.original_language:
+        out.append(f"original language {movie.original_language}, not {original.original_language}")
+    if original.world_id and original.world_id not in movie.world_ids:
+        out.append("outside this mood world")
+    a = movie.availability
+    if original.availability == "cinema" and not a.in_cinema_de:
+        out.append("not in cinemas")
+    if original.availability == "stream" and not a.subscription_services:
+        out.append("streaming not confirmed")
+    relevance = tag_relevance or {}
+    for t in original.tags:
+        if t.mode == "not":
+            continue
+        name = _name(tag_names, t.idx)
+        value = relevance.get(t.idx)
+        if value is None or value != value:  # NaN: the film has no Tag Genome vector
+            out.append(f"no mood data for '{name}'")
+        elif t.mode == "must" and value < MUST_THRESHOLD:
+            out.append(f"little '{name}'")  # a weak preference only ranks lower, it is no miss
+    return out
+
+
+def applied_update(state: dict, opt: Relaxation) -> dict:
+    """Agent state update for an applied relaxation; the first one keeps the criteria it widened."""
+    return {
+        "criteria": opt.criteria.model_dump(),
+        "criteria_changed": True,
+        "relaxed": [*(state.get("relaxed") or []), opt.label],
+        "relax_options": [],
+        "original_criteria": state.get("original_criteria") or state.get("criteria"),
+    }
+
+
+def mark_misses(items: list, original: SearchCriteria, provider) -> None:
+    """Fill RankedMovie.misses against the original criteria (in place)."""
+    wanted = [t.idx for t in original.tags if t.mode != "not"]
+    vectors = provider.tag_vectors([r.movie.id for r in items]) if wanted and items else None
+    for row, r in enumerate(items):
+        relevance = {i: float(vectors[row][i]) for i in wanted} if vectors is not None else None
+        r.misses = misses(r.movie, original, provider.list_tags(), relevance)

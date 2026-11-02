@@ -144,6 +144,8 @@ def build_graph(llm, explain_llm, tools: list, service, provider, checkpointer):
             ]
         try:
             result = service.run(SearchCriteria(**(state.get("criteria") or {})), 0, RESULTS, **_profile_kw(state))
+            if state.get("original_criteria"):
+                relax.mark_misses(result.items, SearchCriteria(**state["original_criteria"]), provider)
             update["results"] = [r.model_dump(mode="json") for r in result.items]
         except Exception:  # noqa: BLE001 — keep the history valid; explain answers with "no films"
             log.exception("present: search failed")
@@ -183,12 +185,7 @@ def build_graph(llm, explain_llm, tools: list, service, provider, checkpointer):
         )
         if opt is None:
             return {"relax_options": []}
-        return {
-            "criteria": opt.criteria.model_dump(),
-            "criteria_changed": True,
-            "relaxed": [*(state.get("relaxed") or []), opt.label],
-            "relax_options": [],
-        }
+        return relax.applied_update(state, opt)
 
     def explain(state: AgentState) -> dict:
         results = state.get("results") or []
@@ -301,6 +298,7 @@ def run_turn(
         "relax_rounds": 0,
         "relax_options": [],
         "relaxed": [],
+        "original_criteria": None,
     }
     with _locks_guard:
         lock = _thread_locks[thread_id]

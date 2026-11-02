@@ -126,3 +126,56 @@ def test_probe_skips_plot_search_when_embeddings_are_down():
 
     c = SearchCriteria(tags=[TagCriterion(idx=7)], availability="cinema")
     assert ids(probe(Service(), c, TAGS, current=0)) == ["availability"]
+
+
+def _film(**kw):
+    from cinesense.domain.models import Movie
+
+    base = {"id": "x", "title": "X", "year": 1993, "runtime_min": 101, "genres": ["Comedy"]}
+    return Movie.model_validate({**base, **kw})
+
+
+def test_misses_against_original():
+    from cinesense.search.relax import misses
+
+    original = SearchCriteria(max_runtime_min=90, availability="cinema")
+    assert misses(_film(), original, TAGS) == ["101 min, longer than 90", "not in cinemas"]
+    fits = _film(runtime_min=85, availability={"in_cinema_de": True})
+    assert misses(fits, original, TAGS) == []
+
+
+def test_misses_all_fields():
+    from cinesense.search.relax import misses
+
+    original = SearchCriteria(
+        tags=[TagCriterion(idx=7, mode="must"), TagCriterion(idx=9, mode="must"), TagCriterion(idx=3, mode="not")],
+        exclude_genres=["Comedy"],
+        year_from=2000,
+        year_to=2010,
+        original_language="de",
+        world_id="scifi",
+        availability="stream",
+    )
+    film = _film(original_language="en", world_ids=["comedy"])
+    assert misses(film, original, TAGS, {7: 0.3}) == [
+        "from 1993, outside 2000–2010",
+        "original language en, not de",
+        "outside this mood world",
+        "streaming not confirmed",
+        "little 'funny'",
+        "no mood data for 'dark'",
+    ]  # not-tags and excluded genres never produce a miss
+
+
+def test_misses_open_year_bound():
+    from cinesense.search.relax import misses
+
+    assert misses(_film(year=1950), SearchCriteria(year_from=1960), TAGS) == ["from 1950, outside 1960–…"]
+
+
+def test_misses_flag_prefer_tags_without_mood_data():
+    from cinesense.search.relax import misses
+
+    original = SearchCriteria(tags=[TagCriterion(idx=7), TagCriterion(idx=9)])
+    assert misses(_film(), original, TAGS, {7: float("nan"), 9: 0.2}) == ["no mood data for 'funny'"]
+    assert misses(_film(), original, TAGS, {7: 0.1, 9: 0.2}) == []  # a weak preference only ranks, never misses

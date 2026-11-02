@@ -76,7 +76,11 @@ class SearchService:
             sig.title = p.search_title(c.title)
             restrict = set(sig.title) if restrict is None else restrict & set(sig.title)
         if c.plot_query and (vec := self._embed(c.plot_query)) is not None:
-            hits = p.semantic_search(vec, k=150)
+            # few cinema films would rarely reach the catalogue-wide top 150: rank plots among them only
+            only = (
+                [m.id for m in p.list_movies() if m.availability.in_cinema_de] if c.availability == "cinema" else None
+            )
+            hits = p.semantic_search(vec, k=150, only_ids=only) if only is not None else p.semantic_search(vec, k=150)
             sig.plot = {m.id: (s, chunk) for m, s, chunk in hits}
             if restrict is None:
                 restrict = set(sig.plot)

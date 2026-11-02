@@ -10,7 +10,7 @@ import ResultList from "@/components/results/ResultList";
 import AdvancedSearch from "@/components/search/AdvancedSearch";
 import SearchChips from "@/components/search/SearchChips";
 import { getTags, type Tag } from "@/lib/api";
-import { useSearchState } from "@/lib/searchState";
+import { type Criteria, useSearchState } from "@/lib/searchState";
 import type { Movie } from "@/lib/types";
 
 export default function ResultsPage() {
@@ -19,6 +19,19 @@ export default function ResultsPage() {
   const [tags, setTags] = useState<Tag[]>([]);
   const [hidden, setHidden] = useState(0);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  // a widening chosen on this page: the original criteria and what was widened (any other change ends it)
+  const [widened, setWidened] = useState<{ from: Criteria; labels: string[] } | null>(null);
+  const change = useCallback(
+    (c: Criteria) => {
+      setWidened(null);
+      setCriteria(c);
+    },
+    [setCriteria],
+  );
+  const relax = (c: Criteria, label: string) => {
+    setWidened((w) => ({ from: w?.from ?? criteria, labels: [...(w?.labels ?? []), label] }));
+    setCriteria(c);
+  };
 
   useEffect(() => {
     getTags().then((r) => r.ok && setTags(r.data));
@@ -43,13 +56,13 @@ export default function ResultsPage() {
           <AdvancedSearch
             criteria={criteria}
             onSubmit={(c) => {
-              setCriteria(c);
+              change(c);
               setShowAdvanced(false);
             }}
           />
         )}
-        <SearchChips tags={tags} criteria={criteria} onChange={setCriteria} hiddenCount={hidden} />
-        <ResultList criteria={criteria} onOpen={open} onMeta={onMeta} onRelax={setCriteria} />
+        <SearchChips tags={tags} criteria={criteria} onChange={change} hiddenCount={hidden} />
+        <ResultList criteria={criteria} onOpen={open} onMeta={onMeta} onRelax={relax} widened={widened} />
       </div>
     </CinemaFrame>
   );

@@ -43,6 +43,7 @@ class DiscoverRequest(BaseModel):
     offset: int = Field(default=0, ge=0)
     limit: int = Field(default=20, ge=1, le=50)
     fill_images: bool = True  # False: no Streaming API image lookups or YouTube searches (homepage background rows)
+    relaxed_from: SearchCriteria | None = None  # the user widened this search: mark what each film misses of it
 
 
 class RelaxationOut(BaseModel):
@@ -150,6 +151,8 @@ def create_app(load_env: bool = True) -> FastAPI:
         trailers: Trailers,
     ) -> DiscoverResponse:
         res = _discover(req, provider, streaming, embedder, live, tasks, profile, checker, trailers)
+        if req.relaxed_from is not None:
+            relax.mark_misses(res.items, req.relaxed_from, provider)
         if req.offset == 0 and res.total < relax.MIN_RESULTS:
             # probes never use the Streaming API or the live search
             probe_service = SearchService(provider, None, embedder)
