@@ -127,3 +127,19 @@ def test_cinema_tags_fall_back_to_plot_search():
     assert [r["movie"]["id"] for r in out["results"]] == ["ml-1265"]
     assert out["criteria"]["availability"] == "cinema"
     assert out["relaxed"] == ["Search the mood (funny) in plot descriptions"]
+
+
+def test_relaxed_labels_do_not_trip_grounding(make_agent):
+    # 90 min finds only 2 films, so the search is widened twice
+    reply = "Nothing matched every wish, so I widened the search: **Allow up to 90 min**, then **Allow up to 120 min**."
+    g = make_agent([ai(calls=[("set_filters", {"max_runtime_min": 60})]), ai("Done."), *HMM], [AIMessage(reply)])
+    out = run_turn(g, "r8", "very short film", crit())
+    assert out["relaxed"] == ["Allow up to 90 min", "Allow up to 120 min"]
+    assert out["grounding_fallback"] is False, out["grounding_reason"]
+    assert out["reply"] == reply
+
+
+def test_explain_input_names_the_widening(make_agent):
+    g = make_agent([ai(calls=[("set_filters", {"max_runtime_min": 60})]), ai("Done."), *HMM])
+    out = run_turn(g, "r9", "very short film", crit())
+    assert "Widened: Allow up to 90 min" in out["prompts"]["explain_input"]

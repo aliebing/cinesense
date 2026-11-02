@@ -192,9 +192,10 @@ def build_graph(llm, explain_llm, tools: list, service, provider, checkpointer):
 
     def explain(state: AgentState) -> dict:
         results = state.get("results") or []
+        relaxed = state.get("relaxed") or []
         wish = _last_human(state["messages"])
         if not results:
-            return {"messages": [AIMessage(template_answer([]))]}
+            return {"messages": [AIMessage(template_answer([], relaxed))]}
 
         def german(m: dict) -> str:  # German users may know a film only by its German title ("Winnetou 1. Teil")
             de = m.get("title_de")
@@ -209,6 +210,8 @@ def build_graph(llm, explain_llm, tools: list, service, provider, checkpointer):
             f"Wish: {wish}\nCriteria: {criteria_summary(state.get('criteria'), provider.list_tags())}\n"
             f"Results:\n{listing}"
         )
+        if relaxed:
+            prompt += f"\nWidened: {'; '.join(relaxed)}"
         usage = state.get("usage") or {}
         system = SystemMessage(EXPLAIN_PROMPT.format(picks=pick_count(results)))
         prompts = {**(state.get("prompts") or {}), "explain": str(system.content), "explain_input": prompt}
@@ -229,7 +232,7 @@ def build_graph(llm, explain_llm, tools: list, service, provider, checkpointer):
         if not ok:
             log.warning("grounding fallback, unlisted titles: %s", bad)
             return {
-                "messages": [AIMessage(template_answer(results))],
+                "messages": [AIMessage(template_answer(results, relaxed))],
                 "grounding_fallback": True,
                 "grounding_reason": bad or ["no usable answer (error or cut off)"],
                 "usage": usage,

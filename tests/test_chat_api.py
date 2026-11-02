@@ -58,6 +58,7 @@ def test_chat_streams_status_and_final():
     ev = events(r.text)
     assert ev[0] == ("status", {"text": "Setting mood tags…"})
     assert ev[-1][0] == "final" and ev[-1][1]["reply"] == "echo dark space films"
+    assert "relaxed" in ev[-1][1]
 
 
 def test_chat_error_event_without_llm():

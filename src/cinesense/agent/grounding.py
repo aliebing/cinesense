@@ -83,13 +83,14 @@ def pick_count(results: list[dict]) -> int:
     return min(len(results), max(PICKS_MIN, close))
 
 
-def template_answer(results: list[dict]) -> str:
+def template_answer(results: list[dict], relaxed: list[str] = ()) -> str:
+    widened = f"Nothing matched every wish, so I widened the search: {'; '.join(relaxed)}.\n" if relaxed else ""
     if not results:
-        return "No films match all of these wishes — try removing a must tag or a filter."
+        return widened + "No films match all of these wishes — try removing a must tag or a filter."
     lines = []
     for r in results[: pick_count(results)]:
         m = r["movie"]
         year = f" ({m['year']})" if m.get("year") else ""
         why = ", ".join(r.get("reasons", [])[:2])
         lines.append(f"- **{m['title']}**{year}" + (f" — {why}" if why else ""))
-    return "Here are films that match:\n" + "\n".join(lines)
+    return widened + "Here are films that match:\n" + "\n".join(lines)

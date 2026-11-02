@@ -91,3 +91,14 @@ def test_pick_count_shows_three_to_five_close_matches():
 def test_template_answer_lists_the_close_matches():
     rs = [{"movie": {"title": f"Film {i}", "year": 2000}, "reasons": [], "match_percent": 90} for i in range(8)]
     assert template_answer(rs).count("**") == 2 * 5
+
+
+def test_template_names_relaxations():
+    out = template_answer([{"movie": {"title": "Amelie", "year": 2001}, "reasons": []}], ["Allow up to 90 min", "x"])
+    assert out.startswith("Nothing matched every wish, so I widened the search: Allow up to 90 min; x.\n")
+    assert "**Amelie** (2001)" in out
+
+
+def test_template_without_results_names_relaxations():
+    out = template_answer([], ["Not only in cinemas"])
+    assert out.startswith("Nothing matched every wish, so I widened the search: Not only in cinemas.")
