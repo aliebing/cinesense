@@ -46,6 +46,7 @@ export type DiscoverResult = {
   extended_used: boolean;
   corrected_person?: string | null; // autocorrect: the person / title a misspelt search found
   corrected_title?: string | null;
+  total_capped?: boolean; // the mood search kept only its best films: total is a lower bound ("500+")
   hidden_by?: Record<string, number>; // per exclusion ("genre:Horror", "tag:284"): films it hid in this search
   relaxations?: Relaxation[];
 };

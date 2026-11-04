@@ -13,6 +13,7 @@ from cinesense.search.ranking import CombinedResult, Signals, combined_rank
 
 log = logging.getLogger(__name__)
 STREAM_CHECK_LIMIT = 30  # streaming lookups per search (free plan budget)
+TAG_LIMIT = 500  # films a catalogue-wide mood search keeps (its best matches)
 EMBED_CACHE_SIZE = 256  # plot-query embeddings kept per service (the chat agent's service lives for the process)
 
 
@@ -83,6 +84,7 @@ class SearchService:
         page = combined_rank([r.movie for r in result.items], c, sig, hidden_by_tags=0, offset=offset, limit=window)
         page.hidden_by_exclusion = result.hidden_by_exclusion
         page.hidden_by = result.hidden_by
+        page.total_capped = result.total_capped
         for r in page.items:  # callers fill images/streaming on the page; never mutate the shared catalogue
             r.movie = r.movie.model_copy(deep=True)
         page.extended_used = extended_used
@@ -101,6 +103,7 @@ class SearchService:
         sig = Signals(tag_names=dict(enumerate(p.list_tags())) if c.has_tags() else {})
         restrict: set[str] | None = None
         hidden = 0
+        capped = False
         # only exclusions ("no horror") next to a text search: filter its hits, do not replace them with the
         # catalogue's best-known films (a tag search without weights)
         exclusions_only = c.has_tags() and not c.prefer_weights() and c.has_text_signal()
@@ -110,7 +113,10 @@ class SearchService:
         tags_filter_hits = exclusions_only or tags_on_identity
 
         if c.has_tags() and not tags_filter_hits:
-            hits, hidden = p.tag_search(c.prefer_weights(), c.must_tags(), c.not_tags(), MUST_THRESHOLD, NOT_THRESHOLD)
+            hits, hidden = p.tag_search(
+                c.prefer_weights(), c.must_tags(), c.not_tags(), MUST_THRESHOLD, NOT_THRESHOLD, limit=TAG_LIMIT
+            )
+            capped = len(hits) >= TAG_LIMIT
             sig.tags = dict(hits)
             restrict = set(sig.tags)
         for q in c.exclude_people:  # "without Stallone": in any role, a misspelt name found like a wanted one
@@ -166,6 +172,7 @@ class SearchService:
         if c.person and sig.person:  # every filter holds together, also for films the live search added
             movies = [m for m in movies if m.id in sig.person]
         result = combined_rank(movies, c, sig, hidden_by_tags=hidden, offset=0, limit=len(movies) or 1)
+        result.total_capped = capped
         return result, sig, extended_used
 
     def _live(self, c: SearchCriteria, sig: Signals) -> list:

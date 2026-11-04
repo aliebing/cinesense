@@ -37,6 +37,7 @@ class CombinedResult:
     corrected_person: str | None = None  # the name a misspelt person search found (autocorrect)
     corrected_title: str | None = None
     hidden_by: dict[str, int] = field(default_factory=dict)  # "genre:Horror" / "tag:284" -> films it hid here
+    total_capped: bool = False  # the mood search kept only its best films: total is a lower bound ("500+")
 
 
 def _normalised(values: dict[str, float]) -> dict[str, float]:

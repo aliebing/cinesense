@@ -228,3 +228,10 @@ it("offers no more button when the row already stops at the bar", async () => {
   expect(await screen.findByText(/The 5 best matches/)).toBeInTheDocument();
   expect(screen.queryByRole("button", { name: /more/ })).toBeNull();
 });
+
+it("says 500+ when the mood search kept only its best films", async () => {
+  const items = sampleRanked(10).map((r) => ({ ...r, match_percent: 40 }));
+  search.mockResolvedValue({ ok: true, data: { items, total: 500, total_capped: true, hidden_by_exclusion: 0, extended_used: false } });
+  render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} />);
+  expect(await screen.findByText(/out of 500\+ films that fit your filters/)).toBeInTheDocument();
+});

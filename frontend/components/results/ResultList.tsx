@@ -26,6 +26,7 @@ type Props = {
 export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened }: Props) {
   const [items, setItems] = useState<RankedMovie[]>([]);
   const [total, setTotal] = useState<number | null>(null);
+  const [capped, setCapped] = useState(false);
   const [extended, setExtended] = useState(false);
   // the options belong to the search they were computed for; while the next one loads they are stale
   const [relaxFor, setRelaxFor] = useState<{ key: string; options: Relaxation[] }>({ key: "", options: [] });
@@ -51,6 +52,7 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
       setShownKey(key);
       setItems(r.data.items);
       setTotal(r.data.total);
+      setCapped(Boolean(r.data.total_capped));
       setExtended(r.data.extended_used);
       setRelaxFor({ key, options: r.data.relaxations ?? [] });
       onMeta?.({
@@ -127,7 +129,11 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
     <>
       {total > shown.length ? `The ${shown.length} best matches` : `${count.format(total)} matches in the CineSense catalogue`}
       {total > shown.length && (
-        <span className="related-hint"> · out of {count.format(total)} films that fit your filters</span>
+        <span className="related-hint">
+          {" "}
+          · out of {count.format(total)}
+          {capped ? "+" : ""} films that fit your filters
+        </span>
       )}
       {extended && <span className="results-extended"> · includes titles just added from Wikidata</span>}
       {canMore && (
