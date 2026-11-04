@@ -108,6 +108,13 @@ class ToolKit:
             "criteria_changed": True,
         }, f"Person set to {resolved}: {len(scores)} films in the catalogue."
 
+    def new_search(self, state: dict) -> tuple[dict, str]:
+        """A new wish that does not build on the last one: nothing of the old search may linger (a person kept from
+        an earlier turn would filter the new search)."""
+        return {"criteria": SearchCriteria().model_dump(), "criteria_changed": True}, (
+            "All criteria cleared. Now set the criteria of the new wish."
+        )
+
     def exclude_people(self, state: dict, names: list[str], replace: bool = False) -> tuple[dict, str]:
         """ "Without Stallone": their films drop out of the search. Names are stored as the catalogue spells them."""
         c = self._criteria(state)
@@ -257,6 +264,12 @@ def make_tools(kit: ToolKit) -> list:
         return wrap(*kit.search_plot(state, query), tool_call_id)
 
     @tool
+    def new_search(state: Annotated[dict, InjectedState], tool_call_id: Annotated[str, InjectedToolCallId]) -> Command:
+        """Clear every criterion (moods, person, title, filters, exclusions) before a new wish that does not build on
+        the current search. Call it first, then set the new wish's criteria."""
+        return wrap(*kit.new_search(state), tool_call_id)
+
+    @tool
     def exclude_people(
         names: list[str],
         state: Annotated[dict, InjectedState],
@@ -331,6 +344,7 @@ def make_tools(kit: ToolKit) -> list:
         return wrap(*kit.relax_search(state, option_id), tool_call_id)
 
     return [
+        new_search,
         set_mood_tags,
         set_filters,
         search_plot,

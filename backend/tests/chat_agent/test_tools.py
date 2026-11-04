@@ -187,3 +187,17 @@ def test_excluding_the_wanted_person_drops_them_as_wanted(kit):
     s = state(criteria=SearchCriteria(person="Keanu Reeves").model_dump())
     upd, _ = kit.exclude_people(s, ["Keanu Reeves"])
     assert upd["criteria"]["person"] is None and upd["criteria"]["exclude_people"] == ["Keanu Reeves"]
+
+
+def test_new_search_clears_every_criterion(kit):
+    from cinesense.chat_agent.tools import make_tools
+
+    s = state(
+        criteria=SearchCriteria(
+            person="Sandra Bullock", exclude_people=["Sylvester Stallone"], year_from=2000, title="Speed"
+        ).model_dump()
+    )
+    upd, msg = kit.new_search(s)
+    assert upd["criteria"] == SearchCriteria().model_dump() and upd["criteria_changed"] is True
+    assert "cleared" in msg.lower()
+    assert "new_search" in [t.name for t in make_tools(kit)]

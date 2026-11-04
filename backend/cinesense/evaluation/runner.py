@@ -63,7 +63,7 @@ def run_scenarios(
             res["error"] = f"{type(exc).__name__}: {exc}"[:300]
         results, reply = last.get("results", []), last.get("reply", "")
         checks = {
-            "constraints": check_constraints(results, s.expect),
+            "constraints": check_constraints(results, s.expect, last.get("criteria")),
             "tools": check_tools(res["tools_called"], s.expect),
             "grounding": check_grounding(reply, results, catalogue_titles, " ".join(s.turns), _spans(last, tag_names)),
             "availability_claims": check_availability_claims(reply, results),

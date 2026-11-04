@@ -21,6 +21,8 @@ class Expect(BaseModel):
     kind: Literal["film", "documentary"] | None = None
     availability: Literal["cinema", "stream"] | None = None
     year_from: int | None = None
+    year_to: int | None = None
+    cleared: list[str] = Field(default_factory=list)  # criteria fields that must be empty after the last turn
     person: str | None = None
     results_required: bool = True
     titles_any: list[str] = Field(default_factory=list)  # informative "hit" check, not a constraint

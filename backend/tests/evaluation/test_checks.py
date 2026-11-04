@@ -127,3 +127,14 @@ def test_an_excluded_person_in_a_result_fails_the_constraints():
     assert check_constraints([ok_row], e) == (True, [])
     ok, fails = check_constraints([ok_row, bad_row], e)
     assert not ok and fails == ["True Lies: with excluded Arnold Schwarzenegger"]
+
+
+def test_year_to_and_cleared_criteria():
+    from cinesense.evaluation.checks import applies
+
+    e = Expect(year_to=1999, cleared=["person"])
+    res = [{"movie": {"title": "Scream", "year": 1996}}, {"movie": {"title": "The Heat", "year": 2013}}]
+    ok, why = check_constraints(res, e, criteria={"person": "Sandra Bullock"})
+    assert not ok and any("2013 > 1999" in w for w in why) and any("kept person" in w for w in why)
+    assert check_constraints(res[:1], e, criteria={"person": None})[0]
+    assert applies("constraints", Expect(cleared=["person"]))

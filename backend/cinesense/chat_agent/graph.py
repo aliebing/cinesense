@@ -285,6 +285,7 @@ TOOL_STATUS = {
     "find_person": "Looking up people…",
     "similar_to": "Finding similar moods…",
     "exclude_people": "Leaving people out…",
+    "new_search": "Starting a new search…",
     "check_streaming": "Checking streaming in Germany…",
     "film_facts": "Reading film facts…",
     "propose_exclusions": "Suggesting exclusions…",

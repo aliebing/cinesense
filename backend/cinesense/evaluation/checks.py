@@ -8,10 +8,13 @@ from cinesense.evaluation.scenarios import Expect
 Check = tuple[bool, list[str]]
 
 
-def check_constraints(results: list[dict], e: Expect) -> Check:
+def check_constraints(results: list[dict], e: Expect, criteria: dict | None = None) -> Check:
+    # a criterion kept from an earlier wish ("new search" after a person search) fails even without results
+    kept = [f"kept {f}: {(criteria or {}).get(f)}" for f in e.cleared if (criteria or {}).get(f)]
     if not results:
-        return (not e.results_required), ([] if not e.results_required else ["no results"])
-    fails = []
+        ok = not e.results_required and not kept
+        return ok, kept + (["no results"] if e.results_required else [])
+    fails = list(kept)
     for r in results:
         m, title = r["movie"], r["movie"]["title"]
         if e.max_runtime and m.get("runtime_min") and m["runtime_min"] > e.max_runtime:
@@ -24,6 +27,8 @@ def check_constraints(results: list[dict], e: Expect) -> Check:
             fails.append(f"{title}: kind {m.get('kind')}")
         if e.year_from and (m.get("year") is None or m["year"] < e.year_from):
             fails.append(f"{title}: year {m.get('year')} < {e.year_from}")
+        if e.year_to and (m.get("year") is None or m["year"] > e.year_to):
+            fails.append(f"{title}: year {m.get('year')} > {e.year_to}")
         if e.person:
             people = [p.lower() for p in m.get("directors", []) + m.get("cast_top", [])]
             people += [x[5:].lower() for x in r.get("reasons", []) if x.startswith("with ")]  # full-cast match
@@ -99,7 +104,8 @@ def check_guarded(guarded: bool, e: Expect) -> Check:
 def applies(kind: str, e: Expect) -> bool:
     """Whether a check has anything to test in this scenario (for honest k/n reporting)."""
     if kind == "constraints":
-        return bool(e.max_runtime or e.exclude_genres or e.kind or e.availability or e.year_from or e.person)
+        limits = (e.max_runtime, e.exclude_genres, e.kind, e.availability, e.year_from, e.year_to, e.person, e.cleared)
+        return any(limits)
     if kind == "tools":
         return bool(e.tools_any or e.tools_none)
     if kind == "reply":

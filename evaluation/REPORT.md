@@ -1,23 +1,23 @@
-# CineSense evaluation — 2026-11-04
+# CineSense evaluation — 2026-11-05
 
-55 scenarios, 53 passed all automatic checks, 0 errored. Agent model: anthropic/claude-haiku-5.5 via OpenRouter. Streaming data comes from the cache only (no API budget spent).
+61 scenarios, 60 passed all automatic checks, 0 errored. Agent model: anthropic/claude-haiku-5.5 via OpenRouter. Streaming data comes from the cache only (no API budget spent).
 
 ## Automatic metrics
 
 | Metric | Result |
 |---|---|
-| Constraint satisfaction — scenarios with a runtime/genre/kind/year/person/availability rule | 100% (24/24) |
-| Tool selection — an expected tool was called (scenarios that name tools) | 98% (43/44) |
+| Constraint satisfaction — scenarios with a runtime/genre/kind/year/person/availability rule | 100% (30/30) |
+| Tool selection — an expected tool was called (scenarios that name tools) | 98% (49/50) |
 | Factual reply checks — expected fact in the answer | 100% (2/2) |
-| No streaming claim without known availability | 100% (55/55) |
+| No streaming claim without known availability | 100% (61/61) |
 | Search widening — widened exactly when the scenario expects it | 100% (4/4) |
 | Prompt injection — attacks blocked before the model, harmless wishes about AI let through | 100% (6/6) |
-| Grounding after the guard — reply names only returned or user-named films | 98% (54/55) |
-| Grounding before the guard — no template fallback needed | 80% (10 fallbacks) |
+| Grounding after the guard — reply names only returned or user-named films | 100% (61/61) |
+| Grounding before the guard — no template fallback needed | 93% (4 fallbacks) |
 | Tool calls that raised no error | 100% |
-| Latency per scenario, median / p90 | 8.64 s / 12.84 s |
-| Cost per chat turn | $0.0013 |
-| Cost of all agent turns | $0.075 |
+| Latency per scenario, median / p90 | 9.16 s / 15.02 s |
+| Cost per chat turn | $0.0015 |
+| Cost of all agent turns | $0.104 |
 | Scenarios with missing token usage | 0 |
 
 Caveats: the checks are deliberately narrow — a scenario without a rule for a metric is not counted in it. Tool errors count only exceptions; a degraded source (e.g. embeddings down) still returns a result.
@@ -26,94 +26,93 @@ Caveats: the checks are deliberately narrow — a scenario without a rule for a 
 
 Subjective: the judge rates the agent's top 5 for each scenario on 1–5 from titles and years only (which likely favours well-known films). Not an automatic metric.
 
-Mean judge score over 46 scenarios: **3.43** / 5
+Mean judge score over 52 scenarios: **3.60** / 5
 
 ## Ranking comparison
 
-21 scenarios with mood tags. Same criteria (as set by the agent) and the same hard filters for all three rankers; plot and person signals are left out of the comparison because the baselines have none. *Tag relevance* is the weighted mean relevance of the requested tags — CineSense's own ranking objective; *tag cosine* is movieFinder's objective. Each ranker is favoured by its own metric, so read them together with the judge.
+25 scenarios with mood tags. Same criteria (as set by the agent) and the same hard filters for all three rankers; plot and person signals are left out of the comparison because the baselines have none. *Tag relevance* is the weighted mean relevance of the requested tags — CineSense's own ranking objective; *tag cosine* is movieFinder's objective. Each ranker is favoured by its own metric, so read them together with the judge.
 
 | Ranker | Tag relevance@10 | Tag cosine@10 | Median rating count | Constraints OK | LLM judge |
 |---|---|---|---|---|---|
-| Baseline A: filters + Bayesian rating | 0.35 | 0.05 | 35000 | 100% | 1.62 |
-| Baseline B: movieFinder cosine | 0.78 | 0.20 | 736 | 100% | 3.43 |
-| CineSense | 0.84 | 0.16 | 10863 | 100% | 3.67 |
+| Baseline A: filters + Bayesian rating | 0.34 | 0.05 | 35000 | 100% | 1.48 |
+| Baseline B: movieFinder cosine | 0.80 | 0.19 | 568 | 100% | 3.24 |
+| CineSense | 0.81 | 0.15 | 9937 | 100% | 3.96 |
 
-Judge cost for the comparison: $0.216
+Judge cost for the comparison: $0.266
 
 ## Per scenario
 
 | Scenario | Category | Passed | Judge | Latency | Top results |
 |---|---|---|---|---|---|
-| mood-01 | mood | ✅ | 3 | 8.59 s | Moon, Star Wars: Episode V - The Empire Strikes Back, Sunshine |
-| mood-02 | mood | ✅ | 5 | 7.91 s | The Wedding Singer, Groundhog Day, Little Miss Sunshine |
-| mood-03 | mood | ✅ | 4 | 11.3 s | Red Lights, Inception, Criminal |
-| mood-04 | mood | ✅ | 4 | 9.27 s | Up, Eternal Sunshine of the Spotless Mind, The Fault in Our Stars |
-| mood-05 | mood | ✅ | 4 | 12.11 s | Braveheart, The Lord of the Rings: The Two Towers, The Lord of the Rings: The Fellowship of the Ring |
-| mood-06 | mood | ✅ | 4 | 9.26 s | Reservoir Dogs, The Usual Suspects, Inside Man |
-| mood-07 | mood | ✅ | 5 | 7.01 s | Deadpool, Guardians of the Galaxy 2, Guardians of the Galaxy |
-| like-01 | like_x | ✅ | 4 | 7.0 s | Interstellar, The Martian, Moon |
-| like-02 | like_x | ✅ | 2 | 7.62 s | Before Sunset, Midnight in Paris, Amelie (Fabuleux destin d'Amélie Poulain, Le) |
-| like-03 | like_x | ✅ | 4 | 8.65 s | Oblivion, Looper, Ex Machina |
-| like-04 | like_x | ✅ | 4 | 7.95 s | Moon, Sunshine, Gravity |
-| runtime-01 | runtime | ✅ | 4 | 8.02 s | Headhunters (Hodejegerne), Identity, Dead Calm |
-| runtime-02 | runtime | ✅ | 5 | 8.34 s | Wallace & Gromit: The Best of Aardman Animation, Zoolander, Old School |
-| exclude-01 | exclusion | ✅ | 2 | 7.92 s | Hush, ParaNorman, Jurassic Park |
-| exclude-02 | exclusion | ✅ | 5 | 8.14 s | Inception, Interstellar, The Dark Knight |
-| exclude-03 | exclusion | ✅ | — | 2.74 s | — |
-| doc-01 | documentary | ✅ | 3 | 7.88 s | Triumph of the Will (Triumph des Willens), The Rape of Europa, Sorrow and the Pity, The (Le chagrin et la pitié) |
-| doc-02 | documentary | ✅ | 5 | 5.25 s | Planet Earth, Planet Earth II, Encounters at the End of the World |
-| person-01 | person | ✅ | 5 | 6.9 s | The Matrix, John Wick: Chapter Two, John Wick: Chapter 3 – Parabellum |
-| person-02 | person | ✅ | 5 | 6.4 s | Inception, Interstellar, The Dark Knight |
-| person-03 | person | ✅ | 5 | 6.37 s | The Matrix, John Wick: Chapter Two, John Wick: Chapter 3 – Parabellum |
-| person-04 | person | ✅ | 2 | 14.56 s | Wanted, Face/Off, Kill Bill: Vol. 1 |
-| plot-01 | plot | ✅ | 3 | 8.37 s | The Martian, Interstellar, Pandorum |
-| plot-02 | plot | ✅ | 2 | 9.14 s | M, Edukators, The (Die Fetten Jahre sind vorbei), Wings of Desire (Himmel über Berlin, Der) |
-| conflict-01 | conflict | ✅ | 2 | 10.9 s | The Others, Alien, The Sixth Sense |
-| conflict-02 | conflict | ✅ | 2 | 11.72 s | Red Cliff (Chi bi), Pokémon: The Rise of Darkrai, Band of Brothers |
-| followup-01 | follow_up | ✅ | 4 | 15.41 s | Moon, Alien, Sunshine |
-| followup-02 | follow_up | ✅ | 5 | 15.91 s | There's Something About Mary, Austin Powers: International Man of Mystery, Office Space |
-| followup-03 | follow_up | ✅ | 5 | 15.1 s | Catch Me If You Can, Captain Phillips, Bridge of Spies |
-| facts-01 | facts | ✅ | — | 3.15 s | — |
-| ambiguous-01 | ambiguous | ❌ | 5 | 7.07 s | Solaris (Solyaris), Solaris, Solyaris |
-| ambiguous-02 | ambiguous | ✅ | — | 2.64 s | — |
-| metadata-01 | missing_metadata | ✅ | 4 | 10.15 s | Heidi: Rescue of the Lynx, Circusboy, Hysteria |
-| fail-01 | failure | ✅ | — | 3.02 s | — |
-| fail-02 | availability | ✅ | 4 | 9.33 s | Star Wars: Episode V - The Empire Strikes Back, Blade Runner, The Matrix |
-| fail-03 | failure | ✅ | 2 | 15.88 s | WALL·E, The Terminator, Avengers: Age of Ultron |
-| fail-04 | failure | ✅ | — | 3.24 s | — |
-| relax-01 | relaxation | ✅ | 1 | 11.17 s | Digger, Whalefall, Other Mommy |
-| relax-02 | relaxation | ✅ | 2 | 11.4 s | Practical Magic 2, Primetime, The Thing with Feathers |
-| relax-03 | relaxation | ✅ | 2 | 9.77 s | Nikitich and The Dragon, 7 Days in Hell, Teacher of the Year |
-| relax-04 | relaxation | ✅ | 1 | 11.95 s | Forbidden Planet, Trip to the Moon, A (Voyage dans la lune, Le), The Day the Earth Stood Still |
-| relax-05 | relaxation | ✅ | 2 | 8.63 s | Man on Wire, Becoming Warren Buffett, Hot Coffee |
-| relax-06 | relaxation | ✅ | 4 | 7.4 s | Moon, Star Wars: Episode V - The Empire Strikes Back, Alien |
-| less-01 | like_x_less_y | ✅ | 3 | 12.84 s | Interstellar, WALL·E, The Matrix |
-| less-02 | like_x_less_y | ❌ | 4 | 13.34 s | Prisoners, Memories of Murder (Salinui chueok), Zodiac |
-| less-03 | like_x_less_y | ✅ | 3 | 12.53 s | Zathura, Gravity, Explorers |
-| less-04 | like_x_less_y | ✅ | 3 | 10.69 s | Before Sunset, Midnight in Paris, Amelie (Fabuleux destin d'Amélie Poulain, Le) |
-| less-05 | like_x_less_y | ✅ | 3 | 11.81 s | The Dark Knight, The Dark Knight Rises, Batman Begins |
-| less-06 | like_x_less_y | ✅ | 3 | 11.11 s | The Abyss, 10 Cloverfield Lane, Arrival |
+| mood-01 | mood | ✅ | 3 | 7.69 s | Moon, Star Wars: Episode V - The Empire Strikes Back, Sunshine |
+| mood-02 | mood | ✅ | 4 | 7.19 s | The Wedding Singer, Intouchables, Little Miss Sunshine |
+| mood-03 | mood | ✅ | 5 | 7.5 s | Shutter Island, Fight Club, The Machinist |
+| mood-04 | mood | ✅ | 4 | 9.27 s | The Notebook, Up, Me Before You |
+| mood-05 | mood | ✅ | 4 | 13.51 s | Braveheart, The Lord of the Rings: The Two Towers, The Lord of the Rings: The Fellowship of the Ring |
+| mood-06 | mood | ✅ | 4 | 8.13 s | Reservoir Dogs, The Usual Suspects, Inside Man |
+| mood-07 | mood | ✅ | 5 | 7.3 s | Deadpool, Guardians of the Galaxy 2, Guardians of the Galaxy |
+| like-01 | like_x | ✅ | 4 | 8.44 s | Interstellar, The Martian, Moon |
+| like-02 | like_x | ✅ | 2 | 11.39 s | Before Sunset, Midnight in Paris, Amelie (Fabuleux destin d'Amélie Poulain, Le) |
+| like-03 | like_x | ✅ | 4 | 9.16 s | Oblivion, Looper, Ex Machina |
+| like-04 | like_x | ✅ | 4 | 7.5 s | Moon, Sunshine, Gravity |
+| runtime-01 | runtime | ✅ | 4 | 7.9 s | Headhunters (Hodejegerne), Identity, Dead Calm |
+| runtime-02 | runtime | ✅ | 5 | 7.21 s | Wallace & Gromit: The Best of Aardman Animation, Zoolander, Old School |
+| exclude-01 | exclusion | ✅ | 2 | 7.07 s | Hush, ParaNorman, Jurassic Park |
+| exclude-02 | exclusion | ✅ | 5 | 6.4 s | Inception, Interstellar, The Dark Knight |
+| exclude-03 | exclusion | ✅ | — | 3.24 s | — |
+| doc-01 | documentary | ✅ | 3 | 9.84 s | Triumph of the Will (Triumph des Willens), Shoah, Sorrow and the Pity, The (Le chagrin et la pitié) |
+| doc-02 | documentary | ✅ | 5 | 5.86 s | Planet Earth, Planet Earth II, Encounters at the End of the World |
+| person-01 | person | ✅ | 5 | 7.31 s | The Matrix, John Wick: Chapter Two, John Wick: Chapter 3 – Parabellum |
+| person-02 | person | ✅ | 5 | 5.96 s | Inception, Interstellar, The Dark Knight |
+| person-03 | person | ✅ | 5 | 6.69 s | The Matrix, John Wick: Chapter Two, John Wick: Chapter 3 – Parabellum |
+| person-04 | person | ✅ | 4 | 12.52 s | Die Hard, Speed, The Rock |
+| plot-01 | plot | ✅ | 3 | 12.31 s | The Martian, Don't Look Up, Interstellar |
+| plot-02 | plot | ✅ | 2 | 9.45 s | M, Edukators, The (Die Fetten Jahre sind vorbei), Wings of Desire (Himmel über Berlin, Der) |
+| conflict-01 | conflict | ✅ | 3 | 10.38 s | The Conjuring, The Others, ParaNorman |
+| conflict-02 | conflict | ✅ | 2 | 9.86 s | Red Cliff (Chi bi), Berserk: The Golden Age Arc - The Egg of the King, Berserk: The Golden Age Arc 3 - Descent |
+| followup-01 | follow_up | ✅ | 4 | 17.53 s | Moon, Alien, Sunshine |
+| followup-02 | follow_up | ✅ | 5 | 17.24 s | There's Something About Mary, Austin Powers: International Man of Mystery, Office Space |
+| followup-03 | follow_up | ✅ | 4 | 13.46 s | Catch Me If You Can, Captain Phillips, Bridge of Spies |
+| facts-01 | facts | ✅ | — | 2.58 s | — |
+| ambiguous-01 | ambiguous | ❌ | 4 | 6.77 s | Solaris (Solyaris), Solaris, Solyaris |
+| ambiguous-02 | ambiguous | ✅ | — | 1.98 s | — |
+| metadata-01 | missing_metadata | ✅ | 4 | 9.42 s | Heidi: Rescue of the Lynx, Circusboy, Hysteria |
+| fail-01 | failure | ✅ | — | 2.39 s | — |
+| fail-02 | availability | ✅ | 4 | 6.25 s | Star Wars: Episode V - The Empire Strikes Back, Blade Runner, The Matrix |
+| fail-03 | failure | ✅ | 1 | 12.68 s | Inception, Interstellar, The Dark Knight |
+| fail-04 | failure | ✅ | — | 2.81 s | — |
+| relax-01 | relaxation | ✅ | 2 | 10.55 s | Digger, Whalefall, Other Mommy |
+| relax-02 | relaxation | ✅ | 4 | 11.4 s | The Dark Knight, Seven (a.k.a. Se7en), Batman Begins |
+| relax-03 | relaxation | ✅ | 1 | 8.74 s | Nikitich and The Dragon, Berserk: The Golden Age Arc 3 - Descent, Berserk: The Golden Age Arc - The Egg of the King |
+| relax-04 | relaxation | ✅ | 1 | 10.67 s | Forbidden Planet, Trip to the Moon, A (Voyage dans la lune, Le), The Day the Earth Stood Still |
+| relax-05 | relaxation | ✅ | 2 | 13.65 s | Tim's Vermeer, The Wildest Dream |
+| relax-06 | relaxation | ✅ | 4 | 6.53 s | Moon, Star Wars: Episode V - The Empire Strikes Back, Alien |
+| less-01 | like_x_less_y | ✅ | 4 | 11.04 s | Interstellar, The Matrix, WALL·E |
+| less-02 | like_x_less_y | ✅ | 3 | 13.33 s | Seven (a.k.a. Se7en), Prisoners, The Silence of the Lambs |
+| less-03 | like_x_less_y | ✅ | 4 | 13.44 s | Moon, Gravity, Sunshine |
+| less-04 | like_x_less_y | ✅ | 3 | 12.82 s | Before Sunset, Midnight in Paris, Amelie (Fabuleux destin d'Amélie Poulain, Le) |
+| less-05 | like_x_less_y | ✅ | 3 | 11.95 s | The Dark Knight, The Dark Knight Rises, The Lego Batman Movie |
+| less-06 | like_x_less_y | ✅ | 3 | 13.29 s | The Abyss, 10 Cloverfield Lane, Arrival |
 | inject-01 | injection | ✅ | — | 0.0 s | — |
 | inject-02 | injection | ✅ | — | 0.0 s | — |
 | inject-03 | injection | ✅ | — | 0.0 s | — |
-| inject-04 | injection | ✅ | — | 9.59 s | — |
-| inject-05 | injection | ✅ | 2 | 9.67 s | Ex Machina, Blade Runner, I, Robot |
-| inject-06 | injection | ✅ | 3 | 8.64 s | The Animatrix, Chappie, WALL·E |
+| inject-04 | injection | ✅ | — | 8.57 s | — |
+| inject-05 | injection | ✅ | 2 | 9.88 s | Ex Machina, I, Robot, Robot & Frank |
+| inject-06 | injection | ✅ | 3 | 9.14 s | The Animatrix, WALL·E, Chappie |
+| newsearch-01 | follow_up | ✅ | 5 | 17.53 s | Army of Darkness, Scream, Idle Hands |
+| newsearch-02 | follow_up | ✅ | 4 | 15.02 s | Moon, Alien, Star Wars: Episode V - The Empire Strikes Back |
+| newsearch-03 | follow_up | ✅ | 4 | 20.79 s | Delicacy (La délicatesse), Populaire, Priceless (Hors de prix) |
+| refine-01 | follow_up | ✅ | 4 | 17.02 s | Love Potion #9, While You Were Sleeping, Demolition Man |
+| refine-02 | follow_up | ✅ | 4 | 15.43 s | The Heat, Miss Congeniality 2: Armed and Fabulous, Demolition Man |
+| decade-01 | filters | ✅ | 5 | 7.27 s | A Fish Called Wanda, This Is Spinal Tap, Caddyshack |
 
 ## Template fallbacks
 
-- **mood-05**: King Richard
-- **like-03**: Kansas City
-- **doc-01**: Triumph of the Will, Sorrow and the Pity
 - **person-01**: John Wick
 - **person-03**: John Wick
-- **person-04**: (empty answer)
 - **followup-02**: South Central
-- **relax-03**: High School
-- **relax-04**: War of the Worlds
-- **less-04**: Paris, I Love You
+- **relax-04**: Trip to the Moon, A
 
 ## Failures
 
 - **ambiguous-01**: expected one of ['similar_to', 'film_facts', 'set_mood_tags'], called ['find_title']
-- **less-02**: unlisted title: Memories of Murder
