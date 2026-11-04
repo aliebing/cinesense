@@ -4,7 +4,7 @@ import { AUTHORITY, OPERATOR, UPDATED, type LegalDoc, type LegalLocale } from ".
  * Privacy notice of CineSense. It describes what the code actually does (checked 2026-11-05): chat and
  * search to OpenRouter (Claude Haiku; plot search embeddings by OpenAI), conversation only in server
  * memory, token counts logged without content, turn limits counted per IP in memory, the anonymous
- * taste id (localStorage "cinesense.user", header X-CineSense-User) with 👍/👎 in the `feedback` table,
+ * taste id (localStorage "cinesense.user", created on the first rating, header X-CineSense-User) with 👍/👎 in the `feedback` table,
  * posters from Wikimedia and Movie of the Night, trailers in the youtube-nocookie player. Change it
  * together with any of these.
  */
@@ -35,7 +35,7 @@ export function datenschutz(locale: LegalLocale): LegalDoc {
         {
           h: "4. Taste profile (👍/👎)",
           body: [
-            "CineSense works without an account. To remember your taste, your browser keeps a random id (localStorage entry „cinesense.user“) and sends it with requests. The server stores this id only with the films you rated 👍 or 👎; it is not linked to your name, IP address or any other data.",
+            "CineSense works without an account. When you rate a film 👍 or 👎 for the first time, your browser creates a random id (localStorage entry „cinesense.user“) to remember your taste and sends it with later requests; without a rating there is no id. The server stores this id only with the films you rated 👍 or 👎; it is not linked to your name, IP address or any other data.",
             "The 👤 panel shows what was learned and deletes it with one click; deleting the browser's site data removes the id. Legal basis: Art. 6 (1) (f) GDPR and Section 25 (2) no. 2 TDDDG (a function you use).",
           ],
         },
@@ -89,7 +89,7 @@ export function datenschutz(locale: LegalLocale): LegalDoc {
       {
         h: "4. Geschmacksprofil (👍/👎)",
         body: [
-          "CineSense funktioniert ohne Konto. Damit Ihr Geschmack erhalten bleibt, speichert Ihr Browser eine zufällige Kennung (localStorage-Eintrag „cinesense.user“) und sendet sie bei Anfragen mit. Der Server speichert diese Kennung nur zusammen mit den Filmen, die Sie mit 👍 oder 👎 bewertet haben; sie ist nicht mit Ihrem Namen, Ihrer IP-Adresse oder anderen Daten verknüpft.",
+          "CineSense funktioniert ohne Konto. Wenn Sie zum ersten Mal einen Film mit 👍 oder 👎 bewerten, legt Ihr Browser eine zufällige Kennung an (localStorage-Eintrag „cinesense.user“), damit Ihr Geschmack erhalten bleibt, und sendet sie bei späteren Anfragen mit; ohne Bewertung gibt es keine Kennung. Der Server speichert diese Kennung nur zusammen mit den Filmen, die Sie mit 👍 oder 👎 bewertet haben; sie ist nicht mit Ihrem Namen, Ihrer IP-Adresse oder anderen Daten verknüpft.",
           "Das 👤-Fenster zeigt, was gelernt wurde, und löscht es mit einem Klick; das Löschen der Website-Daten im Browser entfernt die Kennung. Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO und § 25 Abs. 2 Nr. 2 TDDDG (eine von Ihnen genutzte Funktion).",
         ],
       },

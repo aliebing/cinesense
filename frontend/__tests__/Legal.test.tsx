@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
+import { expect, it } from "vitest";
 import CinemaFrame from "@/components/cinema/CinemaFrame";
 import ImpressumPage from "@/app/impressum/page";
 import DatenschutzPage from "@/app/datenschutz/page";

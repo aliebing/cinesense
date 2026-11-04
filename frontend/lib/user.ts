@@ -11,19 +11,35 @@ export function randomId(): string {
   return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
 }
 
-/** Anonymous visitor id: a random UUID kept in this browser (no login, no personal data). */
+/** Anonymous visitor id kept in this browser (no login, no personal data), or "" while there is none.
+ * Reading never creates one: the id only exists once the visitor rates a film (ensureUserId). */
 export function userId(): string {
   if (typeof window === "undefined") return ""; // never share one id between server-rendered visitors
   try {
-    const existing = window.localStorage.getItem(KEY);
-    if (existing) return existing;
-    const id = randomId();
-    window.localStorage.setItem(KEY, id);
-    return id;
+    return window.localStorage.getItem(KEY) ?? "";
   } catch {
-    memoryId ??= randomId();
-    return memoryId;
+    return memoryId ?? "";
   }
+}
+
+/** The visitor id, created on the first 👍/👎: a random UUID (no login, no personal data). */
+export function ensureUserId(): string {
+  if (typeof window === "undefined") return "";
+  const existing = userId();
+  if (existing) return existing;
+  const id = randomId();
+  try {
+    window.localStorage.setItem(KEY, id);
+  } catch {
+    memoryId = id;
+  }
+  return id;
+}
+
+/** Request headers carrying the visitor id; none at all while the visitor has not rated anything. */
+export function userHeaders(): Record<string, string> {
+  const id = userId();
+  return id ? { [USER_HEADER]: id } : {};
 }
 
 export const USER_HEADER = "X-CineSense-User";
