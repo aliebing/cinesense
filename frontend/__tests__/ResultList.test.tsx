@@ -209,14 +209,18 @@ it("loads the next 50 when every shown film still matches, until the bar is reac
   const page = (from: number, n: number, percent: (i: number) => number) =>
     sampleRanked(n).map((r, i) => ({ ...r, movie: { ...r.movie, id: `f-${from + i}`, title: `Film ${from + i}` }, match_percent: percent(from + i) }));
   search.mockResolvedValueOnce({ ok: true, data: { items: page(0, 50, () => 80), total: 500, hidden_by_exclusion: 0, extended_used: false } });
-  search.mockResolvedValueOnce({
-    ok: true,
-    data: { items: page(50, 50, (i) => (i < 70 ? 60 : 40)), total: 500, hidden_by_exclusion: 0, extended_used: false },
-  });
+  let resolve: (v: unknown) => void = () => {};
+  search.mockImplementationOnce(() => new Promise((r) => (resolve = r)));
   render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} />);
   expect(await screen.findByText(/The 50 best matches/)).toBeInTheDocument();
   await userEvent.click(screen.getByRole("button", { name: "Show 50 more" }));
+  expect(screen.getByRole("progressbar", { name: "Loading results" })).toBeInTheDocument(); // the usual loading bar
+  resolve({
+    ok: true,
+    data: { items: page(50, 50, (i) => (i < 70 ? 60 : 40)), total: 500, hidden_by_exclusion: 0, extended_used: false },
+  });
   expect(await screen.findByText(/The 70 best matches/)).toBeInTheDocument(); // 20 of the next 50 reach 50%
+  expect(screen.queryByRole("progressbar")).toBeNull();
   expect(search.mock.calls[1][1]).toBe(50); // offset
   expect(screen.queryByRole("button", { name: /more/ })).toBeNull(); // below the bar: nothing more to load
 });

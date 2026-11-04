@@ -482,9 +482,10 @@
 .results-widened { margin: 0; color: var(--miss); text-shadow: 0 1px 3px #000; }
 .result-miss { display: block; margin-top: .15em; font-size: .85em; color: var(--miss); }
 .results-relax:hover, .results-relax:focus-visible { background: var(--gold); color: #16130c; }
-.results-more { margin-left: .8em; font: inherit; letter-spacing: .05em; text-transform: none; cursor: pointer; border: 1px solid var(--gold);
-  border-radius: 999px; padding: .15em .8em; background: #0d0d14d9; color: var(--gold); }
-.results-more:hover:not(:disabled), .results-more:focus-visible { background: var(--gold); color: #16130c; }
+/* a link that gets the gold frame when pointed at; while the next films load the row shows its usual loading bar */
+.results-more { margin-left: .6em; font: inherit; letter-spacing: .05em; text-transform: none; cursor: pointer; color: var(--gold);
+  border: 1px solid transparent; border-radius: 999px; padding: .15em .8em; background: none; transition: border-color .2s; }
+.results-more:hover:not(:disabled), .results-more:focus-visible { border-color: var(--gold); }
 .results-more:disabled { opacity: .6; cursor: wait; }
 /* the matches run in one row at the bottom, like "Also fits your mood" on the genre page */
 .results-page .related { position: static; margin-top: auto; }

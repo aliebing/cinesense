@@ -138,7 +138,7 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
       {extended && <span className="results-extended"> · includes titles just added from Wikidata</span>}
       {canMore && (
         <button type="button" className="results-more" onClick={loadMore} disabled={loadingMore}>
-          {loadingMore ? "Loading…" : `Show ${LIMIT} more`}
+          Show {LIMIT} more
         </button>
       )}
     </>
@@ -147,7 +147,7 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
     <>
       {note}
       {widen}
-      <RelatedRow items={shown} onSelect={onOpen} label={label} name="Results" showReasons busy={loading} drift={false} />
+      <RelatedRow items={shown} onSelect={onOpen} label={label} name="Results" showReasons busy={loading || loadingMore} drift={false} />
     </>
   );
 }
