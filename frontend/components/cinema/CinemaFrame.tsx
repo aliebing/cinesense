@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
 
 /**
@@ -16,6 +17,11 @@ export default function CinemaFrame({ children }: { children: ReactNode }) {
         </div>
       </div>
       <div className="cinema-letterbox" data-testid="letterbox" aria-hidden="true" />
+      {/* Impressum and privacy notice on every page, quietly in the lower letterbox bar */}
+      <nav aria-label="Legal" className="cinema-legal">
+        <Link href="/impressum">Impressum</Link>
+        <Link href="/datenschutz">Datenschutz</Link>
+      </nav>
       <div className="cinema-curtain cinema-curtain--left" data-testid="curtain" aria-hidden="true">
         <div className="cinema-curtain-inner">
           {/* eslint-disable-next-line @next/next/no-img-element -- decorative static image, sized by CSS */}

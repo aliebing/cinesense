@@ -50,6 +50,21 @@ body {
   min-height: var(--bar);
   background: #000;
 }
+.cinema-legal {
+  position: absolute;
+  bottom: 0.4rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  display: flex;
+  gap: 1rem;
+  font-size: 0.7rem;
+  color: rgb(255 255 255 / 0.55);
+}
+.cinema-legal a:hover {
+  color: rgb(255 255 255 / 0.85);
+  text-decoration: underline;
+}
 .cinema-stage-wrap {
   display: flex;
   justify-content: center;

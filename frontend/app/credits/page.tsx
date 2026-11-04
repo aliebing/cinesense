@@ -1,3 +1,4 @@
+import Link from "next/link";
 import FogLight from "@/components/atmosphere/FogLight";
 import CinemaFrame from "@/components/cinema/CinemaFrame";
 import Breadcrumb from "@/components/nav/Breadcrumb";
@@ -80,8 +81,8 @@ export default function CreditsPage() {
             <a href="https://policies.google.com/privacy" target="_blank" rel="noreferrer">
               Google Privacy Policy
             </a>
-            . Trailers use the privacy-enhanced youtube-nocookie.com player. CineSense stores no personal data; your search
-            state stays in this browser tab.
+            . Trailers use the privacy-enhanced youtube-nocookie.com player. Everything CineSense processes is described in
+            the <Link href="/datenschutz">privacy notice (Datenschutzerklärung)</Link>.
           </p>
         </section>
       </div>
