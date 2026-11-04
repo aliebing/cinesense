@@ -41,15 +41,40 @@ SELECT ?imdb ?film ?deLabel ?yt ?lang ?enwiki WHERE {
   OPTIONAL { ?enwiki schema:about ?film ; schema:isPartOf <https://en.wikipedia.org/> }
 }"""
 
-_PEOPLE = """
+
+def name_of(item: str, var: str) -> str:
+    """SPARQL for a person's name: the English label, else the multilingual 'mul' one. Wikidata moves names to
+    'mul' and drops the identical English label (Bruce Willis has only 'mul'); English-only lost those people."""
+    return (
+        f'OPTIONAL {{ {item} rdfs:label ?{var}En FILTER(LANG(?{var}En) = "en") }} '
+        f'OPTIONAL {{ {item} rdfs:label ?{var}Mul FILTER(LANG(?{var}Mul) = "mul") }} '
+        f"BIND(COALESCE(?{var}En, ?{var}Mul) AS ?{var}) FILTER(BOUND(?{var}))"
+    )
+
+
+_PEOPLE_PATTERN = f"""
+  {{ ?film wdt:P57 ?d . {name_of("?d", "director")} }}
+  UNION
+  {{ ?film p:P161 ?cs . ?cs ps:P161 ?c . {name_of("?c", "cast")}
+    OPTIONAL {{ ?cs pq:P1545 ?castOrd }} }}"""
+
+_PEOPLE = (
+    """
 SELECT ?ml ?film ?director ?cast ?castOrd WHERE {
   VALUES ?ml { %s }
-  ?film wdt:P14449 ?ml .
-  { ?film wdt:P57 ?d . ?d rdfs:label ?director FILTER(LANG(?director) = "en") }
-  UNION
-  { ?film p:P161 ?cs . ?cs ps:P161 ?c . ?c rdfs:label ?cast FILTER(LANG(?cast) = "en")
-    OPTIONAL { ?cs pq:P1545 ?castOrd } }
-}"""
+  ?film wdt:P14449 ?ml ."""
+    + _PEOPLE_PATTERN.replace("%", "%%")
+    + "\n}"
+)
+
+# the same by Wikidata id: refreshing the people of films already in the catalogue
+_PEOPLE_BY_QID = (
+    """
+SELECT ?film ?director ?cast ?castOrd WHERE {
+  VALUES ?film { %s }"""
+    + _PEOPLE_PATTERN.replace("%", "%%")
+    + "\n}"
+)
 
 
 @dataclass
@@ -164,6 +189,21 @@ async def fetch_wikidata(
         out.update(fold_bindings(rows))
 
     await asyncio.gather(*(one(movielens_ids[i : i + batch]) for i in range(0, len(movielens_ids), batch)))
+    return out
+
+
+async def fetch_people(qids: list[str], client: httpx.AsyncClient, batch: int = 150) -> dict[str, WikidataFilm]:
+    """Directors and cast by Wikidata id (WikidataFilm keyed by QID, only `directors` and `cast` filled)."""
+    out: dict[str, WikidataFilm] = {}
+    sem = asyncio.Semaphore(3)
+
+    async def one(chunk: list[str]) -> None:
+        async with sem:
+            rows = await _sparql(client, _PEOPLE_BY_QID % " ".join(f"wd:{q}" for q in chunk))
+        for f in fold_bindings(rows, key="film").values():
+            out[f.wikidata_id] = f
+
+    await asyncio.gather(*(one(qids[i : i + batch]) for i in range(0, len(qids), batch)))
     return out
 
 

@@ -112,3 +112,30 @@ async def test_fetch_german_titles_by_wikidata_id():
 def test_fold_rows_choose_the_same_language_whatever_the_row_order():
     rows = [b(ml="1", film="http://www.wikidata.org/entity/Q1", lang=x) for x in ("it", "de")]
     assert fold_bindings(rows)[1].original_language == fold_bindings(rows[::-1])[1].original_language == "de"
+
+
+def test_people_fall_back_to_the_multilingual_label():
+    """Wikidata moves names to the 'mul' label and drops the identical English one (Bruce Willis has only 'mul'):
+    an English-only filter lost those people. English still wins where both exist."""
+    from cinesense.catalog_import.extra_titles import _DETAILS
+    from cinesense.data_sources.wikidata import _PEOPLE, _PEOPLE_BY_QID
+
+    for query in (_PEOPLE, _PEOPLE_BY_QID, _DETAILS):
+        assert '"mul"' in query and "COALESCE" in query
+        assert 'FILTER(LANG(?cast) = "en")' not in query and 'FILTER(LANG(?director) = "en")' not in query
+
+
+@respx.mock
+async def test_fetch_people_by_wikidata_id():
+    from cinesense.data_sources.wikidata import fetch_people
+
+    rows = [
+        b(film="http://www.wikidata.org/entity/Q105598", director="John McTiernan"),
+        b(film="http://www.wikidata.org/entity/Q105598", cast="Alan Rickman", castOrd="2"),
+        b(film="http://www.wikidata.org/entity/Q105598", cast="Bruce Willis", castOrd="1"),
+    ]
+    respx.post(SPARQL_URL).mock(return_value=httpx.Response(200, json={"results": {"bindings": rows}}))
+    async with httpx.AsyncClient() as client:
+        out = await fetch_people(["Q105598"], client)
+    assert out["Q105598"].directors == ["John McTiernan"]
+    assert out["Q105598"].cast == ["Bruce Willis", "Alan Rickman"]

@@ -5,7 +5,7 @@ from datetime import date
 import httpx
 
 from cinesense.core.worlds_map import assign_worlds, normalise_wikidata_genres
-from cinesense.data_sources.wikidata import _parse_date, _qid, _sparql, _v, _wiki_title
+from cinesense.data_sources.wikidata import _parse_date, _qid, _sparql, _v, _wiki_title, name_of
 
 DOCUMENTARY = "Q93204"
 
@@ -24,16 +24,16 @@ SELECT ?film ?filmLabel ?type ?deDate ?pub ?imdb ?yt ?runtime ?lang ?enwiki WHER
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
 }"""
 
-_DETAILS = """
-SELECT ?film ?director ?cast ?castOrd ?genreLabel WHERE {
-  VALUES ?film { %s }
-  { ?film wdt:P57 ?d . ?d rdfs:label ?director FILTER(LANG(?director) = "en") }
+_DETAILS = f"""
+SELECT ?film ?director ?cast ?castOrd ?genreLabel WHERE {{
+  VALUES ?film {{ %s }}
+  {{ ?film wdt:P57 ?d . {name_of("?d", "director")} }}
   UNION
-  { ?film p:P161 ?cs . ?cs ps:P161 ?c . ?c rdfs:label ?cast FILTER(LANG(?cast) = "en")
-    OPTIONAL { ?cs pq:P1545 ?castOrd } }
+  {{ ?film p:P161 ?cs . ?cs ps:P161 ?c . {name_of("?c", "cast")}
+    OPTIONAL {{ ?cs pq:P1545 ?castOrd }} }}
   UNION
-  { ?film wdt:P136 ?g . ?g rdfs:label ?genreLabel FILTER(LANG(?genreLabel) = "en") }
-}"""
+  {{ ?film wdt:P136 ?g . ?g rdfs:label ?genreLabel FILTER(LANG(?genreLabel) = "en") }}
+}}"""
 
 
 def fold_recent(rows: list[dict]) -> list[dict]:

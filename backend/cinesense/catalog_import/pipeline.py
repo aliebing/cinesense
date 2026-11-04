@@ -32,6 +32,7 @@ from cinesense.data_sources.wikidata import (
     WikidataFilm,
     fetch_by_imdb,
     fetch_german_titles,
+    fetch_people,
     fetch_wikidata,
 )
 from cinesense.data_sources.wikipedia import chunk_text, fetch_plot
@@ -258,6 +259,7 @@ def main() -> None:
     parser.add_argument("--enrich-live", action="store_true", help="link live imports to Wikidata, load their plots")
     parser.add_argument("--german-titles", action="store_true", help="German titles from Wikidata for the catalogue")
     parser.add_argument("--languages", action="store_true", help="recheck original languages (country of origin)")
+    parser.add_argument("--people", action="store_true", help="reload directors and cast from Wikidata where changed")
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     load_env_file()
@@ -275,6 +277,9 @@ def main() -> None:
     if args.languages:
         with connect(s.database_url) as conn:
             asyncio.run(backfill_languages(conn))
+    if args.people:
+        with connect(s.database_url) as conn:
+            asyncio.run(refresh_people(conn))
     with connect(s.database_url) as conn:
         if not args.no_films:
             if not s.movielens_db_path:
@@ -285,6 +290,44 @@ def main() -> None:
             asyncio.run(ingest_plots(conn, embedder, args.plots))
             if embedder:
                 log.info("Embedding usage: %d tokens, $%.4f", embedder.total_tokens, embedder.total_cost)
+
+
+def people_changes(
+    current_cast: dict[str, list[str]], current_directors: dict[str, list[str]], fetched: dict[str, WikidataFilm]
+) -> list[str]:
+    """Films whose cast or directors on Wikidata differ from ours. A film with no names back (an outage, a
+    removed entry) keeps what it has."""
+    return [
+        film_id
+        for film_id, wd in fetched.items()
+        if (wd.cast or wd.directors)
+        and (wd.cast != current_cast.get(film_id, []) or wd.directors != current_directors.get(film_id, []))
+    ]
+
+
+async def refresh_people(conn) -> list[str]:
+    """Reload directors and cast from Wikidata for every film with a Wikidata id, and replace them where they
+    changed (people with only a 'mul' label were missing). Changed films get their billing checked again."""
+    films = conn.execute("select id, wikidata_id from films where wikidata_id is not null").fetchall()
+    cast: dict[str, list[str]] = {}
+    directors: dict[str, list[str]] = {}
+    for film_id, name, role in conn.execute("select film_id, name, role from film_people order by film_id, role, ord"):
+        (cast if role == "cast" else directors).setdefault(film_id, []).append(name)
+    async with httpx.AsyncClient(timeout=120) as client:
+        by_qid = await fetch_people([q for _, q in films], client)
+    fetched = {film_id: by_qid[q] for film_id, q in films if q in by_qid}
+    changed = people_changes(cast, directors, fetched)
+    for i in range(0, len(changed), 500):
+        ids = changed[i : i + 500]
+        _replace_people(conn, ids, [r for f in ids for r in people_rows(f, fetched[f])])
+        with conn.cursor() as cur:
+            cur.executemany(
+                "update films set directors = %s, cast_top = %s where id = %s",
+                [(fetched[f].directors, fetched[f].cast[:5], f) for f in ids],
+            )
+        conn.commit()
+    log.info("People: %d of %d films updated (%d answered by Wikidata)", len(changed), len(films), len(fetched))
+    return changed
 
 
 async def backfill_german_titles(conn) -> int:

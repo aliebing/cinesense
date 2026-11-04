@@ -247,3 +247,16 @@ def test_backfill_languages_corrects_only_changed_films(monkeypatch):
 
     assert asyncio.run(pipeline.backfill_languages(Conn())) == [("ml-2324", "de", "it")]
     assert executed == [("update films set original_language = %s where id = %s", [("it", "ml-2324")])]
+
+
+def test_people_changes_only_where_wikidata_now_knows_other_names():
+    from cinesense.catalog_import.pipeline import people_changes
+
+    current = {"ml-1": ["Alan Rickman"], "ml-2": ["Tom Hanks"], "ml-3": ["Someone"]}
+    fetched = {
+        "ml-1": WikidataFilm(None, "Q1", directors=["John McTiernan"], cast=["Bruce Willis", "Alan Rickman"]),
+        "ml-2": WikidataFilm(None, "Q2", cast=["Tom Hanks"]),  # unchanged
+        "ml-3": WikidataFilm(None, "Q3"),  # nothing came back (an outage): keep what we have
+    }
+    current_directors = {"ml-1": [], "ml-2": [], "ml-3": []}
+    assert people_changes(current, current_directors, fetched) == ["ml-1"]
