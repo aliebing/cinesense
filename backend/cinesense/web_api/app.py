@@ -1,7 +1,7 @@
 """The FastAPI app: catalogue, search and world endpoints; chat, inspect and taste come from their own routers."""
 
 from concurrent.futures import ThreadPoolExecutor
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -87,6 +87,29 @@ def create_app(load_env: bool = True) -> FastAPI:
     @app.get("/api/worlds")
     def worlds() -> list[MoodWorld]:
         return list(WORLDS)
+
+    @app.get("/api/suggest")
+    def suggest(
+        provider: Provider,
+        field: Literal["title", "person"],
+        q: Annotated[str, Query(max_length=100)] = "",
+        role: Literal["any", "cast", "director"] = "any",
+    ) -> list[dict]:
+        """Suggestions while typing in the advanced search (catalogue only, typo-tolerant); the UI applies a
+        title or person only when one is picked."""
+        q = q.strip()
+        if len(q) < 3:
+            return []
+        if field == "person":
+            return [{"value": n, "label": n} for n in provider.suggest_people(q, role)]
+        out, seen = [], set()
+        for fid in provider.search_title(q, limit=12):
+            m = provider.get_movie(fid)
+            if m is None or m.title in seen:
+                continue
+            seen.add(m.title)
+            out.append({"value": m.title, "label": f"{m.title} ({m.year})" if m.year else m.title})
+        return out[:8]
 
     @app.get("/api/tags")
     def tags(provider: Provider) -> list[dict]:

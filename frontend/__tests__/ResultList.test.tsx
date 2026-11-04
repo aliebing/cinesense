@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, it, vi } from "vitest";
 import ResultList from "@/components/results/ResultList";
@@ -143,4 +143,38 @@ it("nothing found with a title: offers the search without that title", async () 
   expect(await screen.findByText("Nothing found with 🔤 “xyzzy”")).toBeInTheDocument();
   await userEvent.click(screen.getByRole("button", { name: "Search without this title" }));
   expect(onRelax).toHaveBeenCalledWith({ ...criteria, title: null }, "without “xyzzy”");
+});
+
+it("a thin search says how many films match before offering to widen it", async () => {
+  const wider = emptyCriteria();
+  search.mockResolvedValue({
+    ok: true,
+    data: {
+      items: sampleRanked(2),
+      total: 2,
+      hidden_by_exclusion: 0,
+      extended_used: false,
+      relaxations: [{ id: "tags-to-plot", label: "Search the mood in plots", count: 4, criteria: wider }],
+    },
+  });
+  render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} onRelax={() => {}} />);
+  expect(await screen.findByText("Only 2 films match every wish. More with:")).toBeInTheDocument();
+  expect(screen.queryByText(/Nothing matches/)).toBeNull();
+});
+
+it("shows a loading bar while results load, and dims the old row", async () => {
+  let resolve: (v: unknown) => void = () => {};
+  search.mockResolvedValueOnce({ ok: true, data: { items: sampleRanked(3), total: 3, hidden_by_exclusion: 0, extended_used: false } });
+  const { rerender } = render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} />);
+  expect(screen.getByRole("progressbar", { name: "Loading results" })).toBeInTheDocument(); // first load
+  await screen.findByText(/3 matches/);
+  expect(screen.queryByRole("progressbar")).toBeNull();
+  search.mockImplementationOnce(() => new Promise((r) => (resolve = r)));
+  rerender(<ResultList criteria={{ ...emptyCriteria(), title: "x" }} onOpen={() => {}} />);
+  expect(screen.getByRole("progressbar", { name: "Loading results" })).toBeInTheDocument();
+  expect(screen.getByRole("region", { name: "Results" })).toHaveClass("is-busy");
+  await waitFor(() => expect(search).toHaveBeenCalledTimes(2)); // the request starts after a short pause
+  resolve({ ok: true, data: { items: sampleRanked(1), total: 1, hidden_by_exclusion: 0, extended_used: false } });
+  await screen.findByText(/1 matches/);
+  expect(screen.queryByRole("progressbar")).toBeNull();
 });

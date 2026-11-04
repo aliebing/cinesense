@@ -33,6 +33,10 @@ export function anchored(offset: number, before: number | null, now: number): nu
   return before === null ? offset : offset - (now - before);
 }
 
+export function LoadingBar() {
+  return <div className="loading-bar" role="progressbar" aria-label="Loading results" />;
+}
+
 /** Matching films in an endless row across the page that always runs through, steered by the mouse: towards an
  *  edge it runs fast in that direction, in the middle it creeps on. Hovering a card plays its trailer. */
 export default function RelatedRow({
@@ -41,12 +45,15 @@ export default function RelatedRow({
   label = "Also fits your mood",
   name = "Also fits your mood",
   showReasons = false,
+  busy = false,
 }: {
   items: RankedMovie[];
   onSelect: (m: Movie) => void;
   label?: ReactNode;
   name?: string;
   showReasons?: boolean;
+  /** new results are loading: a running bar above the cards, the old cards dimmed */
+  busy?: boolean;
 }) {
   const viewport = useRef<HTMLDivElement | null>(null);
   const track = useRef<HTMLDivElement | null>(null);
@@ -130,10 +137,11 @@ export default function RelatedRow({
     anchor.current = (e.target as HTMLElement).closest?.(".related-wrap") ?? null;
   };
   return (
-    <section className="related" aria-label={name}>
+    <section className={`related ${busy ? "is-busy" : ""}`} aria-label={name} aria-busy={busy}>
       <h3 className="related-label">
         {label} {!still && <span className="related-hint">· move the mouse left or right to browse</span>}
       </h3>
+      {busy && <LoadingBar />}
       <div
         ref={viewport}
         className={`related-viewport ${still ? "is-static" : ""}`}

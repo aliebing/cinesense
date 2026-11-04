@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import RelatedRow from "@/components/genre/RelatedRow";
+import RelatedRow, { LoadingBar } from "@/components/genre/RelatedRow";
 import { search, type DiscoverResult, type Relaxation } from "@/lib/api";
 import type { Criteria } from "@/lib/searchState";
 import type { Movie, RankedMovie } from "@/lib/types";
@@ -26,6 +26,7 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
   // the options belong to the search they were computed for; while the next one loads they are stale
   const [relaxFor, setRelaxFor] = useState<{ key: string; options: Relaxation[] }>({ key: "", options: [] });
   const [error, setError] = useState(false);
+  const [shownKey, setShownKey] = useState<string | null>(null); // the search the shown results belong to
   const key = JSON.stringify(criteria);
   const fromKey = widened ? JSON.stringify(widened.from) : "";
 
@@ -35,8 +36,12 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
       const from = fromKey ? (JSON.parse(fromKey) as Criteria) : undefined;
       const r = await search(JSON.parse(key) as Criteria, 0, LIMIT, from);
       if (cancelled) return;
-      if (!r.ok) return setError(true);
+      if (!r.ok) {
+        setShownKey(key);
+        return setError(true);
+      }
       setError(false);
+      setShownKey(key);
       setItems(r.data.items);
       setTotal(r.data.total);
       setExtended(r.data.extended_used);
@@ -55,13 +60,14 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
     };
   }, [key, fromKey, onMeta]);
 
-  if (error) return <p className="results-error">Couldn&apos;t load films</p>;
-  if (total === null) return null;
+  const loading = shownKey !== key;
+  if (error && !loading) return <p className="results-error">Couldn&apos;t load films</p>;
+  if (total === null) return <LoadingBar />;
   const relaxations = relaxFor.key === key ? relaxFor.options : [];
   const widen =
     onRelax && relaxations.length > 0 ? (
       <div className="results-relax-bar">
-        <span>Nothing matches every wish. Try:</span>
+        <span>{items.length ? `Only ${count.format(total)} films match every wish. More with:` : "Nothing matches every wish. Try:"}</span>
         {relaxations.map((o) => (
           <button key={o.id} type="button" className="results-relax" onClick={() => onRelax(o.criteria, o.label)}>
             {o.label} · {count.format(o.count)} films
@@ -82,6 +88,7 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
   if (items.length === 0)
     return (
       <>
+        {loading && <LoadingBar />}
         {identity && relaxFor.key === key ? (
           <div className="results-relax-bar">
             <span>Nothing found with {identity.text}</span>
@@ -109,7 +116,7 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
     <>
       {note}
       {widen}
-      <RelatedRow items={items} onSelect={onOpen} label={label} name="Results" showReasons />
+      <RelatedRow items={items} onSelect={onOpen} label={label} name="Results" showReasons busy={loading} />
     </>
   );
 }

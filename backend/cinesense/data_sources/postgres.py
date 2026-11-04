@@ -204,6 +204,21 @@ class PostgresProvider:
             rows = c.execute(sql, {"q": q, "ql": ql, "limit": limit}).fetchall()
         return {r[0]: max(float(r[1]), 0.5) for r in rows}
 
+    def suggest_people(self, q: str, role: str = "any", limit: int = 8) -> list[str]:
+        """Distinct names for typing suggestions: names containing the input first, then typo-close ones,
+        then the better-known (more films)."""
+        role_sql = "" if role == "any" else "and role = %(role)s"
+        contains = "cs_norm(name) like '%%' || cs_norm(%(ql)s) || '%%' escape '\\'"
+        sql = (
+            f"select name, bool_or({contains}) as hit, max(word_similarity(cs_norm(%(q)s), cs_norm(name))) as ws, "
+            f"count(*) as n from film_people where ({contains} or cs_norm(%(q)s) <%% cs_norm(name)) {role_sql} "
+            "group by name order by hit desc, ws desc, n desc limit %(limit)s"
+        )
+        ql = q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        with self._conn() as c:
+            rows = c.execute(sql, {"q": q, "ql": ql, "role": role, "limit": limit}).fetchall()
+        return [r[0] for r in rows]
+
     def search_person(self, q: str, role: str = "any", limit: int = 400) -> tuple[dict[str, float], dict[str, str]]:
         role_sql = "" if role == "any" else "and role = %(role)s"
         sounds = (

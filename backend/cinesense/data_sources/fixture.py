@@ -106,6 +106,21 @@ class FixtureProvider:
                     scores[film_id], names[film_id] = s, name
         return scores, names
 
+    def suggest_people(self, q: str, role: str = "any", limit: int = 8) -> list[str]:
+        """Distinct names for typing suggestions: names containing the input first, then close ones."""
+        best: dict[str, tuple[bool, float, int]] = {}
+        ql = q.lower()
+        for people in self._people.values():
+            for name, r, _ in people:
+                if role != "any" and r != role:
+                    continue
+                contains = ql in name.lower()
+                sim = difflib.SequenceMatcher(None, ql, name.lower()).ratio()
+                if contains or sim >= 0.6:
+                    _, s0, n = best.get(name, (contains, 0.0, 0))
+                    best[name] = (contains, max(s0, sim), n + 1)
+        return [n for n, _ in sorted(best.items(), key=lambda x: (not x[1][0], -x[1][1], -x[1][2]))][:limit]
+
     def upsert_live(self, movies: list[Movie]) -> None:
         for m in movies:
             if m.id not in self._by_id:

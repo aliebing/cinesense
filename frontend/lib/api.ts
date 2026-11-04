@@ -50,6 +50,10 @@ export type DiscoverResult = {
 };
 
 export const getTags = () => apiGet<Tag[]>("/api/tags");
+export type Suggestion = { value: string; label: string };
+/** Typing suggestions for the advanced search (catalogue titles or people, typo-tolerant). */
+export const suggest = (field: "title" | "person", q: string, role: string = "any") =>
+  apiGet<Suggestion[]>(`/api/suggest?${new URLSearchParams({ field, q, role })}`);
 /** `fillImages: false` skips the Streaming API image lookups (homepage background rows spend no budget). */
 export const discover = (criteria: Criteria, offset = 0, limit = 20, fillImages = true) =>
   apiPost<DiscoverResult>("/api/discover", fillImages ? { criteria, offset, limit } : { criteria, offset, limit, fill_images: false });

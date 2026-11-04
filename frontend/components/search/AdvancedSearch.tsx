@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useCallback, useState, type FormEvent } from "react";
+import SuggestInput from "@/components/search/SuggestInput";
+import { suggest } from "@/lib/api";
 import type { Criteria } from "@/lib/searchState";
 
 const ROLES: { value: Criteria["person_role"]; label: string }[] = [
@@ -34,14 +36,24 @@ function Choice<T extends string>({ label, options, value, onChange }: { label: 
 export default function AdvancedSearch({ criteria, onSubmit }: { criteria: Criteria; onSubmit: (c: Criteria) => void }) {
   const [title, setTitle] = useState(criteria.title ?? "");
   const [person, setPerson] = useState(criteria.person ?? "");
+  // a title or name counts only when picked from the suggestions (what is already set counts as picked)
+  const [titlePicked, setTitlePicked] = useState(Boolean(criteria.title));
+  const [personPicked, setPersonPicked] = useState(Boolean(criteria.person));
+  const [hint, setHint] = useState<string | null>(null);
   const [role, setRole] = useState(criteria.person_role);
   const [yearFrom, setYearFrom] = useState(criteria.year_from?.toString() ?? "");
   const [yearTo, setYearTo] = useState(criteria.year_to?.toString() ?? "");
   const [kind, setKind] = useState(criteria.kind);
   const [extended, setExtended] = useState(criteria.extended);
+  const loadTitles = useCallback((q: string) => suggest("title", q).then((r) => (r.ok ? r.data : [])), []);
+  const loadPeople = useCallback((q: string) => suggest("person", q, role).then((r) => (r.ok ? r.data : [])), [role]);
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
+    // typed but not picked: only the extended search (newer films, not in the suggestions) takes free text
+    if (!extended && title.trim() && !titlePicked) return setHint("Pick a title from the suggestions");
+    if (!extended && person.trim() && !personPicked) return setHint("Pick a name from the suggestions");
+    setHint(null);
     const year = (v: string) => (v.trim() && /^\d{4}$/.test(v.trim()) ? Number(v.trim()) : null);
     onSubmit({
       ...criteria,
@@ -57,14 +69,40 @@ export default function AdvancedSearch({ criteria, onSubmit }: { criteria: Crite
 
   return (
     <form className="advanced-search" onSubmit={submit} aria-label="Advanced search">
-      <label>
-        Title
-        <input id="adv-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="typos are fine" />
-      </label>
-      <label>
-        Actor or director
-        <input id="adv-person" value={person} onChange={(e) => setPerson(e.target.value)} placeholder="e.g. Sandra Hüller" />
-      </label>
+      <SuggestInput
+        id="adv-title"
+        label="Title"
+        placeholder="type 4 letters for suggestions"
+        value={title}
+        picked={titlePicked}
+        onType={(t) => {
+          setTitle(t);
+          setTitlePicked(false);
+        }}
+        onPick={(t) => {
+          setTitle(t);
+          setTitlePicked(true);
+          setHint(null);
+        }}
+        load={loadTitles}
+      />
+      <SuggestInput
+        id="adv-person"
+        label="Actor or director"
+        placeholder="e.g. Sandra Hüller"
+        value={person}
+        picked={personPicked}
+        onType={(t) => {
+          setPerson(t);
+          setPersonPicked(false);
+        }}
+        onPick={(t) => {
+          setPerson(t);
+          setPersonPicked(true);
+          setHint(null);
+        }}
+        load={loadPeople}
+      />
       <Choice label="Role" options={ROLES} value={role} onChange={setRole} />
       <label>
         From year
@@ -80,6 +118,11 @@ export default function AdvancedSearch({ criteria, onSubmit }: { criteria: Crite
         Extended search (more and newer films, slower)
       </label>
       <button type="submit">Search</button>
+      {hint && (
+        <p className="advanced-search__hint" role="alert">
+          {hint}
+        </p>
+      )}
     </form>
   );
 }
