@@ -13,9 +13,8 @@ wheels/
 .env
 .superpowers/
 
-# Demo video output (docs/video)
-docs/video/out/
+# Local-only working material: design and plans, video recording scripts and output, prompt drafts
+docs/superpowers/
+docs/video/
+docs/*.txt
 
-# Personal prompt drafts (not part of the project)
-prompt.txt
-prompt improve app.txt

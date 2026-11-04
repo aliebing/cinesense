@@ -25,7 +25,7 @@ Cinema and streaming sites show long title lists and genre grids. Combining seve
 
 ## Status
 
-**Plans 1–6 are done:** the cinema UI runs on a real catalogue of about 20,600 films (≈19,800 from MovieLens incl. documentaries, plus ≈800 German releases since 2021). The chat agent works on the homepage and in the genre drawer. Personalisation works on the genre page and in all rankings. Plan 6 added a search that widens itself when too few films match, and says which part of the wish each widened result misses. The evaluation results are below; see `docs/superpowers/plans/2026-10-29-cinesense-roadmap.md`.
+**Plans 1–6 are done:** the cinema UI runs on a real catalogue of about 20,600 films (≈19,800 from MovieLens incl. documentaries, plus ≈800 German releases since 2021). The chat agent works on the homepage and in the genre drawer. Personalisation works on the genre page and in all rankings. Plan 6 added a search that widens itself when too few films match, and says which part of the wish each widened result misses. The evaluation results are below.
 
 **For reviewers:** `/tech` (e.g. http://localhost:8080/tech) is a plain technical view of one agent turn: the
 reply, the criteria with tag names, every tool call with its arguments and result, the prompts that were sent, model,
@@ -67,7 +67,7 @@ backend/      Python: cinesense/ (the app) and tests/, same folder names
 frontend/     Next.js: app/ (routes), components/, lib/
 database/     schema.sql and the project's own local Supabase
 evaluation/   scenarios.json, results/, REPORT.md
-docs/         design, plans, grading briefs, presentation, video scripts
+docs/         grading briefs and the presentation outline
 ```
 
 - **Backend** (`backend/cinesense/`), one folder per role, each building only on the ones before it (checked by a test):
@@ -114,8 +114,6 @@ The model decides **what** to look for; everything that must be reproducible is 
 **Personalisation:** the profile is computed on demand from the feedback: the average Tag Genome vector of the liked films minus the catalogue average (disliked films count against), reduced to the 8 strongest tags. It enters the ranking as a fifth signal (weight 0.15, scaled against the best film not yet rated), so mood, plot and people still lead.
 
 The chat streams its progress (`POST /api/chat`, Server-Sent Events). A typical turn costs about 6,000 input and 800 output tokens; every turn's tokens are logged by the API.
-
-The full design is in `docs/superpowers/specs/2026-10-29-cinesense-design.md`.
 
 ## Data and attribution
 
