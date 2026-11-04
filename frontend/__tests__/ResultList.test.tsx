@@ -170,28 +170,28 @@ it("shows a loading bar while results load, and dims the old row", async () => {
 });
 
 it("shows at least the 3 best matches, and says out of how many", async () => {
-  const items = sampleRanked(12).map((r, i) => ({ ...r, match_percent: 59 - i }));
+  const items = sampleRanked(12).map((r, i) => ({ ...r, match_percent: 49 - i }));
   search.mockResolvedValue({ ok: true, data: { items, total: 39, hidden_by_exclusion: 0, extended_used: false } });
   const { container } = render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} />);
-  expect(await screen.findByText(/The 3 best matches/)).toBeInTheDocument(); // none reaches 60%: the 3 best
+  expect(await screen.findByText(/The 3 best matches/)).toBeInTheDocument(); // none reaches 50%: the 3 best
   expect(screen.getByText(/out of 39 films that fit your filters/)).toBeInTheDocument();
   expect(container.querySelectorAll(".related-card")).toHaveLength(3);
   expect(search.mock.calls[0][2]).toBe(50); // at most 50
 });
 
-it("shows every film from 60% up (Sandra Bullock + funny: 8 of 39)", async () => {
-  const percents = [86, 85, 84, 78, 75, 68, 64, 62, 59, 56, 56, 55];
-  const items = sampleRanked(12).map((r, i) => ({ ...r, match_percent: percents[i] }));
+it("shows every film from 50% up (Sandra Bullock + action + funny: 7 of 39)", async () => {
+  const percents = [71, 63, 59, 59, 57, 51, 51, 48, 48, 48];
+  const items = sampleRanked(10).map((r, i) => ({ ...r, match_percent: percents[i] }));
   search.mockResolvedValue({ ok: true, data: { items, total: 39, hidden_by_exclusion: 0, extended_used: false } });
   const { container } = render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} />);
-  expect(await screen.findByText(/The 8 best matches/)).toBeInTheDocument();
+  expect(await screen.findByText(/The 7 best matches/)).toBeInTheDocument();
   expect(screen.getByText(/out of 39 films/)).toBeInTheDocument();
   const titles = new Set([...container.querySelectorAll(".related-card")].map((c) => c.getAttribute("aria-label") ?? c.textContent));
-  expect(titles.size).toBe(8); // a row too long to fit loops, so its cards appear twice
+  expect(titles.size).toBe(7); // a row too long to fit loops, so its cards appear twice
 });
 
 it("another tag lowers every score, so it shows fewer films, not more (+ horror: 4)", async () => {
-  const percents = [65, 65, 64, 60, 59, 59, 54, 54, 40, 32];
+  const percents = [55, 55, 54, 50, 49, 49, 44, 44, 30, 22];
   const items = sampleRanked(10).map((r, i) => ({ ...r, match_percent: percents[i] }));
   search.mockResolvedValue({ ok: true, data: { items, total: 39, hidden_by_exclusion: 0, extended_used: false } });
   render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} />);

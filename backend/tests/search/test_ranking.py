@@ -1,3 +1,5 @@
+import pytest
+
 from cinesense.core.criteria import SearchCriteria, TagCriterion
 from cinesense.search.ranking import Signals, combined_rank
 
@@ -222,3 +224,26 @@ def test_the_tag_part_is_absolute_a_half_fitting_film_is_not_shown_as_a_full_mat
 
     total = WEIGHTS["tags"] + WEIGHTS["rating"] + WEIGHTS["popularity"] + WEIGHTS["recency"]
     assert abs((full - half) - WEIGHTS["tags"] * 0.4 / total) < 1e-9
+
+
+def test_a_wanted_person_filters_but_gives_no_points_a_small_part_halves_the_match(make_movie):
+    """Every film of a person search has that person: points for it would lift a humourless action film over the
+    bar for 'Stallone + funny'. The match is the mood; a cameo (role weight 0.5 of the lead's 1.0) halves it."""
+    movies = [
+        make_movie(id="lead", ml_rating=3.5, ml_rating_count=1000),
+        make_movie(id="cameo", ml_rating=3.5, ml_rating_count=1000),
+    ]
+    funny = {"lead": 0.8, "cameo": 0.8}
+    sig = Signals(tags=funny, person={"lead": 1.0, "cameo": 0.5})
+    with_person = combined_rank(movies, SearchCriteria(person="x", tags=[TagCriterion(idx=0)]), sig)
+    mood_only = combined_rank(movies, SearchCriteria(tags=[TagCriterion(idx=0)]), Signals(tags=funny))
+    by_id = {r.movie.id: r.score for r in with_person.items}
+    assert by_id["lead"] == pytest.approx(mood_only.items[0].score)  # the person adds nothing
+    assert by_id["cameo"] == pytest.approx(by_id["lead"] / 2)
+
+
+def test_a_misspelt_person_does_not_lower_the_match(make_movie):
+    movies = [make_movie(id="a", ml_rating=3.5, ml_rating_count=1000)]
+    exact = combined_rank(movies, SearchCriteria(person="x"), Signals(person={"a": 1.0}))
+    typo = combined_rank(movies, SearchCriteria(person="x"), Signals(person={"a": 0.7}))  # found by similarity only
+    assert exact.items[0].match_percent == typo.items[0].match_percent

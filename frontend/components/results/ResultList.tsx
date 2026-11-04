@@ -10,7 +10,7 @@ import type { Movie, RankedMovie } from "@/lib/types";
 // gap to the best match: another tag lowers every score, and a gap would then let in more films instead of fewer
 const LIMIT = 50;
 const MIN_SHOWN = 3;
-const MIN_PERCENT = 60;
+const MIN_PERCENT = 50;
 const count = new Intl.NumberFormat("en-US");
 
 type Props = {

@@ -105,9 +105,15 @@ def combined_rank(
         active["tags"] = {k: min(max(v, 0.0), 1.0) for k, v in signals.tags.items()}
     if signals.plot is not None:
         active["plot"] = _normalised({k: v[0] for k, v in signals.plot.items()})
-    people = {**(signals.title or {}), **(signals.person or {})}
-    if signals.person is not None or signals.title is not None:
-        active["people"] = people
+    if signals.title is not None:
+        active["people"] = dict(signals.title)
+    # a wanted person is a filter, not points: every film here has them, so points would only lift films that miss
+    # the mood ("Stallone + funny" showed Rambo). Their part scales the match instead: lead 1.0, cameo 0.5, relative
+    # to the best part found (a misspelt name, found at a lower similarity, does not lower every match).
+    part: dict[str, float] = {}
+    if signals.person:
+        best = max(signals.person.values())
+        part = {k: v / best for k, v in signals.person.items()} if best > 0 else {}
     taste = _normalised(signals.profile) if signals.profile else {}  # once, not per film
     if taste:
         active["profile"] = taste
@@ -123,7 +129,7 @@ def combined_rank(
         rating = bayesian_rating(m.ml_rating, m.ml_rating_count, prior) / 5
         base = sum(WEIGHTS[k] * v for k, v in parts.items()) + WEIGHTS["rating"] * rating
         known = WEIGHTS["popularity"] * _popularity(m.ml_rating_count) + recency_w * _recency(m.year)
-        score = (base + known) / total_w
+        score = (base + known) / total_w * part.get(m.id, 1.0)
         ranked.append(
             RankedMovie(
                 movie=m,
