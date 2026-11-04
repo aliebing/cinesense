@@ -124,3 +124,23 @@ it("hides old relaxation buttons as soon as the criteria change", async () => {
   rerender(<ResultList criteria={wider} onOpen={() => {}} onRelax={() => {}} />);
   expect(screen.queryByRole("button", { name: /Allow up to 90 min/ })).toBeNull();
 });
+
+it("nothing found with a person: says so and offers the search without that person", async () => {
+  search.mockResolvedValue({ ok: true, data: { items: [], total: 0, hidden_by_exclusion: 0, extended_used: false, relaxations: [] } });
+  const onRelax = vi.fn();
+  const criteria = { ...emptyCriteria(), person: "qwertz uiop" };
+  render(<ResultList criteria={criteria} onOpen={() => {}} onRelax={onRelax} />);
+  expect(await screen.findByText("Nothing found with 👤 qwertz uiop")).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: "Search without this person" }));
+  expect(onRelax).toHaveBeenCalledWith({ ...criteria, person: null }, "without qwertz uiop");
+});
+
+it("nothing found with a title: offers the search without that title", async () => {
+  search.mockResolvedValue({ ok: true, data: { items: [], total: 0, hidden_by_exclusion: 0, extended_used: false, relaxations: [] } });
+  const onRelax = vi.fn();
+  const criteria = { ...emptyCriteria(), title: "xyzzy" };
+  render(<ResultList criteria={criteria} onOpen={() => {}} onRelax={onRelax} />);
+  expect(await screen.findByText("Nothing found with 🔤 “xyzzy”")).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: "Search without this title" }));
+  expect(onRelax).toHaveBeenCalledWith({ ...criteria, title: null }, "without “xyzzy”");
+});

@@ -66,10 +66,28 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
   const note = widened?.labels.length ? (
     <p className="results-widened">Widened: {widened.labels.join("; ")} — films marked ≠ miss part of your wish</p>
   ) : null;
+  // a person or title the widening never drops (it is the wish itself): if nothing is found, say which and
+  // offer the search without it (a misspelt name is already matched fuzzily by the backend)
+  const identity = criteria.person
+    ? { text: `👤 ${criteria.person}`, what: "person", without: { ...criteria, person: null }, label: `without ${criteria.person}` }
+    : criteria.title
+      ? { text: `🔤 “${criteria.title}”`, what: "title", without: { ...criteria, title: null }, label: `without “${criteria.title}”` }
+      : null;
   if (items.length === 0)
     return (
       <>
-        <p className="results-head">No matches in the CineSense catalogue</p>
+        {identity && relaxFor.key === key ? (
+          <div className="results-relax-bar">
+            <span>Nothing found with {identity.text}</span>
+            {onRelax && (
+              <button type="button" className="results-relax" onClick={() => onRelax(identity.without, identity.label)}>
+                Search without this {identity.what}
+              </button>
+            )}
+          </div>
+        ) : (
+          <p className="results-head">No matches in the CineSense catalogue</p>
+        )}
         {note}
         {widen}
       </>

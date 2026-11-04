@@ -62,7 +62,12 @@ export default function RelatedRow({
   }, [activeId]);
 
   useEffect(() => {
-    if (still) return;
+    if (still) {
+      // the loop moves the track by hand: a row that shrank to a few films must start at the left again,
+      // or its cards stay wherever the loop had slid them (off screen)
+      if (track.current) track.current.style.transform = "";
+      return;
+    }
     let frame = 0;
     let last = performance.now();
     let offset = 0;

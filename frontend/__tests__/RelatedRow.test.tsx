@@ -91,3 +91,11 @@ it("holds still while the visitor types in the chat drawer", async () => {
   expect(track.style.transform).not.toBe(held);
   vi.restoreAllMocks();
 });
+
+it("a running row that shrinks to a few films stands still at the start, not where the loop had slid to", () => {
+  const { container, rerender } = render(<RelatedRow items={sampleRanked(14)} onSelect={() => {}} />);
+  const track = container.querySelector<HTMLElement>(".related-track")!;
+  track.style.transform = "translate3d(-4000px, 0, 0)"; // where the running loop had got to
+  rerender(<RelatedRow items={sampleRanked(4)} onSelect={() => {}} />);
+  expect(container.querySelector<HTMLElement>(".related-track")!.style.transform).toBe("");
+});
