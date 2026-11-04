@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { getHome, getMovie, getWorldMovies } from "@/lib/api";
+import { getHome, getMovie, getWorldMovies, inspectTurn } from "@/lib/api";
 
 describe("apiGet", () => {
   it("maps fetch rejection to network error", async () => {
@@ -15,6 +15,16 @@ describe("apiGet", () => {
   it("maps 500 to server", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("{}", { status: 500 })));
     expect(await getWorldMovies("action")).toEqual({ ok: false, error: "server" });
+  });
+
+  it("maps 429 to limited with the server's message", async () => {
+    const body = JSON.stringify({ detail: "You've reached today's limit for the assistant." });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(body, { status: 429 })));
+    expect(await inspectTurn("t", "hi", undefined as never)).toEqual({
+      ok: false,
+      error: "limited",
+      message: "You've reached today's limit for the assistant.",
+    });
   });
 
   it("returns parsed data on success and calls the API base URL", async () => {

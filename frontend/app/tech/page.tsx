@@ -38,6 +38,7 @@ export default function TechPage() {
     threadId.current ??= `tech-${randomId()}`;
     const r = await inspectTurn(threadId.current, text, criteria);
     setBusy(false);
+    if (!r.ok && r.error === "limited" && r.message) return setError(r.message);
     if (!r.ok) return setError("The agent is unavailable (no API key, or the backend is down).");
     setTurn(r.data);
     setAsked(text);

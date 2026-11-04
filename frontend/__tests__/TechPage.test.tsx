@@ -90,3 +90,11 @@ it("links a title to its German IMDb page when the IMDb id is known", async () =
   expect(link).toHaveAttribute("href", "https://www.imdb.com/de/title/tt1663202/");
   expect(link).toHaveAttribute("target", "_blank");
 });
+
+it("shows the limit message when the assistant's daily limit is reached", async () => {
+  inspectTurn.mockResolvedValue({ ok: false, error: "limited", message: "You've reached today's limit for the assistant." });
+  render(<TechPage />);
+  await userEvent.type(screen.getByLabelText("Message"), "x");
+  await userEvent.click(screen.getByRole("button", { name: "send" }));
+  expect(await screen.findByText("You've reached today's limit for the assistant.")).toBeInTheDocument();
+});

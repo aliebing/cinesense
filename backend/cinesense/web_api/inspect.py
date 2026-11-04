@@ -5,13 +5,14 @@ result, the prompts that were sent, model, tokens, cost and latency. No images a
 import time
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from cinesense.chat_agent.graph import criteria_summary
 from cinesense.chat_agent.llm import PRICES, cost_usd
 from cinesense.core.config import get_settings
 from cinesense.web_api.chat import ChatRequest
-from cinesense.web_api.deps import get_agent, get_provider
+from cinesense.web_api.deps import get_agent, get_limiter, get_provider
+from cinesense.web_api.limits import visitor_of
 
 router = APIRouter()
 
@@ -42,9 +43,14 @@ def inspect(
     req: ChatRequest,
     runner: Annotated[object, Depends(get_agent)],
     provider: Annotated[object, Depends(get_provider)],
+    request: Request,
+    limiter: Annotated[object, Depends(get_limiter)],
 ) -> dict:
     if runner is None:
         raise HTTPException(status_code=503, detail="no_llm_key")
+    refused = limiter.check(visitor_of(request.headers, request.client and request.client.host))
+    if refused:
+        raise HTTPException(status_code=429, detail=refused)
     started = time.monotonic()
     out = runner(req.thread_id, req.message, req.criteria.model_dump(), None, None)
     latency = time.monotonic() - started

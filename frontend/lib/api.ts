@@ -2,8 +2,8 @@ import type { Criteria } from "@/lib/searchState";
 import type { HomeData, MoodWorld, Movie, RankedMovie } from "@/lib/types";
 import { USER_HEADER, userId } from "@/lib/user";
 
-export type ApiError = "network" | "not_found" | "server";
-export type ApiResult<T> = { ok: true; data: T } | { ok: false; error: ApiError };
+export type ApiError = "network" | "not_found" | "server" | "limited";
+export type ApiResult<T> = { ok: true; data: T } | { ok: false; error: ApiError; message?: string };
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -16,6 +16,11 @@ async function request<T>(path: string, init?: RequestInit): Promise<ApiResult<T
     return { ok: false, error: "network" };
   }
   if (res.status === 404) return { ok: false, error: "not_found" };
+  if (res.status === 429) {
+    // the assistant's turn limits (backend/cinesense/web_api/limits.py): the server says what to show
+    const body = (await res.json().catch(() => ({}))) as { detail?: string };
+    return { ok: false, error: "limited", message: body.detail };
+  }
   if (!res.ok) return { ok: false, error: "server" };
   try {
     return { ok: true, data: (await res.json()) as T };

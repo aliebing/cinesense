@@ -6,14 +6,15 @@ import queue
 import threading
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from cinesense.core.criteria import SearchCriteria
 from cinesense.core.models import Movie
-from cinesense.web_api.deps import get_agent, get_provider, get_streaming
+from cinesense.web_api.deps import get_agent, get_limiter, get_provider, get_streaming
 from cinesense.web_api.images import with_images
+from cinesense.web_api.limits import visitor_of
 from cinesense.web_api.taste import UserProfile
 
 UNAVAILABLE = "The assistant is unavailable right now — you can still use the chips and search."
@@ -39,10 +40,19 @@ def chat(
     provider: Annotated[object, Depends(get_provider)],
     streaming: Annotated[object, Depends(get_streaming)],
     profile: UserProfile,
+    request: Request,
+    limiter: Annotated[object, Depends(get_limiter)],
 ):
+    refused = (
+        None if runner is None else limiter.check(visitor_of(request.headers, request.client and request.client.host))
+    )
+
     def events():
         if runner is None:
             yield _sse("error", {"text": UNAVAILABLE})
+            return
+        if refused:
+            yield _sse("error", {"text": refused})
             return
         q: queue.Queue = queue.Queue()
 

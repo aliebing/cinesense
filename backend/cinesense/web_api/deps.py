@@ -7,6 +7,15 @@ from cinesense.data_sources.fixture import FixtureProvider
 
 
 @lru_cache
+def get_limiter():
+    """One shared counter of agent turns per process (see limits.py). Tests override this."""
+    from cinesense.web_api.limits import TurnLimiter
+
+    s = get_settings()
+    return TurnLimiter(s.chat_per_minute, s.chat_per_day, s.chat_site_per_day)
+
+
+@lru_cache
 def get_provider():
     """Postgres catalogue when configured, otherwise the offline fixture. Tests override this."""
     s = get_settings()
