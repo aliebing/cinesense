@@ -33,7 +33,8 @@ class Settings:
     movielens_db_path: Path | None
     llm_model: str = "anthropic/claude-haiku-5.5"
     streaming_monthly_limit: int = 900
-    youtube_daily_limit: int = 95
+    youtube_daily_limit: int = 90  # searches (100 units each) of YouTube's 10,000 units a day
+    youtube_check_daily_calls: int = 500  # status checks (1 unit for up to 50 videos each)
     chat_per_minute: int = 6  # agent turns per visitor (chat and /api/inspect)
     chat_per_day: int = 40
     chat_site_per_day: int = 800  # all visitors together (~$1 a day at the measured $0.0013 per turn)

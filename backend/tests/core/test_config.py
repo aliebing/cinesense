@@ -29,4 +29,5 @@ def test_settings_missing_is_none(monkeypatch):
     s = get_settings()
     assert s.database_url is None and s.streaming_api_key is None and s.movielens_db_path is None
     assert s.streaming_monthly_limit == 900
-    assert s.youtube_daily_limit == 95
+    assert s.youtube_daily_limit == 90
+    assert s.youtube_check_daily_calls == 500

@@ -1,9 +1,11 @@
-"""Trailer fallback via the YouTube Data API (search.list: 100 searches/day by default; we stop at 95).
+"""Trailer fallback via the YouTube Data API (search.list costs 100 of the 10,000 daily units: we stop at 90
+searches, leaving room for the status checks in trailer_check.py).
 Video ids are cached and re-validated after 30 days (YouTube API policy). Wikidata trailer ids always win."""
 
 import logging
 import re
 import unicodedata
+from collections.abc import Callable
 from datetime import UTC, date, datetime, timedelta
 from typing import Protocol
 
@@ -110,13 +112,15 @@ class YouTubeTrailerClient:
         self,
         api_key: str | None,
         store: TrailerStore,
-        daily_limit: int = 95,
+        daily_limit: int = 90,
         http: httpx.Client | None = None,
+        playable: Callable[[list[str]], list[str]] | None = None,
     ):
         self.api_key = api_key
         self.store = store
         self.daily_limit = daily_limit
         self.http = http or httpx.Client()
+        self.playable = playable  # keeps the ids that play here (TrailerChecker.playable_ids); None: keep all
 
     def find_trailer(self, film_id: str, title: str, year: int | None) -> str | None:
         cached = self.store.get(film_id)
@@ -150,13 +154,13 @@ class YouTubeTrailerClient:
         if r.status_code != 200:
             log.warning("youtube search status %s", r.status_code)
             return None
-        video_id = next(
-            (
-                i["id"]["videoId"]
-                for i in r.json().get("items", [])
-                if _title_matches(plain, i["snippet"]["title"]) and "trailer" in i["snippet"]["title"].lower()
-            ),
-            None,
-        )
+        matches = [
+            i["id"]["videoId"]
+            for i in r.json().get("items", [])
+            if _title_matches(plain, i["snippet"]["title"]) and "trailer" in i["snippet"]["title"].lower()
+        ]
+        if matches and self.playable is not None:
+            matches = self.playable(matches)  # a hit blocked here (region, age, embedding) gives way to the next
+        video_id = matches[0] if matches else None
         self.store.put(film_id, video_id)
         return video_id

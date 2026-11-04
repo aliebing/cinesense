@@ -14,7 +14,7 @@ The grading briefs are in `docs/brief/` (`turing-college-capstone.md`, `turing-c
 
 - **Language:** UI text, code, identifiers, comments, commits and docs are all English. Talk to the user in German.
 - **Look:** dark only, on a matte near-black ground, with fog and light on every page. The main stage is a wide (~2.25:1) cinema screen with letterbox bars and solid red side curtains; tune via the CSS variables at the top of `frontend/app/globals.css`. Text must stay readable over all effects.
-- **Data:** never fabricate film facts. **No TMDB** (its terms forbid AI apps). Sources: MovieLens (local file, never commit it), Wikidata, Wikipedia, Streaming Availability API (1,000 req/month — every call goes through the cache/budget guard), optional YouTube Data API (95 searches/day).
+- **Data:** never fabricate film facts. **No TMDB** (its terms forbid AI apps). Sources: MovieLens (local file, never commit it), Wikidata, Wikipedia, Streaming Availability API (1,000 req/month — every call goes through the cache/budget guard), optional YouTube Data API (90 searches/day plus status checks: embeddable, not blocked in Germany, not age-restricted).
 - **External services** stay behind adapters (`backend/cinesense/data_sources/`). Tests run offline on fixtures.
 
 ## Layout

@@ -83,3 +83,19 @@ def test_matches_catalogue_titles_loosely():
     assert '"The Road Home"' in str(route.calls.last.request.url.params["q"])
     route.mock(return_value=httpx.Response(200, json={"items": [item("x", "Star Trek Official Trailer")]}))
     assert client().find_trailer("ml-2", "Star Wars: Episode IV - A New Hope", 1977) is None
+
+
+@respx.mock
+def test_skips_a_search_hit_that_cannot_play_here():
+    respx.get(SEARCH_URL).mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "items": [item("blocked", "Speed - Official Trailer"), item("fine", "Speed (1994) Official Trailer")]
+            },
+        )
+    )
+    c = YouTubeTrailerClient(
+        "k", MemoryTrailerStore(), http=httpx.Client(), playable=lambda ids: [i for i in ids if i != "blocked"]
+    )
+    assert c.find_trailer("ml-1", "Speed", 1994) == "fine"

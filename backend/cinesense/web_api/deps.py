@@ -71,7 +71,10 @@ def get_trailers():
         store = PostgresTrailerStore(lambda: connect(s.database_url))
     else:
         store = MemoryTrailerStore()
-    return YouTubeTrailerClient(s.youtube_api_key, store, daily_limit=s.youtube_daily_limit)
+    checker = get_trailer_checker()  # a search hit that cannot play here gives way to the next one
+    return YouTubeTrailerClient(
+        s.youtube_api_key, store, daily_limit=s.youtube_daily_limit, playable=checker.playable_ids
+    )
 
 
 def enrich_live_imports(ids: list[str], provider) -> None:
@@ -154,5 +157,7 @@ def get_trailer_checker():
     if s.database_url:
         from cinesense.data_sources.db import connect
 
-        return TrailerChecker(PostgresTrailerStore(lambda: connect(s.database_url)))
-    return TrailerChecker(MemoryTrailerStore())
+        store = PostgresTrailerStore(lambda: connect(s.database_url))
+    else:
+        store = MemoryTrailerStore()
+    return TrailerChecker(store, api_key=s.youtube_api_key, daily_api_calls=s.youtube_check_daily_calls)
