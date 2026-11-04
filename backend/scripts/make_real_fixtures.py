@@ -1,6 +1,6 @@
 """Snapshot a small real-data fixture from the Supabase catalogue (offline tests and demos).
 
-    uv run python scripts/make_real_fixtures.py
+    cd backend && uv run python scripts/make_real_fixtures.py
 
 Per world: the 8 most-rated films with a trailer plus 1 without (Review Focus), with sparse Tag Genome vectors
 (top 50), people and — for at most 20 films — cached Streaming Availability payloads (≤ 20 API requests).
