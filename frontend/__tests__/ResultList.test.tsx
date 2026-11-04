@@ -178,3 +178,12 @@ it("shows a loading bar while results load, and dims the old row", async () => {
   await screen.findByText(/1 matches/);
   expect(screen.queryByRole("progressbar")).toBeNull();
 });
+
+it("films well below the best match are greyed out; the row does not drift on its own", async () => {
+  const items = sampleRanked(3).map((r, i) => ({ ...r, match_percent: [65, 58, 40][i] }));
+  search.mockResolvedValue({ ok: true, data: { items, total: 3, hidden_by_exclusion: 0, extended_used: false } });
+  const { container } = render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} />);
+  await screen.findByText(/3 matches/);
+  const weak = [...container.querySelectorAll(".related-card")].map((c) => c.classList.contains("is-weak"));
+  expect(weak).toEqual([false, false, true]); // more than 10 points below the best (65)
+});

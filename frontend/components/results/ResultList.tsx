@@ -6,7 +6,8 @@ import { search, type DiscoverResult, type Relaxation } from "@/lib/api";
 import type { Criteria } from "@/lib/searchState";
 import type { Movie, RankedMovie } from "@/lib/types";
 
-const LIMIT = 48; // the row runs through the best matches; the header gives the real total
+const LIMIT = 48;
+const WEAK_GAP = 10; // films more than this many points below the best match are shown in black and white // the row runs through the best matches; the header gives the real total
 const count = new Intl.NumberFormat("en-US");
 
 type Props = {
@@ -117,7 +118,16 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
     <>
       {note}
       {widen}
-      <RelatedRow items={items} onSelect={onOpen} label={label} name="Results" showReasons busy={loading} />
+      <RelatedRow
+        items={items}
+        onSelect={onOpen}
+        label={label}
+        name="Results"
+        showReasons
+        busy={loading}
+        drift={false}
+        weakBelow={items[0].match_percent - WEAK_GAP}
+      />
     </>
   );
 }

@@ -134,3 +134,17 @@ it("a few films that do not fit in the visible width run as a loop", async () =>
   expect(container.querySelectorAll(".related-card")).toHaveLength(12);
   undo();
 });
+
+it("edgeSpeed without drift: still unless the mouse steers towards an edge", () => {
+  expect(edgeSpeed(null, -1, false)).toBe(0); // no pointer: the best matches stay where they are
+  expect(edgeSpeed(0.5, -1, false)).toBe(0); // middle: no creeping either
+  expect(edgeSpeed(0.95, -1, false)).toBeLessThan(0); // the edges still browse
+  expect(edgeSpeed(0.05, -1, false)).toBeGreaterThan(0);
+});
+
+it("weak matches are shown in black and white, the best ones in colour", () => {
+  const items = sampleRanked(3).map((r, i) => ({ ...r, match_percent: [65, 58, 40][i] }));
+  const { container } = render(<RelatedRow items={items} onSelect={() => {}} weakBelow={55} />);
+  const weak = [...container.querySelectorAll(".related-card")].map((c) => c.classList.contains("is-weak"));
+  expect(weak).toEqual([false, false, true]);
+});

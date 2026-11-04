@@ -18,12 +18,13 @@ export const MIN_SLOTS = 14; // until the row is measured: fewer films than this
 
 /** Row velocity for a pointer at `ratio` (0 = left edge, 1 = right edge) of the row; null = no pointer.
  *  Right of the middle the films slide left (more come in from the right), left of it the other way,
- *  faster towards the edge. In the middle and without a pointer the row keeps going in direction `dir`. */
-export function edgeSpeed(ratio: number | null, dir = -1): number {
-  if (ratio === null) return dir * IDLE_SPEED;
+ *  faster towards the edge. In the middle and without a pointer the row keeps going in direction `dir`, unless
+ *  `drift` is off (search results: the best matches stay in front until the mouse browses). */
+export function edgeSpeed(ratio: number | null, dir = -1, drift = true): number {
+  if (ratio === null) return drift ? dir * IDLE_SPEED : 0;
   const d = (Math.min(Math.max(ratio, 0), 1) - 0.5) * 2; // -1 … 1
   const reach = (Math.abs(d) - DEAD_ZONE) / (1 - DEAD_ZONE);
-  if (reach <= 0) return dir * SLOW_SPEED;
+  if (reach <= 0) return drift ? dir * SLOW_SPEED : 0;
   return -Math.sign(d) * Math.max(reach * reach * MAX_SPEED, SLOW_SPEED);
 }
 
@@ -46,6 +47,8 @@ export default function RelatedRow({
   name = "Also fits your mood",
   showReasons = false,
   busy = false,
+  drift = true,
+  weakBelow,
 }: {
   items: RankedMovie[];
   onSelect: (m: Movie) => void;
@@ -54,6 +57,10 @@ export default function RelatedRow({
   showReasons?: boolean;
   /** new results are loading: a running bar above the cards, the old cards dimmed */
   busy?: boolean;
+  /** false: the row moves only when the mouse steers towards an edge (it starts with the best match) */
+  drift?: boolean;
+  /** cards with a match below this are shown in black and white (colour on hover) */
+  weakBelow?: number;
 }) {
   const viewport = useRef<HTMLDivElement | null>(null);
   const track = useRef<HTMLDivElement | null>(null);
@@ -117,7 +124,7 @@ export default function RelatedRow({
           offset = anchored(offset, anchorLeft, anchorEl.offsetLeft);
           anchorLeft = anchorEl.offsetLeft;
         }
-        const target = edgeSpeed(pointer.current, dir);
+        const target = edgeSpeed(pointer.current, dir, drift);
         if (Math.abs(target) > SLOW_SPEED) dir = Math.sign(target);
         speed = easeTowards(speed, trailerRef.current ? 0 : target, dt, EASE_MS);
         offset = advance(offset, speed * (dt / 1000), period);
@@ -127,7 +134,7 @@ export default function RelatedRow({
     };
     frame = requestAnimationFrame(step);
     return () => cancelAnimationFrame(frame);
-  }, [still]);
+  }, [still, drift]);
 
   if (items.length === 0) return null;
   const slots = items;
@@ -156,7 +163,7 @@ export default function RelatedRow({
             <HoverTrailer key={`${r.movie.id}-${i}`} movie={r.movie} className="related-wrap">
               <button
                 type="button"
-                className="related-card"
+                className={`related-card ${weakBelow !== undefined && r.match_percent < weakBelow ? "is-weak" : ""}`}
                 aria-label={`${r.movie.title}, ${r.match_percent}% match`}
                 tabIndex={i < slots.length ? 0 : -1}
                 aria-hidden={i < slots.length ? undefined : true}
