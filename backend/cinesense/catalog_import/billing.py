@@ -12,7 +12,7 @@ import time
 
 import httpx
 
-from cinesense.core.billing import billing_order
+from cinesense.core.billing import billing_order, top_cast
 from cinesense.data_sources.wikidata import USER_AGENT
 from cinesense.data_sources.wikipedia import API_URL
 
@@ -88,15 +88,17 @@ async def backfill(conn, max_films: int | None = None, concurrency: int = 3, ids
                     "select film_id, name from film_people where role = 'cast' and film_id = any(%s) order by ord",
                     (ids_,),
                 ).fetchall()
-                rows = []
+                rows, tops = [], []
                 for film_id, title in group:
                     names = [n for f, n in cast if f == film_id]
                     order = billing_order(leads.get(title, ""), names)
                     rows += [(order.get(n), film_id, n) for n in names]
+                    tops.append((top_cast(names, order), film_id))
                 with conn.cursor() as cur:
                     cur.executemany(
                         "update film_people set billing = %s where film_id = %s and name = %s and role = 'cast'", rows
                     )
+                    cur.executemany("update films set cast_top = %s where id = %s", tops)
                     cur.execute("update films set billing_checked_at = now() where id = any(%s)", (ids_,))
                 conn.commit()
                 done += len(group)
@@ -104,9 +106,27 @@ async def backfill(conn, max_films: int | None = None, concurrency: int = 3, ids
     return done
 
 
+def resort_cast_top(conn) -> int:
+    """Leading cast of every checked film in billing order (films checked before cast_top followed billing)."""
+    rows = conn.execute(
+        "select film_id, name, billing from film_people p join films f on f.id = p.film_id "
+        "where p.role = 'cast' and f.billing_checked_at is not null order by film_id, ord"
+    ).fetchall()
+    cast: dict[str, list[tuple[str, int | None]]] = {}
+    for film_id, name, billing in rows:
+        cast.setdefault(film_id, []).append((name, billing))
+    tops = [(top_cast([n for n, _ in people], {n: b for n, b in people if b}), f) for f, people in cast.items()]
+    with conn.cursor() as cur:
+        cur.executemany("update films set cast_top = %s where id = %s", tops)
+    conn.commit()
+    log.info("cast_top in billing order: %d films", len(tops))
+    return len(tops)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--max-films", type=int, default=None)
+    parser.add_argument("--resort", action="store_true", help="only re-sort the leading cast of checked films")
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 
@@ -117,7 +137,10 @@ def main() -> None:
     if not s.database_url:
         raise SystemExit("SUPABASE_DB_URL is needed")
     with connect(s.database_url) as conn:
-        asyncio.run(backfill(conn, args.max_films))
+        if args.resort:
+            resort_cast_top(conn)
+        else:
+            asyncio.run(backfill(conn, args.max_films))
 
 
 if __name__ == "__main__":

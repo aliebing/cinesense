@@ -59,3 +59,12 @@ def test_a_lead_outranks_a_far_more_popular_cameo(tmp_path):
     path.write_text(json.dumps([film("pi", "Life of Pi", 2012, 60000, 6), film("cy", "Cyrano", 1990, 4000, 1)]))
     items = SearchService(FixtureProvider(path)).run(SearchCriteria(person="Gerard Depardieu"), 0, 5).items
     assert [r.movie.id for r in items] == ["cy", "pi"]
+
+
+def test_top_cast_puts_the_lead_billing_first_then_the_rest_in_their_order():
+    from cinesense.core.billing import top_cast
+
+    names = ["Rick Ducommun", "Tracy Reiner", "Paul Gleason", "Alan Rickman", "Bruce Willis", "Bonnie Bedelia"]
+    order = {"Bruce Willis": 1, "Alan Rickman": 2, "Bonnie Bedelia": 4, "Paul Gleason": 7}
+    assert top_cast(names, order) == ["Bruce Willis", "Alan Rickman", "Bonnie Bedelia", "Paul Gleason", "Rick Ducommun"]
+    assert top_cast(names, {}) == names[:5]  # no lead found: Wikidata's order

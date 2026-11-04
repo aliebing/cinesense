@@ -45,3 +45,10 @@ def role_weight(role: str, billing: int | None) -> float:
     if billing <= 2:
         return 1.0
     return 0.85 if billing == 3 else 0.7
+
+
+def top_cast(cast: list[str], order: dict[str, int], n: int = 5) -> list[str]:
+    """The names shown as a film's leading cast: as billed in the Wikipedia lead, then the rest in Wikidata's
+    order (which has no ordinal for most films: Die Hard listed Rick Ducommun before Bruce Willis)."""
+    billed = sorted((name for name in cast if order.get(name)), key=lambda name: order[name])
+    return (billed + [name for name in cast if not order.get(name)])[:n]
