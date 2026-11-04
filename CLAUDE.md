@@ -55,7 +55,7 @@ uv run --env-file .env python -m cinesense.ingest.pipeline --no-films --no-plots
 - LangSmith tracing (EU endpoint)
 - Streaming Availability API (`STREAMING_AVAILABILITY_API_KEY`, base `https://api.movieofthenight.com/v4`, header `X-API-Key`)
 - YouTube Data API (`YOUTUBE_API_KEY`, optional)
-- The Supabase DB is shared with other projects: all CineSense tables live in the `cinesense` schema (`search_path` is set in `cinesense.db.connect`).
+- Own local Supabase (`supabase/config.toml`, project `CineSense`, DB on port 55322, Studio 55323; `make up` / `make down`). The migration in `supabase/migrations/` is a symlink to `db/schema.sql`. All tables live in the `cinesense` schema (`search_path` is set in `cinesense.db.connect`).
 
 ## Gotchas
 

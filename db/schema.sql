@@ -1,5 +1,5 @@
 -- CineSense catalogue schema (Supabase Postgres + pgvector). Idempotent.
--- Lives in its own schema because the Supabase database is shared with other projects.
+-- Applied by `supabase start` (supabase/migrations/ links here) or by `make db-init`.
 create extension if not exists vector;
 create extension if not exists pg_trgm;
 create extension if not exists unaccent;

@@ -1,6 +1,6 @@
-# `docker compose up --build`, then open http://localhost:8080
+# `make up` (starts the local Supabase from supabase/, then this), then open http://localhost:8080
 # Needs a .env with the Supabase / OpenRouter / Streaming Availability keys (see .env.example). The catalogue is the
-# existing Supabase (local on the host or in the cloud), so there is no database container here.
+# project's own Supabase (supabase/, started by `make up`) or a cloud Supabase, so there is no database container here.
 services:
   api:
     build:

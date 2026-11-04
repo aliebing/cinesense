@@ -37,10 +37,11 @@ tokens, cost and latency, and the ranked films as text. It is backed by `POST /a
 
 ```bash
 cp .env.example .env          # Supabase, OpenRouter, Streaming Availability (YouTube optional)
-docker compose up --build     # first build takes a few minutes
+make up                       # own local Supabase + app; first build takes a few minutes
+make down                     # stops both
 ```
 
-Then open **http://localhost:8080**. Three containers run: `api` (FastAPI), `web` (Next.js production build) and `proxy` (nginx), which serves both under one address (`/api` goes to the API, everything else to the web app). The catalogue is the existing Supabase (local on the host or in the cloud), so there is no database container; a `127.0.0.1` Supabase URL in `.env` is pointed at the host automatically. Building the catalogue (`make ingest`) still runs outside Docker, because it needs the local MovieLens file.
+Then open **http://localhost:8080**. Three containers run: `api` (FastAPI), `web` (Next.js production build) and `proxy` (nginx), which serves both under one address (`/api` goes to the API, everything else to the web app). The catalogue lives in the project's own local Supabase (`supabase/config.toml`, ports 5532x, Studio on http://localhost:55323); `make up` starts it and applies `db/schema.sql` as migration. A `127.0.0.1` Supabase URL in `.env` is pointed at the host automatically, and a cloud Supabase works too. Building the catalogue (`make ingest`) still runs outside Docker, because it needs the local MovieLens file.
 
 ### Local development
 
