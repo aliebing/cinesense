@@ -61,3 +61,23 @@ def test_inspect_returns_the_whole_turn_as_text():
 def test_inspect_without_an_llm_key_says_so():
     r = TestClient(make_app(None)).post("/api/inspect", json={"thread_id": "t1", "message": "x"})
     assert r.status_code == 503
+
+
+def test_inspect_needs_the_tech_login_when_one_is_configured(monkeypatch):
+    monkeypatch.setenv("TECH_USER", "admin")
+    monkeypatch.setenv("TECH_PASSWORD", "s3cret")
+    client = TestClient(make_app(runner))
+    body = {"thread_id": "t1", "message": "hi"}
+    r = client.post("/api/inspect", json=body)
+    assert r.status_code == 401
+    assert r.headers["www-authenticate"].startswith("Basic")
+    assert client.post("/api/inspect", json=body, auth=("admin", "wrong")).status_code == 401
+    assert client.post("/api/inspect", json=body, auth=("admin", "s3cret")).status_code == 200
+
+
+def test_inspect_is_open_without_a_configured_login(monkeypatch):
+    monkeypatch.delenv("TECH_USER", raising=False)
+    monkeypatch.delenv("TECH_PASSWORD", raising=False)
+    assert (
+        TestClient(make_app(runner)).post("/api/inspect", json={"thread_id": "t1", "message": "hi"}).status_code == 200
+    )

@@ -7,7 +7,7 @@ import type { Criteria } from "@/lib/searchState";
 import type { Movie, RankedMovie } from "@/lib/types";
 
 const LIMIT = 48;
-const WEAK_GAP = 10; // films more than this many points below the best match are shown in black and white // the row runs through the best matches; the header gives the real total
+const CLOSE_GAP = 10; // like the chat's picks: only films within this many points of the best match are shown // the row runs through the best matches; the header gives the real total
 const count = new Intl.NumberFormat("en-US");
 
 type Props = {
@@ -107,10 +107,12 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
         {widen}
       </>
     );
+  // a person or a few prefer-tags still "match" every film of that person: show the ones that really fit
+  const shown = items.filter((r) => r.match_percent >= items[0].match_percent - CLOSE_GAP);
   const label = (
     <>
       {count.format(total)} matches in the CineSense catalogue
-      {total > items.length && <span className="related-hint"> · the best {items.length}</span>}
+      {total > shown.length && <span className="related-hint"> · the {shown.length} best</span>}
       {extended && <span className="results-extended"> · includes titles just added from Wikidata</span>}
     </>
   );
@@ -118,16 +120,6 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
     <>
       {note}
       {widen}
-      <RelatedRow
-        items={items}
-        onSelect={onOpen}
-        label={label}
-        name="Results"
-        showReasons
-        busy={loading}
-        drift={false}
-        weakBelow={items[0].match_percent - WEAK_GAP}
-      />
-    </>
+      <RelatedRow items={shown} onSelect={onOpen} label={label} name="Results" showReasons busy={loading} drift={false} />    </>
   );
 }

@@ -31,6 +31,8 @@ class Settings:
     streaming_api_key: str | None
     youtube_api_key: str | None
     movielens_db_path: Path | None
+    tech_user: str | None = None  # login for /tech and /api/inspect; unset: open (local development)
+    tech_password: str | None = None
     llm_model: str = "anthropic/claude-haiku-5.5"
     streaming_monthly_limit: int = 900
     youtube_daily_limit: int = 90  # searches (100 units each) of YouTube's 10,000 units a day
@@ -48,6 +50,8 @@ def get_settings() -> Settings:
         streaming_api_key=_env("STREAMING_AVAILABILITY_API_KEY"),
         youtube_api_key=_env("YOUTUBE_API_KEY"),
         movielens_db_path=Path(ml) if ml else None,
+        tech_user=_env("TECH_USER"),
+        tech_password=_env("TECH_PASSWORD"),
         llm_model=_env("CINESENSE_LLM_MODEL") or "anthropic/claude-haiku-5.5",
         chat_per_minute=int(_env("CHAT_LIMIT_PER_MINUTE") or 6),
         chat_per_day=int(_env("CHAT_LIMIT_PER_DAY") or 40),

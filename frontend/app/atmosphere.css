@@ -510,9 +510,6 @@
 }
 @keyframes loading-run { from { transform: translateX(-100%); } to { transform: translateX(290%); } }
 @media (prefers-reduced-motion: reduce) { .loading-bar::after { animation-duration: 3s; } }
-/* search results: weaker matches in black and white, colour again on hover or focus */
-.related-card.is-weak { filter: grayscale(1) brightness(.75); }
-.related-card.is-weak:hover, .related-card.is-weak:focus-visible, .related-wrap.is-active .related-card.is-weak { filter: none; }
 .related.is-busy .related-viewport { opacity: .35; transition: opacity .2s; pointer-events: none; }
 .advanced-search .adv-switch .crit__mode { font-size: 1em; padding-block: .5em; }
 .advanced-search input, .advanced-search select {

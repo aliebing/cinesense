@@ -17,7 +17,7 @@ it("shows the total, never claims 'all', and runs the best matches in one row", 
   search.mockResolvedValue({ ok: true, data: { items: sampleRanked(20), total: 250, hidden_by_exclusion: 3, extended_used: false } });
   render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} />);
   expect(await screen.findByText(/250 matches in the CineSense catalogue/)).toBeInTheDocument();
-  expect(screen.getByText(/the best 20/)).toBeInTheDocument();
+  expect(screen.getByText(/the 11 best/)).toBeInTheDocument(); // 90 … 80: within 10 points of the best
   expect(screen.getByRole("region", { name: "Results" })).toBeInTheDocument();
   expect(search.mock.calls[0][2]).toBe(48);
   expect(screen.queryByRole("button", { name: "Load more" })).toBeNull();
@@ -179,11 +179,11 @@ it("shows a loading bar while results load, and dims the old row", async () => {
   expect(screen.queryByRole("progressbar")).toBeNull();
 });
 
-it("films well below the best match are greyed out; the row does not drift on its own", async () => {
+it("shows only the films close to the best match, like the chat's picks; the header says how many", async () => {
   const items = sampleRanked(3).map((r, i) => ({ ...r, match_percent: [65, 58, 40][i] }));
-  search.mockResolvedValue({ ok: true, data: { items, total: 3, hidden_by_exclusion: 0, extended_used: false } });
+  search.mockResolvedValue({ ok: true, data: { items, total: 39, hidden_by_exclusion: 0, extended_used: false } });
   const { container } = render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} />);
-  await screen.findByText(/3 matches/);
-  const weak = [...container.querySelectorAll(".related-card")].map((c) => c.classList.contains("is-weak"));
-  expect(weak).toEqual([false, false, true]); // more than 10 points below the best (65)
+  expect(await screen.findByText(/39 matches in the CineSense catalogue/)).toBeInTheDocument();
+  expect(screen.getByText(/the 2 best/)).toBeInTheDocument();
+  expect(container.querySelectorAll(".related-card")).toHaveLength(2); // 40% is more than 10 points below 65%
 });

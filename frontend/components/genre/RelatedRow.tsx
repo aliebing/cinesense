@@ -48,7 +48,6 @@ export default function RelatedRow({
   showReasons = false,
   busy = false,
   drift = true,
-  weakBelow,
 }: {
   items: RankedMovie[];
   onSelect: (m: Movie) => void;
@@ -59,8 +58,6 @@ export default function RelatedRow({
   busy?: boolean;
   /** false: the row moves only when the mouse steers towards an edge (it starts with the best match) */
   drift?: boolean;
-  /** cards with a match below this are shown in black and white (colour on hover) */
-  weakBelow?: number;
 }) {
   const viewport = useRef<HTMLDivElement | null>(null);
   const track = useRef<HTMLDivElement | null>(null);
@@ -163,7 +160,7 @@ export default function RelatedRow({
             <HoverTrailer key={`${r.movie.id}-${i}`} movie={r.movie} className="related-wrap">
               <button
                 type="button"
-                className={`related-card ${weakBelow !== undefined && r.match_percent < weakBelow ? "is-weak" : ""}`}
+                className="related-card"
                 aria-label={`${r.movie.title}, ${r.match_percent}% match`}
                 tabIndex={i < slots.length ? 0 : -1}
                 aria-hidden={i < slots.length ? undefined : true}

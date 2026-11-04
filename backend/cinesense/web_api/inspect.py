@@ -2,10 +2,12 @@
 (/tech): the reply, the criteria with tag names, the ranked films as text, every tool call with its arguments and
 result, the prompts that were sent, model, tokens, cost and latency. No images are looked up (no Streaming budget)."""
 
+import secrets
 import time
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
 from cinesense.chat_agent.graph import criteria_summary
 from cinesense.chat_agent.llm import PRICES, cost_usd
@@ -15,6 +17,23 @@ from cinesense.web_api.deps import get_agent, get_limiter, get_provider
 from cinesense.web_api.limits import visitor_of
 
 router = APIRouter()
+_basic = HTTPBasic(auto_error=False)
+
+
+def require_tech_login(credentials: Annotated[HTTPBasicCredentials | None, Depends(_basic)]) -> None:
+    """The technical view shows prompts and costs: with TECH_USER / TECH_PASSWORD set it needs that login (the
+    same Basic Auth the /tech page asks for, which the browser then sends along)."""
+    s = get_settings()
+    if not (s.tech_user and s.tech_password):
+        return
+    ok = credentials is not None and (
+        secrets.compare_digest(credentials.username.encode(), s.tech_user.encode())
+        & secrets.compare_digest(credentials.password.encode(), s.tech_password.encode())
+    )
+    if not ok:
+        raise HTTPException(
+            status_code=401, detail="login_required", headers={"WWW-Authenticate": 'Basic realm="CineSense tech"'}
+        )
 
 
 def _film(r: dict) -> dict:
@@ -38,7 +57,7 @@ def _film(r: dict) -> dict:
     }
 
 
-@router.post("/api/inspect")
+@router.post("/api/inspect", dependencies=[Depends(require_tech_login)])
 def inspect(
     req: ChatRequest,
     runner: Annotated[object, Depends(get_agent)],

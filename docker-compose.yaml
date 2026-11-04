@@ -17,6 +17,9 @@ services:
       context: ./frontend
       args:
         NEXT_PUBLIC_API_URL: "" # same origin: the browser calls /api on :8080
+    environment: # only the login that guards /tech (frontend/proxy.ts), no API keys
+      TECH_USER: ${TECH_USER:-}
+      TECH_PASSWORD: ${TECH_PASSWORD:-}
     depends_on:
       - api
     restart: unless-stopped
