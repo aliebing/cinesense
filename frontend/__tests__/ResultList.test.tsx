@@ -170,7 +170,7 @@ it("shows a loading bar while results load, and dims the old row", async () => {
 });
 
 it("shows at least the 3 best matches, and says out of how many", async () => {
-  const items = sampleRanked(12).map((r, i) => ({ ...r, match_percent: 90 - i * 20 }));
+  const items = sampleRanked(12).map((r, i) => ({ ...r, match_percent: 90 - i * 25 }));
   search.mockResolvedValue({ ok: true, data: { items, total: 39, hidden_by_exclusion: 0, extended_used: false } });
   const { container } = render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} />);
   expect(await screen.findByText(/The 3 best matches/)).toBeInTheDocument(); // only the best is close: 3 at least
@@ -179,15 +179,15 @@ it("shows at least the 3 best matches, and says out of how many", async () => {
   expect(search.mock.calls[0][2]).toBe(50); // at most 50
 });
 
-it("shows every further film close to the best match (Sandra Bullock + funny: 15 of 17)", async () => {
-  const percents = [86, 86, 84, 84, 84, 82, 81, 80, 79, 79, 79, 78, 78, 77, 76, 69, 60];
-  const items = sampleRanked(17).map((r, i) => ({ ...r, match_percent: percents[i] }));
-  search.mockResolvedValue({ ok: true, data: { items, total: 17, hidden_by_exclusion: 0, extended_used: false } });
+it("shows every further film within 20 points of the best match (Sandra Bullock + funny: 6 of 39)", async () => {
+  const percents = [86, 85, 84, 78, 75, 68, 64, 62, 62, 56, 56, 55];
+  const items = sampleRanked(12).map((r, i) => ({ ...r, match_percent: percents[i] }));
+  search.mockResolvedValue({ ok: true, data: { items, total: 39, hidden_by_exclusion: 0, extended_used: false } });
   const { container } = render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} />);
-  expect(await screen.findByText(/The 15 best matches/)).toBeInTheDocument();
-  expect(screen.getByText(/out of 17 films/)).toBeInTheDocument();
+  expect(await screen.findByText(/The 6 best matches/)).toBeInTheDocument(); // 86 … 68: 64 is more than 20 below
+  expect(screen.getByText(/out of 39 films/)).toBeInTheDocument();
   const titles = new Set([...container.querySelectorAll(".related-card")].map((c) => c.getAttribute("aria-label") ?? c.textContent));
-  expect(titles.size).toBe(15); // a row too long to fit loops, so its cards appear twice
+  expect(titles.size).toBe(6); // a row too long to fit loops, so its cards appear twice
 });
 
 it("a search with only a few hits just counts them", async () => {
