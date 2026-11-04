@@ -74,6 +74,7 @@ def inspect(
         "cost_usd": cost_usd(usage, PRICES.get(model, (0.0, 0.0))),  # unknown model: shown as 0
         "latency_s": round(latency, 2),
         "rounds": out.get("rounds", 0),
+        "guarded": out.get("guarded", False),
         "grounding_fallback": out.get("grounding_fallback", False),
         "grounding_reason": out.get("grounding_reason", []),
     }

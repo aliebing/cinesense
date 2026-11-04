@@ -12,6 +12,7 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.types import Command
 
 from cinesense.agent.grounding import pick_count, template_answer, user_named_titles, validate_titles
+from cinesense.agent.guard import GUARD_REPLY, leaks_prompt, looks_like_injection, sanitize
 from cinesense.agent.prompts import AGENT_PROMPT, EXPLAIN_PROMPT, RELAX_PROMPT
 from cinesense.agent.state import AgentState
 from cinesense.domain.criteria import SearchCriteria
@@ -297,6 +298,10 @@ def run_turn(
 ) -> dict:
     """One chat turn. The UI's chips are the truth: they seed the criteria; per-turn fields are reset."""
     config = {"configurable": {"thread_id": thread_id}, "recursion_limit": 4 * MAX_ROUNDS + 30}
+    message = sanitize(message)
+    if looks_like_injection(message):  # never reaches the model, and stays out of the history
+        log.warning("prompt injection blocked on thread %s", thread_id)
+        return _guarded_turn(graph, config, ui_criteria)
     inputs = {
         "messages": [HumanMessage(message)],
         "criteria": SearchCriteria(**(ui_criteria or {})).model_dump(),
@@ -344,8 +349,15 @@ def _run_locked(graph, config: dict, inputs: dict, on_status) -> dict:
         if on_status and "present" in update:
             on_status("Ranking films…")
     s = graph.get_state(config).values
+    reply = str(s["messages"][-1].content).strip() or FALLBACK_REPLY
+    guarded = leaks_prompt(reply, [AGENT_PROMPT, EXPLAIN_PROMPT, RELAX_PROMPT])
+    if guarded:  # the model quoted its instructions: replace the reply, in the history too
+        log.warning("prompt leak blocked on thread %s", config["configurable"]["thread_id"])
+        reply = GUARD_REPLY
+        graph.update_state(config, {"messages": [AIMessage(reply, id=s["messages"][-1].id)]}, as_node="explain")
     return {
-        "reply": str(s["messages"][-1].content).strip() or FALLBACK_REPLY,
+        "reply": reply,
+        "guarded": guarded,
         "criteria": s.get("criteria"),
         "results": s.get("results", []),
         "picks": pick_count(s.get("results", [])),  # how many results the reply presents (3-5)
@@ -361,4 +373,28 @@ def _run_locked(graph, config: dict, inputs: dict, on_status) -> dict:
         "history_len": len(s["messages"]),
         "tools_called": tools_called,
         "tool_errors": tool_errors,
+    }
+
+
+def _guarded_turn(graph, config: dict, ui_criteria: dict) -> dict:
+    """The answer to a blocked message: a fixed reply, the chips unchanged, no model call, no tools."""
+    history = graph.get_state(config).values.get("messages") or []
+    return {
+        "reply": GUARD_REPLY,
+        "guarded": True,
+        "criteria": SearchCriteria(**(ui_criteria or {})).model_dump(),
+        "results": [],
+        "picks": 0,
+        "tool_trace": [],
+        "prompts": {},
+        "proposals": [],
+        "handoff": None,
+        "usage": {},
+        "rounds": 0,
+        "grounding_fallback": False,
+        "grounding_reason": [],
+        "relaxed": [],
+        "history_len": len(history),
+        "tools_called": [],
+        "tool_errors": 0,
     }
