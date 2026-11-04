@@ -249,7 +249,8 @@
 .genre-error { color: #ffd7a0; }
 
 .stage {
-  position: absolute; z-index: 15; top: 3.4cqw; left: calc(var(--safe-x) + var(--panel-w) + 1.4cqw); right: var(--safe-x);
+  /* above the row (z 15): on lower screens the row's box reaches up over the feedback buttons */
+  position: absolute; z-index: 16; top: 3.4cqw; left: calc(var(--safe-x) + var(--panel-w) + 1.4cqw); right: var(--safe-x);
   display: grid; grid-template-columns: 10.5cqw 32cqw minmax(0, 1fr); gap: 1.4cqw; align-items: start; font-size: var(--ui);
 }
 .stage-poster { position: relative; aspect-ratio: 2 / 3; border-radius: 8px; overflow: hidden;
