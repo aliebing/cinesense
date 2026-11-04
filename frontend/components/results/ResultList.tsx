@@ -31,6 +31,9 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
   const [relaxFor, setRelaxFor] = useState<{ key: string; options: Relaxation[] }>({ key: "", options: [] });
   const [error, setError] = useState(false);
   const [shownKey, setShownKey] = useState<string | null>(null); // the search the shown results belong to
+  // further pages ("Show 50 more"), kept with the search they belong to so a new search starts at 50 again
+  const [more, setMore] = useState<{ key: string; items: RankedMovie[] }>({ key: "", items: [] });
+  const [loadingMore, setLoadingMore] = useState(false);
   const key = JSON.stringify(criteria);
   const fromKey = widened ? JSON.stringify(widened.from) : "";
 
@@ -110,7 +113,16 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
         {widen}
       </>
     );
-  const shown = items.filter((r, i) => i < MIN_SHOWN || r.match_percent >= MIN_PERCENT);
+  const loaded = more.key === key ? [...items, ...more.items] : items;
+  const shown = loaded.filter((r, i) => i < MIN_SHOWN || r.match_percent >= MIN_PERCENT);
+  // more only while every loaded film still clears the bar: then the next page may hold more that do
+  const canMore = !loading && loaded.length % LIMIT === 0 && shown.length === loaded.length && loaded.length < total;
+  const loadMore = async () => {
+    setLoadingMore(true);
+    const r = await search(criteria, loaded.length, LIMIT, widened?.from);
+    setLoadingMore(false);
+    if (r.ok) setMore({ key, items: [...(more.key === key ? more.items : []), ...r.data.items] });
+  };
   const label = (
     <>
       {total > shown.length ? `The ${shown.length} best matches` : `${count.format(total)} matches in the CineSense catalogue`}
@@ -118,6 +130,11 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
         <span className="related-hint"> · out of {count.format(total)} films that fit your filters</span>
       )}
       {extended && <span className="results-extended"> · includes titles just added from Wikidata</span>}
+      {canMore && (
+        <button type="button" className="results-more" onClick={loadMore} disabled={loadingMore}>
+          {loadingMore ? "Loading…" : `Show ${LIMIT} more`}
+        </button>
+      )}
     </>
   );
   return (

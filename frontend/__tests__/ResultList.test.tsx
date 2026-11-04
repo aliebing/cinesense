@@ -204,3 +204,27 @@ it("a search with only a few hits just counts them", async () => {
   expect(await screen.findByText(/^3 matches/)).toBeInTheDocument();
   expect(screen.queryByText(/out of/)).toBeNull();
 });
+
+it("loads the next 50 when every shown film still matches, until the bar is reached", async () => {
+  const page = (from: number, n: number, percent: (i: number) => number) =>
+    sampleRanked(n).map((r, i) => ({ ...r, movie: { ...r.movie, id: `f-${from + i}`, title: `Film ${from + i}` }, match_percent: percent(from + i) }));
+  search.mockResolvedValueOnce({ ok: true, data: { items: page(0, 50, () => 80), total: 500, hidden_by_exclusion: 0, extended_used: false } });
+  search.mockResolvedValueOnce({
+    ok: true,
+    data: { items: page(50, 50, (i) => (i < 70 ? 60 : 40)), total: 500, hidden_by_exclusion: 0, extended_used: false },
+  });
+  render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} />);
+  expect(await screen.findByText(/The 50 best matches/)).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: "Show 50 more" }));
+  expect(await screen.findByText(/The 70 best matches/)).toBeInTheDocument(); // 20 of the next 50 reach 50%
+  expect(search.mock.calls[1][1]).toBe(50); // offset
+  expect(screen.queryByRole("button", { name: /more/ })).toBeNull(); // below the bar: nothing more to load
+});
+
+it("offers no more button when the row already stops at the bar", async () => {
+  const items = sampleRanked(10).map((r, i) => ({ ...r, match_percent: i < 5 ? 70 : 40 }));
+  search.mockResolvedValue({ ok: true, data: { items, total: 500, hidden_by_exclusion: 0, extended_used: false } });
+  render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} />);
+  expect(await screen.findByText(/The 5 best matches/)).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /more/ })).toBeNull();
+});
