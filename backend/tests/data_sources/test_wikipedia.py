@@ -66,3 +66,39 @@ async def test_fetch_plot_raises_when_rate_limited_throughout(monkeypatch):
     async with httpx.AsyncClient() as client:
         with pytest.raises(httpx.HTTPStatusError):  # "retry next run", never "this film has no plot"
             await fetch_plot("Alien (film)", client)
+
+
+def test_posters_from_page_images_follow_redirects_and_keep_only_portrait_images():
+    from cinesense.data_sources.wikipedia import posters_from_query
+
+    data = {
+        "query": {
+            "normalized": [{"from": "two If by Sea", "to": "Two If by Sea"}],
+            "redirects": [{"from": "Love Potion 9", "to": "Love Potion No. 9 (film)"}],
+            "pages": [
+                {
+                    "title": "Two If by Sea",
+                    "thumbnail": {
+                        "source": "https://upload.wikimedia.org/a.jpg?utm_source=x",
+                        "width": 258,
+                        "height": 386,
+                    },
+                },
+                {
+                    "title": "Love Potion No. 9 (film)",
+                    "thumbnail": {"source": "https://upload.wikimedia.org/b.jpg", "width": 248, "height": 370},
+                },
+                {
+                    "title": "Some Film",
+                    "thumbnail": {"source": "https://upload.wikimedia.org/scene.jpg", "width": 400, "height": 225},
+                },
+                {"title": "No Image Film"},
+                {"title": "Gone", "missing": True},
+            ],
+        }
+    }
+    asked = ["two If by Sea", "Love Potion 9", "Some Film", "No Image Film", "Gone"]
+    assert posters_from_query(data, asked) == {
+        "two If by Sea": "https://upload.wikimedia.org/a.jpg",  # tracking parameters dropped
+        "Love Potion 9": "https://upload.wikimedia.org/b.jpg",
+    }

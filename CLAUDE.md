@@ -50,6 +50,7 @@ cd backend && uv run --env-file ../.env python -m cinesense.catalog_import.billi
 cd backend && uv run --env-file ../.env python -m cinesense.catalog_import.pipeline --no-films --no-plots --german-titles  # German titles from Wikidata
 cd backend && uv run --env-file ../.env python -m cinesense.catalog_import.pipeline --no-films --no-plots --enrich-live    # Wikidata + plots for live imports
 cd backend && uv run --env-file ../.env python -m cinesense.catalog_import.pipeline --no-films --no-plots --languages      # recheck original languages (~7 min)
+cd backend && uv run --env-file ../.env python -m cinesense.catalog_import.posters   # posters from Wikipedia for films without one (~2 min)
 ```
 
 ## Services (`.env`, see `.env.example`)

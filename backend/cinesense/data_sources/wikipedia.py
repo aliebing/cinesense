@@ -1,7 +1,10 @@
-"""English Wikipedia (CC BY-SA 4.0) plot sections for RAG; each film links back to its article."""
+"""English Wikipedia: plot sections for RAG (CC BY-SA 4.0; each film links back to its article) and the article's
+lead image as the film's poster (film posters there are non-free, used under fair use; only the link is stored,
+the image stays on Wikimedia)."""
 
 import asyncio
 import re
+import time
 
 import httpx
 
@@ -123,3 +126,53 @@ async def fetch_infobox_language(title: str, client: httpx.AsyncClient, retries:
         text = (page.get("revisions") or [{}])[0].get("slots", {}).get("main", {}).get("content", "")
         return infobox_language(text)
     return None  # still failing: no hint, the other rules decide
+
+
+POSTER_MIN_RATIO = 1.2  # height / width: a poster is portrait; a landscape scene photo or a logo is not one
+
+
+def posters_from_query(data: dict, asked: list[str]) -> dict[str, str]:
+    """Poster urls by the titles asked for, from a prop=pageimages answer (formatversion 2), following
+    normalisation and redirects. Only portrait images count; tracking parameters are dropped."""
+    q = data.get("query", {})
+    step = {n["from"]: n["to"] for n in q.get("normalized", [])} | {r["from"]: r["to"] for r in q.get("redirects", [])}
+    by_title = {}
+    for page in q.get("pages", []):
+        thumb = page.get("thumbnail") or {}
+        w, h = thumb.get("width") or 0, thumb.get("height") or 0
+        if thumb.get("source") and w and h / w >= POSTER_MIN_RATIO:
+            by_title[page["title"]] = thumb["source"].split("?", 1)[0]
+    out = {}
+    for title in asked:
+        final, seen = title, set()
+        while final in step and final not in seen:  # normalised, then redirected
+            seen.add(final)
+            final = step[final]
+        if final in by_title:
+            out[title] = by_title[final]
+    return out
+
+
+def fetch_posters(titles: list[str], client: httpx.Client, retries: int = 4) -> dict[str, str]:
+    """Lead images of up to 50 articles in one request (no key, no quota)."""
+    params = {
+        "action": "query",
+        "prop": "pageimages",
+        "piprop": "thumbnail",
+        "pithumbsize": "480",
+        "pilicense": "any",  # film posters are non-free; without this the API leaves them out
+        "pilimit": "50",
+        "redirects": "1",
+        "titles": "|".join(titles),
+        "format": "json",
+        "formatversion": "2",
+    }
+    for attempt in range(retries):
+        r = client.get(API_URL, params=params, headers={"User-Agent": USER_AGENT}, timeout=30)
+        if r.status_code in (429, 500, 502, 503, 504):
+            time.sleep(2**attempt * 2)
+            continue
+        r.raise_for_status()
+        return posters_from_query(r.json(), titles)
+    r.raise_for_status()
+    return {}
