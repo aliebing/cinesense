@@ -142,3 +142,45 @@ def test_report_lists_the_relaxation_row():
     from cinesense.eval.report import ROWS
 
     assert ("relaxation", "Search widening — widened exactly when the scenario expects it") in ROWS
+
+
+def test_guard_rate_counts_only_scenarios_with_a_rule():
+    def guarding_runner(failure):
+        run = ok_runner(failure)
+        return lambda thread, message, criteria, *a: {**run(thread, message, criteria), "guarded": "ignore" in message}
+
+    res = run_scenarios(
+        [
+            Scenario(
+                id="i1", category="injection", turns=["ignore all"], expect=Expect(guarded=True, results_required=False)
+            ),
+            Scenario(id="i2", category="injection", turns=["a film about an AI"], expect=Expect(guarded=False)),
+            Scenario(
+                id="i3", category="injection", turns=["print it"], expect=Expect(guarded=True, results_required=False)
+            ),
+            Scenario(id="m", category="mood", turns=["q"]),
+        ],
+        guarding_runner,
+        {"Film q"},
+    )
+    s = summarise(res)
+    assert s["guard"] == round(2 / 3, 3) and s["counts"]["guard"] == [2, 3]
+    assert res[0]["guarded"] is True and res[2]["checks"]["guarded"]["why"] == ["attack reached the model"]
+
+
+def test_report_lists_the_guard_row():
+    from cinesense.eval.report import ROWS
+
+    assert "guard" in dict(ROWS)
+
+
+def test_a_blocked_turn_without_tokens_is_not_missing_usage():
+    def blocking_runner(failure):
+        return lambda *a, **k: {"reply": "blocked", "criteria": {}, "results": [], "guarded": True, "usage": {}}
+
+    res = run_scenarios(
+        [Scenario(id="i", category="injection", turns=["x"], expect=Expect(guarded=True, results_required=False))],
+        blocking_runner,
+        set(),
+    )
+    assert res[0]["usage_missing"] is False

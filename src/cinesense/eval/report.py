@@ -11,6 +11,7 @@ ROWS = [
     ("reply_checks", "Factual reply checks — expected fact in the answer"),
     ("availability_claims", "No streaming claim without known availability"),
     ("relaxation", "Search widening — widened exactly when the scenario expects it"),
+    ("guard", "Prompt injection — attacks blocked before the model, harmless wishes about AI let through"),
     ("grounding", "Grounding after the guard — reply names only returned or user-named films"),
 ]
 

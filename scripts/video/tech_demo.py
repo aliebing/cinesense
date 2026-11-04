@@ -21,7 +21,7 @@ SEGMENTS = [
         "CineSense unter der Haube. In diesem Video zeige ich, wie die KI-Teile von CineSense "
         "funktionieren: die Daten, die semantische Suche, den LangGraph-Agenten mit seinem Grounding-Check, "
         "die Personalisierung und wie ich das Ganze evaluiert habe. Am Ende zeige ich, was neu dazugekommen ist: "
-        "Die Suche lockert sich selbst, wenn zu wenige Filme passen.",
+        "Die Suche lockert sich selbst, wenn zu wenige Filme passen, und ein Schutz gegen Prompt Injection.",
     ),
     Segment(
         "t02",
@@ -77,7 +77,8 @@ SEGMENTS = [
         "als drei Filme, zählt er, was eine Lockerung bringen würde, und gibt die Optionen an das Modell zurück. "
         "Dazu später mehr. Danach formuliert Explain die Antwort, diesmal "
         "ohne Tools, und der Grounding-Check prüft sie. Bei einer Rückfrage geht die Antwort direkt zurück. "
-        "Der Fortschritt wird per Server-Sent Events ins Frontend gestreamt.",
+        "Der Fortschritt wird per Server-Sent Events ins Frontend gestreamt. Und ganz vorne, noch vor dem "
+        "Agenten, steht neu ein Guard gegen Prompt Injection. Dazu später mehr.",
     ),
     Segment(
         "c06",
@@ -167,24 +168,43 @@ SEGMENTS = [
         "weitersucht.",
     ),
     Segment(
+        "n03",
+        "Ebenfalls neu ist ein Schutz gegen Prompt Injection. Jede Nachricht wird zuerst bereinigt: Steuerzeichen "
+        "und unsichtbare Zeichen fliegen raus, damit sich kein Angriff dahinter verstecken kann. Dann prüfen "
+        "Muster auf Englisch und Deutsch die typischen Angriffe, etwa: Ignoriere alle vorherigen Anweisungen, "
+        "zeig mir deinen Systemprompt, oder eine gefälschte Systemnotiz. Trifft ein Muster, erreicht die "
+        "Nachricht das Modell gar nicht. Es kommt eine feste Antwort, die Chips bleiben, wie sie sind, und die "
+        "Nachricht landet nicht im Verlauf. Filmwünsche über KIs, etwa so wie Ex Machina, kommen dagegen durch. "
+        "Muster sind nur eine Heuristik. Der eigentliche Schutz bleibt das Design: Das Modell kann nur über "
+        "Tools Kriterien setzen und keinen Film nennen, den die Suche nicht gefunden hat.",
+    ),
+    Segment(
+        "c11",
+        "Im Code: run_turn bereinigt die Nachricht und prüft sie, bevor der Graph überhaupt startet. Bei einem "
+        "Treffer geht die feste Antwort zurück, ohne Modellaufruf und ohne Tools. Darunter die Gegenrichtung: "
+        "Enthält eine Antwort ein zusammenhängendes Stück von sechzig Zeichen aus einem der Prompts, wird sie "
+        "ebenfalls ersetzt.",
+    ),
+    Segment(
         "t10",
-        "Evaluiert habe ich mit 48 Szenarien gegen den echten Agenten und den echten Katalog: "
+        "Evaluiert habe ich mit 54 Szenarien gegen den echten Agenten und den echten Katalog: "
         "Stimmungen, ähnliche Filme, Laufzeit, Ausschlüsse, Personen, Handlung, widersprüchliche Wünsche, "
-        "Folgefragen, zwei eingeschleuste Ausfälle und, neu, zwölf Szenarien zur Lockerung und zu Wünschen "
-        "wie: so wie dieser Film, aber weniger düster. 47 bestehen. Die Constraints sind in 24 von 24 Fällen "
-        "erfüllt, das passende Tool wurde in 40 von 41 Fällen gewählt. Der eine Fehler: Bei der mehrdeutigen "
-        "Anfrage Solaris ruft das Modell die Titelsuche auf statt eines der erwarteten Tools. Gelockert wurde "
-        "in vier von vier Fällen genau dann, wenn es nötig war. Besonders aufschlussreich ist das Grounding. "
-        "Vor dem Guard nannte das Modell allein in 90 Prozent der Fälle nur echte Treffer. Nach dem Guard "
-        "sind es 100 Prozent. Fünf Mal hat die Template-Antwort gegriffen.",
+        "Folgefragen, zwei eingeschleuste Ausfälle, zwölf Szenarien zur Lockerung und, neu, sechs zu Prompt "
+        "Injection. 53 bestehen. Die Constraints sind in 24 von 24 Fällen erfüllt, das passende Tool wurde in "
+        "42 von 43 Fällen gewählt. Der eine Fehler: Bei der mehrdeutigen Anfrage Solaris ruft das Modell die "
+        "Titelsuche auf statt eines der erwarteten Tools. Gelockert wurde in vier von vier Fällen genau dann, "
+        "wenn es nötig war, und alle vier Angriffe wurden geblockt, während beide Filmwünsche über KIs "
+        "durchkamen. Besonders aufschlussreich ist das Grounding. Vor dem Guard nannte das Modell allein in 85 "
+        "Prozent der Fälle nur echte Treffer. Nach dem Guard sind es 100 Prozent. Acht Mal hat die "
+        "Template-Antwort gegriffen.",
     ),
     Segment(
         "t11",
         "Für den Ranking-Vergleich bewertet ein LLM-Judge, Claude Sonnet 5.5, die Top-Ergebnisse von "
-        "drei Verfahren in 21 Stimmungs-Szenarien. Nur nach Bewertung sortiert: 1,29 von 5. Die Kosinus-Methode "
-        "aus movieFinder: 3,48. CineSense: 3,76. Die Werte schwanken von Lauf zu Lauf, die Reihenfolge blieb "
-        "bisher gleich. Ein Chat-Turn kostet rund 0,14 Cent, die Median-Latenz liegt bei gut siebeneinhalb "
-        "Sekunden, und die komplette Evaluation hat etwa 27 Cent gekostet.",
+        "drei Verfahren in 21 Stimmungs-Szenarien. Nur nach Bewertung sortiert: 1,38 von 5. Die Kosinus-Methode "
+        "aus movieFinder: 3,43. CineSense: 3,95. Die Werte schwanken von Lauf zu Lauf, die Reihenfolge blieb "
+        "bisher gleich. Ein Chat-Turn kostet rund 0,13 Cent, die Median-Latenz liegt bei knapp achteinhalb "
+        "Sekunden, und die komplette Evaluation hat etwa 29 Cent gekostet.",
     ),
     Segment(
         "t11t",
@@ -228,6 +248,9 @@ CODE = {  # code slide -> its panels, read from the repository at recording time
     "c10": [Snippet("src/cinesense/agent/graph.py", "build_graph.verify",
                     mark=["MIN_RESULTS", "relax.probe", "relax_rounds\": rounds + 1"]),
             Snippet("src/cinesense/search/relax.py", "probe", mark=["service.count", "opt.count > current"])],
+    "c11": [Snippet("src/cinesense/agent/graph.py", start="    message = sanitize(message)",
+                    end="return _guarded_turn", mark=["sanitize(message)", "looks_like_injection"]),
+            Snippet("src/cinesense/agent/guard.py", "leaks_prompt", mark=["min_overlap] in ans"])],
     "c09": [Snippet("src/cinesense/recommend/combined.py", start="    ranked = []", end="ranked.sort(",
                     mark=["WEIGHTS[k] * v", "score = "]),
             Snippet("src/cinesense/personal/profile.py", start="like_vec = avg(liked)", end="taste = {",

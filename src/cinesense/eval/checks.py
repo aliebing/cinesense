@@ -88,6 +88,12 @@ def check_relaxed(relaxed: list[str], e: Expect) -> Check:
     return False, ["expected a widened search" if e.relaxed else "widened without need"]
 
 
+def check_guarded(guarded: bool, e: Expect) -> Check:
+    if e.guarded is None or guarded == e.guarded:
+        return True, []
+    return False, ["attack reached the model" if e.guarded else "harmless wish was blocked"]
+
+
 def applies(kind: str, e: Expect) -> bool:
     """Whether a check has anything to test in this scenario (for honest k/n reporting)."""
     if kind == "constraints":
@@ -98,4 +104,6 @@ def applies(kind: str, e: Expect) -> bool:
         return bool(e.reply_contains_any)
     if kind == "relaxed":
         return e.relaxed is not None
+    if kind == "guarded":
+        return e.guarded is not None
     return True

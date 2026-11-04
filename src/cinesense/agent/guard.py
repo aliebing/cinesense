@@ -52,7 +52,7 @@ def looks_like_injection(text: str) -> bool:
 
 
 def leaks_prompt(answer: str, prompts: list[str], min_overlap: int = 60) -> bool:
-    """True if the answer contains a contiguous piece of at least min_overlap characters of one of the prompts."""
+    """True if the answer contains min_overlap consecutive characters of one of the prompts."""
     ans = _WS.sub(" ", answer)
     for prompt in prompts:
         sp = _WS.sub(" ", prompt).strip()

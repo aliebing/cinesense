@@ -11,6 +11,7 @@ from cinesense.eval.checks import (
     check_availability_claims,
     check_constraints,
     check_grounding,
+    check_guarded,
     check_relaxed,
     check_reply,
     check_tools,
@@ -54,7 +55,8 @@ def run_scenarios(
                 res["tools_called"] += last.get("tools_called", [])
                 res["tool_errors"] += last.get("tool_errors", 0)
                 usage = last.get("usage") or {}
-                res["usage_missing"] |= not usage.get("input_tokens")  # zero tokens means usage was not reported
+                # zero tokens means usage was not reported, unless the guard blocked the turn before any model call
+                res["usage_missing"] |= not usage.get("input_tokens") and not last.get("guarded")
                 res["input_tokens"] += usage.get("input_tokens", 0)
                 res["output_tokens"] += usage.get("output_tokens", 0)
         except Exception as exc:  # noqa: BLE001 — one broken scenario must not stop the evaluation
@@ -67,6 +69,7 @@ def run_scenarios(
             "availability_claims": check_availability_claims(reply, results),
             "reply": check_reply(reply, s.expect),
             "relaxed": check_relaxed(last.get("relaxed", []), s.expect),
+            "guarded": check_guarded(bool(last.get("guarded")), s.expect),
         }
         res.update(
             reply=reply,
@@ -76,6 +79,7 @@ def run_scenarios(
             grounding_fallback=last.get("grounding_fallback", False),
             grounding_reason=last.get("grounding_reason", []),
             relaxed=last.get("relaxed", []),
+            guarded=bool(last.get("guarded")),
             checks={k: {"ok": ok, "why": why, "applies": applies(k, s.expect)} for k, (ok, why) in checks.items()},
             title_hit=title_hit(results, s.expect),
             passed=res["error"] is None and all(ok for ok, _ in checks.values()),
@@ -120,6 +124,7 @@ def summarise(results: list[dict]) -> dict:
         "reply_checks": _rate([r["checks"]["reply"]["ok"] for r in ok if r["checks"]["reply"]["applies"]]),
         "availability_claims": _rate([r["checks"]["availability_claims"]["ok"] for r in ok]),
         "relaxation": _rate([r["checks"]["relaxed"]["ok"] for r in ok if r["checks"]["relaxed"]["applies"]]),
+        "guard": _rate([r["checks"]["guarded"]["ok"] for r in ok if r["checks"]["guarded"]["applies"]]),
         "grounding_raw": _rate([r["checks"]["grounding"]["ok"] and not r.get("grounding_fallback") for r in ok]),
         "counts": {
             "constraint_satisfaction": _count(ok, "constraints"),
@@ -128,6 +133,7 @@ def summarise(results: list[dict]) -> dict:
             "grounding": _count(ok, "grounding"),
             "availability_claims": _count(ok, "availability_claims"),
             "relaxation": _count(ok, "relaxed"),
+            "guard": _count(ok, "guarded"),
         },
         "title_hit_rate": _rate(hits),
         "latency_median_s": round(statistics.median(lat), 2) if lat else None,

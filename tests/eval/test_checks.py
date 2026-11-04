@@ -104,3 +104,14 @@ def test_check_relaxed():
     assert check_relaxed(["x"], Expect()) == (True, [])
     assert applies("relaxed", Expect()) is False
     assert applies("relaxed", Expect(relaxed=False)) is True
+
+
+def test_check_guarded():
+    from cinesense.eval.checks import applies, check_guarded
+
+    assert check_guarded(True, Expect(guarded=True)) == (True, [])
+    assert check_guarded(False, Expect(guarded=True)) == (False, ["attack reached the model"])
+    assert check_guarded(True, Expect(guarded=False)) == (False, ["harmless wish was blocked"])
+    assert check_guarded(True, Expect()) == (True, [])
+    assert applies("guarded", Expect()) is False
+    assert applies("guarded", Expect(guarded=False)) is True
