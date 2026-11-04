@@ -179,7 +179,12 @@ async def _sparql(client: httpx.AsyncClient, query: str, retries: int = 4) -> li
             await asyncio.sleep(2**attempt * 3)
             continue
         r.raise_for_status()
-        return r.json()["results"]["bindings"]
+        try:
+            return r.json()["results"]["bindings"]
+        except ValueError:  # an answer cut off mid-stream
+            if attempt == retries - 1:
+                raise
+            await asyncio.sleep(2**attempt * 3)
     r.raise_for_status()
     return []
 
@@ -211,7 +216,7 @@ async def fetch_people(qids: list[str], client: httpx.AsyncClient, batch: int = 
         async with sem:
             try:
                 rows = await _sparql(client, _PEOPLE_BY_QID % " ".join(f"wd:{q}" for q in chunk))
-            except httpx.HTTPError as e:
+            except (httpx.HTTPError, ValueError) as e:
                 log.warning("People: batch of %d films skipped (%s)", len(chunk), type(e).__name__)
                 return
         for f in fold_bindings(rows, key="film").values():

@@ -173,3 +173,19 @@ async def test_fetch_people_skips_a_batch_that_keeps_failing(monkeypatch):
     async with httpx.AsyncClient() as client:
         out = await wikidata.fetch_people(["Q1", "Q2"], client, batch=1)
     assert list(out) == ["Q2"]
+
+
+@respx.mock
+async def test_a_cut_off_answer_is_retried(monkeypatch):
+    from cinesense.data_sources import wikidata
+
+    monkeypatch.setattr(wikidata.asyncio, "sleep", lambda s: _real_sleep(0))
+    route = respx.post(SPARQL_URL).mock(
+        side_effect=[
+            httpx.Response(200, content=b'{"results": {"bindings": [{"ml": {"val'),
+            httpx.Response(200, json={"results": {"bindings": ROWS}}),
+        ]
+    )
+    async with httpx.AsyncClient() as client:
+        assert await wikidata._sparql(client, "q") == ROWS
+    assert route.call_count == 2
