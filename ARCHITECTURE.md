@@ -11,7 +11,7 @@ returns the films. This page is the map: what lives where, how one request flows
 | `backend/` | Python 3.12, FastAPI, LangGraph. The package `cinesense/` and its tests (`tests/`, same folder names). |
 | `frontend/` | Next.js (App Router), TypeScript, Tailwind. The cinema UI, the chat and the technical view `/tech`. |
 | `database/` | `schema.sql` (all tables in the `cinesense` schema) and the project's own local Supabase (`supabase/`). |
-| `evaluation/` | The 54 evaluation scenarios, every run's raw results and the current `REPORT.md`. |
+| `evaluation/` | The 61 evaluation scenarios, every run's raw results and the current `REPORT.md`. |
 | `docs/` | The grading briefs (`brief/`) and the presentation outline (`presentation.md`). |
 
 At the root: `Makefile` (every command: `make up`, `make test`, `make eval` …), `docker-compose.yaml` with
