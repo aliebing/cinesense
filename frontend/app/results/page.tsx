@@ -8,8 +8,8 @@ import Breadcrumb from "@/components/nav/Breadcrumb";
 import ResultList from "@/components/results/ResultList";
 import AdvancedSearch from "@/components/search/AdvancedSearch";
 import SearchChips from "@/components/search/SearchChips";
-import { getTags, type Tag } from "@/lib/api";
-import { type Criteria, useSearchState } from "@/lib/searchState";
+import { type DiscoverResult, getTags, type Tag } from "@/lib/api";
+import { type Criteria, patchSearchState, useSearchState } from "@/lib/searchState";
 import type { Movie } from "@/lib/types";
 
 export default function ResultsPage() {
@@ -35,7 +35,14 @@ export default function ResultsPage() {
   useEffect(() => {
     getTags().then((r) => r.ok && setTags(r.data));
   }, []);
-  const onMeta = useCallback((m: { hidden_by_exclusion: number }) => setHidden(m.hidden_by_exclusion), []);
+  const onMeta = useCallback((m: Omit<DiscoverResult, "items">) => {
+    setHidden(m.hidden_by_exclusion);
+    // autocorrect: a misspelt person or title becomes the name the search found ("sandra bullok" -> "Sandra Bullock")
+    const patch: Partial<Criteria> = {};
+    if (m.corrected_person) patch.person = m.corrected_person;
+    if (m.corrected_title) patch.title = m.corrected_title;
+    if (Object.keys(patch).length) patchSearchState(patch);
+  }, []);
   const open = (m: Movie) => router.push(`/world/${m.world_ids[0] ?? "suspense"}?film=${m.id}&from=search`); // the row below the stage keeps the other matches
 
   return (

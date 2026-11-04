@@ -59,6 +59,11 @@ function load(): Criteria {
   return state!;
 }
 
+/** Change some fields of the current search (e.g. the autocorrected person), keeping the rest. */
+export function patchSearchState(patch: Partial<Criteria>) {
+  setSearchState({ ...load(), ...patch });
+}
+
 export function setSearchState(next: Criteria) {
   state = next;
   try {

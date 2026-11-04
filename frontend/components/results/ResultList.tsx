@@ -41,7 +41,13 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
       setTotal(r.data.total);
       setExtended(r.data.extended_used);
       setRelaxFor({ key, options: r.data.relaxations ?? [] });
-      onMeta?.({ total: r.data.total, hidden_by_exclusion: r.data.hidden_by_exclusion, extended_used: r.data.extended_used });
+      onMeta?.({
+        total: r.data.total,
+        hidden_by_exclusion: r.data.hidden_by_exclusion,
+        extended_used: r.data.extended_used,
+        corrected_person: r.data.corrected_person,
+        corrected_title: r.data.corrected_title,
+      });
     }, 300);
     return () => {
       cancelled = true;

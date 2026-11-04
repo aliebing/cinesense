@@ -3,6 +3,33 @@
 import { useState, type FormEvent } from "react";
 import type { Criteria } from "@/lib/searchState";
 
+const ROLES: { value: Criteria["person_role"]; label: string }[] = [
+  { value: "any", label: "Any" },
+  { value: "cast", label: "Actor" },
+  { value: "director", label: "Director" },
+];
+const KINDS: { value: Criteria["kind"]; label: string }[] = [
+  { value: "any", label: "All" },
+  { value: "film", label: "Feature films" },
+  { value: "documentary", label: "Documentaries" },
+];
+
+/** A labelled switch: every choice visible, the current one highlighted (the mood panel's Prefer / Must look). */
+function Choice<T extends string>({ label, options, value, onChange }: { label: string; options: { value: T; label: string }[]; value: T; onChange: (v: T) => void }) {
+  return (
+    <div className="adv-field">
+      <span>{label}</span>
+      <div className="crit__modes adv-switch" role="group" aria-label={label}>
+        {options.map((o) => (
+          <button key={o.value} type="button" className="crit__mode" aria-pressed={value === o.value} onClick={() => onChange(o.value)}>
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /** Title / actor-director / year / kind search; "extended" reaches beyond the catalogue (newer films). */
 export default function AdvancedSearch({ criteria, onSubmit }: { criteria: Criteria; onSubmit: (c: Criteria) => void }) {
   const [title, setTitle] = useState(criteria.title ?? "");
@@ -38,14 +65,7 @@ export default function AdvancedSearch({ criteria, onSubmit }: { criteria: Crite
         Actor or director
         <input id="adv-person" value={person} onChange={(e) => setPerson(e.target.value)} placeholder="e.g. Sandra Hüller" />
       </label>
-      <label>
-        Role
-        <select id="adv-role" value={role} onChange={(e) => setRole(e.target.value as Criteria["person_role"])}>
-          <option value="any">Any</option>
-          <option value="cast">Actor</option>
-          <option value="director">Director</option>
-        </select>
-      </label>
+      <Choice label="Role" options={ROLES} value={role} onChange={setRole} />
       <label>
         From year
         <input id="adv-from" inputMode="numeric" value={yearFrom} onChange={(e) => setYearFrom(e.target.value)} />
@@ -54,14 +74,7 @@ export default function AdvancedSearch({ criteria, onSubmit }: { criteria: Crite
         To year
         <input id="adv-to" inputMode="numeric" value={yearTo} onChange={(e) => setYearTo(e.target.value)} />
       </label>
-      <label>
-        Kind
-        <select id="adv-kind" value={kind} onChange={(e) => setKind(e.target.value as Criteria["kind"])}>
-          <option value="any">Films &amp; documentaries</option>
-          <option value="film">Feature films</option>
-          <option value="documentary">Documentaries</option>
-        </select>
-      </label>
+      <Choice label="Kind" options={KINDS} value={kind} onChange={setKind} />
       <label className="advanced-search__check">
         <input id="adv-extended" type="checkbox" checked={extended} onChange={(e) => setExtended(e.target.checked)} />
         Extended search (more and newer films, slower)

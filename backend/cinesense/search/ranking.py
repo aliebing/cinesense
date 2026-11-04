@@ -32,6 +32,8 @@ class CombinedResult:
     total: int
     hidden_by_exclusion: int
     extended_used: bool = False
+    corrected_person: str | None = None  # the name a misspelt person search found (autocorrect)
+    corrected_title: str | None = None
 
 
 def _normalised(values: dict[str, float]) -> dict[str, float]:

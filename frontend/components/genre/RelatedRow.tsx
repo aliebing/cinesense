@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useEffect, useRef } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { advance, easeTowards } from "@/components/home/TileRows";
 import { isTyping } from "@/lib/typingPause";
 import HoverTrailer from "@/components/media/HoverTrailer";
@@ -14,7 +14,7 @@ const SLOW_SPEED = 14; // px per second in the middle: still moving, but a card 
 const MAX_SPEED = 1100; // px per second with the pointer at the very edge
 const DEAD_ZONE = 0.3; // middle share of the row where it only creeps on
 const EASE_MS = 220;
-export const MIN_SLOTS = 14; // fewer films than this don't fill the row: they stand still instead of looping
+export const MIN_SLOTS = 14; // until the row is measured: fewer films than this stand still instead of looping
 
 /** Row velocity for a pointer at `ratio` (0 = left edge, 1 = right edge) of the row; null = no pointer.
  *  Right of the middle the films slide left (more come in from the right), left of it the other way,
@@ -54,8 +54,24 @@ export default function RelatedRow({
   const anchor = useRef<HTMLElement | null>(null); // the card under the pointer
   const trailerRef = useRef(false);
   const reduced = useReducedMotion();
-  // a short list stands still, left-aligned: looping it would need empty boxes (the row looked empty with 2 hits)
-  const still = reduced || items.length < MIN_SLOTS;
+  // films that all fit in the visible width stand still, left-aligned; only a row wider than the screen loops
+  // (looping a short one would need empty boxes). Measured with a ResizeObserver; until then: by count.
+  const [fits, setFits] = useState<boolean | null>(null);
+  const still = reduced || (fits ?? items.length < MIN_SLOTS);
+  useEffect(() => {
+    const view = viewport.current;
+    if (!view || typeof ResizeObserver === "undefined") return;
+    const measure = () => {
+      const el = track.current;
+      const card = (el?.children[0] as HTMLElement | undefined)?.offsetWidth ?? 0;
+      if (!el || !card || !view.clientWidth) return setFits(null);
+      const gap = parseFloat(getComputedStyle(el).columnGap) || 0;
+      setFits(items.length * card + (items.length - 1) * gap <= view.clientWidth);
+    };
+    const observer = new ResizeObserver(measure);
+    observer.observe(view);
+    return () => observer.disconnect();
+  }, [items.length]);
   const { activeId } = useActiveTrailer();
   useEffect(() => {
     trailerRef.current = activeId !== null; // a playing trailer must not slide away from under the pointer

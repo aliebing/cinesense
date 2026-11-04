@@ -472,13 +472,17 @@
 .results-relax:hover, .results-relax:focus-visible { background: var(--gold); color: #16130c; }
 /* the matches run in one row at the bottom, like "Also fits your mood" on the genre page */
 .results-page .related { position: static; margin-top: auto; }
+/* centred, with two cards' room on either side (not across the whole screen) */
+@media (min-width: 760px) { .results-page .related { margin-inline: calc(2 * (var(--card-w) + var(--card-gap))); } }
 .related-why { display: block; margin-top: .2em; font-size: .9em; color: #f3c76bd9; }
 .results-error { color: #ffd7a0; }
 .advanced-search {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(12em, 1fr)); gap: .6em 1em; align-items: end;
   padding: 1em; border-radius: 14px; background: #0d0d14c4; border: 1px solid #ffffff26;
 }
-.advanced-search label { display: flex; flex-direction: column; gap: .25em; font-size: .85em; color: var(--muted); }
+.advanced-search label, .advanced-search .adv-field { display: flex; flex-direction: column; gap: .25em; font-size: .85em; color: var(--muted); }
+.advanced-search .adv-switch { margin-top: 0; }
+.advanced-search .adv-switch .crit__mode { font-size: 1em; padding-block: .5em; }
 .advanced-search input, .advanced-search select {
   font: inherit; color: #fff; background: #ffffff10; border: 1px solid #ffffff30; border-radius: 8px; padding: .45em .6em;
 }

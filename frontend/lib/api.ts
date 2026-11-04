@@ -44,6 +44,8 @@ export type DiscoverResult = {
   total: number;
   hidden_by_exclusion: number;
   extended_used: boolean;
+  corrected_person?: string | null; // autocorrect: the person / title a misspelt search found
+  corrected_title?: string | null;
   relaxations?: Relaxation[];
 };
 

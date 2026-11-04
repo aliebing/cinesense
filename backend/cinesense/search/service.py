@@ -2,6 +2,8 @@
 
 import asyncio
 import logging
+import re
+import unicodedata
 from collections import OrderedDict
 
 from cinesense.core.criteria import MUST_THRESHOLD, NOT_THRESHOLD, SearchCriteria
@@ -10,6 +12,27 @@ from cinesense.search.ranking import CombinedResult, Signals, combined_rank
 log = logging.getLogger(__name__)
 STREAM_CHECK_LIMIT = 30  # streaming lookups per search (free plan budget)
 EMBED_CACHE_SIZE = 256  # plot-query embeddings kept per service (the chat agent's service lives for the process)
+
+
+def _norm(text: str) -> str:
+    plain = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode()
+    return " ".join(plain.lower().split())
+
+
+def correction(query: str | None, found: str | None) -> str | None:
+    """The found name as an autocorrect of `query`, or None when the query is already right: it occurs in the
+    match ("bullock" in "Sandra Bullock", "lord of the rings" in every part's title), ignoring case and accents.
+    MovieLens' alternative title in brackets is dropped ("Amelie (Fabuleux destin …)" -> "Amelie")."""
+    if not query or not found:
+        return None
+    found = re.sub(r"\s*\(.*\)\s*$", "", found).strip() or found
+    return None if _norm(query) in _norm(found) else found
+
+
+def _best(scores: dict[str, float] | None, labels: dict[str, str]) -> str | None:
+    if not scores:
+        return None
+    return labels.get(max(scores, key=scores.get))
 
 
 class SearchService:
@@ -60,6 +83,10 @@ class SearchService:
         for r in page.items:  # callers fill images/streaming on the page; never mutate the shared catalogue
             r.movie = r.movie.model_copy(deep=True)
         page.extended_used = extended_used
+        if offset == 0:  # autocorrect for the advanced search: the name that was really found
+            page.corrected_person = correction(c.person, _best(sig.person, sig.person_names))
+            titles = {r.movie.id: r.movie.title for r in result.items}
+            page.corrected_title = correction(c.title, _best(sig.title, titles))
         if c.availability == "stream":
             page = self._resolve_streaming(page, limit)
         page.items = page.items[:limit]

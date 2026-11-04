@@ -99,3 +99,38 @@ it("a running row that shrinks to a few films stands still at the start, not whe
   rerender(<RelatedRow items={sampleRanked(4)} onSelect={() => {}} />);
   expect(container.querySelector<HTMLElement>(".related-track")!.style.transform).toBe("");
 });
+
+/** Lays the row out as a browser would: the viewport is `viewport` px wide, every card `card` px. */
+function layout(viewport: number, card: number) {
+  const restore: (() => void)[] = [];
+  const stub = (prop: "clientWidth" | "offsetWidth", get: (el: HTMLElement) => number) => {
+    const before = Object.getOwnPropertyDescriptor(HTMLElement.prototype, prop);
+    Object.defineProperty(HTMLElement.prototype, prop, { configurable: true, get() { return get(this); } });
+    restore.push(() => before && Object.defineProperty(HTMLElement.prototype, prop, before));
+  };
+  stub("clientWidth", (el) => (el.classList.contains("related-viewport") ? viewport : 0));
+  stub("offsetWidth", (el) => (el.classList.contains("related-wrap") || el.classList.contains("related-card") ? card : 0));
+  vi.stubGlobal("ResizeObserver", class {
+    constructor(private cb: () => void) {}
+    observe() { this.cb(); }
+    disconnect() {}
+  });
+  return () => { restore.forEach((r) => r()); vi.unstubAllGlobals(); };
+}
+
+it("many films that all fit in the visible width stand still", async () => {
+  const undo = layout(5000, 100);
+  const { container } = render(<RelatedRow items={sampleRanked(20)} onSelect={() => {}} />);
+  expect(container.querySelector(".related-viewport")).toHaveClass("is-static");
+  expect(container.querySelectorAll(".related-card")).toHaveLength(20);
+  expect(container.textContent).not.toContain("move the mouse");
+  undo();
+});
+
+it("a few films that do not fit in the visible width run as a loop", async () => {
+  const undo = layout(300, 100);
+  const { container } = render(<RelatedRow items={sampleRanked(6)} onSelect={() => {}} />);
+  expect(container.querySelector(".related-viewport")).not.toHaveClass("is-static");
+  expect(container.querySelectorAll(".related-card")).toHaveLength(12);
+  undo();
+});

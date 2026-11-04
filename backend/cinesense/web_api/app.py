@@ -60,6 +60,8 @@ class DiscoverResponse(BaseModel):
     total: int
     hidden_by_exclusion: int = 0
     extended_used: bool = False
+    corrected_person: str | None = None  # autocorrect: the person / title a misspelt search found
+    corrected_title: str | None = None
     relaxations: list[RelaxationOut] = Field(default_factory=list)  # ways to widen a thin search (/api/search)
 
 
@@ -124,6 +126,8 @@ def create_app(load_env: bool = True) -> FastAPI:
             total=res.total,
             hidden_by_exclusion=res.hidden_by_exclusion,
             extended_used=res.extended_used,
+            corrected_person=res.corrected_person,
+            corrected_title=res.corrected_title,
         )
 
     @app.post("/api/discover")
