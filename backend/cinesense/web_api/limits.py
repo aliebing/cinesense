@@ -1,6 +1,7 @@
 """Chat limits: every agent turn (chat and /api/inspect) costs real LLM money, so turns are capped per visitor
-(per minute and per day) and for the whole site per day. Counted in memory: one API process, and a restart only
-ever resets the counters to zero. Refused turns are not counted."""
+(per minute and per day) and for the whole site per day; the technical view has its own counter (deps.py).
+Counted in memory: one API process, and a restart only ever resets the counters to zero. Refused turns are
+not counted."""
 
 import time
 from collections import defaultdict, deque

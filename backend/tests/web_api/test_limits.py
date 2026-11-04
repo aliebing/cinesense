@@ -1,6 +1,11 @@
-from cinesense.web_api.deps import get_limiter
+from fastapi.testclient import TestClient
+
+from cinesense.core.config import get_settings
+from cinesense.web_api.deps import get_limiter, get_tech_limiter
 from cinesense.web_api.limits import SITE_DAY, VISITOR_DAY, VISITOR_MINUTE, TurnLimiter, visitor_of
 from tests.web_api.test_chat import chat_client, events, fake_runner
+from tests.web_api.test_inspect import make_app
+from tests.web_api.test_inspect import runner as inspect_runner
 
 
 class Clock:
@@ -86,10 +91,23 @@ def test_chat_over_the_limit_answers_with_a_friendly_error_event():
     assert last == ("error", {"text": VISITOR_MINUTE})
 
 
-def test_inspect_counts_against_the_same_limit():
+def test_inspect_has_its_own_limit():
     client = limited_client(limiter(Clock(), minute=1))
+    client.post("/api/chat", json={"thread_id": "t1", "message": "hi"})  # the chat's limit is used up …
+    tech = TestClient(make_app(inspect_runner))
+    tech.app.dependency_overrides[get_limiter] = client.app.dependency_overrides[get_limiter]
+    tech_lim = limiter(Clock(), minute=1)
+    tech.app.dependency_overrides[get_tech_limiter] = lambda: tech_lim
     body = {"thread_id": "t1", "message": "hi"}
-    client.post("/api/chat", json=body)
-    res = client.post("/api/inspect", json=body)
+    assert tech.post("/api/inspect", json=body).status_code == 200  # … the technical view still runs
+    res = tech.post("/api/inspect", json=body)
     assert res.status_code == 429
     assert res.json()["detail"] == VISITOR_MINUTE
+
+
+def test_default_daily_limits_25_for_the_chat_and_50_for_the_technical_view(monkeypatch):
+    for name in ("CHAT_LIMIT_PER_DAY", "TECH_LIMIT_PER_DAY"):
+        monkeypatch.delenv(name, raising=False)
+    assert get_limiter().per_visitor_day == 25
+    assert get_tech_limiter().per_visitor_day == 50
+    assert get_settings().chat_per_day == 25

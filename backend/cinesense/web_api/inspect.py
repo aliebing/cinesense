@@ -13,7 +13,7 @@ from cinesense.chat_agent.graph import criteria_summary
 from cinesense.chat_agent.llm import PRICES, cost_usd
 from cinesense.core.config import get_settings
 from cinesense.web_api.chat import ChatRequest
-from cinesense.web_api.deps import get_agent, get_limiter, get_provider
+from cinesense.web_api.deps import get_agent, get_provider, get_tech_limiter
 from cinesense.web_api.limits import visitor_of
 
 router = APIRouter()
@@ -63,7 +63,7 @@ def inspect(
     runner: Annotated[object, Depends(get_agent)],
     provider: Annotated[object, Depends(get_provider)],
     request: Request,
-    limiter: Annotated[object, Depends(get_limiter)],
+    limiter: Annotated[object, Depends(get_tech_limiter)],
 ) -> dict:
     if runner is None:
         raise HTTPException(status_code=503, detail="no_llm_key")

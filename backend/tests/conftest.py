@@ -6,11 +6,13 @@ from cinesense.core.models import Availability, Movie
 @pytest.fixture(autouse=True)
 def fresh_chat_limits():
     """Every test starts with untouched chat limits (the limiter is one shared counter per process)."""
-    from cinesense.web_api.deps import get_limiter
+    from cinesense.web_api.deps import get_limiter, get_tech_limiter
 
     get_limiter.cache_clear()
+    get_tech_limiter.cache_clear()
     yield
     get_limiter.cache_clear()
+    get_tech_limiter.cache_clear()
 
 
 @pytest.fixture

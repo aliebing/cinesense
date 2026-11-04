@@ -16,6 +16,15 @@ def get_limiter():
 
 
 @lru_cache
+def get_tech_limiter():
+    """The technical view's own counter: its turns don't use up the chat's daily limit, and it allows more."""
+    from cinesense.web_api.limits import TurnLimiter
+
+    s = get_settings()
+    return TurnLimiter(s.chat_per_minute, s.tech_per_day, s.chat_site_per_day)
+
+
+@lru_cache
 def get_provider():
     """Postgres catalogue when configured, otherwise the offline fixture. Tests override this."""
     s = get_settings()
