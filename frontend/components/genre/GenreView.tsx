@@ -7,6 +7,7 @@ import CinemaFrame from "@/components/cinema/CinemaFrame";
 import RelatedRow from "@/components/genre/RelatedRow";
 import StagePanel from "@/components/genre/StagePanel";
 import Breadcrumb, { type Crumb } from "@/components/nav/Breadcrumb";
+import MoodSummary from "@/components/search/MoodSummary";
 import {
   discover,
   getMovie,
@@ -42,10 +43,11 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
   const reduced = useReducedMotion();
   const [state, setState] = useState<State>({ kind: "loading" });
   const [related, setRelated] = useState<RankedMovie[]>([]);
-  // the shared search state: no settings panel here (moods are edited on the home and results pages), but it
-  // still ranks the row, and ⚡ / 😂 add to it
+  // the shared search state, shown read-only here (edited on the start and results pages): it ranks the row,
+  // and ⚡ / 😂 add to it
   const [criteria, setCriteria] = useSearchState();
   const [tags, setTags] = useState<Tag[]>([]);
+  const [hidden, setHidden] = useState(0);
   const [rowFromSearch, setRowFromSearch] = useState(fromSearch);
   const criteriaKey = JSON.stringify(criteria);
 
@@ -95,6 +97,7 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
         if (cancelled) return;
         setRelated(r.ok ? r.data : []);
         setRowFromSearch(false);
+        setHidden(0);
       });
     const others = (items: RankedMovie[]) => items.some((x) => x.movie.id !== stageId);
     const t = setTimeout(() => {
@@ -107,6 +110,7 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
           if (!others(items)) return loadRelated();
           setRelated(items);
           setRowFromSearch(true);
+          setHidden(r.ok ? r.data.hidden_by_exclusion : 0);
         });
       } else if (hasAnyCriteria(active)) {
         // the chip bar re-ranks the row within this world
@@ -116,6 +120,7 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
           if (!others(items)) return loadRelated();
           setRelated(items);
           setRowFromSearch(false);
+          setHidden(r.ok ? r.data.hidden_by_exclusion : 0);
         });
       } else {
         loadRelated();
@@ -175,7 +180,7 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
       />
       <FogLight tint={world?.tint ?? "#1b4a6b"} reduced={reduced} />
       <header className="genre-top">
-        <Breadcrumb items={crumbs(world, movie, fromSearch)} />
+        <Breadcrumb items={crumbs(movie, fromSearch)} />
       </header>
       {state.kind === "error" && <p className="genre-error">Couldn&apos;t load films</p>}
       {state.kind === "loading" && <p className="genre-loading">Loading …</p>}
@@ -189,6 +194,9 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
             onFeedback={giveFeedback}
             onSteer={steerSession}
           />
+          <div className="side-settings side-settings--genre">
+            <MoodSummary tags={tags} criteria={criteria} hiddenCount={hidden} />
+          </div>
           {fromSearch && rowFromSearch ? (
             <RelatedRow
               items={related.filter((r) => r.movie.id !== movie.id)}
@@ -206,10 +214,9 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
   );
 }
 
-/** Opened from the search: Search › film; otherwise the world it belongs to › film. The world crumb leads back
- *  to the start page showing that world (/world/<id> would only put the world's top film on this stage). */
-function crumbs(world: MoodWorld | null, movie: Movie | null, fromSearch: boolean): Crumb[] {
-  const out: Crumb[] = fromSearch ? [{ label: "Search", href: "/results" }] : world ? [{ label: world.title, href: `/?world=${world.id}` }] : [];
+/** Opened from the search: Search › film; otherwise just the film (the brand already leads to the start page). */
+function crumbs(movie: Movie | null, fromSearch: boolean): Crumb[] {
+  const out: Crumb[] = fromSearch ? [{ label: "Search", href: "/results" }] : [];
   if (movie) out.push({ label: movie.title });
   return out;
 }

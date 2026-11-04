@@ -20,6 +20,23 @@ const MODES: { mode: TagMode; label: string; hint: string }[] = [
   { mode: "not", label: "Exclude", hint: "Hides films with this tag" },
 ];
 
+export type FilterChip = { key: string; label: string; clear: Partial<Criteria>; aria: string };
+
+/** The non-tag criteria as labelled chips (person, title, plot, availability, runtime, kind, years, language). */
+export function filterChips(criteria: Criteria): FilterChip[] {
+  const others: FilterChip[] = [];
+  if (criteria.person) others.push({ key: "person", label: `👤 ${criteria.person}`, clear: { person: null }, aria: `Remove person ${criteria.person}` });
+  if (criteria.title) others.push({ key: "title", label: `🔤 “${criteria.title}”`, clear: { title: null }, aria: `Remove title ${criteria.title}` });
+  if (criteria.plot_query) others.push({ key: "plot", label: `📖 “${criteria.plot_query}”`, clear: { plot_query: null }, aria: "Remove plot search" });
+  if (criteria.availability === "stream") others.push({ key: "stream", label: "📺 Streaming (DE)", clear: { availability: "any" }, aria: "Remove streaming filter" });
+  if (criteria.availability === "cinema") others.push({ key: "cinema", label: "🎬 In cinemas", clear: { availability: "any" }, aria: "Remove cinema filter" });
+  if (criteria.max_runtime_min) others.push({ key: "runtime", label: `< ${criteria.max_runtime_min} min`, clear: { max_runtime_min: null }, aria: "Remove runtime limit" });
+  if (criteria.kind !== "any") others.push({ key: "kind", label: criteria.kind === "documentary" ? "Documentaries" : "Feature films", clear: { kind: "any" }, aria: "Remove kind filter" });
+  if (criteria.year_from || criteria.year_to) others.push({ key: "year", label: `${criteria.year_from ?? "…"}–${criteria.year_to ?? "…"}`, clear: { year_from: null, year_to: null }, aria: "Remove year range" });
+  if (criteria.original_language) others.push({ key: "lang", label: `Language: ${criteria.original_language}`, clear: { original_language: null }, aria: "Remove language filter" });
+  return others;
+}
+
 /** The visible search state as a labelled settings panel: one block per mood tag (stars for weight,
  *  prefer / must / exclude), then exclusions, people and filters. */
 export default function SearchChips({ tags, criteria, onChange, hiddenCount = 0, children }: Props) {
@@ -42,16 +59,7 @@ export default function SearchChips({ tags, criteria, onChange, hiddenCount = 0,
 
   const mood = criteria.tags.filter((t) => t.mode !== "not");
   const excluded = criteria.tags.filter((t) => t.mode === "not");
-  const others: { key: string; label: string; clear: Partial<Criteria>; aria: string }[] = [];
-  if (criteria.person) others.push({ key: "person", label: `👤 ${criteria.person}`, clear: { person: null }, aria: `Remove person ${criteria.person}` });
-  if (criteria.title) others.push({ key: "title", label: `🔤 “${criteria.title}”`, clear: { title: null }, aria: `Remove title ${criteria.title}` });
-  if (criteria.plot_query) others.push({ key: "plot", label: `📖 “${criteria.plot_query}”`, clear: { plot_query: null }, aria: "Remove plot search" });
-  if (criteria.availability === "stream") others.push({ key: "stream", label: "📺 Streaming (DE)", clear: { availability: "any" }, aria: "Remove streaming filter" });
-  if (criteria.availability === "cinema") others.push({ key: "cinema", label: "🎬 In cinemas", clear: { availability: "any" }, aria: "Remove cinema filter" });
-  if (criteria.max_runtime_min) others.push({ key: "runtime", label: `< ${criteria.max_runtime_min} min`, clear: { max_runtime_min: null }, aria: "Remove runtime limit" });
-  if (criteria.kind !== "any") others.push({ key: "kind", label: criteria.kind === "documentary" ? "Documentaries" : "Feature films", clear: { kind: "any" }, aria: "Remove kind filter" });
-  if (criteria.year_from || criteria.year_to) others.push({ key: "year", label: `${criteria.year_from ?? "…"}–${criteria.year_to ?? "…"}`, clear: { year_from: null, year_to: null }, aria: "Remove year range" });
-  if (criteria.original_language) others.push({ key: "lang", label: `Language: ${criteria.original_language}`, clear: { original_language: null }, aria: "Remove language filter" });
+  const others = filterChips(criteria);
 
   const modeSwitch = (t: TagCriterion, label: string) => (
     <div className="crit__modes" role="group" aria-label={`Mode for ${label}`}>

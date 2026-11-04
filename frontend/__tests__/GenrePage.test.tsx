@@ -47,8 +47,8 @@ it("puts the requested film on stage", async () => {
   render(<GenreView worldId="action" filmId="demo-03" />);
   expect(await screen.findByRole("heading", { name: "Demo-Film 03" })).toBeInTheDocument();
   const crumbs = screen.getByRole("navigation", { name: "Breadcrumb" });
-  // back to the start page with this world showing (not /world/action, which puts the world's top film on stage)
-  expect(within(crumbs).getByRole("link", { name: "Action & Adrenaline" })).toHaveAttribute("href", "/?world=action");
+  // CineSense › film: a world crumb would lead to the same start page as the brand
+  expect(within(crumbs).getAllByRole("link").map((l) => l.textContent)).toEqual(["CineSense"]);
   expect(within(crumbs).getByText("Demo-Film 03")).toHaveAttribute("aria-current", "page");
 });
 
@@ -180,9 +180,33 @@ it("has no chat and no back button; the breadcrumb leads back to the start page"
   expect(screen.queryByRole("complementary", { name: "Chat" })).toBeNull();
 });
 
-it("shows no mood settings panel on the detail page (moods are edited on the home and results pages)", async () => {
+it("shows the mood settings read-only: tags, stars, exclusions and filters, without controls", async () => {
+  const { setSearchState, emptyCriteria } = await import("@/lib/searchState");
+  setSearchState({
+    ...emptyCriteria(),
+    tags: [{ idx: 0, weight: 8, mode: "must" }, { idx: 3, weight: 6, mode: "not" }],
+    max_runtime_min: 100,
+  });
   render(<GenreView worldId="action" filmId={null} />);
-  await screen.findByRole("heading", { name: "Demo-Film 01" });
-  expect(screen.queryByRole("region", { name: "Search criteria" })).toBeNull();
-  expect(screen.queryByText("Your mood settings")).toBeNull();
+  const panel = await screen.findByRole("region", { name: "Your mood settings" });
+  expect(within(panel).getByText("dark")).toBeInTheDocument();
+  expect(within(panel).getByLabelText("Weight 4 of 5")).toBeInTheDocument();
+  expect(within(panel).getByText("must")).toBeInTheDocument();
+  expect(within(panel).getByText("action")).toBeInTheDocument(); // under Excluded
+  expect(within(panel).getByText("< 100 min")).toBeInTheDocument();
+  expect(within(panel).queryAllByRole("button")).toHaveLength(0);
+  expect(within(panel).getByRole("link", { name: "Change in search →" })).toHaveAttribute("href", "/results");
+  setSearchState(emptyCriteria());
+});
+
+it("⚡ shows up in the read-only mood settings", async () => {
+  const userEvent = (await import("@testing-library/user-event")).default;
+  const { emptyCriteria, setSearchState } = await import("@/lib/searchState");
+  setSearchState(emptyCriteria());
+  render(<GenreView worldId="action" filmId={null} />);
+  const panel = await screen.findByRole("region", { name: "Your mood settings" });
+  expect(within(panel).queryByText("action")).toBeNull();
+  await userEvent.click(screen.getByRole("button", { name: "⚡ More action" }));
+  expect(await within(panel).findByText("action")).toBeInTheDocument();
+  setSearchState(emptyCriteria());
 });

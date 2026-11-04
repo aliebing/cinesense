@@ -249,10 +249,9 @@
 .genre-error { color: #ffd7a0; }
 
 .stage {
-  position: absolute; z-index: 15; top: 3.4cqw; left: var(--safe-x); right: var(--safe-x);
+  position: absolute; z-index: 15; top: 3.4cqw; left: calc(var(--safe-x) + var(--panel-w) + 1.4cqw); right: var(--safe-x);
   display: grid; grid-template-columns: 10.5cqw 32cqw minmax(0, 1fr); gap: 1.4cqw; align-items: start; font-size: var(--ui);
 }
-.genre-bg ~ .related { left: var(--safe-x); } /* the detail page has no settings panel */
 .stage-poster { position: relative; aspect-ratio: 2 / 3; border-radius: 8px; overflow: hidden;
   outline: 3px solid var(--gold); box-shadow: 0 0 0 6px #f3c76b33, 0 0 60px #f3c76b55, 0 20px 50px #000; }
 .stage-trailer { position: relative; aspect-ratio: 16 / 9; border-radius: 10px; overflow: hidden; background: #000;
@@ -383,6 +382,14 @@
   position: absolute; z-index: 18; left: var(--safe-x); top: 4.2cqw; width: var(--panel-w);
   max-height: calc(100% - 4.2cqw - 8cqw); display: flex; flex-direction: column; font-size: calc(var(--ui) * 1.08);
 }
+.side-settings--genre { top: 3.4cqw; max-height: calc(100% - 4.4cqw); }
+/* read-only variant on the detail page (MoodSummary) */
+.mood-summary .crit { display: flex; flex-direction: column; gap: .35em; }
+.mood-summary__stars span { font-size: 1.2em; line-height: 1; padding: 0 .05em; color: #ffffff3d; }
+.mood-summary__stars span.on { color: var(--gold); text-shadow: 0 0 10px #f3c76b80; }
+.mood-summary__must { font-size: .72em; letter-spacing: .12em; text-transform: uppercase; color: var(--gold); }
+.mood-summary__edit { display: inline-block; margin-top: .9em; font-size: .85em; color: var(--gold); text-decoration: none; }
+.mood-summary__edit:hover, .mood-summary__edit:focus-visible { text-decoration: underline; }
 .criteria-panel {
   overflow-y: auto; scrollbar-width: thin; text-align: left; padding: .9em; border-radius: 14px;
   background: #0d0d14d9; border: 1px solid #f3c76b59; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);

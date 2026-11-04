@@ -121,11 +121,3 @@ it("shows where you are: the home page in the breadcrumb", async () => {
   const crumbs = screen.getByRole("navigation", { name: "Breadcrumb" });
   expect(within(crumbs).getByText("Home")).toHaveAttribute("aria-current", "page");
 });
-
-it("opens on the world named in ?world= (the detail page's breadcrumb leads back here)", async () => {
-  window.history.pushState({}, "", "/?world=action");
-  getHome.mockResolvedValue({ ok: true, data: sampleHome });
-  render(<HomePage />);
-  expect(await screen.findByRole("link", { name: "Enter world →" })).toHaveAttribute("href", "/world/action");
-  window.history.pushState({}, "", "/");
-});
