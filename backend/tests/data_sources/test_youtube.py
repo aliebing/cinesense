@@ -99,3 +99,12 @@ def test_skips_a_search_hit_that_cannot_play_here():
         "k", MemoryTrailerStore(), http=httpx.Client(), playable=lambda ids: [i for i in ids if i != "blocked"]
     )
     assert c.find_trailer("ml-1", "Speed", 1994) == "fine"
+
+
+def test_cached_returns_only_fresh_found_trailers_and_never_searches():
+    store = MemoryTrailerStore()
+    store.put("ml-1", "v1")
+    store.put("ml-2", None)  # searched, nothing found
+    store.put("ml-3", "old", checked_at=datetime.now(UTC) - timedelta(days=31))
+    with respx.mock:  # any request would fail the test
+        assert client(store).cached(["ml-1", "ml-2", "ml-3", "ml-4"]) == {"ml-1": "v1"}

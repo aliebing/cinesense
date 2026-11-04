@@ -347,3 +347,42 @@ def test_misses_name_moods_the_film_has_no_data_for():
 def test_search_reports_what_each_exclusion_hides():
     r = client().post("/api/search", json={"criteria": {"person": "Keanu Reeves", "exclude_genres": ["Horror"]}})
     assert r.json()["hidden_by"] == {"genre:Horror": 0}
+
+
+def test_tile_rows_use_the_fallback_trailer_the_detail_page_found():
+    """The Matrix: its Wikidata trailer is gone, the detail page found another one. Every row that plays trailers on
+    hover (home, worlds, related, background rows) uses that cached one, and none of them searches YouTube."""
+    from cinesense.data_sources.trailer_check import TrailerChecker
+    from cinesense.data_sources.youtube import MemoryTrailerStore
+
+    searched = []
+
+    class Fallback:
+        def find_trailer(self, film_id, title, year):
+            searched.append(film_id)
+            return None
+
+        def cached(self, film_ids):
+            return {f: f"yt-{f}" for f in film_ids}
+
+    prov = FixtureProvider()
+    checker = TrailerChecker(MemoryTrailerStore())
+    for m in prov._movies:
+        m.youtube_key = "goneKey01"
+    checker.mark_bad("goneKey01")
+    app = make_app(provider=prov, trailers=Fallback())
+    app.dependency_overrides[get_trailer_checker] = lambda: checker
+    c = TestClient(app)
+    world = prov.list_movies()[0].world_ids[0]
+    rows = {
+        "home": [m for row in c.get("/api/home").json()["rows"].values() for m in row],
+        "world": [r["movie"] for r in c.get(f"/api/worlds/{world}/movies").json()],
+        "related": [r["movie"] for r in c.get(f"/api/movies/{prov.list_movies()[0].id}/related").json()],
+        "background": [
+            r["movie"] for r in c.post("/api/discover", json={"limit": 12, "fill_images": False}).json()["items"]
+        ],
+    }
+    for name, movies in rows.items():
+        assert movies, name
+        assert all(m["youtube_key"] == f"yt-{m['id']}" for m in movies), name
+    assert searched == []

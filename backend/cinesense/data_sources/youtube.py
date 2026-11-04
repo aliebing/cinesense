@@ -36,9 +36,16 @@ def _title_matches(title: str, video_title: str) -> bool:
     return bool(words) and sum(w in have for w in words) >= 0.75 * len(words)
 
 
+def _fresh(checked_at: datetime) -> bool:
+    if checked_at.tzinfo is None:
+        checked_at = checked_at.replace(tzinfo=UTC)
+    return datetime.now(UTC) - checked_at < CACHE_TTL
+
+
 class TrailerStore(Protocol):
     def get(self, film_id: str) -> tuple[str | None, datetime] | None: ...
     def put(self, film_id: str, video_id: str | None, checked_at: datetime | None = None) -> None: ...
+    def get_many(self, film_ids: list[str]) -> dict[str, tuple[str | None, datetime]]: ...
     def calls_today(self) -> int: ...
     def add_call(self) -> None: ...
 
@@ -122,14 +129,19 @@ class YouTubeTrailerClient:
         self.http = http or httpx.Client()
         self.playable = playable  # keeps the ids that play here (TrailerChecker.playable_ids); None: keep all
 
+    def cached(self, film_ids: list[str]) -> dict[str, str]:
+        """Trailers an earlier search already found (film id -> video id), from the cache only: no quota, no
+        request. The tile rows use them where the Wikidata trailer is missing or does not play."""
+        fresh = {}
+        for film_id, (video_id, checked_at) in self.store.get_many(film_ids).items():
+            if video_id and _fresh(checked_at):
+                fresh[film_id] = video_id
+        return fresh
+
     def find_trailer(self, film_id: str, title: str, year: int | None) -> str | None:
         cached = self.store.get(film_id)
-        if cached is not None:
-            video_id, checked_at = cached
-            if checked_at.tzinfo is None:
-                checked_at = checked_at.replace(tzinfo=UTC)
-            if datetime.now(UTC) - checked_at < CACHE_TTL:
-                return video_id
+        if cached is not None and _fresh(cached[1]):
+            return cached[0]
         if not self.api_key or self.store.calls_today() >= self.daily_limit:
             return None
         plain = _plain_title(title)

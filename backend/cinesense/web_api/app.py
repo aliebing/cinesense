@@ -126,11 +126,11 @@ def create_app(load_env: bool = True) -> FastAPI:
         profile=None,
         checker=None,
         trailers=None,
+        search_trailers=True,
     ) -> DiscoverResponse:
         res = SearchService(provider, streaming, embedder, live).run(req.criteria, req.offset, req.limit, profile)
-        if checker is not None:
-            checker.filter_known([r.movie for r in res.items])
-        if trailers is not None:  # the search rows play trailers on hover, so the best hits should have one
+        _row_trailers([r.movie for r in res.items], checker, trailers)
+        if trailers is not None and search_trailers:  # the search rows play trailers on hover: the best hits need one
             top = [r.movie for r in res.items[:TRAILER_FILL] if r.movie.youtube_key is None]
             with ThreadPoolExecutor(max_workers=TRAILER_FILL) as pool:  # uncached ids cost a round trip each
                 keys = list(pool.map(lambda m: trailers.find_trailer(m.id, m.title, m.year), top))
@@ -165,9 +165,17 @@ def create_app(load_env: bool = True) -> FastAPI:
         checker: Checker,
         trailers: Trailers,
     ) -> DiscoverResponse:
-        # background rows (fill_images=False) spend no API budget, neither images nor YouTube searches
-        fallback = trailers if req.fill_images else None
-        return _discover(req, provider, streaming, embedder, profile=profile, checker=checker, trailers=fallback)
+        # background rows (fill_images=False) spend no API budget: no images, no YouTube search (the cache is free)
+        return _discover(
+            req,
+            provider,
+            streaming,
+            embedder,
+            profile=profile,
+            checker=checker,
+            trailers=trailers,
+            search_trailers=req.fill_images,
+        )
 
     @app.post("/api/search")
     def search(
@@ -195,12 +203,19 @@ def create_app(load_env: bool = True) -> FastAPI:
 
     @app.get("/api/worlds/{world_id}/movies")
     def world_movies(
-        world_id: str, provider: Provider, profile: UserProfile, limit: Annotated[int, Query(ge=1, le=100)] = 12
+        world_id: str,
+        provider: Provider,
+        profile: UserProfile,
+        checker: Checker,
+        trailers: Trailers,
+        limit: Annotated[int, Query(ge=1, le=100)] = 12,
     ) -> list[RankedMovie]:
         if get_world(world_id) is None:
             raise HTTPException(status_code=404, detail="world_not_found")
         # with the profile: a rejected film never comes back as the world's default stage film
-        return SearchService(provider).run(SearchCriteria(world_id=world_id), 0, limit, profile).items
+        items = SearchService(provider).run(SearchCriteria(world_id=world_id), 0, limit, profile).items
+        _row_trailers([r.movie for r in items], checker, trailers)
+        return items
 
     @app.get("/api/movies/{movie_id}")
     def movie(movie_id: str, provider: Provider, streaming: Streaming, trailers: Trailers, checker: Checker) -> Movie:
@@ -224,6 +239,7 @@ def create_app(load_env: bool = True) -> FastAPI:
         streaming: Streaming,
         profile: UserProfile,
         checker: Checker,
+        trailers: Trailers,
         limit: Annotated[int, Query(ge=1, le=100)] = 13,
         world_id: str | None = None,
     ) -> list[RankedMovie]:
@@ -235,8 +251,7 @@ def create_app(load_env: bool = True) -> FastAPI:
             world_id = found.world_ids[0] if found.world_ids else None
         items = SearchService(provider).run(SearchCriteria(world_id=world_id), 0, limit + 1, profile).items
         items = [r for r in items if r.movie.id != movie_id][:limit]
-        if checker is not None:
-            checker.filter_known([r.movie for r in items])
+        _row_trailers([r.movie for r in items], checker, trailers)
         for r in items[:RELATED_IMAGE_FILL]:
             _with_images(r.movie, provider, streaming)
         return items
@@ -260,14 +275,13 @@ def create_app(load_env: bool = True) -> FastAPI:
             raise HTTPException(status_code=429, detail="too_many_reports")
 
     @app.get("/api/home")
-    def home(provider: Provider, streaming: Streaming, checker: Checker) -> dict:
+    def home(provider: Provider, streaming: Streaming, checker: Checker, trailers: Trailers) -> dict:
         movies = provider.list_movies()
         pools: dict[str, list[Movie]] = {}
         for w in WORLDS:
             in_world = sorted((m for m in movies if w.id in m.world_ids), key=lambda m: m.ml_rating_count, reverse=True)
             pool = [m.model_copy(deep=True) for m in in_world[: ROW_SIZE * 4]]
-            if checker is not None:
-                checker.filter_known(pool)  # never waits for YouTube; unknown ids are checked in the background
+            _row_trailers(pool, checker, trailers)
             # popular films with a playable trailer first, so hovering a tile usually plays something
             pools[w.id] = sorted(pool, key=lambda m: (m.youtube_key is not None, m.ml_rating_count), reverse=True)
         rows: dict[str, list[Movie]] = {w.id: [] for w in WORLDS}
@@ -287,3 +301,21 @@ def create_app(load_env: bool = True) -> FastAPI:
         return {"worlds": list(WORLDS), "rows": rows, "tiles": tiles, "titles": titles}
 
     return app
+
+
+def _row_trailers(movies: list[Movie], checker, trailers) -> list[Movie]:
+    """Trailers for tiles that play on hover, without waiting or spending quota: known-bad ids drop out (unknown
+    ones are checked in the background), and a film left without one gets the trailer a YouTube search already
+    found for it (the Matrix: its Wikidata trailer is gone, the detail page found another)."""
+    if checker is not None:
+        checker.filter_known(movies)
+    cached = getattr(trailers, "cached", None)
+    missing = [m for m in movies if m.youtube_key is None]
+    if cached is None or not missing:
+        return movies
+    found = cached([m.id for m in missing])
+    for m in missing:
+        m.youtube_key = found.get(m.id)
+    if checker is not None:
+        checker.filter_known(missing)  # a reported fallback trailer is never offered again
+    return movies
