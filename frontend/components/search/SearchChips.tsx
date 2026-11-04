@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { fuzzyFind } from "@/lib/fuzzy";
 import type { Criteria, TagCriterion, TagMode } from "@/lib/searchState";
 
 export type Tag = { idx: number; tag: string };
@@ -44,9 +45,12 @@ export default function SearchChips({ tags, criteria, onChange, hiddenCount = 0,
   const [query, setQuery] = useState("");
   const name = useMemo(() => new Map(tags.map((t) => [t.idx, t.tag])), [tags]);
   const used = new Set(criteria.tags.map((t) => t.idx));
-  const matches = query.trim()
-    ? tags.filter((t) => !used.has(t.idx) && t.tag.toLowerCase().includes(query.trim().toLowerCase())).slice(0, 8)
-    : [];
+  // typo-tolerant ("medival" finds "medieval"); only a click on a suggestion adds the tag
+  const free = tags.filter((t) => !used.has(t.idx));
+  const byName = new Map(free.map((t) => [t.tag, t]));
+  const matches = fuzzyFind(query, free.map((t) => t.tag))
+    .slice(0, 8)
+    .map((n) => byName.get(n)!);
 
   const setTag = (idx: number, patch: Partial<TagCriterion>) =>
     onChange({ ...criteria, tags: criteria.tags.map((t) => (t.idx === idx ? { ...t, ...patch } : t)) });
@@ -138,6 +142,7 @@ export default function SearchChips({ tags, criteria, onChange, hiddenCount = 0,
               autoFocus
               onChange={(e) => setQuery(e.target.value)}
             />
+            {query.trim() && matches.length === 0 && <span className="tag-picker__none">No mood tag like that</span>}
             {matches.map((t) => (
               <button key={t.idx} type="button" onClick={() => addTag(t.idx)}>
                 {t.tag}

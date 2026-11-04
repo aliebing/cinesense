@@ -65,3 +65,32 @@ it("extended search may use typed text (newer films are not in the suggestions)"
   await userEvent.click(screen.getByRole("button", { name: "Search" }));
   expect(onSubmit.mock.calls[0][0]).toMatchObject({ title: "Some new film", extended: true });
 });
+
+it("a year that is not a real four-digit year is pointed out, not silently ignored", async () => {
+  const onSubmit = vi.fn();
+  render(<AdvancedSearch criteria={emptyCriteria()} onSubmit={onSubmit} />);
+  await userEvent.type(screen.getByLabelText("From year"), "199");
+  await userEvent.click(screen.getByRole("button", { name: "Search" }));
+  expect(onSubmit).not.toHaveBeenCalled();
+  expect(screen.getByText("Enter years as four digits, e.g. 1994")).toBeInTheDocument();
+  expect(screen.getByLabelText("From year")).toHaveAttribute("aria-invalid", "true");
+});
+
+it("a year range that runs backwards is pointed out", async () => {
+  const onSubmit = vi.fn();
+  render(<AdvancedSearch criteria={emptyCriteria()} onSubmit={onSubmit} />);
+  await userEvent.type(screen.getByLabelText("From year"), "2010");
+  await userEvent.type(screen.getByLabelText("To year"), "1990");
+  await userEvent.click(screen.getByRole("button", { name: "Search" }));
+  expect(onSubmit).not.toHaveBeenCalled();
+  expect(screen.getByText("'From year' is after 'To year'")).toBeInTheDocument();
+});
+
+it("years before films existed or far in the future are pointed out", async () => {
+  const onSubmit = vi.fn();
+  render(<AdvancedSearch criteria={emptyCriteria()} onSubmit={onSubmit} />);
+  await userEvent.type(screen.getByLabelText("To year"), "3024");
+  await userEvent.click(screen.getByRole("button", { name: "Search" }));
+  expect(onSubmit).not.toHaveBeenCalled();
+  expect(screen.getByText(/between 1888 and/)).toBeInTheDocument();
+});

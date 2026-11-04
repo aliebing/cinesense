@@ -65,3 +65,18 @@ it("× removes a chip; person and filter chips are removable", () => {
   expect(onChange.mock.calls[1][0].person).toBeNull();
   expect(screen.getByText("< 120 min")).toBeInTheDocument();
 });
+
+it("the tag picker tolerates typos", async () => {
+  const onChange = setup();
+  await userEvent.click(screen.getByRole("button", { name: "+ Tag" }));
+  await userEvent.type(screen.getByRole("searchbox", { name: "Find a mood tag" }), "medival");
+  await userEvent.click(screen.getByRole("button", { name: "medieval" }));
+  expect(onChange.mock.calls.at(-1)![0].tags).toEqual([{ idx: 3, weight: 6, mode: "prefer" }]);
+});
+
+it("the tag picker says so when nothing fits", async () => {
+  setup();
+  await userEvent.click(screen.getByRole("button", { name: "+ Tag" }));
+  await userEvent.type(screen.getByRole("searchbox", { name: "Find a mood tag" }), "zzzz");
+  expect(screen.getByText("No mood tag like that")).toBeInTheDocument();
+});
