@@ -475,7 +475,13 @@
 /* the matches run in one row at the bottom, like "Also fits your mood" on the genre page */
 .results-page .related { position: static; margin-top: auto; }
 /* centred, with two cards' room on either side (not across the whole screen) */
-@media (min-width: 760px) { .results-page .related { margin-inline: calc(2 * (var(--card-w) + var(--card-gap))); } }
+@media (min-width: 760px) {
+  .results-page .related { margin-inline: calc(2 * (var(--card-w) + var(--card-gap))); }
+  /* the film row, header and advanced search always show in full; the mood panel takes what is left and
+     scrolls inside itself when it holds many chips */
+  .results-page > * { flex-shrink: 0; }
+  .results-page > .criteria-panel { flex-shrink: 1; min-height: 6em; overflow-y: auto; }
+}
 .related-why { display: block; margin-top: .2em; font-size: .9em; color: #f3c76bd9; }
 .results-error { color: #ffd7a0; }
 .advanced-search {

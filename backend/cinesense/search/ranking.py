@@ -94,7 +94,9 @@ def combined_rank(
 
     active: dict[str, dict[str, float]] = {}
     if signals.tags is not None:
-        active["tags"] = _normalised(signals.tags)
+        # absolute (weighted mean relevance, 0..1), not relative to the best hit: a film that is only 30% funny
+        # must not show as a full mood match just because nothing in the results is funnier
+        active["tags"] = {k: min(max(v, 0.0), 1.0) for k, v in signals.tags.items()}
     if signals.plot is not None:
         active["plot"] = _normalised({k: v[0] for k, v in signals.plot.items()})
     people = {**(signals.title or {}), **(signals.person or {})}

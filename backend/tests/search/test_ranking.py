@@ -210,3 +210,15 @@ def test_each_genre_exclusion_counts_the_films_it_hides(make_movie):
     ]
     res = combined_rank(movies, SearchCriteria(exclude_genres=["Horror", "Western"]), Signals())
     assert res.hidden_by == {"genre:Horror": 2, "genre:Western": 0}
+
+
+def test_the_tag_part_is_absolute_a_half_fitting_film_is_not_shown_as_a_full_match(make_movie):
+    """A film that fits the mood only partly keeps that in its match, even when it is the best of the results."""
+    c = SearchCriteria(tags=[TagCriterion(idx=0, weight=6)])
+    film = [make_movie(id="a")]
+    half = combined_rank(film, c, Signals(tags={"a": 0.6})).items[0].score
+    full = combined_rank(film, c, Signals(tags={"a": 1.0})).items[0].score
+    from cinesense.search.ranking import WEIGHTS
+
+    total = WEIGHTS["tags"] + WEIGHTS["rating"] + WEIGHTS["popularity"] + WEIGHTS["recency"]
+    assert abs((full - half) - WEIGHTS["tags"] * 0.4 / total) < 1e-9
