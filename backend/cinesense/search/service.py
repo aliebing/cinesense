@@ -113,6 +113,9 @@ class SearchService:
             hits, hidden = p.tag_search(c.prefer_weights(), c.must_tags(), c.not_tags(), MUST_THRESHOLD, NOT_THRESHOLD)
             sig.tags = dict(hits)
             restrict = set(sig.tags)
+        for q in c.exclude_people:  # "without Stallone": in any role, a misspelt name found like a wanted one
+            for film_id in p.search_person(q, "any")[0]:
+                sig.excluded_people.setdefault(film_id, q)
         if c.person:
             sig.person, sig.person_names = p.search_person(c.person, c.person_role)
             restrict = set(sig.person) if restrict is None else restrict & set(sig.person)

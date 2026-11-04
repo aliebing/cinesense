@@ -1,7 +1,8 @@
 """Widen a search that finds too little: list the constraints that may be loosened (least intrusive first),
 probe how many films each option finds, and pick one when the agent does not.
 
-Never loosened: not-tags and excluded genres (the user's hard limits), person, title and kind (the wish's identity)."""
+Never loosened: not-tags, excluded genres and people (the user's hard limits), person, title and kind (the wish's
+identity)."""
 
 import logging
 from dataclasses import dataclass

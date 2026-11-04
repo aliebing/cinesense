@@ -25,6 +25,7 @@ class Signals:
     profile: dict[str, float] | None = None  # film id -> taste match (raw)
     disliked: set[str] = field(default_factory=set)  # 👎 films: hidden and counted
     hidden_by_tag: dict[int, int] = field(default_factory=dict)  # not-tag idx -> films it hid (where counted)
+    excluded_people: dict[str, str] = field(default_factory=dict)  # film id -> the excluded name that hides it
 
 
 @dataclass
@@ -80,9 +81,14 @@ def combined_rank(
     # what each exclusion hides in this search, so the UI can say "hides nothing here" (no horror with this actor)
     hidden_by = {f"tag:{t}": n for t, n in signals.hidden_by_tag.items()}
     hidden_by |= {f"genre:{g}": 0 for g in criteria.exclude_genres}
+    hidden_by |= {f"person:{q}": 0 for q in criteria.exclude_people}
     kept: list[Movie] = []
     for m in movies:
         genres = {g.lower() for g in m.genres}
+        if m.id not in signals.disliked and (q := signals.excluded_people.get(m.id)) is not None:
+            hidden += 1
+            hidden_by[f"person:{q}"] += 1
+            continue
         if m.id in signals.disliked or (excluded and genres & excluded):
             hidden += 1
             for g in criteria.exclude_genres:

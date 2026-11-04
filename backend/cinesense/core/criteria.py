@@ -21,6 +21,7 @@ class SearchCriteria(BaseModel):
     person: str | None = None
     person_role: Literal["cast", "director", "any"] = "any"
     exclude_genres: list[str] = Field(default_factory=list)
+    exclude_people: list[str] = Field(default_factory=list, max_length=5)  # as typed; the person search corrects
     world_id: str | None = None
     availability: Literal["cinema", "stream", "any"] = "any"
     kind: Literal["film", "documentary", "any"] = "any"

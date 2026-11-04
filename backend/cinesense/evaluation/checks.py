@@ -18,6 +18,8 @@ def check_constraints(results: list[dict], e: Expect) -> Check:
             fails.append(f"{title}: {m['runtime_min']} min > {e.max_runtime}")
         if bad := [g for g in m.get("genres", []) if g in e.exclude_genres]:
             fails.append(f"{title}: excluded genre {', '.join(bad)}")
+        top_billed = {p.lower() for p in m.get("directors", []) + m.get("cast_top", [])}
+        fails += [f"{title}: with excluded {p}" for p in e.exclude_people if p.lower() in top_billed]
         if e.kind and m.get("kind") != e.kind:
             fails.append(f"{title}: kind {m.get('kind')}")
         if e.year_from and (m.get("year") is None or m["year"] < e.year_from):

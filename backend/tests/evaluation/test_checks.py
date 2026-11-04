@@ -115,3 +115,15 @@ def test_check_guarded():
     assert check_guarded(True, Expect()) == (True, [])
     assert applies("guarded", Expect()) is False
     assert applies("guarded", Expect(guarded=False)) is True
+
+
+def test_an_excluded_person_in_a_result_fails_the_constraints():
+    from cinesense.evaluation.checks import check_constraints
+    from cinesense.evaluation.scenarios import Expect
+
+    e = Expect(exclude_people=["Arnold Schwarzenegger"])
+    ok_row = {"movie": {"title": "Die Hard", "directors": ["John McTiernan"], "cast_top": ["Bruce Willis"]}}
+    bad_row = {"movie": {"title": "True Lies", "directors": [], "cast_top": ["Arnold Schwarzenegger"]}}
+    assert check_constraints([ok_row], e) == (True, [])
+    ok, fails = check_constraints([ok_row, bad_row], e)
+    assert not ok and fails == ["True Lies: with excluded Arnold Schwarzenegger"]

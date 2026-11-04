@@ -168,3 +168,22 @@ def test_relax_search_applies_offered_option(kit):
     assert upd["criteria"]["max_runtime_min"] == 90
     assert upd["relaxed"] == ["Allow up to 90 min"] and upd["relax_options"] == []
     assert upd["criteria_changed"] is True
+
+
+def test_exclude_people_resolves_the_name_and_keeps_the_others(kit):
+    s = state(criteria=SearchCriteria(exclude_people=["Tom Hanks"]).model_dump())
+    upd, msg = kit.exclude_people(s, ["Kianu Reeves", "Zzyzx Qwertyuiop"])
+    assert upd["criteria"]["exclude_people"] == ["Tom Hanks", "Keanu Reeves"]  # the found spelling, not the typo
+    assert "Keanu Reeves" in msg and "Zzyzx Qwertyuiop" in msg and "not found" in msg.lower()
+
+
+def test_exclude_people_replace_and_clear(kit):
+    s = state(criteria=SearchCriteria(exclude_people=["Tom Hanks"]).model_dump())
+    upd, _ = kit.exclude_people(s, [], replace=True)
+    assert upd["criteria"]["exclude_people"] == []
+
+
+def test_excluding_the_wanted_person_drops_them_as_wanted(kit):
+    s = state(criteria=SearchCriteria(person="Keanu Reeves").model_dump())
+    upd, _ = kit.exclude_people(s, ["Keanu Reeves"])
+    assert upd["criteria"]["person"] is None and upd["criteria"]["exclude_people"] == ["Keanu Reeves"]

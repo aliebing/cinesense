@@ -17,6 +17,7 @@ class Expect(BaseModel):
     tools_none: list[str] = Field(default_factory=list)
     max_runtime: int | None = None
     exclude_genres: list[str] = Field(default_factory=list)
+    exclude_people: list[str] = Field(default_factory=list)  # none of them among a result's top-billed people
     kind: Literal["film", "documentary"] | None = None
     availability: Literal["cinema", "stream"] | None = None
     year_from: int | None = None

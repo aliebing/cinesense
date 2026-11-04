@@ -99,3 +99,21 @@ it("an exclusion without a count shows no note", () => {
   render(<SearchChips tags={tags} criteria={{ ...emptyCriteria(), exclude_genres: ["Horror"] }} onChange={() => {}} />);
   expect(screen.queryByText(/changes nothing|hides/)).toBeNull();
 });
+
+it("lists excluded people struck through, says what each hides, and removes one", async () => {
+  const onChange = vi.fn();
+  render(
+    <SearchChips
+      tags={tags}
+      criteria={{ ...emptyCriteria(), exclude_people: ["Sylvester Stallone", "Arnold Schwarzenegger"] }}
+      onChange={onChange}
+      hiddenBy={{ "person:Sylvester Stallone": 4, "person:Arnold Schwarzenegger": 0 }}
+    />,
+  );
+  expect(screen.getByRole("heading", { name: "Excluded" })).toBeInTheDocument();
+  expect(screen.getByText("Sylvester Stallone").closest("s")).not.toBeNull();
+  expect(screen.getByText("hides 4 films here")).toBeInTheDocument();
+  expect(screen.getByText("none of these films are with Arnold Schwarzenegger: changes nothing")).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: "Remove excluded person Sylvester Stallone" }));
+  expect(onChange.mock.calls[0][0].exclude_people).toEqual(["Arnold Schwarzenegger"]);
+});

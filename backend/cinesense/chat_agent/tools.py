@@ -108,6 +108,28 @@ class ToolKit:
             "criteria_changed": True,
         }, f"Person set to {resolved}: {len(scores)} films in the catalogue."
 
+    def exclude_people(self, state: dict, names: list[str], replace: bool = False) -> tuple[dict, str]:
+        """ "Without Stallone": their films drop out of the search. Names are stored as the catalogue spells them."""
+        c = self._criteria(state)
+        current = [] if replace else list(c.exclude_people)
+        missing = []
+        for name in names:
+            found = self.provider.search_person(name, "any")[1]
+            if not found:
+                missing.append(name)
+                continue
+            resolved = next(iter(found.values()))
+            if resolved not in current:
+                current.append(resolved)
+        update = {"exclude_people": current[-5:]}
+        if c.person and c.person in current:  # excluding the wanted person: no longer wanted
+            update["person"] = None
+        c = c.model_copy(update=update)
+        msg = f"Excluded people now: {', '.join(c.exclude_people) or 'none'}."
+        if missing:
+            msg += f" Not found in the catalogue: {', '.join(missing)}."
+        return {"criteria": c.model_dump(), "criteria_changed": True}, msg
+
     def find_title(self, state: dict, title: str) -> tuple[dict, str]:
         """A film asked for by name. The search also looks the title up live when the catalogue has no good match
         (e.g. "Winnetou": no Tag Genome data, so not in the catalogue) and imports what it finds."""
@@ -235,6 +257,17 @@ def make_tools(kit: ToolKit) -> list:
         return wrap(*kit.search_plot(state, query), tool_call_id)
 
     @tool
+    def exclude_people(
+        names: list[str],
+        state: Annotated[dict, InjectedState],
+        tool_call_id: Annotated[str, InjectedToolCallId],
+        replace: bool = False,
+    ) -> Command:
+        """Exclude actors or directors: their films drop out ("without Stallone"). Typos are fine. replace=true
+        sets the list to exactly these names (an empty list clears it)."""
+        return wrap(*kit.exclude_people(state, names, replace), tool_call_id)
+
+    @tool
     def find_title(
         title: str, state: Annotated[dict, InjectedState], tool_call_id: Annotated[str, InjectedToolCallId]
     ) -> Command:
@@ -303,6 +336,7 @@ def make_tools(kit: ToolKit) -> list:
         search_plot,
         find_title,
         find_person,
+        exclude_people,
         similar_to,
         check_streaming,
         film_facts,

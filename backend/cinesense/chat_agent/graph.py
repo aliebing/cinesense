@@ -48,6 +48,8 @@ def criteria_summary(criteria: dict, tags: list[str]) -> str:
             out.append(f"{field}: {getattr(c, field)}")
     if c.exclude_genres:
         out.append(f"exclude genres: {', '.join(c.exclude_genres)}")
+    if c.exclude_people:
+        out.append(f"without: {', '.join(c.exclude_people)}")
     return "; ".join(out) or "(empty)"
 
 
@@ -282,6 +284,7 @@ TOOL_STATUS = {
     "find_title": "Looking up the title…",
     "find_person": "Looking up people…",
     "similar_to": "Finding similar moods…",
+    "exclude_people": "Leaving people out…",
     "check_streaming": "Checking streaming in Germany…",
     "film_facts": "Reading film facts…",
     "propose_exclusions": "Suggesting exclusions…",

@@ -10,7 +10,7 @@ export default function MoodSummary({ tags, criteria, hiddenCount = 0 }: { tags:
   const name = new Map(tags.map((t) => [t.idx, t.tag]));
   const label = (idx: number) => name.get(idx) ?? `tag ${idx}`;
   const mood = criteria.tags.filter((t) => t.mode !== "not");
-  const excluded = [...criteria.tags.filter((t) => t.mode === "not").map((t) => label(t.idx)), ...criteria.exclude_genres.map((g) => `${g} (genre)`)];
+  const excluded = [...criteria.tags.filter((t) => t.mode === "not").map((t) => label(t.idx)), ...criteria.exclude_genres.map((g) => `${g} (genre)`), ...(criteria.exclude_people ?? [])];
   const filters = filterChips(criteria);
   const empty = mood.length === 0 && excluded.length === 0 && filters.length === 0;
 

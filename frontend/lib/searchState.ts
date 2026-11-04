@@ -13,6 +13,7 @@ export type Criteria = {
   person: string | null;
   person_role: "cast" | "director" | "any";
   exclude_genres: string[];
+  exclude_people: string[]; // "without Stallone": their films drop out (at most 5)
   world_id: string | null;
   availability: "cinema" | "stream" | "any";
   kind: "film" | "documentary" | "any";
@@ -32,6 +33,7 @@ export function emptyCriteria(): Criteria {
     person: null,
     person_role: "any",
     exclude_genres: [],
+    exclude_people: [],
     world_id: null,
     availability: "any",
     kind: "any",

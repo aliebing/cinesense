@@ -20,6 +20,7 @@
   {"id": "person-01", "category": "person", "turns": ["Films with Keanu Reeves"], "expect": {"tools_any": ["find_person"], "person": "Keanu Reeves"}},
   {"id": "person-02", "category": "person", "turns": ["Something directed by Christopher Nolan"], "expect": {"tools_any": ["find_person"], "person": "Christopher Nolan"}},
   {"id": "person-03", "category": "person", "turns": ["films with keanu reevs"], "expect": {"tools_any": ["find_person"], "person": "Keanu Reeves"}},
+  {"id": "person-04", "category": "person", "turns": ["Action films like the ones with Sylvester Stallone and Arnold Schwarzenegger, but without Stallone and Schwarzenegger"], "expect": {"tools_any": ["exclude_people"], "exclude_people": ["Sylvester Stallone", "Arnold Schwarzenegger"]}},
   {"id": "plot-01", "category": "plot", "turns": ["An astronaut stranded alone on a planet has to survive"], "expect": {"tools_any": ["search_plot"], "titles_any": ["The Martian", "Moon", "Robinson Crusoe on Mars", "Interstellar", "Cast Away"]}},
   {"id": "plot-02", "category": "plot", "turns": ["A heist in Berlin"], "expect": {"tools_any": ["search_plot"]}},
   {"id": "conflict-01", "category": "conflict", "turns": ["Something really scary but also relaxing and cozy"], "expect": {"tools_any": ["set_mood_tags"], "results_required": false}},

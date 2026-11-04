@@ -73,7 +73,7 @@ export default function SearchChips({ tags, criteria, onChange, hiddenCount = 0,
     if (n === undefined) return null;
     return (
       <span className={`crit__note ${n === 0 ? "crit__note--idle" : ""}`}>
-        {n === 0 ? `none of these films are ${what}: changes nothing` : `hides ${n} film${n === 1 ? "" : "s"} here`}
+        {n === 0 ? `none of these films are ${key.startsWith("person:") ? "with " : ""}${what}: changes nothing` : `hides ${n} film${n === 1 ? "" : "s"} here`}
       </span>
     );
   };
@@ -164,7 +164,7 @@ export default function SearchChips({ tags, criteria, onChange, hiddenCount = 0,
           </span>
         )}
       </div>
-      {(excluded.length > 0 || criteria.exclude_genres.length > 0) && (
+      {(excluded.length > 0 || criteria.exclude_genres.length > 0 || criteria.exclude_people.length > 0) && (
         <>
           <h3 className="chips-heading">Excluded</h3>
           <ul className="criteria-list">
@@ -192,6 +192,24 @@ export default function SearchChips({ tags, criteria, onChange, hiddenCount = 0,
                   </button>
                 </div>
                 {effect(`genre:${g}`, g)}
+              </li>
+            ))}
+            {criteria.exclude_people.map((p) => (
+              <li key={p} className="crit chip chip--excluded">
+                <div className="crit__head">
+                  <span className="crit__name">
+                    🚫 <s>{p}</s>
+                  </span>
+                  <button
+                    type="button"
+                    className="crit__x"
+                    aria-label={`Remove excluded person ${p}`}
+                    onClick={() => onChange({ ...criteria, exclude_people: criteria.exclude_people.filter((x) => x !== p) })}
+                  >
+                    ×
+                  </button>
+                </div>
+                {effect(`person:${p}`, p)}
               </li>
             ))}
           </ul>
