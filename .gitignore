@@ -13,8 +13,8 @@ wheels/
 .env
 .superpowers/
 
-# Demo video output (scripts/video)
-scripts/video/out/
+# Demo video output (docs/video)
+docs/video/out/
 
 # Personal prompt drafts (not part of the project)
 prompt.txt

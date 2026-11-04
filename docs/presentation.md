@@ -38,7 +38,7 @@ Framing: **SCR** (Situation → Complication → Resolution). Each section is ab
 - **36 scenarios**, run through the real agent and catalogue:
   - mood, "like X", runtime, exclusions, documentaries, people, plot, conflicts, follow-ups, facts, ambiguous wishes
   - 4 injected failures: streaming down, budget exhausted, embeddings down, unknown person
-- **Automatic results** (`eval/REPORT.md`, k/n over scenarios that define each check):
+- **Automatic results** (`evaluation/REPORT.md`, k/n over scenarios that define each check):
   - 36/36 pass
   - constraints 19/19
   - tool selection 35/35

@@ -1,0 +1,5 @@
+# API image context (backend/): only pyproject.toml, uv.lock, cinesense/ and entrypoint.sh are copied
+.venv
+tests
+scripts
+**/__pycache__

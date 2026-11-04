@@ -1,0 +1,49 @@
+"""Postgres connections: one pool per URL, pgvector registered, search_path set to the cinesense schema."""
+
+from contextlib import contextmanager
+from threading import Lock
+
+import psycopg
+from pgvector.psycopg import register_vector
+from psycopg_pool import ConnectionPool
+
+from cinesense.core.config import REPO_ROOT
+
+SCHEMA_PATH = REPO_ROOT / "database" / "schema.sql"
+_pools: dict[str, ConnectionPool] = {}
+_lock = Lock()
+
+
+def _configure(conn: psycopg.Connection) -> None:
+    register_vector(conn)
+    conn.commit()
+
+
+def get_pool(url: str) -> ConnectionPool:
+    """One shared pool per database URL (Supabase connections are expensive to open)."""
+    with _lock:
+        pool = _pools.get(url)
+        if pool is None:
+            pool = ConnectionPool(
+                url,
+                min_size=1,
+                max_size=8,
+                kwargs={"connect_timeout": 15, "options": "-c search_path=cinesense,public"},
+                configure=_configure,
+                open=True,
+            )
+            _pools[url] = pool
+        return pool
+
+
+@contextmanager
+def connect(url: str):
+    """A pooled Postgres connection with the pgvector adapter and the cinesense search_path."""
+    with get_pool(url).connection() as conn:
+        yield conn
+
+
+def init_schema(url: str) -> None:
+    with psycopg.connect(url, connect_timeout=15) as conn:
+        conn.execute(SCHEMA_PATH.read_text(encoding="utf-8"))
+        conn.commit()

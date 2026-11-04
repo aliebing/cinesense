@@ -8,44 +8,48 @@ CineSense ("Don't choose a movie. Choose a feeling.") is a Turing College AI Eng
 
 The approved design is in `docs/superpowers/specs/2026-10-29-cinesense-design.md`. Read it before changing behaviour or look. Implementation plans and the 4-week roadmap are in `docs/superpowers/plans/`. Approved mockups are in `docs/superpowers/specs/mockups/`.
 
-The grading briefs are `turing-college-capstone.md` and `turing-college-sprint4.md`.
+The grading briefs are in `docs/brief/` (`turing-college-capstone.md`, `turing-college-sprint4.md`). `ARCHITECTURE.md` is the reviewer-facing map of the code; keep it true when moving things.
 
 ## Conventions
 
 - **Language:** UI text, code, identifiers, comments, commits and docs are all English. Talk to the user in German.
-- **Look:** dark only, on a matte near-black ground, with fog and light on every page. The main stage is a wide (~2.25:1) cinema screen with letterbox bars and solid red side curtains; tune via the CSS variables at the top of `web/app/globals.css`. Text must stay readable over all effects.
+- **Look:** dark only, on a matte near-black ground, with fog and light on every page. The main stage is a wide (~2.25:1) cinema screen with letterbox bars and solid red side curtains; tune via the CSS variables at the top of `frontend/app/globals.css`. Text must stay readable over all effects.
 - **Data:** never fabricate film facts. **No TMDB** (its terms forbid AI apps). Sources: MovieLens (local file, never commit it), Wikidata, Wikipedia, Streaming Availability API (1,000 req/month — every call goes through the cache/budget guard), optional YouTube Data API (95 searches/day).
-- **External services** stay behind adapters (`src/cinesense/providers/`). Tests run offline on fixtures.
+- **External services** stay behind adapters (`backend/cinesense/data_sources/`). Tests run offline on fixtures.
 
 ## Layout
 
-- `src/cinesense/`: Python backend (FastAPI)
-  - `domain/`: models and the six mood worlds
-  - `providers/`: data sources
-  - `recommend/`, `search/`: filtering and ranking (deterministic)
-  - `agent/`: LangGraph chat agent (tools write the shared criteria; grounding check on replies)
-  - `ingest/`: catalogue build
-  - `api/`: HTTP layer
-- `tests/`: pytest
-- `web/`: Next.js frontend (App Router, TypeScript, Tailwind, Vitest)
+- `backend/`: Python backend (FastAPI, uv project: `pyproject.toml`, `.venv`). Package `cinesense/`, one folder per role; `tests/` mirrors the folders.
+  - `core/`: films, search criteria, mood worlds, tag relevance, settings (no I/O)
+  - `data_sources/`: adapters to Postgres (+ offline fixture), streaming, live search, Wikidata, Wikipedia, embeddings, YouTube
+  - `search/`: deterministic ranking and widening; `taste/`: 👍/👎 profile
+  - `catalog_import/`: offline catalogue build
+  - `chat_agent/`: LangGraph agent (tools write the shared criteria; guard on input, grounding check on replies)
+  - `web_api/`: HTTP layer; `deps.py` wires the adapters
+  - `evaluation/`: scenarios, checks, judge, baselines
+  - Layers only import downwards; `tests/test_architecture.py` enforces the allowed map.
+- `frontend/`: Next.js (App Router, TypeScript, Tailwind, Vitest)
+- `database/`: `schema.sql` and the local Supabase (`database/supabase/`)
+- `evaluation/`: `scenarios.json`, `results/`, `REPORT.md` (written by `make eval`)
+- `docs/`: design and plans, briefs, presentation, `video/` (recording scripts)
 
 ## Commands
 
 ```bash
-uv sync                                   # backend deps
+cd backend && uv sync                     # backend deps (Python commands run in backend/)
 make dev-api                              # FastAPI on :8000 (auto-reload)
 make dev-web                              # Next.js on :3000
 make test                                 # backend + frontend tests
-uv run pytest tests/test_api.py::test_health -v   # single backend test
-cd web && npx vitest run __tests__/TileRows.test.tsx  # single frontend test
+cd backend && uv run pytest tests/web_api/test_api.py::test_health -v   # single backend test
+cd frontend && npx vitest run __tests__/TileRows.test.tsx  # single frontend test
 make lint                                 # ruff + eslint
-uv run pytest -m db                       # tests against the Supabase catalogue (excluded by default)
+cd backend && uv run pytest -m db         # tests against the Supabase catalogue (excluded by default)
 make db-init                              # create/upgrade the cinesense schema
 MOVIELENS_DB_PATH=/home/ali/projects/turing/moviefinder/db/moviedoc.db make ingest  # resumable full ingest
-uv run --env-file .env python -m cinesense.ingest.billing  # cast billing from Wikipedia leads (resumable)
-uv run --env-file .env python -m cinesense.ingest.pipeline --no-films --no-plots --german-titles  # German titles from Wikidata
-uv run --env-file .env python -m cinesense.ingest.pipeline --no-films --no-plots --enrich-live    # Wikidata + plots for live imports
-uv run --env-file .env python -m cinesense.ingest.pipeline --no-films --no-plots --languages      # recheck original languages (~7 min)
+cd backend && uv run --env-file ../.env python -m cinesense.catalog_import.billing  # cast billing from Wikipedia leads (resumable)
+cd backend && uv run --env-file ../.env python -m cinesense.catalog_import.pipeline --no-films --no-plots --german-titles  # German titles from Wikidata
+cd backend && uv run --env-file ../.env python -m cinesense.catalog_import.pipeline --no-films --no-plots --enrich-live    # Wikidata + plots for live imports
+cd backend && uv run --env-file ../.env python -m cinesense.catalog_import.pipeline --no-films --no-plots --languages      # recheck original languages (~7 min)
 ```
 
 ## Services (`.env`, see `.env.example`)
@@ -55,9 +59,9 @@ uv run --env-file .env python -m cinesense.ingest.pipeline --no-films --no-plots
 - LangSmith tracing (EU endpoint)
 - Streaming Availability API (`STREAMING_AVAILABILITY_API_KEY`, base `https://api.movieofthenight.com/v4`, header `X-API-Key`)
 - YouTube Data API (`YOUTUBE_API_KEY`, optional)
-- Own local Supabase (`supabase/config.toml`, project `CineSense`, DB on port 55322, Studio 55323; `make up` / `make down`). The migration in `supabase/migrations/` is a symlink to `db/schema.sql`. All tables live in the `cinesense` schema (`search_path` is set in `cinesense.db.connect`).
+- Own local Supabase (`database/supabase/config.toml`, project `CineSense`, DB on port 55322, Studio 55323; `make up` / `make down`, which pass `--workdir database` to the Supabase CLI). The migration in `database/supabase/migrations/` is a symlink to `database/schema.sql`. All tables live in the `cinesense` schema (`search_path` is set in `cinesense.data_sources.db.connect`).
 
 ## Gotchas
 
-- The Next.js 16 dev server (Turbopack) sometimes keeps serving a stale `globals.css`. If a CSS change doesn't show, stop the server, delete `web/.next` and restart.
-- Routes use English world ids (`/world/suspense`, `/world/comedy`, …) from `src/cinesense/domain/worlds.py`.
+- The Next.js 16 dev server (Turbopack) sometimes keeps serving a stale `globals.css`. If a CSS change doesn't show, stop the server, delete `frontend/.next` and restart.
+- Routes use English world ids (`/world/suspense`, `/world/comedy`, …) from `backend/cinesense/core/worlds.py`.

@@ -1,21 +1,20 @@
-# `make up` (starts the local Supabase from supabase/, then this), then open http://localhost:8080
+# `make up` (starts the local Supabase from database/supabase/, then this), then open http://localhost:8080
 # Needs a .env with the Supabase / OpenRouter / Streaming Availability keys (see .env.example). The catalogue is the
-# project's own Supabase (supabase/, started by `make up`) or a cloud Supabase, so there is no database container here.
+# project's own Supabase (database/supabase/, started by `make up`) or a cloud Supabase, so there is no database container here.
 services:
   api:
     build:
-      context: .
-      dockerfile: docker/api.Dockerfile
+      context: ./backend
     env_file:
       - path: .env
         required: false
     extra_hosts:
-      - "host.docker.internal:host-gateway" # a local Supabase on the host (see docker/api-entrypoint.sh)
+      - "host.docker.internal:host-gateway" # a local Supabase on the host (see backend/entrypoint.sh)
     restart: unless-stopped
 
   web:
     build:
-      context: ./web
+      context: ./frontend
       args:
         NEXT_PUBLIC_API_URL: "" # same origin: the browser calls /api on :8080
     depends_on:
@@ -27,7 +26,7 @@ services:
     ports:
       - "127.0.0.1:8080:8080"
     volumes:
-      - ./docker/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - api
       - web
