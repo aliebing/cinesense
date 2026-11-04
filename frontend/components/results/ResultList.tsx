@@ -9,7 +9,7 @@ import type { Movie, RankedMovie } from "@/lib/types";
 // the row shows the short list: every film within CLOSE_GAP points of the best match, at least MIN_SHOWN, at most LIMIT
 const LIMIT = 50;
 const MIN_SHOWN = 3;
-const CLOSE_GAP = 20;
+const CLOSE_GAP = 30;
 const count = new Intl.NumberFormat("en-US");
 
 type Props = {
