@@ -6,10 +6,11 @@ import { search, type DiscoverResult, type Relaxation } from "@/lib/api";
 import type { Criteria } from "@/lib/searchState";
 import type { Movie, RankedMovie } from "@/lib/types";
 
-// the row shows the short list: every film within CLOSE_GAP points of the best match, at least MIN_SHOWN, at most LIMIT
+// the row shows every film matching at least MIN_PERCENT, at least the MIN_SHOWN best, at most LIMIT. A fixed bar, not a
+// gap to the best match: another tag lowers every score, and a gap would then let in more films instead of fewer
 const LIMIT = 50;
 const MIN_SHOWN = 3;
-const CLOSE_GAP = 30;
+const MIN_PERCENT = 60;
 const count = new Intl.NumberFormat("en-US");
 
 type Props = {
@@ -109,7 +110,7 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
         {widen}
       </>
     );
-  const shown = items.filter((r, i) => i < MIN_SHOWN || r.match_percent >= items[0].match_percent - CLOSE_GAP);
+  const shown = items.filter((r, i) => i < MIN_SHOWN || r.match_percent >= MIN_PERCENT);
   const label = (
     <>
       {total > shown.length ? `The ${shown.length} best matches` : `${count.format(total)} matches in the CineSense catalogue`}
