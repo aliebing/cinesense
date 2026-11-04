@@ -82,6 +82,7 @@ class SearchService:
             sig.tag_relevance = {fid: {i: float(vectors[row][i]) for i in idxs} for row, fid in enumerate(top_ids)}
         page = combined_rank([r.movie for r in result.items], c, sig, hidden_by_tags=0, offset=offset, limit=window)
         page.hidden_by_exclusion = result.hidden_by_exclusion
+        page.hidden_by = result.hidden_by
         for r in page.items:  # callers fill images/streaming on the page; never mutate the shared catalogue
             r.movie = r.movie.model_copy(deep=True)
         page.extended_used = extended_used
@@ -131,8 +132,8 @@ class SearchService:
                 restrict |= set(sig.plot)
 
         if tags_filter_hits and restrict:
-            restrict, hidden_here, sig.tags = _tags_on_hits(p, c, restrict)
-            hidden += hidden_here
+            restrict, sig.hidden_by_tag, sig.tags = _tags_on_hits(p, c, restrict)
+            hidden += sum(sig.hidden_by_tag.values())
 
         if profile is not None:
             sig.disliked = set(profile.disliked)
@@ -198,13 +199,14 @@ class SearchService:
         return page
 
 
-def _tags_on_hits(p, c: SearchCriteria, hits: set[str]) -> tuple[set[str], int, dict[str, float] | None]:
-    """Mood tags applied to films a text signal found: not-tags hide (counted), must-tags narrow, prefer and must
-    weights give the tag score for ranking. A film without Tag Genome data (NaN) is never hidden by a not-tag,
+def _tags_on_hits(p, c: SearchCriteria, hits: set[str]) -> tuple[set[str], dict[int, int], dict[str, float] | None]:
+    """Mood tags applied to films a text signal found: not-tags hide (counted per tag), must-tags narrow, prefer
+    and must weights give the tag score for ranking. A film without Tag Genome data (NaN) is never hidden by a not-tag,
     cannot prove a must-tag, and scores 0."""
     ids = sorted(hits)
     vectors = p.tag_vectors(ids)
-    excluded = {fid for row, fid in enumerate(ids) if any(vectors[row][t] >= NOT_THRESHOLD for t in c.not_tags())}
+    hides = {t: {fid for row, fid in enumerate(ids) if vectors[row][t] >= NOT_THRESHOLD} for t in c.not_tags()}
+    excluded = set().union(*hides.values())
     lacking = {fid for row, fid in enumerate(ids) if not all(vectors[row][t] >= MUST_THRESHOLD for t in c.must_tags())}
     kept = hits - excluded - lacking
     weights = c.prefer_weights()
@@ -216,7 +218,7 @@ def _tags_on_hits(p, c: SearchCriteria, hits: set[str]) -> tuple[set[str], int, 
             fid: sum(w / total * float(np.nan_to_num(vectors[rows[fid]][t])) for t, w in weights.items())
             for fid in kept
         }
-    return kept, len(excluded), scores
+    return kept, {t: len(f) for t, f in hides.items()}, scores
 
 
 _taste_cache: dict[tuple, dict[str, float] | None] = {}

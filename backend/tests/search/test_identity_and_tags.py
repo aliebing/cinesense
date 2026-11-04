@@ -105,3 +105,14 @@ def test_live_hits_must_match_person_and_title_together(make_movie):
     assert "wd-speed3" in found  # in both live searches
     assert "wd-metal" not in found  # title only
     assert "wd-gravity" not in found  # person only
+
+
+def test_each_exclusion_says_how_many_films_it_hides_here(make_movie):
+    c = SearchCriteria(
+        person="Sandra Bullock",
+        title="Speed",
+        exclude_genres=["Horror"],
+        tags=[TagCriterion(idx=DARK, weight=6, mode="not")],
+    )
+    page = SearchService(catalogue(make_movie)).run(c)
+    assert page.hidden_by == {"tag:2": 1, "genre:Horror": 0}  # Speed 2 is too dark; no horror among the hits

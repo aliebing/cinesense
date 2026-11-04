@@ -80,3 +80,22 @@ it("the tag picker says so when nothing fits", async () => {
   await userEvent.type(screen.getByRole("searchbox", { name: "Find a mood tag" }), "zzzz");
   expect(screen.getByText("No mood tag like that")).toBeInTheDocument();
 });
+
+it("each exclusion says what it hides in this search, and when it hides nothing", () => {
+  render(
+    <SearchChips
+      tags={tags}
+      criteria={{ ...emptyCriteria(), tags: [{ idx: 0, weight: 6, mode: "not" }], exclude_genres: ["Horror", "Western"] }}
+      onChange={() => {}}
+      hiddenBy={{ "tag:0": 3, "genre:Horror": 0, "genre:Western": 1 }}
+    />,
+  );
+  expect(screen.getByText("hides 3 films here")).toBeInTheDocument();
+  expect(screen.getByText("hides 1 film here")).toBeInTheDocument();
+  expect(screen.getByText("none of these films are Horror: changes nothing")).toBeInTheDocument();
+});
+
+it("an exclusion without a count shows no note", () => {
+  render(<SearchChips tags={tags} criteria={{ ...emptyCriteria(), exclude_genres: ["Horror"] }} onChange={() => {}} />);
+  expect(screen.queryByText(/changes nothing|hides/)).toBeNull();
+});

@@ -24,6 +24,7 @@ class Signals:
     person_names: dict[str, str] = field(default_factory=dict)
     profile: dict[str, float] | None = None  # film id -> taste match (raw)
     disliked: set[str] = field(default_factory=set)  # 👎 films: hidden and counted
+    hidden_by_tag: dict[int, int] = field(default_factory=dict)  # not-tag idx -> films it hid (where counted)
 
 
 @dataclass
@@ -34,6 +35,7 @@ class CombinedResult:
     extended_used: bool = False
     corrected_person: str | None = None  # the name a misspelt person search found (autocorrect)
     corrected_title: str | None = None
+    hidden_by: dict[str, int] = field(default_factory=dict)  # "genre:Horror" / "tag:284" -> films it hid here
 
 
 def _normalised(values: dict[str, float]) -> dict[str, float]:
@@ -75,10 +77,17 @@ def combined_rank(
 ) -> CombinedResult:
     excluded = {g.lower() for g in criteria.exclude_genres}
     hidden = hidden_by_tags
+    # what each exclusion hides in this search, so the UI can say "hides nothing here" (no horror with this actor)
+    hidden_by = {f"tag:{t}": n for t, n in signals.hidden_by_tag.items()}
+    hidden_by |= {f"genre:{g}": 0 for g in criteria.exclude_genres}
     kept: list[Movie] = []
     for m in movies:
-        if m.id in signals.disliked or (excluded and any(g.lower() in excluded for g in m.genres)):
+        genres = {g.lower() for g in m.genres}
+        if m.id in signals.disliked or (excluded and genres & excluded):
             hidden += 1
+            for g in criteria.exclude_genres:
+                if g.lower() in genres:
+                    hidden_by[f"genre:{g}"] += 1
             continue
         if _passes(m, criteria):
             kept.append(m)
@@ -116,7 +125,9 @@ def combined_rank(
             )
         )
     ranked.sort(key=lambda r: (r.score, r.movie.ml_rating_count), reverse=True)
-    return CombinedResult(items=ranked[offset : offset + limit], total=len(ranked), hidden_by_exclusion=hidden)
+    return CombinedResult(
+        items=ranked[offset : offset + limit], total=len(ranked), hidden_by_exclusion=hidden, hidden_by=hidden_by
+    )
 
 
 def _popularity(count: int) -> float:

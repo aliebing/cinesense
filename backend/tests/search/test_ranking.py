@@ -200,3 +200,13 @@ def test_a_title_search_keeps_sound_alikes_when_nothing_better_matches(make_movi
 
     res = SearchService(Prov([make_movie(id="incep", title="Inception")])).run(SearchCriteria(title="Incepshun"), 0, 20)
     assert [r.movie.id for r in res.items] == ["incep"]  # a typo still finds the film
+
+
+def test_each_genre_exclusion_counts_the_films_it_hides(make_movie):
+    movies = [
+        make_movie(id="a", genres=["Horror"]),
+        make_movie(id="b", genres=["Horror", "Comedy"]),
+        make_movie(id="c"),
+    ]
+    res = combined_rank(movies, SearchCriteria(exclude_genres=["Horror", "Western"]), Signals())
+    assert res.hidden_by == {"genre:Horror": 2, "genre:Western": 0}

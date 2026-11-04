@@ -443,6 +443,8 @@
 .tag-picker button { font: inherit; text-align: left; color: #fff; background: none; border: 0; padding: .3em .5em; border-radius: 6px; cursor: pointer; }
 .tag-picker button:hover, .tag-picker button:focus-visible { background: #ffffff18; }
 .chips-hidden { margin: .6em 0 0; font-size: .85em; color: #ffb3b3; }
+.crit__note { display: block; margin-top: .35em; font-size: .78em; color: #ffb3b3; }
+.crit__note--idle { color: var(--muted); font-style: italic; }
 .criteria-panel .chat-results { width: 100%; margin-top: .9em; }
 /* results page: the panel spans the page, the settings sit side by side */
 .results-page .criteria-list { flex-direction: row; flex-wrap: wrap; }

@@ -17,6 +17,7 @@ export default function ResultsPage() {
   const [criteria, setCriteria] = useSearchState();
   const [tags, setTags] = useState<Tag[]>([]);
   const [hidden, setHidden] = useState(0);
+  const [hiddenBy, setHiddenBy] = useState<Record<string, number> | undefined>(undefined);
   const [showAdvanced, setShowAdvanced] = useState(false);
   // a widening chosen on this page: the original criteria and what was widened (any other change ends it)
   const [widened, setWidened] = useState<{ from: Criteria; labels: string[] } | null>(null);
@@ -37,6 +38,7 @@ export default function ResultsPage() {
   }, []);
   const onMeta = useCallback((m: Omit<DiscoverResult, "items">) => {
     setHidden(m.hidden_by_exclusion);
+    setHiddenBy(m.hidden_by);
     // autocorrect: a misspelt person or title becomes the name the search found ("sandra bullok" -> "Sandra Bullock")
     const patch: Partial<Criteria> = {};
     if (m.corrected_person) patch.person = m.corrected_person;
@@ -66,7 +68,7 @@ export default function ResultsPage() {
             }}
           />
         )}
-        <SearchChips tags={tags} criteria={criteria} onChange={change} hiddenCount={hidden} />
+        <SearchChips tags={tags} criteria={criteria} onChange={change} hiddenCount={hidden} hiddenBy={hiddenBy} />
         <ResultList criteria={criteria} onOpen={open} onMeta={onMeta} onRelax={relax} widened={widened} />
       </div>
     </CinemaFrame>

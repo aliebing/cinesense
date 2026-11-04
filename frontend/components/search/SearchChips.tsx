@@ -10,6 +10,8 @@ type Props = {
   criteria: Criteria;
   onChange: (c: Criteria) => void;
   hiddenCount?: number;
+  /** per exclusion ("genre:Horror", "tag:284"): how many films it hid in the current search */
+  hiddenBy?: Record<string, number>;
   /** extra content at the bottom of the panel, e.g. a "Show results" button */
   children?: React.ReactNode;
 };
@@ -40,7 +42,7 @@ export function filterChips(criteria: Criteria): FilterChip[] {
 
 /** The visible search state as a labelled settings panel: one block per mood tag (stars for weight,
  *  prefer / must / exclude), then exclusions, people and filters. */
-export default function SearchChips({ tags, criteria, onChange, hiddenCount = 0, children }: Props) {
+export default function SearchChips({ tags, criteria, onChange, hiddenCount = 0, hiddenBy, children }: Props) {
   const [picking, setPicking] = useState(false);
   const [query, setQuery] = useState("");
   const name = useMemo(() => new Map(tags.map((t) => [t.idx, t.tag])), [tags]);
@@ -64,6 +66,17 @@ export default function SearchChips({ tags, criteria, onChange, hiddenCount = 0,
   const mood = criteria.tags.filter((t) => t.mode !== "not");
   const excluded = criteria.tags.filter((t) => t.mode === "not");
   const others = filterChips(criteria);
+
+  // what an exclusion does in this search: "hides 3 films here", or that it changes nothing
+  const effect = (key: string, what: string) => {
+    const n = hiddenBy?.[key];
+    if (n === undefined) return null;
+    return (
+      <span className={`crit__note ${n === 0 ? "crit__note--idle" : ""}`}>
+        {n === 0 ? `none of these films are ${what}: changes nothing` : `hides ${n} film${n === 1 ? "" : "s"} here`}
+      </span>
+    );
+  };
 
   const modeSwitch = (t: TagCriterion, label: string) => (
     <div className="crit__modes" role="group" aria-label={`Mode for ${label}`}>
@@ -160,6 +173,7 @@ export default function SearchChips({ tags, criteria, onChange, hiddenCount = 0,
               return (
                 <li key={t.idx} className="crit chip chip--excluded">
                   {head(label, t.idx, true)}
+                  {effect(`tag:${t.idx}`, label)}
                   {modeSwitch(t, label)}
                 </li>
               );
@@ -177,6 +191,7 @@ export default function SearchChips({ tags, criteria, onChange, hiddenCount = 0,
                     ×
                   </button>
                 </div>
+                {effect(`genre:${g}`, g)}
               </li>
             ))}
           </ul>

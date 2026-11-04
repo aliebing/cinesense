@@ -342,3 +342,8 @@ def test_misses_name_moods_the_film_has_no_data_for():
     res = client(provider=p).post("/api/search", json=body).json()["items"]
     items = {i["movie"]["title"]: i["misses"] for i in res}
     assert items["Shrek"] == ["no mood data for 'funny'"] and items["Toy Story"] == []
+
+
+def test_search_reports_what_each_exclusion_hides():
+    r = client().post("/api/search", json={"criteria": {"person": "Keanu Reeves", "exclude_genres": ["Horror"]}})
+    assert r.json()["hidden_by"] == {"genre:Horror": 0}

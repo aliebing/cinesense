@@ -62,6 +62,7 @@ class DiscoverResponse(BaseModel):
     extended_used: bool = False
     corrected_person: str | None = None  # autocorrect: the person / title a misspelt search found
     corrected_title: str | None = None
+    hidden_by: dict[str, int] = Field(default_factory=dict)  # per exclusion ("genre:Horror", "tag:284"): films hidden
     relaxations: list[RelaxationOut] = Field(default_factory=list)  # ways to widen a thin search (/api/search)
 
 
@@ -151,6 +152,7 @@ def create_app(load_env: bool = True) -> FastAPI:
             extended_used=res.extended_used,
             corrected_person=res.corrected_person,
             corrected_title=res.corrected_title,
+            hidden_by=res.hidden_by,
         )
 
     @app.post("/api/discover")

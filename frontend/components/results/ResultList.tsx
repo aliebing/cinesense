@@ -52,6 +52,7 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
         extended_used: r.data.extended_used,
         corrected_person: r.data.corrected_person,
         corrected_title: r.data.corrected_title,
+        hidden_by: r.data.hidden_by,
       });
     }, 300);
     return () => {

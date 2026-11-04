@@ -46,6 +46,7 @@ export type DiscoverResult = {
   extended_used: boolean;
   corrected_person?: string | null; // autocorrect: the person / title a misspelt search found
   corrected_title?: string | null;
+  hidden_by?: Record<string, number>; // per exclusion ("genre:Horror", "tag:284"): films it hid in this search
   relaxations?: Relaxation[];
 };
 
