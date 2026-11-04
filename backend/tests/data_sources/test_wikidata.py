@@ -1,9 +1,12 @@
+import asyncio
 from datetime import date
 
 import httpx
 import respx
 
 from cinesense.data_sources.wikidata import SPARQL_URL, fetch_wikidata, fold_bindings
+
+_real_sleep = asyncio.sleep
 
 
 def b(**kw):
@@ -139,3 +142,34 @@ async def test_fetch_people_by_wikidata_id():
         out = await fetch_people(["Q105598"], client)
     assert out["Q105598"].directors == ["John McTiernan"]
     assert out["Q105598"].cast == ["Bruce Willis", "Alan Rickman"]
+
+
+@respx.mock
+async def test_a_timeout_is_retried(monkeypatch):
+    from cinesense.data_sources import wikidata
+
+    monkeypatch.setattr(wikidata.asyncio, "sleep", lambda s: _real_sleep(0))
+    route = respx.post(SPARQL_URL).mock(
+        side_effect=[httpx.ReadTimeout("slow"), httpx.Response(200, json={"results": {"bindings": ROWS}})]
+    )
+    async with httpx.AsyncClient() as client:
+        assert await wikidata._sparql(client, "q") == ROWS
+    assert route.call_count == 2
+
+
+@respx.mock
+async def test_fetch_people_skips_a_batch_that_keeps_failing(monkeypatch):
+    from cinesense.data_sources import wikidata
+
+    monkeypatch.setattr(wikidata.asyncio, "sleep", lambda s: _real_sleep(0))
+    good = [b(film="http://www.wikidata.org/entity/Q2", cast="Bruce Willis")]
+
+    def answer(request):
+        if b"Q1" in request.content:
+            raise httpx.ReadTimeout("slow")
+        return httpx.Response(200, json={"results": {"bindings": good}})
+
+    respx.post(SPARQL_URL).mock(side_effect=answer)
+    async with httpx.AsyncClient() as client:
+        out = await wikidata.fetch_people(["Q1", "Q2"], client, batch=1)
+    assert list(out) == ["Q2"]

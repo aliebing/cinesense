@@ -2,11 +2,14 @@
 Films imported live (no MovieLens id) are looked up by IMDb id (P345) instead: German title, Wikipedia article."""
 
 import asyncio
+import logging
 from dataclasses import dataclass, field
 from datetime import date
 from urllib.parse import unquote
 
 import httpx
+
+log = logging.getLogger(__name__)
 
 SPARQL_URL = "https://query.wikidata.org/sparql"
 USER_AGENT = "CineSense-capstone/0.1 (https://github.com/aliebing; student project) httpx"
@@ -165,7 +168,13 @@ def fold_bindings(rows: list[dict], key: str = "ml") -> dict:
 
 async def _sparql(client: httpx.AsyncClient, query: str, retries: int = 4) -> list[dict]:
     for attempt in range(retries):
-        r = await client.post(SPARQL_URL, data={"query": query}, headers=HEADERS, timeout=90)
+        try:
+            r = await client.post(SPARQL_URL, data={"query": query}, headers=HEADERS, timeout=90)
+        except httpx.TimeoutException:
+            if attempt == retries - 1:
+                raise
+            await asyncio.sleep(2**attempt * 3)
+            continue
         if r.status_code in (429, 500, 502, 503, 504):
             await asyncio.sleep(2**attempt * 3)
             continue
@@ -192,14 +201,19 @@ async def fetch_wikidata(
     return out
 
 
-async def fetch_people(qids: list[str], client: httpx.AsyncClient, batch: int = 150) -> dict[str, WikidataFilm]:
-    """Directors and cast by Wikidata id (WikidataFilm keyed by QID, only `directors` and `cast` filled)."""
+async def fetch_people(qids: list[str], client: httpx.AsyncClient, batch: int = 50) -> dict[str, WikidataFilm]:
+    """Directors and cast by Wikidata id (WikidataFilm keyed by QID, only `directors` and `cast` filled). A batch
+    that keeps failing is left out (its films keep their people) instead of failing the whole run."""
     out: dict[str, WikidataFilm] = {}
     sem = asyncio.Semaphore(3)
 
     async def one(chunk: list[str]) -> None:
         async with sem:
-            rows = await _sparql(client, _PEOPLE_BY_QID % " ".join(f"wd:{q}" for q in chunk))
+            try:
+                rows = await _sparql(client, _PEOPLE_BY_QID % " ".join(f"wd:{q}" for q in chunk))
+            except httpx.HTTPError as e:
+                log.warning("People: batch of %d films skipped (%s)", len(chunk), type(e).__name__)
+                return
         for f in fold_bindings(rows, key="film").values():
             out[f.wikidata_id] = f
 
