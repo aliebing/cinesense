@@ -170,3 +170,23 @@ it("clicking into the chat field already pauses the motion, before the first let
   expect(document.documentElement.hasAttribute("data-typing")).toBe(true);
   await userEvent.tab();
 });
+
+it("'Start over' clears the conversation, the search and the agent's memory (a new thread)", async () => {
+  streamChat.mockResolvedValue(final());
+  render(
+    <>
+      <ChatPanel mode="live" />
+      <CriteriaProbe />
+    </>,
+  );
+  expect(screen.queryByRole("button", { name: /Start over/ })).toBeNull(); // nothing to reset yet
+  await userEvent.type(screen.getByLabelText("Message CineSense"), "dark{enter}");
+  await screen.findByText("Here are dark picks.");
+  const before = streamChat.mock.calls[0][0].threadId;
+  await userEvent.click(screen.getByRole("button", { name: /Start over/ }));
+  expect(screen.queryByText("Here are dark picks.")).toBeNull();
+  expect(JSON.parse(screen.getByTestId("criteria").textContent!)).toEqual(emptyCriteria());
+  await userEvent.type(screen.getByLabelText("Message CineSense"), "funny{enter}");
+  await waitFor(() => expect(streamChat).toHaveBeenCalledTimes(2));
+  expect(streamChat.mock.calls[1][0].threadId).not.toBe(before);
+});

@@ -7,6 +7,7 @@ import {
   ChatError,
   getChatLog,
   replyPicks,
+  resetConversation,
   type Proposal,
   setChatStatus,
   streamChat,
@@ -14,7 +15,7 @@ import {
   useChatLog,
   useChatStatus,
 } from "@/lib/chat";
-import { useSearchState, withNoHorror } from "@/lib/searchState";
+import { emptyCriteria, hasAnyCriteria, useSearchState, withNoHorror } from "@/lib/searchState";
 import { noteTyping, stopTyping } from "@/lib/typingPause";
 import type { Movie } from "@/lib/types";
 
@@ -63,6 +64,13 @@ export default function ChatPanel({ mode, horrorIdx = null }: { mode: "static" |
       ),
     );
   };
+
+  const startOver = () => {
+    resetConversation();
+    setCriteria(emptyCriteria());
+    setDraft("");
+  };
+  const canReset = live && (entries.length > 0 || hasAnyCriteria(criteria));
 
   const openMovie = (m: Movie) => router.push(`/world/${m.world_ids[0] ?? "suspense"}?film=${m.id}`);
   const lastBot = entries.map((e) => e.role).lastIndexOf("bot");
@@ -171,6 +179,11 @@ export default function ChatPanel({ mode, horrorIdx = null }: { mode: "static" |
             {q.label}
           </button>
         ))}
+        {canReset && (
+          <button type="button" className="chat-reset" disabled={busy} onClick={startOver} title="Clear the chat and all search settings">
+            ↺ Start over
+          </button>
+        )}
       </div>
     </div>
   );

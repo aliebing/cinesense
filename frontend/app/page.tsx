@@ -92,9 +92,7 @@ export default function HomePage() {
           <button type="button" onClick={() => browse("stream")}>
             📺 Streaming
           </button>{" "}
-          · <Link href="/credits">Credits</Link> · {/* a plain link: a <Link> is prefetched, and the 401 of the login-protected /tech made the browser ask for
-              the login on the start page */}
-          <a href="/tech">Tech view</a> ·{" "}
+          · <Link href="/credits">Credits</Link> ·{" "}
           <button type="button" aria-label="Profile" aria-expanded={showProfile} onClick={() => setShowProfile((v) => !v)}>
             👤
           </button>

@@ -149,6 +149,17 @@ export function clearChatLog() {
   setChatLog([]);
 }
 
+/** "Start over": an empty log and a new thread, so the agent forgets the conversation as well. */
+export function resetConversation() {
+  try {
+    window.sessionStorage.removeItem(THREAD_KEY);
+  } catch {
+    /* memory only */
+  }
+  memoryThread = null;
+  clearChatLog();
+}
+
 // --- turn in flight, shared so a second panel (genre drawer) shows it and can't start another turn ---
 let status: string | null = null;
 

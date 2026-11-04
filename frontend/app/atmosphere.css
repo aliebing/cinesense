@@ -180,6 +180,8 @@
 .chat-chips { display: flex; flex-wrap: wrap; gap: .45em; margin-top: .7em; }
 .chat-chips button { font: inherit; font-size: .85em; padding: .35em .75em; border-radius: 999px; border: 1px solid #ffffff30; background: #ffffff0c; color: #fff; cursor: pointer; }
 .chat-chips button.is-on { border-color: var(--gold); background: #f3c76b26; color: var(--gold); }
+.chat-chips .chat-reset { margin-left: auto; border-color: transparent; background: none; opacity: .75; } /* quieter than the filters */
+.chat-chips .chat-reset:hover { opacity: 1; border-color: #ffffff30; }
 .chat-results { margin-top: .7em; }
 .chat-log { max-height: var(--chat-log-h, 15cqw); overflow-y: auto; margin-bottom: .4em; padding-right: .3em; scrollbar-width: thin; }
 .chat-msg p { margin: 0 0 .45em; } .chat-msg p:last-child { margin-bottom: 0; }
