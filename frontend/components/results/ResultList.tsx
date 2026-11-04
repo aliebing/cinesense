@@ -6,8 +6,7 @@ import { search, type DiscoverResult, type Relaxation } from "@/lib/api";
 import type { Criteria } from "@/lib/searchState";
 import type { Movie, RankedMovie } from "@/lib/types";
 
-const LIMIT = 48;
-const CLOSE_GAP = 10; // like the chat's picks: only films within this many points of the best match are shown // the row runs through the best matches; the header gives the real total
+const LIMIT = 8; // like the chat's picks: the row shows the best matches, the header gives the real total
 const count = new Intl.NumberFormat("en-US");
 
 type Props = {
@@ -107,12 +106,12 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
         {widen}
       </>
     );
-  // a person or a few prefer-tags still "match" every film of that person: show the ones that really fit
-  const shown = items.filter((r) => r.match_percent >= items[0].match_percent - CLOSE_GAP);
   const label = (
     <>
-      {count.format(total)} matches in the CineSense catalogue
-      {total > shown.length && <span className="related-hint"> · the {shown.length} best</span>}
+      {total > items.length ? `The ${items.length} best matches` : `${count.format(total)} matches in the CineSense catalogue`}
+      {total > items.length && (
+        <span className="related-hint"> · out of {count.format(total)} films that fit your filters</span>
+      )}
       {extended && <span className="results-extended"> · includes titles just added from Wikidata</span>}
     </>
   );
@@ -120,6 +119,7 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
     <>
       {note}
       {widen}
-      <RelatedRow items={shown} onSelect={onOpen} label={label} name="Results" showReasons busy={loading} drift={false} />    </>
+      <RelatedRow items={items} onSelect={onOpen} label={label} name="Results" showReasons busy={loading} drift={false} />
+    </>
   );
 }

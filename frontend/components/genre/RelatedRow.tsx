@@ -74,7 +74,10 @@ export default function RelatedRow({
     if (!view || typeof ResizeObserver === "undefined") return;
     const measure = () => {
       const el = track.current;
-      const card = (el?.children[0] as HTMLElement | undefined)?.offsetWidth ?? 0;
+      // the narrowest card is the normal width; a card widened by its trailer must not count (it made a
+      // fitting row flip into the loop and back while the trailer played)
+      const widths = el ? [...el.children].map((c) => (c as HTMLElement).offsetWidth).filter((w) => w > 0) : [];
+      const card = widths.length ? Math.min(...widths) : 0;
       if (!el || !card || !view.clientWidth) return setFits(null);
       const gap = parseFloat(getComputedStyle(el).columnGap) || 0;
       setFits(items.length * card + (items.length - 1) * gap <= view.clientWidth);

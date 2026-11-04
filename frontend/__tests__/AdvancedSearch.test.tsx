@@ -4,6 +4,10 @@ import { expect, it, vi } from "vitest";
 import AdvancedSearch from "@/components/search/AdvancedSearch";
 import { emptyCriteria } from "@/lib/searchState";
 
+// no suggestions unless a test sets some: typing 4+ letters in the first tests must not hit an empty mock
+const suggest = vi.fn(async () => ({ ok: true, data: [] as unknown[] }));
+vi.mock("@/lib/api", () => ({ suggest: (...a: unknown[]) => suggest(...(a as [])) }));
+
 it("submits title, person with role, years, kind and extended", async () => {
   const onSubmit = vi.fn();
   render(<AdvancedSearch criteria={emptyCriteria()} onSubmit={onSubmit} />);
@@ -28,9 +32,6 @@ it("shows role and kind as switches with the current choice highlighted", async 
   await userEvent.click(kind.getByRole("button", { name: "All" }));
   expect(kind.getByRole("button", { name: "All" })).toHaveAttribute("aria-pressed", "true");
 });
-
-const suggest = vi.fn();
-vi.mock("@/lib/api", () => ({ suggest: (...a: unknown[]) => suggest(...a) }));
 
 it("suggests titles from the 4th letter and takes one only when it is clicked", async () => {
   suggest.mockResolvedValue({ ok: true, data: [{ value: "The Matrix", label: "The Matrix (1999)" }] });

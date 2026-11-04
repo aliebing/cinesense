@@ -141,3 +141,19 @@ it("edgeSpeed without drift: still unless the mouse steers towards an edge", () 
   expect(edgeSpeed(0.95, -1, false)).toBeLessThan(0); // the edges still browse
   expect(edgeSpeed(0.05, -1, false)).toBeGreaterThan(0);
 });
+
+it("a card widened by its trailer does not make a fitting row start looping", async () => {
+  const undo = layout(900, 100);
+  const wide = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "offsetWidth")!;
+  Object.defineProperty(HTMLElement.prototype, "offsetWidth", {
+    configurable: true,
+    get() {
+      const base = wide.get!.call(this) as number;
+      return this === this.parentElement?.firstElementChild && base ? 300 : base; // the first card plays its trailer
+    },
+  });
+  const { container } = render(<RelatedRow items={sampleRanked(8)} onSelect={() => {}} />);
+  expect(container.querySelector(".related-viewport")).toHaveClass("is-static");
+  Object.defineProperty(HTMLElement.prototype, "offsetWidth", wide);
+  undo();
+});
