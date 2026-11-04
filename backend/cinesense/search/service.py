@@ -6,6 +6,8 @@ import re
 import unicodedata
 from collections import OrderedDict
 
+import numpy as np
+
 from cinesense.core.criteria import MUST_THRESHOLD, NOT_THRESHOLD, SearchCriteria
 from cinesense.search.ranking import CombinedResult, Signals, combined_rank
 
@@ -101,8 +103,12 @@ class SearchService:
         # only exclusions ("no horror") next to a text search: filter its hits, do not replace them with the
         # catalogue's best-known films (a tag search without weights)
         exclusions_only = c.has_tags() and not c.prefer_weights() and c.has_text_signal()
+        # a person or title picks the films; mood tags then only rank them (prefer) or narrow them (must / not).
+        # The catalogue-wide tag search would keep just its top 500 and lose e.g. "Speed" for action + funny.
+        tags_on_identity = c.has_tags() and bool(c.person or c.title)
+        tags_filter_hits = exclusions_only or tags_on_identity
 
-        if c.has_tags() and not exclusions_only:
+        if c.has_tags() and not tags_filter_hits:
             hits, hidden = p.tag_search(c.prefer_weights(), c.must_tags(), c.not_tags(), MUST_THRESHOLD, NOT_THRESHOLD)
             sig.tags = dict(hits)
             restrict = set(sig.tags)
@@ -124,15 +130,9 @@ class SearchService:
             elif not (c.has_tags() or c.person or c.title):
                 restrict |= set(sig.plot)
 
-        if exclusions_only and restrict:
-            ids = sorted(restrict)
-            vectors = p.tag_vectors(ids)
-            # NaN (no Tag Genome data) compares False: such films stay, the genre exclusion still applies
-            excluded = {
-                fid for row, fid in enumerate(ids) if any(vectors[row][t] >= NOT_THRESHOLD for t in c.not_tags())
-            }
-            restrict -= excluded
-            hidden += len(excluded)
+        if tags_filter_hits and restrict:
+            restrict, hidden_here, sig.tags = _tags_on_hits(p, c, restrict)
+            hidden += hidden_here
 
         if profile is not None:
             sig.disliked = set(profile.disliked)
@@ -159,6 +159,8 @@ class SearchService:
         if c.title and sig.title:
             sig.title = _without_sound_alikes(sig.title)
             movies = [m for m in movies if m.id in sig.title]
+        if c.person and sig.person:  # every filter holds together, also for films the live search added
+            movies = [m for m in movies if m.id in sig.person]
         result = combined_rank(movies, c, sig, hidden_by_tags=hidden, offset=0, limit=len(movies) or 1)
         return result, sig, extended_used
 
@@ -194,6 +196,27 @@ class SearchService:
         page.items = kept + rest
         page.total = max(page.total - dropped, len(page.items))
         return page
+
+
+def _tags_on_hits(p, c: SearchCriteria, hits: set[str]) -> tuple[set[str], int, dict[str, float] | None]:
+    """Mood tags applied to films a text signal found: not-tags hide (counted), must-tags narrow, prefer and must
+    weights give the tag score for ranking. A film without Tag Genome data (NaN) is never hidden by a not-tag,
+    cannot prove a must-tag, and scores 0."""
+    ids = sorted(hits)
+    vectors = p.tag_vectors(ids)
+    excluded = {fid for row, fid in enumerate(ids) if any(vectors[row][t] >= NOT_THRESHOLD for t in c.not_tags())}
+    lacking = {fid for row, fid in enumerate(ids) if not all(vectors[row][t] >= MUST_THRESHOLD for t in c.must_tags())}
+    kept = hits - excluded - lacking
+    weights = c.prefer_weights()
+    scores = None
+    if weights:
+        total = sum(weights.values())
+        rows = {fid: row for row, fid in enumerate(ids)}
+        scores = {
+            fid: sum(w / total * float(np.nan_to_num(vectors[rows[fid]][t])) for t, w in weights.items())
+            for fid in kept
+        }
+    return kept, len(excluded), scores
 
 
 _taste_cache: dict[tuple, dict[str, float] | None] = {}
