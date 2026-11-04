@@ -212,26 +212,30 @@
   <h2 class="b" style="--d:.3s">Der LangGraph-Agent</h2>
   <svg width="1440" height="620" viewBox="0 0 1440 620" class="b" style="--d:.6s">
     <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0 0L10 5L0 10z" fill="rgba(255,255,255,.55)"/></marker></defs>
-    <g class="node b" style="--d:1s"><rect x="0" y="250" width="230" height="110" rx="55"/><text x="115" y="300">Nachricht</text><text class="sub" x="115" y="332">+ aktuelle Chips</text></g>
-    <path class="edge b" style="--d:1.6s" d="M232 305 H318"/>
-    <g class="node hot b" style="--d:2s"><rect x="320" y="245" width="250" height="120" rx="18"/><text x="445" y="298">agent</text><text class="sub" x="445" y="332">LLM mit Tools</text></g>
-    <path class="edge b" style="--d:4.5s" d="M400 243 C400 130, 490 130, 490 243"/>
-    <text class="elabel b" style="--d:4.5s" x="300" y="120">Tool-Aufrufe, max. 6 Runden</text>
-    <g class="node b" style="--d:4.5s"><rect x="340" y="20" width="210" height="70" rx="14"/><text x="445" y="65">tools</text></g>
-    <path class="edge b" style="--d:9s" d="M572 305 H708"/>
-    <text class="elabel b" style="--d:9s" x="598" y="285">Kriterien</text>
-    <g class="node b" style="--d:9s"><rect x="710" y="245" width="250" height="120" rx="18"/><text x="835" y="298">present</text><text class="sub" x="835" y="332">deterministische Suche</text></g>
-    <path class="edge b" style="--d:12s" d="M962 305 H1058"/>
-    <g class="node hot b" style="--d:12s"><rect x="1060" y="245" width="250" height="120" rx="18"/><text x="1185" y="298">explain</text><text class="sub" x="1185" y="332">LLM ohne Tools</text></g>
-    <path class="edge b" style="--d:15s" d="M1185 367 V438"/>
-    <g class="node b" style="--d:15s"><rect x="1060" y="440" width="250" height="100" rx="18" style="stroke:var(--gold)"/><text x="1185" y="485">Grounding-Check</text><text class="sub" x="1185" y="515">nur echte Treffer</text></g>
-    <path class="edge b" style="--d:16s" d="M445 367 V560 H600"/>
-    <text class="elabel b" style="--d:16s" x="460" y="540">Rückfrage</text>
-    <g class="node b" style="--d:16s"><rect x="602" y="520" width="260" height="80" rx="40"/><text x="732" y="570">Antwort + Chips</text></g>
-    <path class="edge b" style="--d:16.5s" d="M1058 490 C960 490, 960 560, 864 560"/>
-    <circle class="dot b" style="--d:2s" r="10"><animateMotion dur="5s" repeatCount="indefinite" path="M232 305 H445 V60 V305 H835 H1185 V490"/></circle>
+    <g class="node b" style="--d:1s"><rect x="0" y="250" width="200" height="110" rx="55"/><text x="100" y="300">Nachricht</text><text class="sub" x="100" y="332">+ aktuelle Chips</text></g>
+    <path class="edge b" style="--d:1.6s" d="M202 305 H258"/>
+    <g class="node hot b" style="--d:2s"><rect x="260" y="245" width="280" height="120" rx="18"/><text x="400" y="298">agent</text><text class="sub" x="400" y="332">LLM mit Tools</text></g>
+    <path class="edge b" style="--d:4.5s" d="M345 243 C345 130, 455 130, 455 243"/>
+    <text class="elabel b" style="--d:4.5s" x="40" y="150">Tool-Aufrufe, max. 6 Runden</text>
+    <g class="node b" style="--d:4.5s"><rect x="295" y="20" width="210" height="70" rx="14"/><text x="400" y="65">tools</text></g>
+    <path class="edge b" style="--d:9s" d="M542 305 H608"/>
+    <g class="node b" style="--d:9s"><rect x="610" y="245" width="230" height="120" rx="18"/><text x="725" y="298">present</text><text class="sub" x="725" y="332">deterministische Suche</text></g>
+    <path class="edge b" style="--d:20.4s" d="M842 305 H888"/>
+    <g class="node b" style="--d:20.4s"><rect x="890" y="245" width="200" height="120" rx="18" style="stroke:var(--gold);stroke-dasharray:8 6"/><text x="990" y="298">verify</text><text class="sub" x="990" y="332">genug Treffer?</text></g>
+    <text class="elabel b gold" style="--d:20.4s; fill:var(--gold); font-weight:700" x="1050" y="238">NEU</text>
+    <path class="edge b" style="--d:24.4s; stroke:var(--gold)" d="M990 243 V190 H500 V243"/>
+    <text class="elabel b" style="--d:24.4s" x="560" y="178">unter 3 Treffern: Lockerung anbieten</text>
+    <path class="edge b" style="--d:30.8s" d="M1092 305 H1148"/>
+    <g class="node hot b" style="--d:30.8s"><rect x="1150" y="245" width="250" height="120" rx="18"/><text x="1275" y="298">explain</text><text class="sub" x="1275" y="332">LLM ohne Tools</text></g>
+    <path class="edge b" style="--d:34.6s" d="M1275 367 V438"/>
+    <g class="node b" style="--d:34.6s"><rect x="1150" y="440" width="250" height="100" rx="18" style="stroke:var(--gold)"/><text x="1275" y="485">Grounding-Check</text><text class="sub" x="1275" y="515">nur echte Treffer</text></g>
+    <path class="edge b" style="--d:36.5s" d="M400 367 V560 H600"/>
+    <text class="elabel b" style="--d:36.5s" x="415" y="540">Rückfrage</text>
+    <g class="node b" style="--d:36.5s"><rect x="602" y="520" width="260" height="80" rx="40"/><text x="732" y="570">Antwort + Chips</text></g>
+    <path class="edge b" style="--d:36.5s" d="M1148 490 C1000 490, 1000 560, 864 560"/>
+    <circle class="dot b" style="--d:2s" r="10"><animateMotion dur="5s" repeatCount="indefinite" path="M202 305 H400 V60 V305 H725 H990 H1275 V490"/></circle>
   </svg>
-  <p class="muted b" style="--d:19s; font-size:22px">Standardmodell Claude Haiku 5.5 über OpenRouter · Fortschritt per Server-Sent Events · ein Gesprächsthread pro Browser-Tab</p>
+  <p class="muted b" style="--d:38s; font-size:22px">Standardmodell Claude Haiku 5.5 über OpenRouter · Fortschritt per Server-Sent Events · ein Gesprächsthread pro Browser-Tab</p>
 </section>
 
 <section id="c06" class="code-slide">
@@ -252,11 +256,13 @@
       <li><code>find_title</code> · <code>find_person</code> · <code>similar_to</code></li>
       <li><code>check_streaming</code> · <code>film_facts</code></li>
       <li><code>propose_exclusions</code> nur Vorschlag</li>
-      <li><code>show_on_stage</code> Übergabe an die Bühne</li></ul></div>
+      <li><code>show_on_stage</code> Übergabe an die Bühne</li>
+      <li><code>relax_search</code> Lockerung wählen <span class="gold">· neu</span></li></ul></div>
     <div class="card b" style="--d:14s"><h3>Deterministischer Code</h3><ul>
       <li>Ranking: Tags, Plot, Personen, Bayes-Rating, Bekanntheit, Neuheit</li>
       <li>harte Filter &amp; „→ n Filme ausgeblendet“</li>
       <li>finale Suche (<code>present</code>), Top 8</li>
+      <li>Lockerungs-Optionen gezählt, „kein …“ bleibt <span class="gold">· neu</span></li>
       <li>Budgets: 900 Streaming-Calls/Monat, max. 3 pro Turn</li>
       <li>Grounding der Antwort</li>
       <li>„kein Horror“ schließt auch das Genre aus</li></ul></div>
@@ -311,19 +317,47 @@
 </section>
 
 
+<section id="n01">
+  <div class="kicker b">Neu · Suche lockern</div>
+  <h2 class="b" style="--d:.3s">Lockern statt leerer Liste</h2>
+  <div class="gr" style="grid-template-columns:1fr 1.7fr; align-items:center">
+    <div class="cards">
+      <div class="card b" style="--d:6.8s"><h3>Zu eng</h3><p>gruselig · kein Horror · nur im Kino → 0 Filme</p></div>
+      <div class="card b" style="--d:17.4s"><h3>Zählen statt raten</h3><p>jede mögliche Lockerung wird gezählt, ohne Live-Import und Streaming-Abfragen</p></div>
+      <div class="card b" style="--d:32.1s"><h3>Nie gelockert</h3><p>Ausschlüsse wie „kein Horror“, Art, Person, Titel</p></div>
+    </div>
+    <img class="shot b" style="--d:26s" src="out/shots/relax-offer.jpg">
+  </div>
+</section>
+
+<section id="n02">
+  <div class="kicker b">Neu · Transparenz</div>
+  <h2 class="b" style="--d:.3s">Was nicht ganz passt, steht dran</h2>
+  <img class="shot b" style="--d:1s" src="out/shots/relax-widened.jpg">
+  <p class="muted b mono" style="--d:12.4s; font-size:23px; margin-top:22px"><span class="gold">≠</span> no mood data for 'creepy' · <span class="gold">≠</span> 142 min, longer than 120 · <span class="gold">≠</span> not in cinemas</p>
+</section>
+
+<section id="c10" class="code-slide">
+  <div class="kicker b">Im Code · Neu</div>
+  <h2 class="b" style="--d:.3s">Prüfen und lockern</h2>
+  <div class="panels" data-code="c10"></div>
+</section>
+
+
 <section id="t10">
   <div class="kicker b">Evaluation</div>
-  <h2 class="b" style="--d:.3s">36 Szenarien, echter Agent</h2>
-  <div class="stats">
-    <div class="stat b" style="--d:9s"><b>36/36</b><span>Szenarien bestanden</span></div>
-    <div class="stat b" style="--d:11s"><b>19/19</b><span>Constraints erfüllt</span></div>
-    <div class="stat b" style="--d:12.5s"><b>35/35</b><span>passendes Tool gewählt</span></div>
-    <div class="stat b" style="--d:14s"><b>36/36</b><span>kein Streaming-Claim ohne Daten</span></div>
+  <h2 class="b" style="--d:.3s">48 Szenarien, echter Agent</h2>
+  <div class="stats" style="grid-template-columns:repeat(5, 1fr)">
+    <div class="stat b" style="--d:20.4s"><b>47/48</b><span>Szenarien bestanden</span></div>
+    <div class="stat b" style="--d:21.2s"><b>24/24</b><span>Constraints erfüllt</span></div>
+    <div class="stat b" style="--d:24.4s"><b>40/41</b><span>passendes Tool gewählt</span></div>
+    <div class="stat b" style="--d:35.4s"><b>4/4</b><span>richtig gelockert <span class="gold">· neu</span></span></div>
+    <div class="stat b" style="--d:35.4s"><b>48/48</b><span>kein Streaming-Claim ohne Daten</span></div>
   </div>
-  <p class="b" style="--d:16s; margin:44px 0 18px; font-size:30px">Grounding: Antworten, die nur echte Treffer nennen</p>
+  <p class="b" style="--d:39.9s; margin:44px 0 18px; font-size:30px">Grounding: Antworten, die nur echte Treffer nennen</p>
   <div class="bars">
-    <div class="bar b" style="--d:16s"><div class="lab">vor dem Guard (Modell allein)</div><div class="track"><div class="fill grow" style="--d:16.4s;width:86%"></div><span class="val" style="left:86%">86 %</span></div></div>
-    <div class="bar me b" style="--d:21s"><div class="lab">nach dem Guard (was Nutzer sehen)</div><div class="track"><div class="fill grow" style="--d:21.4s;width:100%"></div><span class="val" style="left:calc(100% - 120px);color:#111">100 %</span></div></div>
+    <div class="bar b" style="--d:39.9s"><div class="lab">vor dem Guard (Modell allein)</div><div class="track"><div class="fill grow" style="--d:39.9s;width:90%"></div><span class="val" style="left:calc(90% - 110px);color:#111">90 %</span></div></div>
+    <div class="bar me b" style="--d:47.8s"><div class="lab">nach dem Guard (was Nutzer sehen)</div><div class="track"><div class="fill grow" style="--d:47.8s;width:100%"></div><span class="val" style="left:calc(100% - 120px);color:#111">100 %</span></div></div>
   </div>
 </section>
 
@@ -331,15 +365,15 @@
   <div class="kicker b">Ranking-Vergleich</div>
   <h2 class="b" style="--d:.3s">LLM-Judge (1–5), 21 Stimmungs-Szenarien</h2>
   <div class="bars">
-    <div class="bar b" style="--d:5s"><div class="lab">Filter + Bayes-Rating</div><div class="track"><div class="fill grow" style="--d:5.3s;width:30.4%"></div><span class="val" style="left:30.4%">1,52</span></div></div>
-    <div class="bar b" style="--d:7.5s"><div class="lab">movieFinder (Tag-Kosinus)</div><div class="track"><div class="fill grow" style="--d:7.8s;width:73.4%"></div><span class="val" style="left:73.4%">3,67</span></div></div>
-    <div class="bar me b" style="--d:10s"><div class="lab">CineSense</div><div class="track"><div class="fill grow" style="--d:10.3s;width:81%"></div><span class="val" style="left:81%">4,05</span></div></div>
+    <div class="bar b" style="--d:5s"><div class="lab">Filter + Bayes-Rating</div><div class="track"><div class="fill grow" style="--d:5.3s;width:25.8%"></div><span class="val" style="left:25.8%">1,29</span></div></div>
+    <div class="bar b" style="--d:7.5s"><div class="lab">movieFinder (Tag-Kosinus)</div><div class="track"><div class="fill grow" style="--d:7.8s;width:69.6%"></div><span class="val" style="left:69.6%">3,48</span></div></div>
+    <div class="bar me b" style="--d:10s"><div class="lab">CineSense</div><div class="track"><div class="fill grow" style="--d:10.3s;width:75.2%"></div><span class="val" style="left:75.2%">3,76</span></div></div>
   </div>
   <p class="axisnote b" style="--d:5s">Skala 0–5 · Judge: Claude Sonnet 5.5, sieht nur Titel und Jahr, also subjektiv</p>
   <div class="stats" style="margin-top:56px">
-    <div class="stat b" style="--d:13s"><b>$0,0011</b><span>pro Chat-Turn</span></div>
-    <div class="stat b" style="--d:15s"><b>7,5 s</b><span>Median-Latenz (p90 12 s)</span></div>
-    <div class="stat b" style="--d:17s"><b>$0,22</b><span>gesamte Evaluation</span></div>
+    <div class="stat b" style="--d:13s"><b>$0,0014</b><span>pro Chat-Turn</span></div>
+    <div class="stat b" style="--d:15s"><b>7,7 s</b><span>Median-Latenz (p90 13 s)</span></div>
+    <div class="stat b" style="--d:17s"><b>$0,27</b><span>gesamte Evaluation</span></div>
     <div class="stat b" style="--d:18s"><b>2</b><span>eingeschleuste Ausfälle bestanden</span></div>
   </div>
 </section>
