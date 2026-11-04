@@ -171,10 +171,11 @@ it("opened from a search with no other matches, the row shows the related films 
   setSearchState(emptyCriteria());
 });
 
-it("has no chat; a button leads back to the start page with the results", async () => {
+it("has no chat and no back button; the breadcrumb leads back to the start page", async () => {
   render(<GenreView worldId="action" filmId={null} />);
   await screen.findByRole("heading", { name: "Demo-Film 01" });
-  expect(screen.getByRole("link", { name: "← Back to results" })).toHaveAttribute("href", "/");
+  expect(screen.getByRole("link", { name: "CineSense" })).toHaveAttribute("href", "/");
+  expect(screen.queryByRole("link", { name: /Back to/ })).toBeNull();
   expect(screen.queryByRole("button", { name: /Chat/ })).toBeNull();
   expect(screen.queryByRole("complementary", { name: "Chat" })).toBeNull();
 });

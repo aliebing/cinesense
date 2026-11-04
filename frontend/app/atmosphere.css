@@ -519,10 +519,4 @@
   background: #ff6b6b1a; color: #ffb3b3; cursor: pointer; }
 @media (max-width: 759px) { .profile-panel { position: fixed; inset: 16px; width: auto; max-height: none; } }
 
-/* back to the start page (search hits and conversation stay): replaces the chat on the stage and results pages */
-.genre-top .back-home, .back-home {
-  flex: none; align-self: flex-start; padding: .35em .9em; border: 1px solid #f3c76b88; border-radius: 999px;
-  background: #07080cb3; color: #fff; opacity: 1; font-weight: 600; text-decoration: none;
-}
-.genre-top .back-home:hover, .genre-top .back-home:focus-visible { border-color: var(--gold); color: var(--gold); text-decoration: none; }
 .results-actions { display: flex; gap: .8em; align-items: flex-start; }

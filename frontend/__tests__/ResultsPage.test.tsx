@@ -10,7 +10,8 @@ vi.mock("@/lib/api", () => ({
 
 import ResultsPage from "@/app/results/page";
 
-it("the search page leads back to the start page with the results", async () => {
+it("the search page leads back to the start page through the breadcrumb, without a second back button", async () => {
   render(<ResultsPage />);
-  expect(await screen.findByRole("link", { name: "← Back to results" })).toHaveAttribute("href", "/");
+  expect(await screen.findByRole("link", { name: "CineSense" })).toHaveAttribute("href", "/");
+  expect(screen.queryByRole("link", { name: /Back to/ })).toBeNull();
 });

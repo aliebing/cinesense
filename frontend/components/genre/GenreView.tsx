@@ -6,7 +6,6 @@ import FogLight from "@/components/atmosphere/FogLight";
 import CinemaFrame from "@/components/cinema/CinemaFrame";
 import RelatedRow from "@/components/genre/RelatedRow";
 import StagePanel from "@/components/genre/StagePanel";
-import BackHome from "@/components/nav/BackHome";
 import Breadcrumb, { type Crumb } from "@/components/nav/Breadcrumb";
 import {
   discover,
@@ -177,7 +176,6 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
       <FogLight tint={world?.tint ?? "#1b4a6b"} reduced={reduced} />
       <header className="genre-top">
         <Breadcrumb items={crumbs(world, movie, fromSearch)} />
-        <BackHome />
       </header>
       {state.kind === "error" && <p className="genre-error">Couldn&apos;t load films</p>}
       {state.kind === "loading" && <p className="genre-loading">Loading …</p>}
