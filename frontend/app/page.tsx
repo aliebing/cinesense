@@ -10,12 +10,13 @@ import ChatPanel from "@/components/chat/ChatPanel";
 import Breadcrumb from "@/components/nav/Breadcrumb";
 import ProfilePanel from "@/components/profile/ProfilePanel";
 import FilmTitles from "@/components/home/FilmTitles";
+import { LoadingBar } from "@/components/genre/RelatedRow";
 import TileRows, { visibleWorlds } from "@/components/home/TileRows";
 import WorldLabel from "@/components/home/WorldLabel";
 import SearchChips from "@/components/search/SearchChips";
 import { getHome, getTags, type ApiResult, type Tag } from "@/lib/api";
 import { currentPicks, useChatLog } from "@/lib/chat";
-import { useSearchRows } from "@/lib/searchRows";
+import { useSearchRowsWithStatus } from "@/lib/searchRows";
 import { hasAnyCriteria, useSearchState } from "@/lib/searchState";
 import type { HomeData, Movie } from "@/lib/types";
 import { useActiveTrailer } from "@/lib/useActiveTrailer";
@@ -70,7 +71,7 @@ export default function HomePage() {
   const [chatLog] = useChatLog();
   // the films the chat just suggested lead the middle row, lit, until the settings are changed
   const picks = useMemo(() => currentPicks(chatLog, criteria).map((r) => r.movie), [chatLog, criteria]);
-  const searchRows = useSearchRows(criteria, worlds, rowCount, picks);
+  const { rows: searchRows, loading: searching } = useSearchRowsWithStatus(criteria, worlds, rowCount, picks);
   const rows =
     searchRows ?? (data ? visibleWorlds(active, worlds, rowCount).map((w) => ({ world: w, movies: data.rows[w.id] ?? [] })) : []);
 
@@ -120,8 +121,9 @@ export default function HomePage() {
       </div>
 
       {data && !narrow && <FilmTitles titles={data.titles} />}
-      {rows.length > 0 && (
-        <div className="home-rows">
+      {(rows.length > 0 || searching) && (
+        <div className={`home-rows${searching ? " is-busy" : ""}`} aria-busy={searching}>
+          {searching && <LoadingBar />}
           <TileRows rows={rows.slice(0, rowCount)} onSelect={openMovie} worldOrder={worldIds} />
         </div>
       )}

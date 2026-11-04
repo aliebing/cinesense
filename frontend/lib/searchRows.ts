@@ -39,11 +39,24 @@ export function aroundTheShortList(short: TileRow, others: TileRow[]): TileRow[]
  *  so the homepage shows its world rows. Uses /api/discover: same ranking, never the paid live search; only the hits
  *  row may look up missing images (like the result page), the world rows use the pictures already known. */
 export function useSearchRows(criteria: Criteria, worlds: MoodWorld[], rowCount: number, picks: Movie[] = []): TileRow[] | null {
+  return useSearchRowsWithStatus(criteria, worlds, rowCount, picks).rows;
+}
+
+/** `useSearchRows` plus `loading`: true from a change of the search until its rows are there (the homepage's loading
+ *  bar). The rows of the previous search stay meanwhile. */
+export function useSearchRowsWithStatus(
+  criteria: Criteria,
+  worlds: MoodWorld[],
+  rowCount: number,
+  picks: Movie[] = [],
+): { rows: TileRow[] | null; loading: boolean } {
   const [rows, setRows] = useState<TileRow[] | null>(null);
+  const [doneKey, setDoneKey] = useState<string | null>(null);
   const active = hasAnyCriteria(criteria);
   const key = active ? JSON.stringify({ ...criteria, world_id: null }) : null;
   const order = worlds.map((w) => w.id).join(",");
   const pickKey = JSON.stringify(picks.slice(0, 5));
+  const runKey = `${key}|${order}|${rowCount}|${pickKey}`;
 
   useEffect(() => {
     let live = true;
@@ -61,7 +74,10 @@ export function useSearchRows(criteria: Criteria, worlds: MoodWorld[], rowCount:
       const found = new Map(hits.map((r) => [r.movie.id, r.movie]));
       // the hits carry looked-up pictures, the chat's copies may not
       const chosen = (JSON.parse(pickKey) as Movie[]).map((m) => found.get(m.id) ?? m);
-      if (hits.length === 0 && chosen.length === 0) return setRows(null);
+      if (hits.length === 0 && chosen.length === 0) {
+        setDoneKey(runKey);
+        return setRows(null);
+      }
       const featured = chosen.map((m) => m.id);
       const rest = preferPictured(hits.map((r) => r.movie)).filter((m) => !featured.includes(m.id));
       const middle = [...chosen, ...rest].slice(0, Math.max(MIDDLE_MAX, chosen.length));
@@ -91,6 +107,7 @@ export function useSearchRows(criteria: Criteria, worlds: MoodWorld[], rowCount:
         if (movies.length >= MIN_ROW) out.push({ ...row, movies });
       }
       setRows(aroundTheShortList(short, out));
+      setDoneKey(runKey);
     }, DEBOUNCE_MS);
     return () => {
       live = false;
@@ -98,7 +115,7 @@ export function useSearchRows(criteria: Criteria, worlds: MoodWorld[], rowCount:
     };
   }, [key, order, rowCount, pickKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  return rows;
+  return { rows, loading: key !== null && doneKey !== runKey };
 }
 
 function hitsWorld(): MoodWorld {

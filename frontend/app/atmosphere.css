@@ -512,6 +512,9 @@
 @keyframes loading-run { from { transform: translateX(-100%); } to { transform: translateX(290%); } }
 @media (prefers-reduced-motion: reduce) { .loading-bar::after { animation-duration: 3s; } }
 .related.is-busy .related-viewport { opacity: .35; transition: opacity .2s; pointer-events: none; }
+/* homepage: the same bar above the tile rows while a search loads them; the old rows dimmed */
+.home-rows .loading-bar { margin: 0 var(--safe-x, 2cqw) .5em 0; }
+.home-rows.is-busy .tile-row-wrap { opacity: .35; transition: opacity .2s; }
 .advanced-search .adv-switch .crit__mode { font-size: 1em; padding-block: .5em; }
 .advanced-search input, .advanced-search select {
   font: inherit; color: #fff; background: #ffffff10; border: 1px solid #ffffff30; border-radius: 8px; padding: .45em .6em;

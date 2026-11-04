@@ -49,6 +49,22 @@ it("a search (chat or chips) takes over the rows: its hits first, then the world
   expect(discover).toHaveBeenCalledWith(expect.objectContaining({ world_id: null }), 0, expect.any(Number));
 });
 
+it("shows a loading bar while a search loads its rows, and dims the rows meanwhile", async () => {
+  getHome.mockResolvedValue({ ok: true, data: sampleHome });
+  let answer: (v: unknown) => void = () => {};
+  const hits = { ok: true, data: { items: sampleRanked(6), total: 6, hidden_by_exclusion: 0, extended_used: false } };
+  discover.mockResolvedValue(hits); // the world rows after the hits
+  discover.mockImplementationOnce(() => new Promise((r) => (answer = r))); // the hits wait
+  setSearchState({ ...emptyCriteria(), tags: [{ idx: 7, weight: 8, mode: "prefer" }] });
+  render(<HomePage />);
+  expect(await screen.findByRole("progressbar", { name: "Loading results" })).toBeInTheDocument();
+  expect(document.querySelector(".home-rows")).toHaveClass("is-busy");
+  await waitFor(() => expect(discover).toHaveBeenCalled());
+  await act(async () => answer(hits));
+  await waitFor(() => expect(screen.queryByRole("progressbar")).toBeNull());
+  expect(document.querySelector(".home-rows")).not.toHaveClass("is-busy");
+});
+
 it("shows the mood settings panel even before any tag is set", async () => {
   getHome.mockResolvedValue({ ok: true, data: sampleHome });
   render(<HomePage />);

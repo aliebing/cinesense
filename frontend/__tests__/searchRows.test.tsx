@@ -7,12 +7,14 @@ import { sampleRanked, sampleWorlds } from "./fixtures";
 const discover = vi.fn();
 vi.mock("@/lib/api", () => ({ discover: (...a: unknown[]) => discover(...a) }));
 
-import { HITS_ROW_ID, preferPictured, topWorlds, useSearchRows } from "@/lib/searchRows";
+import { HITS_ROW_ID, preferPictured, topWorlds, useSearchRows, useSearchRowsWithStatus } from "@/lib/searchRows";
 
 const ranked = (ids: string[], world: string): RankedMovie[] =>
   sampleRanked(ids.length).map((r, i) => ({ ...r, movie: { ...r.movie, id: ids[i], world_ids: [world] } }));
 
-beforeEach(() => discover.mockReset());
+beforeEach(() => {
+  discover.mockReset();
+});
 
 it("topWorlds: the worlds the hits fall into most often, ties in catalogue order", () => {
   const hits = [...ranked(["a", "b"], "action"), ...ranked(["c"], "suspense")];
@@ -120,4 +122,21 @@ it("the middle row keeps the closest matches only; later hits may run in the row
   const [hits, around] = result.current!;
   expect(hits.movies).toHaveLength(12);
   expect(around.movies.map((m) => m.id)).toEqual(["h15", "h16", "h17", "h18"]);
+});
+
+it("says it is loading from a change of the search until its rows are there", async () => {
+  const criteria = { ...emptyCriteria(), tags: [{ idx: 7, weight: 8, mode: "prefer" as const }] };
+  let answer: (v: unknown) => void = () => {};
+  discover.mockImplementation(() => new Promise((r) => (answer = r)));
+  const { result } = renderHook(() => useSearchRowsWithStatus(criteria, sampleWorlds, 1));
+  expect(result.current.loading).toBe(true);
+  await waitFor(() => expect(discover).toHaveBeenCalled());
+  answer({ ok: true, data: { items: ranked(["h1", "h2"], "action"), total: 2, hidden_by_exclusion: 0, extended_used: false } });
+  await waitFor(() => expect(result.current.loading).toBe(false));
+  expect(result.current.rows?.[0].world.id).toBe(HITS_ROW_ID);
+});
+
+it("without a search it is not loading", () => {
+  const { result } = renderHook(() => useSearchRowsWithStatus(emptyCriteria(), sampleWorlds, 1));
+  expect(result.current).toEqual({ rows: null, loading: false });
 });
