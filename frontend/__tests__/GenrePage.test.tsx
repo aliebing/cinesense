@@ -47,7 +47,8 @@ it("puts the requested film on stage", async () => {
   render(<GenreView worldId="action" filmId="demo-03" />);
   expect(await screen.findByRole("heading", { name: "Demo-Film 03" })).toBeInTheDocument();
   const crumbs = screen.getByRole("navigation", { name: "Breadcrumb" });
-  expect(within(crumbs).getByRole("link", { name: "Action & Adrenaline" })).toHaveAttribute("href", "/world/action");
+  // back to the start page with this world showing (not /world/action, which puts the world's top film on stage)
+  expect(within(crumbs).getByRole("link", { name: "Action & Adrenaline" })).toHaveAttribute("href", "/?world=action");
   expect(within(crumbs).getByText("Demo-Film 03")).toHaveAttribute("aria-current", "page");
 });
 
@@ -176,4 +177,11 @@ it("has no chat; a button leads back to the start page with the results", async 
   expect(screen.getByRole("link", { name: "← Back to results" })).toHaveAttribute("href", "/");
   expect(screen.queryByRole("button", { name: /Chat/ })).toBeNull();
   expect(screen.queryByRole("complementary", { name: "Chat" })).toBeNull();
+});
+
+it("shows no mood settings panel on the detail page (moods are edited on the home and results pages)", async () => {
+  render(<GenreView worldId="action" filmId={null} />);
+  await screen.findByRole("heading", { name: "Demo-Film 01" });
+  expect(screen.queryByRole("region", { name: "Search criteria" })).toBeNull();
+  expect(screen.queryByText("Your mood settings")).toBeNull();
 });

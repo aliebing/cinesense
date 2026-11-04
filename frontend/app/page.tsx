@@ -34,7 +34,12 @@ export default function HomePage() {
   useEffect(() => {
     let cancelled = false;
     getHome().then((r) => {
-      if (!cancelled) setResult(r);
+      if (cancelled) return;
+      setResult(r);
+      // ?world=<id> (the detail page's breadcrumb): start on that world instead of the first one
+      const wanted = new URLSearchParams(window.location.search).get("world");
+      const i = r.ok && wanted ? r.data.worlds.findIndex((w) => w.id === wanted) : -1;
+      if (i >= 0) setActive(i);
     });
     getTags().then((r) => {
       if (!cancelled && r.ok) setTags(r.data);
