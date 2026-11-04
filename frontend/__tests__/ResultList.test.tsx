@@ -169,14 +169,14 @@ it("shows a loading bar while results load, and dims the old row", async () => {
   expect(screen.queryByRole("progressbar")).toBeNull();
 });
 
-it("shows at least the 8 best matches, and says out of how many", async () => {
-  const items = sampleRanked(12).map((r, i) => ({ ...r, match_percent: 90 - i * 5 }));
+it("shows at least the 3 best matches, and says out of how many", async () => {
+  const items = sampleRanked(12).map((r, i) => ({ ...r, match_percent: 90 - i * 20 }));
   search.mockResolvedValue({ ok: true, data: { items, total: 39, hidden_by_exclusion: 0, extended_used: false } });
   const { container } = render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} />);
-  expect(await screen.findByText(/The 8 best matches/)).toBeInTheDocument(); // 90 … 55: only 3 are close, 8 at least
+  expect(await screen.findByText(/The 3 best matches/)).toBeInTheDocument(); // only the best is close: 3 at least
   expect(screen.getByText(/out of 39 films that fit your filters/)).toBeInTheDocument();
-  expect(container.querySelectorAll(".related-card")).toHaveLength(8);
-  expect(search.mock.calls[0][2]).toBe(48);
+  expect(container.querySelectorAll(".related-card")).toHaveLength(3);
+  expect(search.mock.calls[0][2]).toBe(50); // at most 50
 });
 
 it("shows every further film close to the best match (Sandra Bullock + funny: 15 of 17)", async () => {

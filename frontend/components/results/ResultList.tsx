@@ -6,9 +6,10 @@ import { search, type DiscoverResult, type Relaxation } from "@/lib/api";
 import type { Criteria } from "@/lib/searchState";
 import type { Movie, RankedMovie } from "@/lib/types";
 
-const LIMIT = 48;
-const MIN_SHOWN = 8; // like the chat's picks: at least the 8 best matches …
-const CLOSE_GAP = 10; // … and every further film within this many points of the best one
+// the row shows the short list: every film within CLOSE_GAP points of the best match, at least MIN_SHOWN, at most LIMIT
+const LIMIT = 50;
+const MIN_SHOWN = 3;
+const CLOSE_GAP = 10;
 const count = new Intl.NumberFormat("en-US");
 
 type Props = {
