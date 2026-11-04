@@ -34,6 +34,25 @@ export function aroundTheShortList(short: TileRow, others: TileRow[]): TileRow[]
   return [...others.slice(0, mid), short, ...others.slice(mid)];
 }
 
+/** A search with few hits finds too few worlds for `count` rows: fill up with the homepage's world rows (worlds
+ *  not shown yet, films not shown yet), so the homepage always shows its full set of rows; the hits stay in the middle. */
+export function padRows(rows: TileRow[], worldRows: TileRow[], count: number): TileRow[] {
+  if (rows.length >= count) return rows;
+  const short = rows.find((r) => r.world.id === HITS_ROW_ID);
+  const others = rows.filter((r) => r !== short);
+  const seen = new Set(rows.flatMap((r) => r.movies.map((m) => m.id)));
+  const worlds = new Set(rows.map((r) => r.world.id));
+  for (const row of worldRows) {
+    if (others.length + (short ? 1 : 0) >= count) break;
+    if (worlds.has(row.world.id)) continue;
+    const movies = row.movies.filter((m) => !seen.has(m.id));
+    if (movies.length < MIN_ROW) continue;
+    movies.forEach((m) => seen.add(m.id));
+    others.push({ world: row.world, movies });
+  }
+  return short ? aroundTheShortList(short, others) : others;
+}
+
 /** Homepage tile rows for the current search (set in the chat or with the chips): the hits in the middle, led by the
  *  chat's picks (`picks`, shown larger), around them one row per world the hits belong to, with the same criteria and no film twice. `null` while there is no search (or no hit),
  *  so the homepage shows its world rows. Uses /api/discover: same ranking, never the paid live search; only the hits

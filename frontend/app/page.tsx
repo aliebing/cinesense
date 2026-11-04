@@ -16,7 +16,7 @@ import WorldLabel from "@/components/home/WorldLabel";
 import SearchChips from "@/components/search/SearchChips";
 import { getHome, getTags, type ApiResult, type Tag } from "@/lib/api";
 import { currentPicks, useChatLog } from "@/lib/chat";
-import { useSearchRowsWithStatus } from "@/lib/searchRows";
+import { padRows, useSearchRowsWithStatus } from "@/lib/searchRows";
 import { hasAnyCriteria, useSearchState } from "@/lib/searchState";
 import type { HomeData, Movie } from "@/lib/types";
 import { useActiveTrailer } from "@/lib/useActiveTrailer";
@@ -72,8 +72,9 @@ export default function HomePage() {
   // the films the chat just suggested lead the middle row, lit, until the settings are changed
   const picks = useMemo(() => currentPicks(chatLog, criteria).map((r) => r.movie), [chatLog, criteria]);
   const { rows: searchRows, loading: searching } = useSearchRowsWithStatus(criteria, worlds, rowCount, picks);
-  const rows =
-    searchRows ?? (data ? visibleWorlds(active, worlds, rowCount).map((w) => ({ world: w, movies: data.rows[w.id] ?? [] })) : []);
+  const worldRows = (n: number) => (data ? visibleWorlds(active, worlds, n).map((w) => ({ world: w, movies: data.rows[w.id] ?? [] })) : []);
+  // a search with few hits fills up with world rows: the homepage always shows its full set of rows
+  const rows = searchRows ? padRows(searchRows, worldRows(worlds.length), rowCount) : worldRows(rowCount);
 
   return (
     <CinemaFrame>

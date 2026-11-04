@@ -7,7 +7,7 @@ import { sampleRanked, sampleWorlds } from "./fixtures";
 const discover = vi.fn();
 vi.mock("@/lib/api", () => ({ discover: (...a: unknown[]) => discover(...a) }));
 
-import { HITS_ROW_ID, preferPictured, topWorlds, useSearchRows, useSearchRowsWithStatus } from "@/lib/searchRows";
+import { HITS_ROW_ID, padRows, preferPictured, topWorlds, useSearchRows, useSearchRowsWithStatus } from "@/lib/searchRows";
 
 const ranked = (ids: string[], world: string): RankedMovie[] =>
   sampleRanked(ids.length).map((r, i) => ({ ...r, movie: { ...r.movie, id: ids[i], world_ids: [world] } }));
@@ -139,4 +139,16 @@ it("says it is loading from a change of the search until its rows are there", as
 it("without a search it is not loading", () => {
   const { result } = renderHook(() => useSearchRowsWithStatus(emptyCriteria(), sampleWorlds, 1));
   expect(result.current).toEqual({ rows: null, loading: false });
+});
+
+it("padRows fills a short search up with the homepage's world rows, hits in the middle, no film twice", () => {
+  const hits = { world: { ...sampleWorlds[0], id: HITS_ROW_ID }, movies: sampleRanked(5).map((r) => r.movie), picked: true };
+  const film = (id: string) => ({ ...sampleRanked(1)[0].movie, id });
+  const worldRows = sampleWorlds.slice(0, 3).map((w, i) => ({ world: w, movies: [film("demo-01"), ...[1, 2, 3, 4].map((n) => film(`${w.id}-${i}-${n}`))] }));
+  const rows = padRows([hits], worldRows, 3);
+  expect(rows).toHaveLength(3);
+  expect(rows[1].world.id).toBe(HITS_ROW_ID);
+  const ids = rows.flatMap((r) => r.movies.map((m) => m.id));
+  expect(new Set(ids).size).toBe(ids.length); // demo-01 is a hit: not again in a world row
+  expect(padRows([hits, worldRows[0], worldRows[1]], worldRows, 3)).toHaveLength(3); // already full: unchanged
 });
