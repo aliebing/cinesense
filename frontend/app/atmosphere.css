@@ -358,6 +358,9 @@
 .hover-trailer.is-active:not(.tile-wrap, .related-wrap) { outline: var(--glow-width, 3px) solid var(--gold); box-shadow: 0 0 18px #f3c76bcc; }
 .tile-wrap { flex: none; border-radius: 4px; }
 .related-wrap { flex: none; border-radius: 8px; }
+/* block, not the buttons' inline-block: an inline box sits on the text baseline and leaves a gap under the picture,
+   so the gold frame of the wrapper stood a few pixels below the image */
+.tile-wrap > .tile, .related-wrap > .related-card { display: block; }
 /* portrait card: the 16:9 trailer fills its height and is cropped at the sides */
 .related-wrap .hover-trailer__note { left: 50%; bottom: auto; top: 50%; transform: translate(-50%, -50%); white-space: nowrap; }
 .related-wrap .hover-trailer__player iframe { left: 50%; width: calc(100% * 1.5 * 16 / 9); transform: translateX(-50%); }
