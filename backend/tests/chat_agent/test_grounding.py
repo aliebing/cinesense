@@ -102,3 +102,30 @@ def test_template_names_relaxations():
 def test_template_without_results_names_relaxations():
     out = template_answer([], ["Not only in cinemas"])
     assert out.startswith("Nothing matched every wish, so I widened the search: Not only in cinemas.")
+
+
+def test_template_answer_names_mood_gaps():
+    from cinesense.chat_agent.grounding import template_answer
+
+    results = [{"movie": {"title": "Shrek", "year": 2001}, "reasons": ["funny 88%"], "match_percent": 60}]
+    assert "None of the top films is clearly scary." in template_answer(results, [], {"missing": ["scary"]})
+    split = template_answer(results, [], {"missing": [], "split": ["funny", "scary"]})
+    assert "No top film combines funny and scary" in split
+    assert template_answer(results).startswith("Here are films")
+
+
+def test_a_result_may_be_named_without_its_alternative_title():
+    from cinesense.chat_agent.grounding import result_titles
+
+    results = [
+        {"movie": {"title": "Let the Right One In (Låt den rätte komma in)", "title_de": "So finster die Nacht"}},
+        {"movie": {"title": "Alien"}},
+    ]
+    titles = result_titles(results)
+    assert {"Let the Right One In (Låt den rätte komma in)", "Let the Right One In", "So finster die Nacht"} <= set(
+        titles
+    )
+    ok, _ = validate_titles(
+        "**Let the Right One In** — creepy.", titles, {"Let the Right One In (Låt den rätte komma in)"}
+    )
+    assert ok

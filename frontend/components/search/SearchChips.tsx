@@ -25,7 +25,7 @@ const MODES: { mode: TagMode; label: string; hint: string }[] = [
 
 export type FilterChip = { key: string; label: string; clear: Partial<Criteria>; aria: string };
 
-/** The non-tag criteria as labelled chips (person, title, plot, availability, runtime, kind, years, language). */
+/** The non-tag criteria as labelled chips (person, title, plot, availability, runtime, kind, years, rating, language). */
 export function filterChips(criteria: Criteria): FilterChip[] {
   const others: FilterChip[] = [];
   if (criteria.person) others.push({ key: "person", label: `👤 ${criteria.person}`, clear: { person: null }, aria: `Remove person ${criteria.person}` });
@@ -36,6 +36,7 @@ export function filterChips(criteria: Criteria): FilterChip[] {
   if (criteria.max_runtime_min) others.push({ key: "runtime", label: `< ${criteria.max_runtime_min} min`, clear: { max_runtime_min: null }, aria: "Remove runtime limit" });
   if (criteria.kind !== "any") others.push({ key: "kind", label: criteria.kind === "documentary" ? "Documentaries" : "Feature films", clear: { kind: "any" }, aria: "Remove kind filter" });
   if (criteria.year_from || criteria.year_to) others.push({ key: "year", label: `${criteria.year_from ?? "…"}–${criteria.year_to ?? "…"}`, clear: { year_from: null, year_to: null }, aria: "Remove year range" });
+  if (criteria.min_rating != null) others.push({ key: "rating", label: `★ Rated ${criteria.min_rating}+`, clear: { min_rating: null }, aria: "Remove rating filter" });
   if (criteria.original_language) others.push({ key: "lang", label: `Language: ${criteria.original_language}`, clear: { original_language: null }, aria: "Remove language filter" });
   return others;
 }

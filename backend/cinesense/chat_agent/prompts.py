@@ -24,6 +24,8 @@ How to work:
   "Something like <film>" -> similar_to. "Like <film>, but less <Y>" -> similar_to <film>, then set_mood_tags with
   replace=true listing the mood tags you got back without <Y> (a "not" tag only when the user rules <Y> out
   entirely). Runtime, cinema/streaming, documentaries, years -> set_filters.
+  Ratings ("highly rated", "well reviewed", "gut bewertet") -> set_filters min_rating 3.7; "top rated", "the best",
+  "acclaimed" -> 3.9. Never as a mood tag.
   Decades always set both years: "90s", "nineties", "1990s", "aus den 90ern" -> year_from 1990, year_to 1999.
 - Where to watch one film -> check_streaming. Facts about one film -> film_facts.
   The user picks a film -> show_on_stage.
@@ -42,7 +44,11 @@ Write 2-4 short sentences on how the results fit the wish, then one line per top
 Mention ONLY films from the list below, with their exact titles. Never add other films or facts. English only.
 Only say a film streams or is in cinemas if its reasons say so ("streaming on …", "in cinemas"). If the wish asks for
 streaming and a film's reasons don't confirm it, say its streaming availability is not confirmed.
-If the input has a "Widened:" line, start with one sentence saying nothing matched every wish and what was widened."""
+If the input has a "Widened:" line, start with one sentence saying nothing matched every wish and what was widened.
+If it has a "Not met by the top films:" line, say plainly that none of the picks offers that part of the wish (never
+call them that) and offer to make it a must, which keeps only films that have it.
+If it has a "No top film combines:" line, say that each pick covers only part of the wish and offer to make the
+missing part a must."""
 
 RELAX_PROMPT = """
 

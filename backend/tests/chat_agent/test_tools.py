@@ -201,3 +201,10 @@ def test_new_search_clears_every_criterion(kit):
     assert upd["criteria"] == SearchCriteria().model_dump() and upd["criteria_changed"] is True
     assert "cleared" in msg.lower()
     assert "new_search" in [t.name for t in make_tools(kit)]
+
+
+def test_set_filters_min_rating_and_clear(kit):
+    upd, msg = kit.set_filters(state(), {"min_rating": 3.8})
+    assert upd["criteria"]["min_rating"] == 3.8 and "min_rating" in msg
+    upd2, _ = kit.set_filters({**state(), "criteria": upd["criteria"]}, {"clear": ["min_rating"]})
+    assert upd2["criteria"]["min_rating"] is None

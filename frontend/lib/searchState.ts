@@ -22,6 +22,7 @@ export type Criteria = {
   year_to: number | null;
   original_language: string | null;
   min_rating_count: number;
+  min_rating: number | null; // Bayesian MovieLens rating 0–5 ("highly rated")
   extended: boolean;
 };
 
@@ -42,6 +43,7 @@ export function emptyCriteria(): Criteria {
     year_to: null,
     original_language: null,
     min_rating_count: 0,
+    min_rating: null,
     extended: false,
   };
 }

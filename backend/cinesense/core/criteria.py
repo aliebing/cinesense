@@ -30,6 +30,7 @@ class SearchCriteria(BaseModel):
     year_to: int | None = None
     original_language: str | None = None
     min_rating_count: int = 0
+    min_rating: float | None = Field(default=None, ge=0.5, le=5)  # Bayesian MovieLens rating, 0–5
     extended: bool = False
 
     def prefer_weights(self) -> dict[int, int]:

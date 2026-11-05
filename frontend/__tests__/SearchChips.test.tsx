@@ -117,3 +117,10 @@ it("lists excluded people struck through, says what each hides, and removes one"
   await userEvent.click(screen.getByRole("button", { name: "Remove excluded person Sylvester Stallone" }));
   expect(onChange.mock.calls[0][0].exclude_people).toEqual(["Arnold Schwarzenegger"]);
 });
+
+it("a rating filter shows as a chip that removes it", async () => {
+  const onChange = setup({ min_rating: 3.7 });
+  await userEvent.click(screen.getByRole("button", { name: "Remove rating filter" }));
+  expect(onChange.mock.calls[0][0].min_rating).toBeNull();
+  expect(screen.getByText(/Rated 3\.7\+/)).toBeInTheDocument();
+});

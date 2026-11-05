@@ -43,6 +43,21 @@ def user_named_titles(text: str, catalogue_titles: set[str]) -> list[str]:
     return found
 
 
+_ALT_TITLE = re.compile(r"\s*\([^()]*\)$")  # "Let the Right One In (Låt den rätte komma in)", "Seven (a.k.a. Se7en)"
+
+
+def result_titles(results: list[dict]) -> list[str]:
+    """The names a reply may use for the result films: the catalogue title, the title without its trailing
+    alternative title in brackets (how people write it), and the German title."""
+    out: list[str] = []
+    for r in results:
+        m = r["movie"]
+        for t in (m["title"], _ALT_TITLE.sub("", m["title"]), m.get("title_de")):
+            if t and t not in out:
+                out.append(t)
+    return out
+
+
 def validate_titles(
     text: str, allowed_titles: list[str], catalogue_titles: set[str], tag_spans: list[str] = ()
 ) -> tuple[bool, list[str]]:
@@ -83,8 +98,13 @@ def pick_count(results: list[dict]) -> int:
     return min(len(results), max(PICKS_MIN, close))
 
 
-def template_answer(results: list[dict], relaxed: list[str] = ()) -> str:
+def template_answer(results: list[dict], relaxed: list[str] = (), gaps: dict | None = None) -> str:
     widened = f"Nothing matched every wish, so I widened the search: {'; '.join(relaxed)}.\n" if relaxed else ""
+    gaps = gaps or {}
+    if results and gaps.get("missing"):
+        widened += f"None of the top films is clearly {' or '.join(gaps['missing'])}.\n"
+    elif results and gaps.get("split"):
+        widened += f"No top film combines {' and '.join(gaps['split'])}; each covers part of the wish.\n"
     if not results:
         return widened + "No films match all of these wishes — try removing a must tag or a filter."
     lines = []

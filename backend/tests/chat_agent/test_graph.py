@@ -172,3 +172,17 @@ def test_the_explanation_may_name_a_film_by_its_german_title():
     out = run_turn(g, "t-de", "Winnetou", empty())
     assert "German title: Winnetou 1. Teil" in out["prompts"]["explain_input"]
     assert not out.get("grounding_fallback") and "Winnetou 1. Teil" in out["reply"]
+
+
+def test_explain_input_names_wishes_the_top_films_miss(make_agent):
+    tags = [{"name": "funny", "weight": 8}, {"name": "scary", "weight": 4}]
+    g = make_agent([ai(calls=[("set_mood_tags", {"tags": tags})]), ai("Done.")])
+    out = run_turn(g, "t-unmet", "funny and a bit scary", empty())
+    assert "Not met by the top films: scary" in out["prompts"]["explain_input"]
+
+
+def test_highly_rated_is_a_filter_in_the_explain_criteria(make_agent):
+    g = make_agent([ai(calls=[("set_filters", {"min_rating": 4.1})]), ai("Done.")])
+    out = run_turn(g, "t-rated", "highly rated films", empty())
+    assert out["criteria"]["min_rating"] == 4.1
+    assert "min_rating: 4.1" in out["prompts"]["explain_input"]

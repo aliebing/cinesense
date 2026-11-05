@@ -9,13 +9,16 @@ from dataclasses import dataclass
 
 from cinesense.core.criteria import MUST_THRESHOLD, SearchCriteria
 from cinesense.core.models import Movie
+from cinesense.search.ranking import REASON_MIN
+from cinesense.search.rating import DEFAULT_PRIOR_MEAN, catalogue_rating
 
 log = logging.getLogger(__name__)
 
 MIN_RESULTS = 3  # fewer films than this and the search is widened
-MAX_OPTIONS = 7
+MAX_OPTIONS = 8
 RUNTIME_STEP, RUNTIME_MAX = 30, 400
 YEAR_STEP = 10
+RATING_STEP = 0.3  # below the catalogue mean a rating filter is dropped, not lowered
 
 
 @dataclass
@@ -56,6 +59,12 @@ def relaxation_options(c: SearchCriteria, tag_names: list[str]) -> list[Relaxati
         lo = c.year_from - YEAR_STEP if c.year_from else None
         hi = c.year_to + YEAR_STEP if c.year_to else None
         add("years", f"Widen the years to {lo or '…'}–{hi or '…'}", year_from=lo, year_to=hi)
+    if c.min_rating is not None:
+        r = round(c.min_rating - RATING_STEP, 1)
+        if r >= DEFAULT_PRIOR_MEAN:
+            add("rating", f"Rated {r} or better", min_rating=r)
+        else:
+            add("rating", "Any rating", min_rating=None)
     if c.original_language:
         add("language", "Any original language", original_language=None)
     if c.world_id:
@@ -106,6 +115,10 @@ def misses(
     lo, hi = original.year_from, original.year_to
     if movie.year and ((lo and movie.year < lo) or (hi and movie.year > hi)):
         out.append(f"from {movie.year}, outside {lo or '…'}–{hi or '…'}")
+    if original.min_rating is not None:
+        rating = catalogue_rating(movie.ml_rating, movie.ml_rating_count)
+        if rating < original.min_rating:
+            out.append(f"rated {rating:.1f}, below {original.min_rating}")
     if original.original_language and movie.original_language and movie.original_language != original.original_language:
         out.append(f"original language {movie.original_language}, not {original.original_language}")
     if original.world_id and original.world_id not in movie.world_ids:
@@ -146,3 +159,27 @@ def mark_misses(items: list, original: SearchCriteria, provider) -> None:
     for row, r in enumerate(items):
         relevance = {i: float(vectors[row][i]) for i in wanted} if vectors is not None else None
         r.misses = misses(r.movie, original, provider.list_tags(), relevance)
+
+
+@dataclass
+class MoodCoverage:
+    missing: list[str]  # wanted moods none of the films shows
+    combined: bool  # some film shows every wanted mood
+
+
+def mood_coverage(items: list, c: SearchCriteria, provider) -> MoodCoverage:
+    """How far the top films meet the wanted moods (relevance >= REASON_MIN counts as present). "Romantic, funny and
+    a bit scary" may rank romantic comedies first: named so the reply says so instead of quietly meeting two of
+    three, and "funny and scary" may split into comedies and thrillers with no film that is both."""
+    wanted = [t.idx for t in c.tags if t.mode != "not"]
+    if not wanted or not items:
+        return MoodCoverage([], True)
+    vectors = provider.tag_vectors([r.movie.id for r in items])
+    names = provider.list_tags()
+
+    def present(row, i) -> bool:
+        return row[i] == row[i] and float(row[i]) >= REASON_MIN  # NaN: no mood data
+
+    missing = [_name(names, i) for i in wanted if not any(present(row, i) for row in vectors)]
+    combined = any(all(present(row, i) for i in wanted) for row in vectors)
+    return MoodCoverage(missing, combined)

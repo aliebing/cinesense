@@ -11,7 +11,13 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, Tool
 from langgraph.graph import END, START, StateGraph
 from langgraph.types import Command
 
-from cinesense.chat_agent.grounding import pick_count, template_answer, user_named_titles, validate_titles
+from cinesense.chat_agent.grounding import (
+    pick_count,
+    result_titles,
+    template_answer,
+    user_named_titles,
+    validate_titles,
+)
 from cinesense.chat_agent.guard import GUARD_REPLY, leaks_prompt, looks_like_injection, sanitize
 from cinesense.chat_agent.prompts import AGENT_PROMPT, EXPLAIN_PROMPT, RELAX_PROMPT
 from cinesense.chat_agent.state import AgentState
@@ -40,6 +46,7 @@ def criteria_summary(criteria: dict, tags: list[str]) -> str:
         "year_from",
         "year_to",
         "original_language",
+        "min_rating",
     ):
         if getattr(c, field):
             out.append(f"{field}: {getattr(c, field)}")
@@ -169,7 +176,22 @@ def build_graph(llm, explain_llm, tools: list, service, provider, checkpointer):
         except Exception:  # noqa: BLE001 — keep the history valid; explain answers with "no films"
             log.exception("present: search failed")
             update["results"] = []
+            return update
+        update["mood_gaps"] = _mood_gaps(result.items[: pick_count(update["results"])], state)
         return update
+
+    def _mood_gaps(top: list, state: AgentState) -> dict:
+        """Wanted moods the presented films miss (against the wish before any widening)."""
+        try:
+            c = SearchCriteria(**(state.get("original_criteria") or state.get("criteria") or {}))
+            cov = widening.mood_coverage(top, c, provider)
+        except Exception:  # noqa: BLE001 — without the check the reply only loses the note
+            log.exception("present: mood coverage failed")
+            return {}
+        names = provider.list_tags()
+        wanted = [names[t.idx] for t in c.tags if t.mode != "not" and t.idx < len(names)]
+        split = wanted if not cov.missing and not cov.combined and len(wanted) > 1 else []
+        return {"missing": cov.missing, "split": split}
 
     def verify(state: AgentState) -> dict:
         """Too few films: work out which constraints could be widened and how many films each would find."""
@@ -211,6 +233,7 @@ def build_graph(llm, explain_llm, tools: list, service, provider, checkpointer):
     def explain(state: AgentState) -> dict:
         results = state.get("results") or []
         relaxed = state.get("relaxed") or []
+        gaps = state.get("mood_gaps") or {}
         wish = _last_human(state["messages"])
         if not results:
             return {"messages": [AIMessage(template_answer([], relaxed))]}
@@ -230,6 +253,10 @@ def build_graph(llm, explain_llm, tools: list, service, provider, checkpointer):
         )
         if relaxed:
             prompt += f"\nWidened: {'; '.join(relaxed)}"
+        if gaps.get("missing"):
+            prompt += f"\nNot met by the top films: {', '.join(gaps['missing'])}"
+        if gaps.get("split"):
+            prompt += f"\nNo top film combines: {', '.join(gaps['split'])}"
         usage = state.get("usage") or {}
         system = SystemMessage(EXPLAIN_PROMPT.format(picks=pick_count(results)))
         prompts = {**(state.get("prompts") or {}), "explain": str(system.content), "explain_input": prompt}
@@ -241,8 +268,7 @@ def build_graph(llm, explain_llm, tools: list, service, provider, checkpointer):
         except Exception:  # noqa: BLE001 — the template is always a valid answer
             text = ""
         titles = catalogue_titles()
-        allowed = [r["movie"]["title"] for r in results] + user_named_titles(wish, titles)
-        allowed += [r["movie"]["title_de"] for r in results if r["movie"].get("title_de")]
+        allowed = result_titles(results) + user_named_titles(wish, titles)
         names = provider.list_tags()
         tag_spans = [names[t["idx"]] for t in (state.get("criteria") or {}).get("tags", []) if t["idx"] < len(names)]
         tag_spans += [p["tag"] for p in state.get("proposals") or []]
@@ -250,7 +276,7 @@ def build_graph(llm, explain_llm, tools: list, service, provider, checkpointer):
         if not ok:
             log.warning("grounding fallback, unlisted titles: %s", bad)
             return {
-                "messages": [AIMessage(template_answer(results, relaxed))],
+                "messages": [AIMessage(template_answer(results, relaxed, gaps))],
                 "grounding_fallback": True,
                 "grounding_reason": bad or ["no usable answer (error or cut off)"],
                 "usage": usage,
@@ -326,6 +352,7 @@ def run_turn(
         "relax_options": [],
         "relaxed": [],
         "original_criteria": None,
+        "mood_gaps": {},
     }
     with _locks_guard:
         lock = _thread_locks[thread_id]
@@ -376,6 +403,7 @@ def _run_locked(graph, config: dict, inputs: dict, on_status) -> dict:
         "grounding_fallback": s.get("grounding_fallback", False),
         "grounding_reason": s.get("grounding_reason", []),
         "relaxed": s.get("relaxed", []),
+        "mood_gaps": s.get("mood_gaps") or {},
         "history_len": len(s["messages"]),
         "tools_called": tools_called,
         "tool_errors": tool_errors,
@@ -400,6 +428,7 @@ def _guarded_turn(graph, config: dict, ui_criteria: dict) -> dict:
         "grounding_fallback": False,
         "grounding_reason": [],
         "relaxed": [],
+        "mood_gaps": {},
         "history_len": len(history),
         "tools_called": [],
         "tool_errors": 0,

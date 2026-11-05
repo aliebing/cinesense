@@ -5,12 +5,13 @@ from dataclasses import dataclass, field
 
 from cinesense.core.criteria import SearchCriteria
 from cinesense.core.models import Movie, RankedMovie
-from cinesense.search.rating import DEFAULT_PRIOR_MEAN, bayesian_rating
+from cinesense.search.rating import DEFAULT_PRIOR_MEAN, bayesian_rating, catalogue_rating
 
 WEIGHTS = {"tags": 0.4, "plot": 0.3, "people": 0.2, "profile": 0.15, "rating": 0.1, "popularity": 0.08, "recency": 0.04}
 RECENCY_FROM, RECENCY_TO = 1970, 2025  # a small bonus growing from 1970 to the newest films
 POPULARITY_FULL = 100_000  # MovieLens ratings at which a film counts as fully known (log scale)
 TASTE_REASON = 0.75  # normalised profile match from which "fits your taste" is shown
+REASON_MIN = 0.3  # tag relevance from which a mood counts as present (shown as a reason)
 
 
 @dataclass
@@ -66,6 +67,8 @@ def _passes(m: Movie, c: SearchCriteria) -> bool:
         and not m.availability.subscription_services
     ):
         return False  # unknown availability stays in; the API resolves it for the top results
+    if c.min_rating is not None and catalogue_rating(m.ml_rating, m.ml_rating_count) < c.min_rating:
+        return False
     return m.ml_rating_count >= c.min_rating_count
 
 
@@ -159,7 +162,7 @@ def _reasons(m: Movie, c: SearchCriteria, s: Signals, taste: dict[str, float]) -
     out: list[str] = []
     rel = s.tag_relevance.get(m.id, {})
     for t in c.tags:
-        if t.mode != "not" and t.idx in rel and t.idx in s.tag_names and rel[t.idx] >= 0.3:
+        if t.mode != "not" and t.idx in rel and t.idx in s.tag_names and rel[t.idx] >= REASON_MIN:
             out.append(f"{s.tag_names[t.idx]} {round(100 * rel[t.idx])}%")
     if s.plot and m.id in s.plot:
         chunk = s.plot[m.id][1].strip().replace("\n", " ")

@@ -23,6 +23,7 @@ FILTER_FIELDS = (
     "year_to",
     "original_language",
     "exclude_genres",
+    "min_rating",
 )
 
 
@@ -248,10 +249,12 @@ def make_tools(kit: ToolKit) -> list:
         year_to: int | None = None,
         original_language: str | None = None,
         exclude_genres: list[str] | None = None,
+        min_rating: float | None = None,
         clear: list[str] | None = None,
     ) -> Command:
         """Set hard filters: availability in Germany, max runtime (minutes), kind, year range, ISO 639-1 original
-        language (e.g. 'en'), excluded MovieLens genres (e.g. ['Horror']). 'clear' resets named filters."""
+        language (e.g. 'en'), excluded MovieLens genres (e.g. ['Horror']), minimum MovieLens rating 0-5
+        ('highly rated' 3.7, 'top rated' 3.9). 'clear' resets named filters."""
         filters = {k: v for k, v in locals().items() if k not in ("state", "tool_call_id")}
         return wrap(*kit.set_filters(state, filters), tool_call_id)
 
