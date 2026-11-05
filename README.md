@@ -35,7 +35,8 @@ tokens, cost and latency, and the ranked films as text. It is backed by `POST /a
 `/tech` asks for a login; locally it is open.
 
 **Chat limits** (`.env`): `CHAT_LIMIT_PER_DAY` (default 25 turns per visitor and day) and `TECH_LIMIT_PER_DAY`
-(default 50, a separate counter for `/tech`), plus a per-minute and a site-wide daily limit.
+(default 50, a separate counter for `/tech`), plus a per-minute and a site-wide daily limit. The daily counts are kept in Postgres
+(`chat_turns`, today only, visitor addresses as a keyed hash), so restarting the API does not reset them.
 
 ## Setup
 

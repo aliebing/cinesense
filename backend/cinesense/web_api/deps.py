@@ -6,13 +6,26 @@ from cinesense.core.config import get_settings
 from cinesense.data_sources.fixture import FixtureProvider
 
 
+def _turn_store():
+    """Daily turn counts in Postgres when configured (they survive a restart), otherwise in memory. The database
+    URL is a server secret, so it keys the hash of the visitor addresses."""
+    from cinesense.web_api.limits import MemoryTurnStore, PostgresTurnStore
+
+    s = get_settings()
+    if s.database_url:
+        from cinesense.data_sources.db import connect
+
+        return PostgresTurnStore(lambda: connect(s.database_url), secret=s.database_url)
+    return MemoryTurnStore()
+
+
 @lru_cache
 def get_limiter():
     """One shared counter of agent turns per process (see limits.py). Tests override this."""
     from cinesense.web_api.limits import TurnLimiter
 
     s = get_settings()
-    return TurnLimiter(s.chat_per_minute, s.chat_per_day, s.chat_site_per_day)
+    return TurnLimiter(s.chat_per_minute, s.chat_per_day, s.chat_site_per_day, store=_turn_store(), scope="chat")
 
 
 @lru_cache
@@ -21,7 +34,7 @@ def get_tech_limiter():
     from cinesense.web_api.limits import TurnLimiter
 
     s = get_settings()
-    return TurnLimiter(s.chat_per_minute, s.tech_per_day, s.chat_site_per_day)
+    return TurnLimiter(s.chat_per_minute, s.tech_per_day, s.chat_site_per_day, store=_turn_store(), scope="tech")
 
 
 @lru_cache

@@ -83,3 +83,13 @@ create table if not exists feedback (
   updated_at timestamptz not null default now(),
   primary key (user_id, film_id)
 );
+
+-- chat limits: agent turns per UTC day, scope (chat / tech) and visitor (keyed hash of the address, '*' = whole
+-- site); the API keeps only the current day
+create table if not exists chat_turns (
+  day date not null,
+  scope text not null,
+  visitor text not null,
+  turns int not null default 0,
+  primary key (day, scope, visitor)
+);

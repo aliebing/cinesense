@@ -2,7 +2,14 @@ from fastapi.testclient import TestClient
 
 from cinesense.core.config import get_settings
 from cinesense.web_api.deps import get_limiter, get_tech_limiter
-from cinesense.web_api.limits import SITE_DAY, VISITOR_DAY, VISITOR_MINUTE, TurnLimiter, visitor_of
+from cinesense.web_api.limits import (
+    SITE_DAY,
+    VISITOR_DAY,
+    VISITOR_MINUTE,
+    MemoryTurnStore,
+    TurnLimiter,
+    visitor_of,
+)
 from tests.web_api.test_chat import chat_client, events, fake_runner
 from tests.web_api.test_inspect import make_app
 from tests.web_api.test_inspect import runner as inspect_runner
@@ -16,8 +23,10 @@ class Clock:
         return self.t
 
 
-def limiter(clock, minute=3, day=5, site=8):
-    return TurnLimiter(per_visitor_minute=minute, per_visitor_day=day, site_day=site, clock=clock)
+def limiter(clock, minute=3, day=5, site=8, store=None, scope="chat"):
+    return TurnLimiter(
+        per_visitor_minute=minute, per_visitor_day=day, site_day=site, clock=clock, store=store, scope=scope
+    )
 
 
 def test_allows_turns_under_every_limit():
@@ -70,6 +79,47 @@ def test_refused_turns_do_not_count():
         lim.check("a")
     clock.t += 61
     assert lim.check("a") is None  # 2 counted turns, not 11: still under the daily 5
+
+
+def test_daily_counts_survive_a_restart():
+    """The daily counters live in the store (Postgres in production), so a new process starts from them."""
+    clock, store = Clock(), MemoryTurnStore()
+    first = limiter(clock, store=store)
+    for _ in range(5):
+        first.check("a")
+        clock.t += 30
+    restarted = limiter(clock, store=store)
+    assert restarted.check("a") == VISITOR_DAY
+
+
+def test_site_count_survives_a_restart():
+    clock, store = Clock(), MemoryTurnStore()
+    first = limiter(clock, store=store)
+    for i in range(8):
+        first.check(f"v{i}")
+    assert limiter(clock, store=store).check("new") == SITE_DAY
+
+
+def test_chat_and_technical_view_count_separately_in_one_store():
+    clock, store = Clock(), MemoryTurnStore()
+    chat = limiter(clock, day=1, store=store, scope="chat")
+    tech = limiter(clock, day=1, store=store, scope="tech")
+    assert chat.check("a") is None
+    assert tech.check("a") is None
+    assert chat.check("a") == VISITOR_DAY
+
+
+class BrokenStore:
+    def counts(self, day, scope, visitor):
+        raise RuntimeError("database down")
+
+    def add(self, day, scope, visitor):
+        raise RuntimeError("database down")
+
+
+def test_a_failing_store_falls_back_to_counting_in_memory():
+    lim = limiter(Clock(), minute=10, day=2, store=BrokenStore())
+    assert [lim.check("a") for _ in range(3)] == [None, None, VISITOR_DAY]
 
 
 def test_visitor_is_the_address_the_proxy_added_last():
