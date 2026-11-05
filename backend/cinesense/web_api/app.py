@@ -13,6 +13,7 @@ from cinesense.core.models import MoodWorld, Movie, RankedMovie
 from cinesense.core.worlds import WORLDS, get_world
 from cinesense.search import widening
 from cinesense.search.service import SearchService
+from cinesense.web_api.admin import router as admin_router
 from cinesense.web_api.chat import router as chat_router
 from cinesense.web_api.deps import (
     get_embedder,
@@ -82,6 +83,7 @@ def create_app(load_env: bool = True) -> FastAPI:
     app.include_router(chat_router)
     app.include_router(inspect_router)
     app.include_router(eval_router)
+    app.include_router(admin_router)
     app.include_router(taste_router)
 
     @app.get("/api/health")

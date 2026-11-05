@@ -13,7 +13,8 @@ from cinesense.chat_agent.graph import criteria_summary
 from cinesense.chat_agent.llm import PRICES, cost_usd
 from cinesense.core.config import get_settings
 from cinesense.web_api.chat import ChatRequest
-from cinesense.web_api.deps import get_agent, get_provider, get_tech_limiter
+from cinesense.web_api.chat_log import log_turn
+from cinesense.web_api.deps import get_agent, get_chat_log, get_provider, get_tech_limiter, log_secret
 from cinesense.web_api.limits import visitor_of
 
 router = APIRouter()
@@ -64,18 +65,27 @@ def inspect(
     provider: Annotated[object, Depends(get_provider)],
     request: Request,
     limiter: Annotated[object, Depends(get_tech_limiter)],
+    chat_log: Annotated[object, Depends(get_chat_log)],
 ) -> dict:
     if runner is None:
         raise HTTPException(status_code=503, detail="no_llm_key")
-    refused = limiter.check(visitor_of(request.headers, request.client and request.client.host))
+    visitor = visitor_of(request.headers, request.client and request.client.host)
+    refused = limiter.check(visitor)
     if refused:
         raise HTTPException(status_code=429, detail=refused)
     started = time.monotonic()
-    out = runner(req.thread_id, req.message, req.criteria.model_dump(), None, None)
-    latency = time.monotonic() - started
     names = provider.list_tags()
-    criteria = out.get("criteria") or {}
     model = get_settings().llm_model
+    logged = {"scope": "tech", "visitor": visitor, "thread_id": req.thread_id, "message": req.message}
+    logged |= {"secret": log_secret(), "model": model, "tag_names": names}
+    try:
+        out = runner(req.thread_id, req.message, req.criteria.model_dump(), None, None)
+    except Exception as exc:
+        log_turn(chat_log, out=None, duration_s=time.monotonic() - started, error=type(exc).__name__, **logged)
+        raise
+    latency = time.monotonic() - started
+    log_turn(chat_log, out=out, duration_s=latency, error=None, **logged)
+    criteria = out.get("criteria") or {}
     usage = out.get("usage") or {}
     return {
         "reply": out.get("reply", ""),

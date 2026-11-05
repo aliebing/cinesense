@@ -15,6 +15,18 @@ def fresh_chat_limits():
     get_tech_limiter.cache_clear()
 
 
+@pytest.fixture(autouse=True)
+def memory_chat_log(monkeypatch):
+    """No test writes the visitor log to a real database, even with SUPABASE_DB_URL loaded from .env."""
+    from cinesense.web_api import chat_log
+    from cinesense.web_api.deps import get_chat_log
+
+    monkeypatch.setattr(chat_log, "PostgresChatLog", lambda *a, days=30: chat_log.MemoryChatLog(days))
+    get_chat_log.cache_clear()
+    yield
+    get_chat_log.cache_clear()
+
+
 @pytest.fixture
 def make_movie():
     def _make(**overrides) -> Movie:

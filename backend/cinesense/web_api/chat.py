@@ -4,15 +4,18 @@ import json
 import logging
 import queue
 import threading
+import time
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
+from cinesense.core.config import get_settings
 from cinesense.core.criteria import SearchCriteria
 from cinesense.core.models import Movie
-from cinesense.web_api.deps import get_agent, get_limiter, get_provider, get_streaming
+from cinesense.web_api.chat_log import log_turn
+from cinesense.web_api.deps import get_agent, get_chat_log, get_limiter, get_provider, get_streaming, log_secret
 from cinesense.web_api.images import with_images
 from cinesense.web_api.limits import visitor_of
 from cinesense.web_api.taste import UserProfile
@@ -42,10 +45,10 @@ def chat(
     profile: UserProfile,
     request: Request,
     limiter: Annotated[object, Depends(get_limiter)],
+    chat_log: Annotated[object, Depends(get_chat_log)],
 ):
-    refused = (
-        None if runner is None else limiter.check(visitor_of(request.headers, request.client and request.client.host))
-    )
+    visitor = visitor_of(request.headers, request.client and request.client.host)
+    refused = None if runner is None else limiter.check(visitor)
 
     def events():
         if runner is None:
@@ -57,6 +60,7 @@ def chat(
         q: queue.Queue = queue.Queue()
 
         def work():
+            started, out, error = time.monotonic(), None, None
             try:
                 out = runner(
                     req.thread_id, req.message, req.criteria.model_dump(), lambda t: q.put(("status", t)), profile
@@ -66,9 +70,23 @@ def chat(
                 u = out.get("usage") or {}
                 log.info("chat turn: %s input / %s output tokens", u.get("input_tokens"), u.get("output_tokens"))
                 q.put(("final", out))
-            except Exception:  # noqa: BLE001 — any LLM/provider failure degrades to the chips
+            except Exception as exc:  # noqa: BLE001 — any LLM/provider failure degrades to the chips
                 log.exception("chat turn failed")
+                error = type(exc).__name__
                 q.put(("error", None))
+            log_turn(
+                chat_log,
+                scope="chat",
+                visitor=visitor,
+                thread_id=req.thread_id,
+                message=req.message,
+                out=out,
+                duration_s=time.monotonic() - started,
+                error=error,
+                secret=log_secret(),
+                model=get_settings().llm_model,
+                tag_names=provider.list_tags(),
+            )
 
         threading.Thread(target=work, daemon=True).start()
         while True:

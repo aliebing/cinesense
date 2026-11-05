@@ -159,6 +159,25 @@ def get_agent():
 
 
 @lru_cache
+def get_chat_log():
+    """The visitor log (chat_log.py): Postgres when configured, otherwise in memory. Tests override this."""
+    s = get_settings()
+    from cinesense.web_api.chat_log import MemoryChatLog, PostgresChatLog
+
+    if s.database_url:
+        from cinesense.data_sources.db import connect
+
+        return PostgresChatLog(lambda: connect(s.database_url), days=s.chat_log_days)
+    return MemoryChatLog(days=s.chat_log_days)
+
+
+def log_secret() -> str:
+    """Keys the visitor and conversation hashes of the log: a server secret, never stored with them."""
+    s = get_settings()
+    return s.database_url or s.tech_password or "cinesense-local"
+
+
+@lru_cache
 def get_feedback_store():
     s = get_settings()
     from cinesense.taste.feedback import MemoryFeedbackStore, PostgresFeedbackStore

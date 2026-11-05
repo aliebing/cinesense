@@ -93,3 +93,30 @@ create table if not exists chat_turns (
   turns int not null default 0,
   primary key (day, scope, visitor)
 );
+
+-- visitor log for /admin/visitors: one row per agent turn, kept 30 days (the API deletes older rows on every
+-- write); visitor and thread are keyed hashes, never the address or the client's conversation id
+create table if not exists chat_log (
+  id bigserial primary key,
+  ts timestamptz not null default now(),
+  scope text not null,
+  visitor text,
+  thread text,
+  message text,
+  reply text,
+  criteria jsonb,
+  criteria_summary text,
+  films jsonb,
+  tools jsonb,
+  relaxed jsonb,
+  grounding_fallback boolean not null default false,
+  grounding_reason jsonb,
+  guarded boolean not null default false,
+  model text,
+  input_tokens int not null default 0,
+  output_tokens int not null default 0,
+  cost_usd double precision not null default 0,
+  duration_ms int,
+  error text
+);
+create index if not exists chat_log_ts on chat_log (ts desc);
