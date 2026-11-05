@@ -47,8 +47,8 @@ Each folder is one role. Read them top to bottom: each builds only on the ones a
 | `search/` | Turns `SearchCriteria` into ranked, explained results; widens a search that finds too little | `service.py`, `ranking.py`, `widening.py` | core |
 | `taste/` | Anonymous 👍/👎 and the taste profile derived from them | `profile.py`, `feedback.py` | core |
 | `catalog_import/` | Offline jobs that build the catalogue: MovieLens + Tag Genome, plots, embeddings, posters, billing, languages | `pipeline.py` | core, data_sources |
-| `chat_agent/` | The LangGraph agent: injection guard, tool loop, deterministic search run, widening, grounded explanation | `graph.py`, `tools.py`, `grounding.py`, `guard.py`, `prompts.py` | core, search, taste |
-| `web_api/` | The HTTP layer: catalogue and search endpoints, chat as Server-Sent Events, `/api/inspect`, taste, the per-visitor and daily turn limits | `app.py`, `chat.py`, `limits.py`, `deps.py` (wiring) | everything above |
+| `chat_agent/` | The LangGraph agent: injection guard, tool loop, deterministic search run, widening, mood coverage of the picks, grounded explanation | `graph.py`, `tools.py`, `grounding.py`, `guard.py`, `prompts.py` | core, search, taste |
+| `web_api/` | The HTTP layer: catalogue and search endpoints, chat as Server-Sent Events, `/api/inspect`, the saved eval runs (`/api/eval/runs`), taste, the per-visitor and daily turn limits | `app.py`, `chat.py`, `limits.py`, `deps.py` (wiring) | everything above |
 | `evaluation/` | Scenarios against the real agent, automatic checks, LLM judge, two baseline rankers | `runner.py`, `checks.py`, `baselines.py` | everything above |
 
 The rule in the last column is enforced by `backend/tests/test_architecture.py`: an import that points upwards

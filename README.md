@@ -33,6 +33,10 @@ Cinema and streaming sites show long title lists and genre grids. Combining seve
 reply, the criteria with tag names, every tool call with its arguments and result, the prompts that were sent, model,
 tokens, cost and latency, and the ranked films as text. It is backed by `POST /api/inspect`. On the public server
 `/tech` asks for a login; locally it is open.
+`/tech/eval`, behind the same login, shows the saved `make eval` runs: the automatic checks as k/n bars, the ranker
+comparison, the history across runs, and every scenario with its turns, tools per turn, reply and the judge's reason.
+It reads `evaluation/results/` through `GET /api/eval/runs` (in the API container, mount that folder and point
+`CINESENSE_EVAL_DIR` at it).
 
 **Chat limits** (`.env`): `CHAT_LIMIT_PER_DAY` (default 25 turns per visitor and day) and `TECH_LIMIT_PER_DAY`
 (default 50, a separate counter for `/tech`), plus a per-minute and a site-wide daily limit. The daily counts are kept in Postgres
@@ -110,13 +114,14 @@ The model decides **what** to look for; everything that must be reproducible is 
 |---|---|
 | `new_search` — clears every criterion before a wish that does not build on the last one | ranking: weighted tag relevance, plot similarity, title match, Bayesian rating, popularity, recency |
 | `set_mood_tags` — Tag Genome tags with weight and prefer/must/not | a wanted person filters and scales the match by their part (lead 1.0, cameo 0.5), without extra points |
-| `set_filters` — cinema/streaming, runtime, kind, years, language, genres | hard filters and the "→ n films hidden" count |
+| `set_filters` — cinema/streaming, runtime, kind, years, language, genres, minimum rating ("highly rated") | hard filters and the "→ n films hidden" count |
 | `search_plot` — RAG over Wikipedia plots | the final search run (`present`) and its top 8 |
 | `find_person`, `exclude_people`, `find_title`, `similar_to` | API budgets (streaming 900/month, max 3 streaming checks per turn) |
 | `check_streaming`, `film_facts` | grounding: the reply may only name returned films, else a template answer |
 | `propose_exclusions` — suggested, never applied silently | "No horror" also excludes the Horror genre |
 | `show_on_stage` — hand-off to the genre page | thread memory (one conversation per browser tab) |
 | `relax_search` — picks one of the counted widening options | the widening options and their film counts (`verify`) |
+| | mood coverage of the picks: a wanted mood none of them shows, or moods no single pick combines, is named in the reply with a way to get it (`present`) |
 | | the injection guard and the prompt-leak check (`chat_agent/guard.py`) |
 
 **Personalisation:** the profile is computed on demand from the feedback: the average Tag Genome vector of the liked films minus the catalogue average (disliked films count against), reduced to the 8 strongest tags. It enters the ranking as an extra signal (weight 0.15, scaled against the best film not yet rated), so mood and plot still lead.
@@ -141,44 +146,46 @@ All sources are credited on the in-app **Credits** page. No unlicensed sources a
 
 ## Evaluation
 
-`make eval` runs 61 scenarios through the real agent and catalogue: mood, "like X", "like X, but less Y", runtime, exclusions, documentaries, people (wanted and excluded), plot, conflicting wishes, follow-ups that must narrow the search and new wishes that must start over, decades, facts, ambiguous input, an unknown person, searches that must (or must not) widen, prompt-injection attacks and harmless wishes about AIs, and two injected failures (Streaming Availability API down, embedding service down). Streaming data comes from the cache only in every scenario, so the run never spends API budget and also tests the "budget exhausted" path. Full results: [`evaluation/REPORT.md`](evaluation/REPORT.md); raw data in `evaluation/results/` (earlier runs are kept, including the ones where the checks themselves had bugs).
+`make eval` runs 63 scenarios through the real agent and catalogue: mood, "like X", "like X, but less Y", runtime, exclusions, documentaries, people (wanted and excluded), plot, conflicting wishes (including "romantic, funny, a bit scary, well rated", where the reply must say which part the picks miss), ratings, follow-ups that must narrow the search and new wishes that must start over, decades, facts, ambiguous input, an unknown person, searches that must (or must not) widen, prompt-injection attacks and harmless wishes about AIs, and two injected failures (Streaming Availability API down, embedding service down). Streaming data comes from the cache only in every scenario, so the run never spends API budget and also tests the "budget exhausted" path. Full results: [`evaluation/REPORT.md`](evaluation/REPORT.md) and, graphically, `/tech/eval`; raw data in `evaluation/results/` (earlier runs are kept, including the ones where the checks themselves had bugs).
 
-**Automatic metrics (run of 2026-11-05).** Each rate counts only the scenarios that define the check:
+**Automatic metrics (run of 2026-11-05, 16:13).** Each rate counts only the scenarios that define the check; every check judges the final turn of a scenario:
 
 | Metric | Result |
 |---|---|
-| Scenarios passing all checks | 60 / 61 |
-| Constraint satisfaction (runtime, genres, kind, years, person, excluded people, criteria cleared on a new wish) | 30 / 30 |
-| Tool selection (an expected tool was called, none it must not call) | 49 / 50 |
-| Factual reply checks | 2 / 2 |
-| No streaming claim without known availability | 61 / 61 |
+| Scenarios passing all checks | 62 / 63 |
+| Constraint satisfaction (runtime, genres, kind, years, person, excluded people, minimum rating, criteria cleared on a new wish) | 32 / 32 |
+| Tool selection (an expected tool was called, none it must not call) | 51 / 52 |
+| Factual reply checks | 3 / 3 |
+| No streaming claim without known availability | 63 / 63 |
 | Search widening: widened exactly when the scenario expects it | 4 / 4 |
 | Prompt injection: 4 attacks blocked before the model, 2 wishes about AIs let through | 6 / 6 |
-| Grounding **before** the guard: the model's own explanation named only returned films | 57 / 61 (93%) |
-| Grounding **after** the guard: what the user sees | 61 / 61 (4 template fallbacks) |
-| Latency per scenario, median / p90 | 9.2 s / 15.0 s |
-| Cost per chat turn (Claude Haiku 5.5) | $0.0015 |
+| Grounding **before** the guard: the model's own explanation named only returned films | 57 / 63 (90%) |
+| Grounding **after** the guard: what the user sees | 63 / 63 (6 template fallbacks) |
+| Latency per scenario, median / p90 | 9.1 s / 15.2 s |
+| Cost per chat turn (Claude Haiku 5.5) | $0.0016 |
+
+Until this run the tool check counted the tools of all turns together. A follow-up such as "rather from the 90s" then failed when the agent had (harmlessly) called `new_search` in the first turn on empty criteria, although the follow-up itself refined correctly. It now judges the final turn like every other check, and the run saves the tools per turn so this stays visible.
 
 The one failure (`ambiguous-01`, the bare wish "Solaris") is in tool selection: the scenario predates the `find_title` tool and expects `similar_to`, `film_facts` or `set_mood_tags`. The agent called `find_title` and showed all three Solaris films (1968, 1972, 2002), which is a sensible answer; the scenario was left unchanged so the number stays honest.
 
 "Tool success 100%" only means that no tool raised an exception. A degraded source (embeddings down) still returns a result, with weaker relevance.
 
-**Ranking comparison.** 25 mood-tag scenarios, run with the criteria the agent set and identical hard filters for all three rankers:
+**Ranking comparison.** 26 mood-tag scenarios, run with the criteria the agent set and identical hard filters for all three rankers:
 
 | Ranker | Tag relevance@10 | Tag cosine@10 | Median MovieLens rating count | LLM judge 1–5 |
 |---|---|---|---|---|
-| Baseline A: filters + Bayesian rating | 0.34 | 0.05 | 35,000 | 1.48 |
-| Baseline B: movieFinder (tag cosine + rating) | 0.80 | **0.19** | 568 | 3.24 |
-| **CineSense** | **0.81** | 0.15 | 9,937 | **3.96** |
+| Baseline A: filters + Bayesian rating | 0.33 | 0.05 | 35,000 | 1.42 |
+| Baseline B: movieFinder (tag cosine + rating) | 0.76 | **0.20** | 489 | 3.27 |
+| **CineSense** | **0.79** | 0.15 | 10,145 | **3.85** |
 
 How to read the comparison:
 - Each ranker wins on its own objective. *Tag relevance* (weighted mean of the requested tags) is what CineSense ranks by. *Tag cosine* is what movieFinder ranks by.
-- The independent signal is the LLM judge (Claude Sonnet 5.5, subjective). It prefers CineSense (3.96 vs 3.24). The absolute scores vary from run to run (earlier runs gave 3.95 vs 3.43, 3.76 vs 3.48 and 4.05 vs 3.67), but the order has stayed the same in every run.
-- The judge sees only titles and years, which may favour well-known films. CineSense's picks are clearly better known than movieFinder's (median 9,937 vs 568 ratings).
+- The independent signal is the LLM judge (Claude Sonnet 5.5, subjective). It prefers CineSense (3.85 vs 3.27). The absolute scores vary from run to run (earlier runs gave 3.96 vs 3.24, 3.95 vs 3.43, 3.76 vs 3.48 and 4.05 vs 3.67), but the order has stayed the same in every run.
+- The judge sees only titles and years, which may favour well-known films. CineSense's picks are clearly better known than movieFinder's (median 10,145 vs 489 ratings).
 - The rating-only baseline ignores the wish.
-- The judge gives the agent's own top 5 a mean of 3.60/5 over 52 scenarios. Between runs it moves by about ±0.2 even where nothing changed (3.65 and 3.43 in the two runs before).
+- The judge gives the agent's own top 5 a mean of 3.67/5 over 55 scenarios. Between runs it moves by about ±0.2 even where nothing changed (3.60, 3.65 and 3.43 in earlier runs).
 
-The whole evaluation costs about $0.37: $0.10 for agent turns and $0.27 for the judge.
+The whole evaluation costs about $0.40: $0.11 for agent turns and $0.28 for the judge.
 
 Limits of the evaluation:
 - The automatic checks are narrow, and relevance is only judged subjectively.
@@ -202,4 +209,5 @@ Limits of the evaluation:
   - Newer films (German releases since 2021, live imports) have no mood tags. They are found through plot, title and people, so mood searches favour older films.
   - Plot texts come from English Wikipedia, which covers non-English films less well.
   - The Bayesian rating dampens obscure films, so the ranking leans towards well-known titles.
+  - The mood score is a weighted mean, so two strong moods can outweigh a missing third ("romantic, funny and a bit scary" ranks romantic comedies first). The reply says so and offers to make the missing mood a must; the ranking itself is not changed.
   - The taste profile learns only from explicit 👍/👎, with no tracking of views or clicks.
