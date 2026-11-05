@@ -3,7 +3,7 @@ import { AUTHORITY, OPERATOR, UPDATED, type LegalDoc, type LegalLocale } from ".
 /**
  * Privacy notice of CineSense. It describes what the code actually does (checked 2026-11-05): chat and
  * search to OpenRouter (Claude Haiku; plot search embeddings by OpenAI), conversation only in server
- * memory, token counts logged without content, turn limits counted per IP in memory, the anonymous
+ * memory, token counts logged without content, turn limits per IP (daily counts as an HMAC in Postgres, kept one day), the anonymous
  * taste id (localStorage "cinesense.user", created on the first rating, header X-CineSense-User) with 👍/👎 in the `feedback` table,
  * posters from Wikimedia and Movie of the Night, trailers in the youtube-nocookie player. Change it
  * together with any of these.
@@ -29,7 +29,7 @@ export function datenschutz(locale: LegalLocale): LegalDoc {
           body: [
             "To understand your wishes, your chat messages and search texts are sent with the conversation to OpenRouter, Inc. (USA, https://openrouter.ai/privacy), which passes them to the providers of the language models (currently Anthropic and, for the plot search, OpenAI, both USA). This is a transfer to a third country. Please do not enter personal data in the chat. Legal basis: Art. 6 (1) (f) GDPR (providing the search you are using).",
             "The conversation is kept only in the server's memory while it runs and is not stored. The server logs only how many tokens a turn used, not its content.",
-            "To limit use, the server counts chat turns per IP address (per minute and per day). The counters are kept only in memory and reset daily and on every restart (Art. 6 (1) (f) GDPR, preventing misuse and costs).",
+            "To limit use, the server counts chat turns per IP address (per minute and per day). The daily counts are stored in the database under a keyed hash (HMAC) of your IP address – never the address itself – and deleted the next day; the per-minute count is kept only in memory (Art. 6 (1) (f) GDPR, preventing misuse and costs).",
           ],
         },
         {
@@ -83,7 +83,7 @@ export function datenschutz(locale: LegalLocale): LegalDoc {
         body: [
           "Damit CineSense Ihre Wünsche versteht, werden Ihre Chat-Nachrichten und Suchtexte mit dem Gesprächsverlauf an die OpenRouter, Inc. (USA, https://openrouter.ai/privacy) übermittelt, die sie an die Anbieter der Sprachmodelle weitergibt (derzeit Anthropic und für die Inhaltssuche OpenAI, beide USA). Es handelt sich um eine Übermittlung in ein Drittland. Bitte geben Sie im Chat keine personenbezogenen Daten ein. Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO (Bereitstellung der von Ihnen genutzten Suche).",
           "Der Gesprächsverlauf liegt nur im Arbeitsspeicher des laufenden Servers und wird nicht gespeichert. Protokolliert wird nur, wie viele Tokens eine Anfrage verbraucht hat, nicht ihr Inhalt.",
-          "Um die Nutzung zu begrenzen, zählt der Server Chat-Anfragen je IP-Adresse (pro Minute und pro Tag). Die Zähler liegen nur im Arbeitsspeicher und werden täglich und bei jedem Neustart gelöscht (Art. 6 Abs. 1 lit. f DSGVO, Schutz vor Missbrauch und Kosten).",
+          "Um die Nutzung zu begrenzen, zählt der Server Chat-Anfragen je IP-Adresse (pro Minute und pro Tag). Die Tageszähler speichert er in der Datenbank unter einem mit einem geheimen Schlüssel gebildeten Hashwert (HMAC) Ihrer IP-Adresse – nie die Adresse selbst – und löscht sie am nächsten Tag; der Minutenzähler liegt nur im Arbeitsspeicher (Art. 6 Abs. 1 lit. f DSGVO, Schutz vor Missbrauch und Kosten).",
         ],
       },
       {
