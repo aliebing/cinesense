@@ -1,0 +1,98 @@
+/* evaluation page: the plain technical look of /tech, with a few quiet charts. Gold marks CineSense and the
+   selected run; green/red only ever come with ✓/✗. */
+.ev { --ev-gold: #f3c76b; --ev-good: #9fc9a0; --ev-bad: #ff8a80; --ev-ink2: #999; --ev-ink3: #777; --ev-line: #2a2a2a; --ev-panel: #1b1b1b; }
+.ev section { max-width: 1100px; }
+.ev h2 { margin-top: 36px; }
+.ev h4 { margin: 14px 0 4px; font-size: 13px; color: var(--ev-ink2); font-weight: 600; }
+.ev code { color: #eee; }
+.ev-muted { color: var(--ev-ink2); }
+.ev-lead { color: var(--ev-ink2); max-width: 75ch; margin: 0 0 12px; }
+.ev-bad { color: var(--ev-bad); margin: 4px 0; }
+.ev select { background: var(--ev-panel); color: #eee; border: 1px solid #444; padding: 4px 6px; font: inherit; }
+.ev-run { display: inline-block; margin: 4px 0 8px; color: var(--ev-ink2); }
+
+/* hero: the pass count is the page's one big thing */
+.ev-hero { margin: 12px 0 8px; }
+.ev-score { margin: 0; font-size: 22px; color: #eee; }
+.ev-big { font-size: 64px; line-height: 1; font-weight: 700; color: var(--ev-gold); margin-right: 6px; font-variant-numeric: tabular-nums; }
+.ev-hero .ev-muted { max-width: 75ch; margin: 8px 0 16px; }
+.ev-facts { display: flex; flex-wrap: wrap; gap: 12px 36px; margin: 0; }
+.ev-facts dt { color: var(--ev-ink2); font-size: 12px; }
+.ev-facts dd { margin: 2px 0 0; font-size: 20px; color: #eee; font-variant-numeric: tabular-nums; }
+
+/* automatic checks: one bar per check, k of n */
+.ev-metrics { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+.ev-metric { display: grid; grid-template-columns: minmax(0, 22rem) minmax(0, 1fr) 4.5rem; gap: 16px; align-items: center; margin: 0; }
+.ev-metric-label { color: #eee; }
+.ev-metric-label small { display: block; color: var(--ev-ink3); font-size: 12px; }
+.ev-metric-track { height: 8px; background: var(--ev-line); border-radius: 4px; overflow: hidden; }
+.ev-metric-fill { display: block; height: 100%; background: var(--ev-good); border-radius: 0 4px 4px 0; }
+.ev-metric.is-short .ev-metric-fill { background: var(--ev-bad); }
+.ev-metric.is-soft .ev-metric-fill { background: #8a8a8a; }
+.ev-metric-value { text-align: right; font-variant-numeric: tabular-nums; color: #eee; }
+.ev-metric.is-short .ev-metric-value::before { content: "✗ "; color: var(--ev-bad); }
+
+/* ranker comparison */
+.ev-bars { display: grid; gap: 10px; margin-bottom: 16px; }
+.ev-bar { display: grid; grid-template-columns: minmax(0, 22rem) minmax(0, 1fr) 4.5rem; gap: 16px; align-items: center; }
+.ev-bar-track { height: 18px; background: var(--ev-line); border-radius: 0 4px 4px 0; }
+.ev-bar-fill { display: block; height: 100%; background: #666; border-radius: 0 4px 4px 0; }
+.ev-bar.is-ours .ev-bar-fill { background: var(--ev-gold); }
+.ev-bar.is-ours .ev-bar-name { color: var(--ev-gold); font-weight: 600; }
+.ev-bar-value { text-align: right; font-variant-numeric: tabular-nums; color: #eee; }
+.ev-table { width: 100%; max-width: 900px; }
+.ev-table th, .ev-table td { text-align: left; padding: 4px 16px 4px 0; border-bottom: 1px solid var(--ev-line); font-weight: normal; }
+.ev-table thead th { color: var(--ev-ink2); font-size: 12px; cursor: help; }
+.ev-table td { font-variant-numeric: tabular-nums; }
+.ev-table tr.is-ours th { color: var(--ev-gold); }
+.ev-compare td:nth-child(2) { width: 3rem; }
+
+/* history: two small line charts */
+.ev-history { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; max-width: 900px; }
+.ev-chart { margin: 0; }
+.ev-chart figcaption { color: #eee; margin-bottom: 4px; }
+.ev-chart svg { width: 100%; height: auto; overflow: visible; }
+.ev-grid { stroke: var(--ev-line); stroke-width: 1; }
+.ev-axis { fill: var(--ev-ink3); font-size: 11px; }
+.ev-value { fill: #eee; font-size: 12px; }
+.ev-line { fill: none; stroke: #aaa; stroke-width: 2; stroke-linejoin: round; }
+.ev-dot { cursor: pointer; outline: none; }
+.ev-hit { fill: transparent; }
+.ev-mark { fill: #aaa; stroke: #111; stroke-width: 2; }
+.ev-dot:hover .ev-mark, .ev-dot:focus-visible .ev-mark { fill: #eee; }
+.ev-dot:focus-visible .ev-hit { stroke: var(--ev-gold); stroke-width: 1.5; }
+.ev-dot.is-selected .ev-mark { fill: var(--ev-gold); }
+
+/* scenarios */
+.ev-filters { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; margin-bottom: 12px; }
+.ev .ev-filters button { text-decoration: none; padding: 4px 10px; border: 1px solid #444; border-radius: 4px; color: #ddd; }
+.ev .ev-filters button[aria-pressed="true"] { border-color: var(--ev-gold); color: var(--ev-gold); }
+.ev-filters label { color: var(--ev-ink2); }
+.ev-scenarios { list-style: none; padding: 0; margin: 0; }
+.ev-scenarios li { margin: 0; border-bottom: 1px solid var(--ev-line); }
+.ev-scenarios summary { display: grid; grid-template-columns: 1.5rem 9rem minmax(0, 1fr) minmax(0, 1.1fr) 3.5rem 3.5rem; gap: 12px; align-items: baseline; padding: 8px 0; cursor: pointer; list-style: none; }
+.ev-scenarios summary::-webkit-details-marker { display: none; }
+.ev-scenarios summary:hover { background: #161616; }
+.ev-scenarios summary:focus-visible { outline: 1px solid var(--ev-gold); }
+.ev-status { color: var(--ev-good); font-weight: 700; }
+.is-failed .ev-status { color: var(--ev-bad); }
+.ev-id { color: #eee; font-weight: 600; }
+.ev-id small, .ev-num small { display: block; font-weight: normal; color: var(--ev-ink3); font-size: 11px; }
+.ev-wish { color: #ddd; }
+.ev-checks { display: flex; flex-wrap: wrap; gap: 4px; }
+.ev-check { font-size: 11px; padding: 1px 6px; border-radius: 3px; background: #1d241d; color: var(--ev-good); white-space: nowrap; }
+.ev-check.is-bad { background: #2a1a19; color: var(--ev-bad); }
+.ev-num { text-align: right; font-variant-numeric: tabular-nums; color: #eee; }
+.ev-detail { padding: 4px 0 16px 2.25rem; max-width: 90ch; }
+.ev-detail ol { padding-left: 20px; }
+.ev-detail li { border: 0; margin-bottom: 4px; }
+
+@media (max-width: 759px) {
+  .ev-metric, .ev-bar { grid-template-columns: minmax(0, 1fr) 4rem; }
+  .ev-metric-track, .ev-bar-track { grid-column: 1 / -1; grid-row: 2; }
+  .ev-history { grid-template-columns: 1fr; }
+  .ev-scenarios summary { grid-template-columns: 1.5rem minmax(0, 1fr) 3rem 3rem; }
+  .ev-wish, .ev-checks { grid-column: 2 / -1; }
+  .ev-detail { padding-left: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .ev * { transition: none !important; } }

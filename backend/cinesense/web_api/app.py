@@ -22,6 +22,7 @@ from cinesense.web_api.deps import (
     get_trailer_checker,
     get_trailers,
 )
+from cinesense.web_api.eval_view import router as eval_router
 from cinesense.web_api.images import with_images as _with_images
 from cinesense.web_api.inspect import router as inspect_router
 from cinesense.web_api.taste import UserProfile, get_user
@@ -80,6 +81,7 @@ def create_app(load_env: bool = True) -> FastAPI:
 
     app.include_router(chat_router)
     app.include_router(inspect_router)
+    app.include_router(eval_router)
     app.include_router(taste_router)
 
     @app.get("/api/health")

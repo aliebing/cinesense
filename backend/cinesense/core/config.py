@@ -41,6 +41,7 @@ class Settings:
     chat_per_day: int = 25
     tech_per_day: int = 50  # agent turns per visitor and day on the login-protected technical view (/api/inspect)
     chat_site_per_day: int = 800  # all visitors together (~$1 a day at the measured $0.0013 per turn)
+    eval_dir: Path = REPO_ROOT / "evaluation" / "results"  # saved `make eval` runs, shown on /tech/eval
 
 
 def get_settings() -> Settings:
@@ -58,4 +59,5 @@ def get_settings() -> Settings:
         chat_per_day=int(_env("CHAT_LIMIT_PER_DAY") or 25),
         tech_per_day=int(_env("TECH_LIMIT_PER_DAY") or 50),
         chat_site_per_day=int(_env("CHAT_LIMIT_SITE_PER_DAY") or 800),
+        eval_dir=Path(_env("CINESENSE_EVAL_DIR") or REPO_ROOT / "evaluation" / "results"),
     )

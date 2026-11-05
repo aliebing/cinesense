@@ -122,3 +122,48 @@ export type InspectResult = {
 };
 export const inspectTurn = (threadId: string, message: string, criteria: Criteria) =>
   apiPost<InspectResult>("/api/inspect", { thread_id: threadId, message, criteria });
+
+/** One saved `make eval` run in the history (backend/cinesense/web_api/eval_view.py). */
+export type EvalRunOverview = {
+  run: string; // "2026-11-05_1554"
+  scenarios: number;
+  passed: number;
+  grounding_raw: number | null;
+  agent_judge: number | null; // mean LLM-judge score (1-5) of the agent's top 5
+  ranker_judge: Record<string, number | null>; // per ranker in the comparison
+};
+export type EvalCheck = { ok: boolean; why: string[]; applies: boolean };
+export type EvalScenario = {
+  id: string;
+  category: string;
+  failure: string | null;
+  turns: string[];
+  tools_called: string[];
+  tools_per_turn?: string[][]; // runs before 2026-11-05 only have the flat list
+  reply: string;
+  results: string[];
+  passed: boolean;
+  error: string | null;
+  checks: Record<string, EvalCheck>;
+  judge?: { score: number | null; reason: string };
+  latency_s: number;
+  cost_usd?: number;
+  grounding_fallback?: boolean;
+  grounding_reason?: string[];
+  relaxed?: string[];
+};
+export type EvalComparisonRow = {
+  id: string;
+  metrics: Record<string, Record<string, number | null>>;
+  top: Record<string, string[]>;
+  judge: Record<string, number | null>;
+};
+export type EvalRun = EvalRunOverview & {
+  summary: Record<string, unknown> & { counts?: Record<string, [number, number]> };
+  results: EvalScenario[];
+  comparison: { rows?: EvalComparisonRow[]; judge_cost_usd?: number };
+  rankers: Record<string, Record<string, number | null>>;
+};
+
+export const getEvalRuns = () => apiGet<EvalRunOverview[]>("/api/eval/runs");
+export const getEvalRun = (run: string) => apiGet<EvalRun>(`/api/eval/runs/${encodeURIComponent(run)}`);
