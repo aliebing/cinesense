@@ -205,7 +205,7 @@ it("a search with only a few hits just counts them", async () => {
   expect(screen.queryByText(/out of/)).toBeNull();
 });
 
-it("loads the next 50 when every shown film still matches, until the bar is reached", async () => {
+it("pages through the next 50 while every shown film still matches, and back", async () => {
   const page = (from: number, n: number, percent: (i: number) => number) =>
     sampleRanked(n).map((r, i) => ({ ...r, movie: { ...r.movie, id: `f-${from + i}`, title: `Film ${from + i}` }, match_percent: percent(from + i) }));
   search.mockResolvedValueOnce({ ok: true, data: { items: page(0, 50, () => 80), total: 500, hidden_by_exclusion: 0, extended_used: false } });
@@ -213,16 +213,21 @@ it("loads the next 50 when every shown film still matches, until the bar is reac
   search.mockImplementationOnce(() => new Promise((r) => (resolve = r)));
   render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} />);
   expect(await screen.findByText(/The 50 best matches/)).toBeInTheDocument();
-  await userEvent.click(screen.getByRole("button", { name: "Show 50 more" }));
+  expect(screen.queryByRole("button", { name: "Previous 50" })).toBeNull();
+  await userEvent.click(screen.getByRole("button", { name: "Next 50" }));
   expect(screen.getByRole("progressbar", { name: "Loading results" })).toBeInTheDocument(); // the usual loading bar
   resolve({
     ok: true,
     data: { items: page(50, 50, (i) => (i < 70 ? 60 : 40)), total: 500, hidden_by_exclusion: 0, extended_used: false },
   });
-  expect(await screen.findByText(/The 70 best matches/)).toBeInTheDocument(); // 20 of the next 50 reach 50%
-  expect(screen.queryByRole("progressbar")).toBeNull();
+  expect(await screen.findByText(/Matches 51–70/)).toBeInTheDocument(); // the next page, only its films from 50% up
   expect(search.mock.calls[1][1]).toBe(50); // offset
-  expect(screen.queryByRole("button", { name: /more/ })).toBeNull(); // below the bar: nothing more to load
+  expect(screen.queryAllByRole("button", { name: /Film 0,/ })).toHaveLength(0); // page one's films are gone
+  expect(screen.getAllByRole("button", { name: /Film 50,/ }).length).toBeGreaterThan(0);
+  expect(screen.queryByRole("button", { name: "Next 50" })).toBeNull(); // below the bar: no further page
+  await userEvent.click(screen.getByRole("button", { name: "Previous 50" }));
+  expect(await screen.findByText(/The 50 best matches/)).toBeInTheDocument();
+  expect(search).toHaveBeenCalledTimes(2); // page one comes back without a new request
 });
 
 it("offers no more button when the row already stops at the bar", async () => {
@@ -230,7 +235,7 @@ it("offers no more button when the row already stops at the bar", async () => {
   search.mockResolvedValue({ ok: true, data: { items, total: 500, hidden_by_exclusion: 0, extended_used: false } });
   render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} />);
   expect(await screen.findByText(/The 5 best matches/)).toBeInTheDocument();
-  expect(screen.queryByRole("button", { name: /more/ })).toBeNull();
+  expect(screen.queryByRole("button", { name: /Next/ })).toBeNull();
 });
 
 it("says 500+ when the mood search kept only its best films", async () => {

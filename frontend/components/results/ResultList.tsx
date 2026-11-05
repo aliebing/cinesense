@@ -32,8 +32,9 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
   const [relaxFor, setRelaxFor] = useState<{ key: string; options: Relaxation[] }>({ key: "", options: [] });
   const [error, setError] = useState(false);
   const [shownKey, setShownKey] = useState<string | null>(null); // the search the shown results belong to
-  // further pages ("Show 50 more"), kept with the search they belong to so a new search starts at 50 again
-  const [more, setMore] = useState<{ key: string; items: RankedMovie[] }>({ key: "", items: [] });
+  // further pages of 50 (» / «), kept with the search they belong to so a new search starts on page one again
+  const [more, setMore] = useState<{ key: string; pages: RankedMovie[][] }>({ key: "", pages: [] });
+  const [page, setPage] = useState<{ key: string; n: number }>({ key: "", n: 0 });
   const [loadingMore, setLoadingMore] = useState(false);
   const key = JSON.stringify(criteria);
   const fromKey = widened ? JSON.stringify(widened.from) : "";
@@ -115,20 +116,30 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
         {widen}
       </>
     );
-  const loaded = more.key === key ? [...items, ...more.items] : items;
-  const shown = loaded.filter((r, i) => i < MIN_SHOWN || r.match_percent >= MIN_PERCENT);
-  // more only while every loaded film still clears the bar: then the next page may hold more that do
-  const canMore = !loading && loaded.length % LIMIT === 0 && shown.length === loaded.length && loaded.length < total;
-  const loadMore = async () => {
+  const pages = [items, ...(more.key === key ? more.pages : [])];
+  const n = page.key === key ? Math.min(page.n, pages.length - 1) : 0;
+  const current = pages[n];
+  const first = n * LIMIT; // films before this page
+  const shown = current.filter((r, i) => (n === 0 && i < MIN_SHOWN) || r.match_percent >= MIN_PERCENT);
+  // a next page only while every film on this one still clears the bar: then the next may hold more that do
+  const canNext = !loading && current.length === LIMIT && shown.length === current.length && first + LIMIT < total;
+  const next = async () => {
+    if (n + 1 < pages.length) return setPage({ key, n: n + 1 });
     setLoadingMore(true);
-    const r = await search(criteria, loaded.length, LIMIT, widened?.from);
+    const r = await search(criteria, first + LIMIT, LIMIT, widened?.from);
     setLoadingMore(false);
-    if (r.ok) setMore({ key, items: [...(more.key === key ? more.items : []), ...r.data.items] });
+    if (!r.ok || r.data.items.length === 0) return;
+    setMore({ key, pages: [...pages.slice(1), r.data.items] });
+    setPage({ key, n: n + 1 });
   };
   const label = (
     <>
-      {total > shown.length ? `The ${shown.length} best matches` : `${count.format(total)} matches in the CineSense catalogue`}
-      {total > shown.length && (
+      {n > 0
+        ? `Matches ${first + 1}–${first + shown.length}`
+        : total > shown.length
+          ? `The ${shown.length} best matches`
+          : `${count.format(total)} matches in the CineSense catalogue`}
+      {(n > 0 || total > shown.length) && (
         <span className="related-hint">
           {" "}
           · out of {count.format(total)}
@@ -142,14 +153,28 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
     <>
       {note}
       {widen}
-      <RelatedRow items={shown} onSelect={onOpen} label={label} name="Results" showReasons busy={loading || loadingMore}
+      <RelatedRow
+        key={n} // a new page starts at its first film
+        items={shown}
+        onSelect={onOpen}
+        label={label}
+        name="Results"
+        showReasons
+        busy={loading || loadingMore}
         drift={false}
         after={
-          canMore && (
-            <button type="button" className="results-more" onClick={loadMore} disabled={loadingMore} aria-label={`Show ${LIMIT} more`} title={`Show ${LIMIT} more`}>
-              »
-            </button>
-          )
+          <>
+            {n > 0 && !loading && (
+              <button type="button" className="results-more results-more--back" onClick={() => setPage({ key, n: n - 1 })} aria-label={`Previous ${LIMIT}`} title={`Previous ${LIMIT}`}>
+                «
+              </button>
+            )}
+            {canNext && (
+              <button type="button" className="results-more" onClick={next} disabled={loadingMore} aria-label={`Next ${LIMIT}`} title={`Next ${LIMIT}`}>
+                »
+              </button>
+            )}
+          </>
         }
       />
     </>
