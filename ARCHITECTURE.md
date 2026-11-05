@@ -9,9 +9,9 @@ returns the films. This page is the map: what lives where, how one request flows
 | Folder | What it is |
 |---|---|
 | `backend/` | Python 3.12, FastAPI, LangGraph. The package `cinesense/` and its tests (`tests/`, same folder names). |
-| `frontend/` | Next.js (App Router), TypeScript, Tailwind. The cinema UI, the chat and the technical view `/tech`. |
+| `frontend/` | Next.js (App Router), TypeScript, Tailwind. The cinema UI, the chat and the admin area `/admin` (technical view, visitor log, evaluation). |
 | `database/` | `schema.sql` (all tables in the `cinesense` schema) and the project's own local Supabase (`supabase/`). |
-| `evaluation/` | The 61 evaluation scenarios, every run's raw results and the current `REPORT.md`. |
+| `evaluation/` | The 63 evaluation scenarios, every run's raw results and the current `REPORT.md`. |
 | `docs/` | The grading briefs (`brief/`) and the presentation outline (`presentation.md`). |
 
 At the root: `Makefile` (every command: `make up`, `make test`, `make eval` …), `docker-compose.yaml` with
@@ -48,8 +48,8 @@ Each folder is one role. Read them top to bottom: each builds only on the ones a
 | `taste/` | Anonymous 👍/👎 and the taste profile derived from them | `profile.py`, `feedback.py` | core |
 | `catalog_import/` | Offline jobs that build the catalogue: MovieLens + Tag Genome, plots, embeddings, posters, billing, languages | `pipeline.py` | core, data_sources |
 | `chat_agent/` | The LangGraph agent: injection guard, tool loop, deterministic search run, widening, mood coverage of the picks, grounded explanation | `graph.py`, `tools.py`, `grounding.py`, `guard.py`, `prompts.py` | core, search, taste |
-| `web_api/` | The HTTP layer: catalogue and search endpoints, chat as Server-Sent Events, `/api/inspect`, the saved eval runs (`/api/eval/runs`), taste, the per-visitor and daily turn limits | `app.py`, `chat.py`, `limits.py`, `deps.py` (wiring) | everything above |
-| `evaluation/` | Scenarios against the real agent, automatic checks, LLM judge, two baseline rankers | `runner.py`, `checks.py`, `baselines.py` | everything above |
+| `evaluation/` | Scenarios against the real agent, automatic checks, LLM judge, two baseline rankers; one run (`session.py`) shared by `make eval` and the admin page | `session.py`, `runner.py`, `checks.py`, `baselines.py` | core, data_sources, search, taste, chat_agent |
+| `web_api/` | The HTTP layer: catalogue and search endpoints, chat as Server-Sent Events, `/api/inspect`, the visitor log (`chat_log.py`, `/api/admin/visitors`), the eval runs (`/api/eval/*`: saved runs, starting one, its live state), taste, the per-visitor and daily turn limits | `app.py`, `chat.py`, `chat_log.py`, `eval_view.py`, `limits.py`, `deps.py` (wiring) | everything above |
 
 The rule in the last column is enforced by `backend/tests/test_architecture.py`: an import that points upwards
 fails the test suite. The search never imports a data source; `web_api/deps.py` builds the adapters once and
@@ -65,14 +65,14 @@ passes them in, which is also how the tests swap them for offline fakes.
 4. `web_api/chat.py`: how a turn is streamed to the browser.
 5. `evaluation/` and `evaluation/REPORT.md` at the repo root: how all of this is measured.
 
-The technical view `/tech` in the running app shows the same for one live turn: tool calls, prompts, tokens,
+The technical view `/admin/tech` in the running app shows the same for one live turn: tool calls, prompts, tokens,
 cost and the ranked films.
 
 ## Frontend (`frontend/`)
 
 | Folder | What it holds |
 |---|---|
-| `app/` | Routes: `/` (cinema start page), `/world/[worldId]` (genre page with the stage), `/results`, `/tech`, `/credits` |
+| `app/` | Routes: `/` (cinema start page), `/world/[worldId]` (genre page with the stage), `/results`, `/admin/*` (tech, visitors, evaluation), `/credits` |
 | `components/` | One folder per part of the screen: `cinema`, `atmosphere`, `home`, `chat`, `search`, `results`, `genre`, `media`, `profile`, `nav`, `ui` |
 | `lib/` | API client (`api.ts`, `chat.ts`), the shared search state (`searchState.ts`, mirrors `core/criteria.py`), types (`types.ts`, mirror `core/models.py`) |
 | `__tests__/` | Vitest tests |
