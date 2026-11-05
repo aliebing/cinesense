@@ -29,16 +29,18 @@ export const RANKERS: Record<string, string> = {
 
 /** "2026-11-05_1554" -> "5 Nov 2026, 15:54" */
 export function runLabel(run: string): string {
-  const m = /^(\d{4})-(\d{2})-(\d{2})_(\d{2})(\d{2})$/.exec(run);
+  const m = /^(\d{4})-(\d{2})-(\d{2})_(\d{2})(\d{2})(\d{2})?$/.exec(run);
   if (!m) return run;
   const month = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][Number(m[2]) - 1];
   return `${Number(m[3])} ${month} ${m[1]}, ${m[4]}:${m[5]}`;
 }
 
-/** "anthropic/claude-haiku-5.5" -> "Claude Haiku 5.5" */
+/** "anthropic/claude-haiku-5.5" -> "Claude Haiku 5.5", "openai/gpt-5.6-luna" -> "GPT-5.6 Luna" */
 export function modelLabel(id: unknown): string | null {
   if (typeof id !== "string" || !id) return null;
   const name = id.split("/").pop() ?? id;
+  const gpt = /^gpt-([\d.]+)(?:-(.*))?$/.exec(name);
+  if (gpt) return `GPT-${gpt[1]}${gpt[2] ? ` ${modelLabel(gpt[2])}` : ""}`;
   return name
     .split("-")
     .map((w) => (/^\d/.test(w) ? w : w[0].toUpperCase() + w.slice(1)))

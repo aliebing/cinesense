@@ -5,7 +5,7 @@ import { expect, it, vi } from "vitest";
 const inspectTurn = vi.fn();
 vi.mock("@/lib/api", () => ({ inspectTurn: (...a: unknown[]) => inspectTurn(...a) }));
 
-import TechPage from "@/app/tech/page";
+import TechPage from "@/app/admin/tech/page";
 
 it("shows the reply, criteria, tools, cost and the films as plain text", async () => {
   inspectTurn.mockResolvedValue({

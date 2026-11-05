@@ -2,8 +2,9 @@ import { AUTHORITY, OPERATOR, UPDATED, type LegalDoc, type LegalLocale } from ".
 
 /**
  * Privacy notice of CineSense. It describes what the code actually does (checked 2026-11-05): chat and
- * search to OpenRouter (Claude Haiku; plot search embeddings by OpenAI), conversation only in server
- * memory, token counts logged without content, turn limits per IP (daily counts as an HMAC in Postgres, kept one day), the anonymous
+ * search to OpenRouter (Claude Haiku; plot search embeddings by OpenAI), conversation history only in server
+ * memory, each turn logged for 30 days in the `chat_log` table (message, reply, films, tools, tokens; visitor and
+ * conversation only as keyed hashes) for the operator's /admin/visitors page, turn limits per IP (daily counts as an HMAC in Postgres, kept one day), the anonymous
  * taste id (localStorage "cinesense.user", created on the first rating, header X-CineSense-User) with 👍/👎 in the `feedback` table,
  * posters from Wikimedia and Movie of the Night, trailers in the youtube-nocookie player. Change it
  * together with any of these.
@@ -28,7 +29,7 @@ export function datenschutz(locale: LegalLocale): LegalDoc {
           h: "3. Search and chat",
           body: [
             "To understand your wishes, your chat messages and search texts are sent with the conversation to OpenRouter, Inc. (USA, https://openrouter.ai/privacy), which passes them to the providers of the language models (currently Anthropic and, for the plot search, OpenAI, both USA). This is a transfer to a third country. Please do not enter personal data in the chat. Legal basis: Art. 6 (1) (f) GDPR (providing the search you are using).",
-            "The conversation is kept only in the server's memory while it runs and is not stored. The server logs only how many tokens a turn used, not its content.",
+            "The ongoing conversation is kept in the server's memory only while it runs. To check and improve the answers, the server also logs each chat turn for 30 days: your message, the reply, the understood search, the films shown, the tools the assistant used, tokens, cost and duration. The log contains no IP address and no conversation id, only keyed hashes (HMAC) of both, so the turns of one conversation can be read together; only the operator can see it, behind a login. Entries are deleted automatically after 30 days. Legal basis: Art. 6 (1) (f) GDPR (quality and misuse control of the assistant).",
             "To limit use, the server counts chat turns per IP address (per minute and per day). The daily counts are stored in the database under a keyed hash (HMAC) of your IP address – never the address itself – and deleted the next day; the per-minute count is kept only in memory (Art. 6 (1) (f) GDPR, preventing misuse and costs).",
           ],
         },
@@ -54,7 +55,7 @@ export function datenschutz(locale: LegalLocale): LegalDoc {
         },
         {
           h: "6. Cookies and tracking",
-          body: ["CineSense sets no cookies and uses no tracking, analytics or advertising. Only the operator's technical view (/tech) uses a browser login."],
+          body: ["CineSense sets no cookies and uses no tracking, analytics or advertising. Only the operator's admin area (/admin) uses a browser login."],
         },
         {
           h: "7. Your rights",
@@ -82,7 +83,7 @@ export function datenschutz(locale: LegalLocale): LegalDoc {
         h: "3. Suche und Chat",
         body: [
           "Damit CineSense Ihre Wünsche versteht, werden Ihre Chat-Nachrichten und Suchtexte mit dem Gesprächsverlauf an die OpenRouter, Inc. (USA, https://openrouter.ai/privacy) übermittelt, die sie an die Anbieter der Sprachmodelle weitergibt (derzeit Anthropic und für die Inhaltssuche OpenAI, beide USA). Es handelt sich um eine Übermittlung in ein Drittland. Bitte geben Sie im Chat keine personenbezogenen Daten ein. Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO (Bereitstellung der von Ihnen genutzten Suche).",
-          "Der Gesprächsverlauf liegt nur im Arbeitsspeicher des laufenden Servers und wird nicht gespeichert. Protokolliert wird nur, wie viele Tokens eine Anfrage verbraucht hat, nicht ihr Inhalt.",
+          "Das laufende Gespräch liegt nur im Arbeitsspeicher des Servers, solange es läuft. Um die Antworten zu prüfen und zu verbessern, protokolliert der Server zusätzlich jede Chat-Anfrage für 30 Tage: Ihre Nachricht, die Antwort, die verstandene Suche, die gezeigten Filme, die vom Assistenten genutzten Werkzeuge, Tokens, Kosten und Dauer. Das Protokoll enthält keine IP-Adresse und keine Gesprächskennung, sondern nur mit einem geheimen Schlüssel gebildete Hashwerte (HMAC) davon, damit die Anfragen eines Gesprächs zusammen gelesen werden können; einsehen kann es nur der Betreiber nach Anmeldung. Einträge werden nach 30 Tagen automatisch gelöscht. Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO (Qualitäts- und Missbrauchskontrolle des Assistenten).",
           "Um die Nutzung zu begrenzen, zählt der Server Chat-Anfragen je IP-Adresse (pro Minute und pro Tag). Die Tageszähler speichert er in der Datenbank unter einem mit einem geheimen Schlüssel gebildeten Hashwert (HMAC) Ihrer IP-Adresse – nie die Adresse selbst – und löscht sie am nächsten Tag; der Minutenzähler liegt nur im Arbeitsspeicher (Art. 6 Abs. 1 lit. f DSGVO, Schutz vor Missbrauch und Kosten).",
         ],
       },
@@ -108,7 +109,7 @@ export function datenschutz(locale: LegalLocale): LegalDoc {
       },
       {
         h: "6. Cookies und Tracking",
-        body: ["CineSense setzt keine Cookies und nutzt kein Tracking, keine Reichweitenmessung und keine Werbung. Nur die technische Ansicht des Betreibers (/tech) verwendet eine Browser-Anmeldung."],
+        body: ["CineSense setzt keine Cookies und nutzt kein Tracking, keine Reichweitenmessung und keine Werbung. Nur der Admin-Bereich des Betreibers (/admin) verwendet eine Browser-Anmeldung."],
       },
       {
         h: "7. Ihre Rechte",

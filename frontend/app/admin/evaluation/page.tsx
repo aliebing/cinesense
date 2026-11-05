@@ -1,63 +1,110 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import LiveRun from "@/components/eval/LiveRun";
 import RankerComparison from "@/components/eval/RankerComparison";
 import RunHistory from "@/components/eval/RunHistory";
+import RunLauncher from "@/components/eval/RunLauncher";
+import RunTable, { RECENT } from "@/components/eval/RunTable";
 import ScenarioList from "@/components/eval/ScenarioList";
 import { METRICS, modelLabel, runLabel } from "@/components/eval/labels";
-import { type EvalRun, type EvalRunOverview, getEvalRun, getEvalRuns } from "@/lib/api";
-import "../tech.css";
+import {
+  type ApiResult,
+  type EvalLive,
+  type EvalOptions,
+  type EvalRun,
+  type EvalRunOverview,
+  getEvalLive,
+  getEvalOptions,
+  getEvalRun,
+  getEvalRuns,
+  startEval,
+  stopEval,
+} from "@/lib/api";
+
 import "./eval.css";
 
-/** The saved `make eval` runs: what passed, how each check did, the ranker comparison, the history, and every
- *  scenario with the turn behind it. Behind the same login as /tech (proxy.ts and the backend both check it). */
+/** The evaluation: start a run (model, scenarios, estimated cost) and watch it live, the last runs, and one run
+ *  in full: what passed, each check, the ranker comparison, the history and every scenario with its turns.
+ *  Behind the admin login (proxy.ts and the backend both check it). */
 export default function EvalPage() {
   const [runs, setRuns] = useState<EvalRunOverview[] | null>(null);
   const [selected, setSelected] = useState("");
   const [run, setRun] = useState<EvalRun | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [options, setOptions] = useState<EvalOptions | null>(null);
+  const [live, setLive] = useState<EvalLive | null>(null);
+  const [startError, setStartError] = useState<string | null>(null);
+  const running = live?.status === "running" || live?.status === "stopping";
+
+  const showRuns = useCallback((r: ApiResult<EvalRunOverview[]>, pick?: string) => {
+    if (!r.ok) return setError("The evaluation results could not be loaded. Is the backend running?");
+    setRuns(r.data);
+    setSelected((cur) => pick ?? (cur || r.data.at(-1)?.run || ""));
+  }, []);
+  const loadRuns = useCallback((pick?: string) => getEvalRuns().then((r) => showRuns(r, pick)), [showRuns]);
 
   useEffect(() => {
-    getEvalRuns().then((r) => {
-      if (!r.ok) return setError("The evaluation results could not be loaded. Is the backend running?");
-      setRuns(r.data);
-      if (r.data.length) setSelected(r.data[r.data.length - 1].run);
-    });
-  }, []);
+    getEvalRuns().then((r) => showRuns(r));
+    getEvalOptions().then((r) => r.ok && setOptions(r.data));
+    getEvalLive().then((r) => r.ok && r.data.status !== "idle" && setLive(r.data));
+  }, [showRuns]);
+
+  // while a run goes, ask for its state every 1.5 s; when it is saved, list it and open it
+  useEffect(() => {
+    if (!running) return;
+    const timer = setInterval(async () => {
+      const r = await getEvalLive();
+      if (!r.ok) return;
+      setLive(r.data);
+      if (r.data.run) void loadRuns(r.data.run);
+    }, 1500);
+    return () => clearInterval(timer);
+  }, [running, loadRuns]);
 
   useEffect(() => {
     if (!selected) return;
     getEvalRun(selected).then((r) => (r.ok ? setRun(r.data) : setError(`Run ${selected} could not be loaded.`)));
   }, [selected]);
 
+  const start = async (model: string, ids: string[]) => {
+    setStartError(null);
+    const r = await startEval(model, ids);
+    if (r.ok) setLive(r.data);
+    else setStartError(r.message ?? "The run could not be started.");
+  };
+  const stop = async () => {
+    const r = await stopEval();
+    if (r.ok) setLive(r.data);
+  };
+  const full = (runs ?? []).filter((r) => r.scenarios === r.scenarios_total && !r.stopped);
+
   return (
-    <div className="tech ev">
-      <header className="tech-head">
-        <strong>CineSense evaluation</strong>
-        <span>
-          <Link href="/tech">technical view</Link> · <Link href="/">back to the app</Link>
-        </span>
-      </header>
-      {error && <p className="tech-error">{error}</p>}
-      {runs && runs.length === 0 && (
-        <p className="ev-muted">
-          No saved runs. Run <code>make eval</code>; on the server, mount the results folder at CINESENSE_EVAL_DIR.
+    <div className="ev">
+      <section aria-labelledby="ev-start">
+        <h2 id="ev-start">Start a run</h2>
+        <p className="ev-lead">
+          Every scenario runs through the real agent and catalogue with the chosen model; streaming comes from the
+          cache only. Each answer is checked automatically and scored by the judge as soon as it is in.
         </p>
-      )}
+        {options ? (
+          <RunLauncher options={options} busy={running} onStart={start} />
+        ) : (
+          <p className="ev-muted">Loading models and scenarios…</p>
+        )}
+        {startError && <p className="tech-error">{startError}</p>}
+        {live && live.status !== "idle" && <LiveRun live={live} onStop={stop} onShow={setSelected} />}
+      </section>
+
+      {error && <p className="tech-error">{error}</p>}
+      {runs && runs.length === 0 && <p className="ev-muted">No saved runs yet.</p>}
       {runs && runs.length > 0 && (
-        <label className="ev-run">
-          Run{" "}
-          <select value={selected} onChange={(e) => setSelected(e.target.value)}>
-            {[...runs].reverse().map((r) => (
-              <option key={r.run} value={r.run}>
-                {runLabel(r.run)}: {r.passed} of {r.scenarios} passed
-              </option>
-            ))}
-          </select>
-        </label>
+        <section aria-labelledby="ev-recent">
+          <h2 id="ev-recent">Last {Math.min(RECENT, runs.length)} runs</h2>
+          <RunTable runs={runs} selected={selected} onSelect={setSelected} />
+        </section>
       )}
-      {run && run.run === selected && <RunView run={run} runs={runs ?? []} onSelect={setSelected} />}
+      {run && run.run === selected && <RunView run={run} runs={full} onSelect={setSelected} />}
     </div>
   );
 }
@@ -73,9 +120,13 @@ function RunView({ run, runs, onSelect }: { run: EvalRun; runs: EvalRunOverview[
 
   return (
     <>
-      <section className="ev-hero" aria-label="Result">
+      <h2 id="ev-run">Run of {runLabel(run.run)}</h2>
+      <section className="ev-hero" aria-labelledby="ev-run">
         <p className="ev-score">
           <span className="ev-big">{run.passed}</span> of {run.scenarios} scenarios pass every check
+          {run.scenarios < run.scenarios_total && (
+            <span className="ev-muted"> (a selection of {run.scenarios_total})</span>
+          )}
         </p>
         <p className="ev-muted">
           Run of {runLabel(run.run)}.{" "}
@@ -130,10 +181,11 @@ function RunView({ run, runs, onSelect }: { run: EvalRun; runs: EvalRunOverview[
 
       {runs.length > 1 && (
         <section aria-labelledby="ev-history">
-          <h2 id="ev-history">History</h2>
+          <h2 id="ev-history">History of full runs</h2>
           <p className="ev-lead">
-            Scenarios were added between runs ({runs[0].scenarios} in the first, {runs.at(-1)?.scenarios} in the
-            latest), so the rates are not over the same set. Click a point to show that run.
+            Only runs of every scenario. Scenarios were added between runs ({runs[0].scenarios} in the first,{" "}
+            {runs.at(-1)?.scenarios} in the latest), so the rates are not over the same set. Click a point to show
+            that run.
           </p>
           <RunHistory runs={runs} selected={run.run} onSelect={onSelect} />
         </section>

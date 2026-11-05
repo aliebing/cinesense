@@ -6,7 +6,7 @@ import { type InspectFilm, inspectTurn, type InspectResult } from "@/lib/api";
 import { type Criteria, emptyCriteria } from "@/lib/searchState";
 import { shorten } from "@/lib/text";
 import { randomId } from "@/lib/user";
-import "./tech.css";
+
 
 /** "directed by … · with …", leaving out what the catalogue doesn't know. */
 function credits(f: InspectFilm): string {
@@ -53,13 +53,11 @@ export default function TechPage() {
   };
 
   return (
-    <div className="tech">
-      <header className="tech-head">
-        <strong>CineSense · technical view</strong>
-        <span>
-          <Link href="/">back to the app</Link> · <button onClick={reset}>new conversation</button>
-        </span>
-      </header>
+    <div>
+      <p className="admin-lead">
+        One agent turn with everything behind it: reply, criteria, tools, prompts, tokens and cost. Its own
+        conversation, separate from the app. <button onClick={reset}>New conversation</button>
+      </p>
       <form className="tech-ask" onSubmit={send}>
         <input
           aria-label="Message"

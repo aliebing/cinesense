@@ -1,0 +1,25 @@
+/* visitor log: a dense table and the selected turn beside it (below on narrow screens) */
+.vis-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-bottom: 12px; }
+.tech .vis-bar button { text-decoration: none; color: #bbb; border: 1px solid #444; padding: 3px 10px; border-radius: 12px; }
+.tech .vis-bar button[aria-pressed="true"] { color: #111; background: #f3c76b; border-color: #f3c76b; }
+.vis-sums { color: #999; }
+.vis-cols { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 24px; align-items: start; }
+.vis-table-wrap { overflow-x: auto; }
+.vis-table { width: 100%; font-size: 13px; }
+.tech .vis-table th { text-align: left; color: #999; font-weight: 600; padding: 4px 10px 4px 0; border-bottom: 1px solid #333; white-space: nowrap; }
+.tech .vis-table td { padding: 4px 10px 4px 0; border-bottom: 1px solid #222; }
+.vis-table tbody tr { cursor: pointer; }
+.vis-table tbody tr:hover { background: #1b1b1b; }
+.vis-table tr.is-selected { background: #252016; }
+.vis-table .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.vis-table .nowrap { white-space: nowrap; }
+.vis-msg { max-width: 22rem; }
+.tech .vis-msg button { color: #eee; text-decoration: none; text-align: left; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 22rem; }
+.vis-tools { color: #999; font-size: 12px; max-width: 12rem; }
+.vis-note { color: #ff8a80; white-space: nowrap; }
+.vis-more { margin-top: 10px; }
+.vis-detail { position: sticky; top: 12px; max-height: calc(100vh - 24px); overflow-y: auto; padding: 4px 0 12px; }
+.vis-detail h2:first-of-type { margin-top: 8px; }
+.vis-convo { color: #bbb; }
+.vis-convo li { margin-bottom: 4px; }
+@media (max-width: 999px) { .vis-cols { grid-template-columns: 1fr; } .vis-detail { position: static; max-height: none; } }

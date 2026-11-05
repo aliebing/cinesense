@@ -30,6 +30,8 @@ function scenario(id: string, passed: boolean, extra: Partial<EvalScenario> = {}
 it("labels runs and models in plain words", () => {
   expect(runLabel("2026-11-05_1554")).toBe("5 Nov 2026, 15:54");
   expect(modelLabel("anthropic/claude-haiku-5.5")).toBe("Claude Haiku 5.5");
+  expect(modelLabel("openai/gpt-5.6-terra")).toBe("GPT-5.6 Terra");
+  expect(runLabel("2026-11-05_170112")).toBe("5 Nov 2026, 17:01");
 });
 
 it("lists scenarios with only the checks that apply, filters the failed ones and opens the turn", async () => {

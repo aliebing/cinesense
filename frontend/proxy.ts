@@ -1,8 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { basicAuthOk } from "@/lib/basicAuth";
 
-/** The technical view shows prompts, tool calls and costs: it needs the login from TECH_USER / TECH_PASSWORD.
- *  The browser then sends the same login with /api/inspect, which the backend checks as well. */
+/** The admin area (technical view, visitor log, evaluation) shows prompts, chats and costs: it needs the login
+ *  from TECH_USER / TECH_PASSWORD. The browser then sends the same login with the /api calls behind it
+ *  (/api/inspect, /api/admin/*, /api/eval/*), which the backend checks as well. */
 export function proxy(request: NextRequest) {
   if (basicAuthOk(request.headers.get("authorization"), process.env.TECH_USER, process.env.TECH_PASSWORD)) {
     return NextResponse.next();
@@ -14,5 +15,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/tech", "/tech/:path*"],
+  matcher: ["/admin", "/admin/:path*", "/tech", "/tech/:path*"],
 };

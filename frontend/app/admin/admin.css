@@ -20,3 +20,13 @@
 .tech-result { color: #9fc9a0; }
 .tech-error, .tech-note { color: #ff8a80; }
 @media (max-width: 759px) { .tech-cols { grid-template-columns: 1fr; } }
+
+/* admin area: one bar with the three pages; the current one is gold and underlined, the others plain */
+.admin-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 28px; margin: 0 0 16px; padding-bottom: 10px; border-bottom: 1px solid #2a2a2a; }
+.admin-head nav { display: flex; gap: 20px; }
+.tech .admin-head nav a { color: #bbb; text-decoration: none; font-size: 15px; padding-bottom: 2px; }
+.tech .admin-head nav a:hover { color: #eee; }
+.tech .admin-head nav a[aria-current="page"] { color: #f3c76b; border-bottom: 2px solid #f3c76b; }
+.tech .admin-back { margin-left: auto; font-size: 13px; }
+.admin-lead { color: #999; max-width: 80ch; margin: 0 0 12px; }
+.vis-tag { margin-left: 6px; font-size: 11px; color: #f3c76b; }
