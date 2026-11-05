@@ -21,7 +21,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<ApiResult<T
     const body = (await res.json().catch(() => ({}))) as { detail?: string };
     return { ok: false, error: "limited", message: body.detail };
   }
-  if (!res.ok) return { ok: false, error: "server" };
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { detail?: unknown };
+    return { ok: false, error: "server", message: typeof body.detail === "string" ? body.detail : undefined };
+  }
   try {
     return { ok: true, data: (await res.json()) as T };
   } catch {
@@ -123,11 +126,16 @@ export type InspectResult = {
 export const inspectTurn = (threadId: string, message: string, criteria: Criteria) =>
   apiPost<InspectResult>("/api/inspect", { thread_id: threadId, message, criteria });
 
-/** One saved `make eval` run in the history (backend/cinesense/web_api/eval_view.py). */
+/** One saved evaluation run in the history (backend/cinesense/web_api/eval_view.py). */
 export type EvalRunOverview = {
   run: string; // "2026-11-05_1554"
   scenarios: number;
+  scenarios_total: number; // all scenarios at the time: a run of a selection has fewer
   passed: number;
+  model: string | null;
+  cost_usd: number; // agent and judge
+  stopped: boolean;
+  source: "local" | "server";
   grounding_raw: number | null;
   agent_judge: number | null; // mean LLM-judge score (1-5) of the agent's top 5
   ranker_judge: Record<string, number | null>; // per ranker in the comparison
@@ -167,3 +175,93 @@ export type EvalRun = EvalRunOverview & {
 
 export const getEvalRuns = () => apiGet<EvalRunOverview[]>("/api/eval/runs");
 export const getEvalRun = (run: string) => apiGet<EvalRun>(`/api/eval/runs/${encodeURIComponent(run)}`);
+
+/** Starting a run on /admin/evaluation. Prices are USD per million tokens. */
+export type EvalModel = {
+  id: string;
+  label: string;
+  input_per_million: number;
+  output_per_million: number;
+  price_source: "openrouter" | "table";
+  agent_per_scenario_usd: number | null;
+};
+export type EvalOptions = {
+  models: EvalModel[];
+  default_model: string;
+  judge: Omit<EvalModel, "agent_per_scenario_usd"> & { per_call_usd: number | null };
+  estimate_basis: string | null;
+  scenarios: { id: string; category: string; turns: string[]; compared: boolean }[];
+  presets: Record<string, string[]>;
+};
+export type EvalLiveResult = {
+  id: string;
+  category: string;
+  turns: string[];
+  passed: boolean;
+  reply: string;
+  results: string[];
+  judge?: { score: number | null; reason: string } | null;
+  latency_s: number | null;
+  cost_usd: number | null;
+  error: string | null;
+  failed_checks: string[];
+  grounding_fallback: boolean;
+};
+export type EvalLive = {
+  status: "idle" | "running" | "stopping" | "done" | "stopped" | "failed";
+  model?: string;
+  selection?: string[];
+  total?: number;
+  done?: number;
+  passed?: number;
+  cost_usd?: number;
+  current?: { id: string; turns: string[] } | null;
+  phase?: "scenarios" | "comparing" | "saved";
+  results?: EvalLiveResult[];
+  started?: number;
+  run?: string | null;
+  error?: string | null;
+};
+export const getEvalOptions = () => apiGet<EvalOptions>("/api/eval/options");
+export const startEval = (model: string, scenarioIds: string[]) =>
+  apiPost<EvalLive>("/api/eval/start", { model, scenario_ids: scenarioIds });
+export const getEvalLive = () => apiGet<EvalLive>("/api/eval/live");
+export const stopEval = () => apiPost<EvalLive>("/api/eval/stop", {});
+
+/** The visitor log on /admin/visitors (backend/cinesense/web_api/chat_log.py). */
+export type VisitorTurn = {
+  id: number;
+  ts: string;
+  scope: "chat" | "tech";
+  visitor: string | null;
+  thread: string | null;
+  message: string | null;
+  films: number;
+  tools: string[];
+  grounding_fallback: boolean;
+  guarded: boolean;
+  input_tokens: number;
+  output_tokens: number;
+  cost_usd: number;
+  duration_ms: number | null;
+  error: string | null;
+};
+export type VisitorPage = {
+  items: VisitorTurn[];
+  total: number;
+  sums: { count: number; cost_usd: number; avg_duration_ms: number | null; visitors: number };
+};
+export type VisitorTurnDetail = Omit<VisitorTurn, "films" | "tools"> & {
+  reply: string | null;
+  criteria: Record<string, unknown> | null;
+  criteria_summary: string | null;
+  films: { title: string; year: number | null; match: number | null }[];
+  tools: { name: string; args: Record<string, unknown> }[];
+  relaxed: string[];
+  grounding_reason: string[];
+  model: string | null;
+  conversation: { id: number; ts: string; message: string | null }[];
+};
+export const getVisitors = (scope: "chat" | "tech" | null, offset = 0, limit = 50) =>
+  apiGet<VisitorPage>(`/api/admin/visitors?${scope ? `scope=${scope}&` : ""}offset=${offset}&limit=${limit}`);
+export const getVisitorTurn = (id: number) => apiGet<VisitorTurnDetail>(`/api/admin/visitors/${id}`);

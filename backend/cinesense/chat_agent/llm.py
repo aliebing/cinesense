@@ -6,10 +6,12 @@ from cinesense.core.config import Settings
 
 OPENROUTER_BASE = "https://openrouter.ai/api/v1"
 
-# USD per token, from https://openrouter.ai/api/v1/models (checked 2026-10-29)
+# USD per token, from https://openrouter.ai/api/v1/models (checked 2026-11-05); /admin/evaluation asks live
 PRICES = {
     "anthropic/claude-haiku-5.5": (0.10e-6, 0.50e-6),
     "anthropic/claude-sonnet-5.5": (2.0e-6, 10.0e-6),
+    "openai/gpt-5.6-luna": (0.20e-6, 1.20e-6),
+    "openai/gpt-5.6-terra": (2.0e-6, 12.0e-6),
 }
 
 

@@ -26,8 +26,10 @@ def run_scenarios(
     catalogue_titles: set[str],
     model: str = "anthropic/claude-haiku-5.5",
     tag_names: list[str] = (),
+    price: tuple[float, float] | None = None,
 ) -> list[dict]:
-    """tag_names: the genome tag list, to name the final search's tags for the grounding rule."""
+    """tag_names: the genome tag list, to name the final search's tags for the grounding rule. price: USD per
+    input and output token of the model (default: the built-in table)."""
     out = []
     for s in scenarios:
         runner = make_runner(s.failure)
@@ -89,7 +91,7 @@ def run_scenarios(
             passed=res["error"] is None and all(ok for ok, _ in checks.values()),
             latency_s=round(res["latency_s"], 2),
         )
-        res["cost_usd"] = cost_usd(res, PRICES.get(model, (0.0, 0.0)))  # unknown model: cost shown as 0
+        res["cost_usd"] = cost_usd(res, price or PRICES.get(model, (0.0, 0.0)))  # unknown model: cost shown as 0
         out.append(res)
     return out
 

@@ -15,8 +15,8 @@ ALLOWED = {
     "taste": {"core"},
     "catalog_import": {"core", "data_sources"},
     "chat_agent": {"core", "search", "taste"},
-    "web_api": {"core", "data_sources", "search", "taste", "chat_agent", "catalog_import"},
-    "evaluation": {"core", "data_sources", "search", "taste", "chat_agent", "web_api"},
+    "web_api": {"core", "data_sources", "search", "taste", "chat_agent", "catalog_import", "evaluation"},
+    "evaluation": {"core", "data_sources", "search", "taste", "chat_agent"},
 }
 _IMPORT = re.compile(r"^\s*(?:from|import) cinesense\.([a-z_]+)", re.M)
 
