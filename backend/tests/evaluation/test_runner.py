@@ -184,3 +184,25 @@ def test_a_blocked_turn_without_tokens_is_not_missing_usage():
         set(),
     )
     assert res[0]["usage_missing"] is False
+
+
+def test_tool_rules_judge_the_final_turn():
+    """'The refinement must not start over': a new_search in the first turn (empty criteria) does not fail it."""
+
+    def make(failure):
+        def run(thread_id, message, criteria, on_status=None, profile=None):
+            tools = ["new_search", "find_person"] if message == "first" else ["set_filters"]
+            return {"reply": "", "criteria": criteria, "results": [movie("A")], "tools_called": tools, "usage": {}}
+
+        return run
+
+    s = Scenario(
+        id="r",
+        category="follow_up",
+        turns=["first", "second"],
+        expect=Expect(tools_any=["set_filters"], tools_none=["new_search"]),
+    )
+    [res] = run_scenarios([s], make, set())
+    assert res["checks"]["tools"]["ok"]
+    assert res["tools_per_turn"] == [["new_search", "find_person"], ["set_filters"]]
+    assert res["tools_called"] == ["new_search", "find_person", "set_filters"]

@@ -2,8 +2,9 @@
 
 import re
 
-from cinesense.chat_agent.grounding import user_named_titles, validate_titles
+from cinesense.chat_agent.grounding import result_titles, user_named_titles, validate_titles
 from cinesense.evaluation.scenarios import Expect
+from cinesense.search.rating import catalogue_rating
 
 Check = tuple[bool, list[str]]
 
@@ -34,6 +35,10 @@ def check_constraints(results: list[dict], e: Expect, criteria: dict | None = No
             people += [x[5:].lower() for x in r.get("reasons", []) if x.startswith("with ")]  # full-cast match
             if e.person.lower() not in people:
                 fails.append(f"{title}: without {e.person} in the top-billed people")
+        if e.min_rating is not None:
+            rating = catalogue_rating(m.get("ml_rating"), m.get("ml_rating_count") or 0)
+            if rating < e.min_rating:
+                fails.append(f"{title}: rated {rating:.2f} < {e.min_rating}")
         a = m.get("availability") or {}
         if e.availability == "stream" and a.get("streaming_de") is not None and not a.get("subscription_services"):
             fails.append(f"{title}: known not streaming")  # unknown availability is labelled in the UI, not a lie
@@ -55,7 +60,7 @@ def check_grounding(
     reply: str, results: list[dict], catalogue_titles: set[str], user_text: str, tag_spans: list[str] = ()
 ) -> Check:
     """tag_spans: the tags of the final search and the proposals — the same rule as the production guard."""
-    allowed = [r["movie"]["title"] for r in results] + user_named_titles(user_text, catalogue_titles)
+    allowed = result_titles(results) + user_named_titles(user_text, catalogue_titles)
     ok, bad = validate_titles(reply, allowed, catalogue_titles, tag_spans)
     return ok, [f"unlisted title: {t}" for t in bad]
 
@@ -104,7 +109,17 @@ def check_guarded(guarded: bool, e: Expect) -> Check:
 def applies(kind: str, e: Expect) -> bool:
     """Whether a check has anything to test in this scenario (for honest k/n reporting)."""
     if kind == "constraints":
-        limits = (e.max_runtime, e.exclude_genres, e.kind, e.availability, e.year_from, e.year_to, e.person, e.cleared)
+        limits = (
+            e.max_runtime,
+            e.exclude_genres,
+            e.kind,
+            e.availability,
+            e.year_from,
+            e.year_to,
+            e.person,
+            e.cleared,
+            e.min_rating,
+        )
         return any(limits)
     if kind == "tools":
         return bool(e.tools_any or e.tools_none)

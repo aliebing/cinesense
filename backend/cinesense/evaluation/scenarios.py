@@ -24,6 +24,7 @@ class Expect(BaseModel):
     year_to: int | None = None
     cleared: list[str] = Field(default_factory=list)  # criteria fields that must be empty after the last turn
     person: str | None = None
+    min_rating: float | None = None  # every result rated at least this (Bayesian MovieLens, as the filter)
     results_required: bool = True
     titles_any: list[str] = Field(default_factory=list)  # informative "hit" check, not a constraint
     reply_contains_any: list[str] = Field(default_factory=list)

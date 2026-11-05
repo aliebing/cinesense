@@ -120,7 +120,7 @@ def main() -> None:
             }
         )
     comparison = {"rows": rows, "judge_cost_usd": cost_usd(judge_llm.usage, PRICES[JUDGE_MODEL])}
-    summary = summarise(results)
+    summary = {**summarise(results), "agent_model": s.llm_model, "judge_model": JUDGE_MODEL}
     stamp = datetime.now().strftime("%Y-%m-%d_%H%M")
     (OUT_DIR / "results").mkdir(parents=True, exist_ok=True)
     (OUT_DIR / "results" / f"{stamp}.json").write_text(

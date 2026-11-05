@@ -38,6 +38,7 @@ def run_scenarios(
             "failure": s.failure,
             "turns": s.turns,
             "tools_called": [],
+            "tools_per_turn": [],
             "tool_errors": 0,
             "input_tokens": 0,
             "output_tokens": 0,
@@ -53,6 +54,7 @@ def run_scenarios(
                 res["latency_s"] += time.perf_counter() - t0
                 criteria = last.get("criteria") or criteria
                 res["tools_called"] += last.get("tools_called", [])
+                res["tools_per_turn"].append(last.get("tools_called", []))
                 res["tool_errors"] += last.get("tool_errors", 0)
                 usage = last.get("usage") or {}
                 # zero tokens means usage was not reported, unless the guard blocked the turn before any model call
@@ -64,7 +66,9 @@ def run_scenarios(
         results, reply = last.get("results", []), last.get("reply", "")
         checks = {
             "constraints": check_constraints(results, s.expect, last.get("criteria")),
-            "tools": check_tools(res["tools_called"], s.expect),
+            # the final turn, like every check: "the refinement must not start over" is about the follow-up, and a
+            # new_search in the first turn (on empty criteria) is harmless
+            "tools": check_tools(last.get("tools_called", []), s.expect),
             "grounding": check_grounding(reply, results, catalogue_titles, " ".join(s.turns), _spans(last, tag_names)),
             "availability_claims": check_availability_claims(reply, results),
             "reply": check_reply(reply, s.expect),

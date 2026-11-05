@@ -138,3 +138,12 @@ def test_year_to_and_cleared_criteria():
     assert not ok and any("2013 > 1999" in w for w in why) and any("kept person" in w for w in why)
     assert check_constraints(res[:1], e, criteria={"person": None})[0]
     assert applies("constraints", Expect(cleared=["person"]))
+
+
+def test_min_rating_constraint_uses_the_filter_rating():
+    good, poor = r("Good"), r("Poor")
+    good["movie"] |= {"ml_rating": 4.2, "ml_rating_count": 50000}
+    poor["movie"] |= {"ml_rating": 3.2, "ml_rating_count": 50000}
+    ok, fails = check_constraints([good, poor], Expect(min_rating=3.7))
+    assert not ok and fails == ["Poor: rated 3.20 < 3.7"]
+    assert check_constraints([good], Expect(min_rating=3.7))[0]
