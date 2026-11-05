@@ -136,18 +136,22 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
         </span>
       )}
       {extended && <span className="results-extended"> · includes titles just added from Wikidata</span>}
-      {canMore && (
-        <button type="button" className="results-more" onClick={loadMore} disabled={loadingMore}>
-          Show {LIMIT} more
-        </button>
-      )}
     </>
   );
   return (
     <>
       {note}
       {widen}
-      <RelatedRow items={shown} onSelect={onOpen} label={label} name="Results" showReasons busy={loading || loadingMore} drift={false} />
+      <RelatedRow items={shown} onSelect={onOpen} label={label} name="Results" showReasons busy={loading || loadingMore}
+        drift={false}
+        after={
+          canMore && (
+            <button type="button" className="results-more" onClick={loadMore} disabled={loadingMore} aria-label={`Show ${LIMIT} more`} title={`Show ${LIMIT} more`}>
+              »
+            </button>
+          )
+        }
+      />
     </>
   );
 }

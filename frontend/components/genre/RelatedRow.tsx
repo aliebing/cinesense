@@ -48,6 +48,7 @@ export default function RelatedRow({
   showReasons = false,
   busy = false,
   drift = true,
+  after,
 }: {
   items: RankedMovie[];
   onSelect: (m: Movie) => void;
@@ -58,6 +59,8 @@ export default function RelatedRow({
   busy?: boolean;
   /** false: the row moves only when the mouse steers towards an edge (it starts with the best match) */
   drift?: boolean;
+  /** placed after the cards, inside the row (the results page's "load more" arrow) */
+  after?: ReactNode;
 }) {
   const viewport = useRef<HTMLDivElement | null>(null);
   const track = useRef<HTMLDivElement | null>(null);
@@ -186,6 +189,7 @@ export default function RelatedRow({
           ))}
         </div>
       </div>
+      {after}
     </section>
   );
 }

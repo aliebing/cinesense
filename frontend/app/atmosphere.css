@@ -482,14 +482,19 @@
 .results-widened { margin: 0; color: var(--miss); text-shadow: 0 1px 3px #000; }
 .result-miss { display: block; margin-top: .15em; font-size: .85em; color: var(--miss); }
 .results-relax:hover, .results-relax:focus-visible { background: var(--gold); color: #16130c; }
-/* a link that gets the gold frame when pointed at; while the next films load the row shows its usual loading bar */
-.results-more { margin-left: .6em; font: inherit; letter-spacing: .05em; text-transform: none; cursor: pointer; color: var(--gold);
-  border: 1px solid transparent; border-radius: 999px; padding: .15em .8em; background: none; transition: border-color .2s; }
-.results-more:hover:not(:disabled), .results-more:focus-visible { border-color: var(--gold); }
-.results-more:disabled { opacity: .6; cursor: wait; }
+/* more films to load: a thick gold double arrow right of the row, at the cards' height; it grows when pointed at */
+.results-more { position: absolute; z-index: 6; right: calc(-1 * (var(--card-w) + var(--card-gap))); bottom: calc(var(--card-w) * .75);
+  transform: translateY(50%); display: grid; place-items: center; width: var(--card-w); aspect-ratio: 1; padding: 0; border: 0;
+  background: none; cursor: pointer; color: var(--gold); font-size: calc(var(--card-w) * .62); font-weight: 800; line-height: 1;
+  text-shadow: 0 0 18px #f3c76b99, 0 2px 6px #000; transition: transform .2s; }
+.results-more:hover:not(:disabled), .results-more:focus-visible { transform: translateY(50%) scale(1.4); }
+.results-more:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; border-radius: 8px; }
+.results-more:disabled { opacity: .5; cursor: wait; }
 /* the matches run in one row at the bottom, like "Also fits your mood" on the genre page */
-.results-page .related { position: static; margin-top: auto; }
+.results-page .related { position: relative; inset: auto; margin-top: auto; } /* relative: room for the arrow */
 /* centred, with two cards' room on either side (not across the whole screen) */
+/* on a phone there is no room beside the row: the arrow sits over its right end */
+@media (max-width: 759px) { .results-page .results-more { right: 0; background: #000b; border-radius: 50%; width: 3em; font-size: 1.6em; } }
 @media (min-width: 760px) {
   .results-page .related { margin-inline: calc(2 * (var(--card-w) + var(--card-gap))); }
   /* the film row, header and advanced search always show in full; the mood panel takes what is left and
