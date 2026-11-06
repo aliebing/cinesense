@@ -94,3 +94,28 @@ def test_list_movies_shares_cached_objects_and_search_results_are_copies():
     page = SearchService(p).run(SearchCriteria(), 0, 5)
     page.items[0].movie.title = "mutated"
     assert all(m.title != "mutated" for m in p.list_movies())
+
+
+def test_stale_catalogue_is_served_while_it_reloads_in_the_background():
+    log = []
+    p = provider(log)
+    first = p.list_movies()
+    assert len(log) == 1  # the very first call waits for the load
+    gate = threading.Event()
+    reloaded = threading.Event()
+    original = p._reload
+
+    def slow_reload():
+        gate.wait(5)
+        out = original()
+        reloaded.set()
+        return out
+
+    p._reload = slow_reload
+    p._loaded_at -= p._cache_seconds + 1  # stale
+    again = p.list_movies()  # answers at once with the old films, the reload runs on
+    assert [m.id for m in again] == [m.id for m in first] and not reloaded.is_set()
+    p.list_movies()  # a second call meanwhile starts no second reload
+    gate.set()
+    assert reloaded.wait(5)
+    assert len(log) == 2

@@ -78,10 +78,59 @@ def test_home_rows_per_world():
     assert set(data["rows"]) == {"suspense", "scifi", "romance", "adventure", "comedy", "action"}
     for wid, films in data["rows"].items():
         assert 0 < len(films) <= 16 and all(wid in f["world_ids"] for f in films)
-    assert len(data["tiles"]) == 24
-    covered = {wid for t in data["tiles"] for wid in t["world_ids"]}
-    assert {"suspense", "scifi", "romance", "adventure", "comedy", "action"} <= covered
+    assert "tiles" not in data  # the frontend never used it
     assert data["titles"] and all(isinstance(t, str) for t in data["titles"])
+
+
+def test_home_tiles_carry_only_what_a_tile_needs():
+    film = next(iter(client().get("/api/home").json()["rows"].values()))[0]
+    assert {"id", "title", "world_ids", "horizontal_poster_url", "backdrop_url"} <= set(film)
+    assert "overview" not in film and "cast_top" not in film and "poster_url" not in film
+
+
+def test_home_sends_a_backdrop_only_for_the_hero_or_a_tile_without_wide_poster():
+    from cinesense.core.models import Movie as M
+    from cinesense.web_api.home import _tiles
+
+    def film(i, wide, bd):
+        return M(id=f"f{i}", title=f"F{i}", world_ids=["action"], horizontal_poster_url=wide, backdrop_url=bd)
+
+    tiles = _tiles([film(1, "w1", "b1"), film(2, "w2", "b2"), film(3, None, "b3")])
+    assert [t["backdrop_url"] for t in tiles] == ["b1", None, "b3"]  # hero, dropped, needed as the tile picture
+
+
+def test_home_is_built_once_and_kept():
+    from cinesense.web_api.home import HomeCache
+
+    calls = []
+    cache = HomeCache(ttl=60)
+    assert cache.get(lambda: calls.append(1) or {"n": len(calls)}) == {"n": 1}
+    assert cache.get(lambda: calls.append(1) or {"n": len(calls)}) == {"n": 1}
+    assert len(calls) == 1
+
+
+def test_stale_home_is_served_while_the_next_one_builds():
+    import threading
+
+    from cinesense.web_api.home import HomeCache
+
+    cache = HomeCache(ttl=0)
+    cache.get(lambda: {"v": 1})
+    gate, done = threading.Event(), threading.Event()
+
+    def slow():
+        gate.wait(5)
+        done.set()
+        return {"v": 2}
+
+    assert cache.get(slow) == {"v": 1}  # at once, the old one
+    gate.set()
+    assert done.wait(5)
+    for _ in range(50):  # the background thread stores it right after
+        if cache._value == {"v": 2}:
+            break
+        threading.Event().wait(0.01)
+    assert cache._value == {"v": 2}
 
 
 def test_related_uses_requested_world_for_multi_world_film():

@@ -1,5 +1,6 @@
 """Catalogue access in Supabase Postgres (pgvector for plot embeddings and Tag Genome vectors)."""
 
+import logging
 import threading
 import time
 from datetime import date, timedelta
@@ -8,6 +9,8 @@ import numpy as np
 
 from cinesense.core.billing import role_weight
 from cinesense.core.models import Availability, Movie
+
+log = logging.getLogger(__name__)
 
 IN_CINEMA_DAYS = 56
 _FIELDS = (
@@ -36,23 +39,41 @@ class PostgresProvider:
         self._tags: list[str] | None = None
         self._mean: np.ndarray | None = None
         self._lock = threading.Lock()
+        self._refreshing = False  # one background reload at a time
 
     # --- MovieProvider -------------------------------------------------
     def list_movies(self) -> list[Movie]:
+        """The whole catalogue, cached. Once the cache is stale it is still served while a background thread
+        reloads it (loading ~20,000 films takes seconds; no visitor should wait for that). Only the very first
+        call waits."""
         with self._lock:
             movies = self._movies
-            fresh = movies is not None and time.monotonic() - self._loaded_at <= self._cache_seconds
-        if not fresh:
-            with self._conn() as c:
-                rows = c.execute(f"select {_FIELDS} from films").fetchall()
-            movies = [row_to_movie(r) for r in rows]
-            with self._lock:
-                self._movies, self._by_id, self._loaded_at = (
-                    movies,
-                    {m.id: m for m in movies},
-                    time.monotonic(),
-                )
+            stale = movies is not None and time.monotonic() - self._loaded_at > self._cache_seconds
+            reload_now = stale and not self._refreshing
+            if reload_now:
+                self._refreshing = True
+        if movies is None:
+            movies = self._reload()
+        elif reload_now:
+            threading.Thread(target=self._reload_in_background, daemon=True).start()
         return list(movies)  # shared, read-only objects; SearchService copies the page it returns
+
+    def _reload(self) -> list[Movie]:
+        with self._conn() as c:
+            rows = c.execute(f"select {_FIELDS} from films").fetchall()
+        movies = [row_to_movie(r) for r in rows]
+        with self._lock:
+            self._movies, self._by_id, self._loaded_at = movies, {m.id: m for m in movies}, time.monotonic()
+        return movies
+
+    def _reload_in_background(self) -> None:
+        try:
+            self._reload()
+        except Exception:  # noqa: BLE001 — keep serving the old catalogue; the next call tries again
+            log.exception("catalogue reload failed")
+        finally:
+            with self._lock:
+                self._refreshing = False
 
     def get_movie(self, movie_id: str) -> Movie | None:
         with self._conn() as c:

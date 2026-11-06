@@ -1,6 +1,10 @@
 """The FastAPI app: catalogue, search and world endpoints; chat, inspect and taste come from their own routers."""
 
+import logging
+import threading
+from collections.abc import AsyncIterator
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import asynccontextmanager
 from typing import Annotated, Literal
 
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query
@@ -24,6 +28,7 @@ from cinesense.web_api.deps import (
     get_trailers,
 )
 from cinesense.web_api.eval_view import router as eval_router
+from cinesense.web_api.home import HomeCache, build_home, row_trailers
 from cinesense.web_api.images import with_images as _with_images
 from cinesense.web_api.inspect import router as inspect_router
 from cinesense.web_api.taste import UserProfile, get_user
@@ -36,7 +41,6 @@ Live = Annotated[object, Depends(get_live)]
 Trailers = Annotated[object, Depends(get_trailers)]
 Checker = Annotated[object, Depends(get_trailer_checker)]
 
-ROW_SIZE = 16
 IMAGE_FILL = 12  # images fetched per list response (each new film costs one Streaming API request once)
 RELATED_IMAGE_FILL = 24  # the related row shows up to 24 films; no blank tiles
 TRAILER_FILL = 4  # top search hits without a Wikidata trailer ask YouTube (cached 30 days; 95 searches/day)
@@ -70,9 +74,24 @@ class DiscoverResponse(BaseModel):
 
 
 def create_app(load_env: bool = True) -> FastAPI:
+    """`load_env` is the real server: it also warms the catalogue and the homepage at startup (tests skip both)."""
     if load_env:
         load_env_file()
-    app = FastAPI(title="CineSense API")
+    home_cache = HomeCache()
+
+    def warm() -> None:
+        try:
+            home_cache.get(lambda: build_home(get_provider(), get_streaming(), get_trailer_checker(), get_trailers()))
+        except Exception:  # noqa: BLE001 — the first visitor then builds it
+            logging.getLogger(__name__).exception("warming the homepage failed")
+
+    @asynccontextmanager
+    async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+        if load_env:
+            threading.Thread(target=warm, daemon=True).start()  # the catalogue load takes seconds
+        yield
+
+    app = FastAPI(title="CineSense API", lifespan=lifespan)
     app.add_middleware(
         CORSMiddleware,
         allow_origin_regex=r"http://(localhost|127\.0\.0\.1)(:\d+)?",
@@ -134,7 +153,7 @@ def create_app(load_env: bool = True) -> FastAPI:
         search_trailers=True,
     ) -> DiscoverResponse:
         res = SearchService(provider, streaming, embedder, live).run(req.criteria, req.offset, req.limit, profile)
-        _row_trailers([r.movie for r in res.items], checker, trailers)
+        row_trailers([r.movie for r in res.items], checker, trailers)
         if trailers is not None and search_trailers:  # the search rows play trailers on hover: the best hits need one
             top = [r.movie for r in res.items[:TRAILER_FILL] if r.movie.youtube_key is None]
             with ThreadPoolExecutor(max_workers=TRAILER_FILL) as pool:  # uncached ids cost a round trip each
@@ -220,7 +239,7 @@ def create_app(load_env: bool = True) -> FastAPI:
             raise HTTPException(status_code=404, detail="world_not_found")
         # with the profile: a rejected film never comes back as the world's default stage film
         items = SearchService(provider).run(SearchCriteria(world_id=world_id), 0, limit, profile).items
-        _row_trailers([r.movie for r in items], checker, trailers)
+        row_trailers([r.movie for r in items], checker, trailers)
         return items
 
     @app.get("/api/movies/{movie_id}")
@@ -257,7 +276,7 @@ def create_app(load_env: bool = True) -> FastAPI:
             world_id = found.world_ids[0] if found.world_ids else None
         items = SearchService(provider).run(SearchCriteria(world_id=world_id), 0, limit + 1, profile).items
         items = [r for r in items if r.movie.id != movie_id][:limit]
-        _row_trailers([r.movie for r in items], checker, trailers)
+        row_trailers([r.movie for r in items], checker, trailers)
         for r in items[:RELATED_IMAGE_FILL]:
             _with_images(r.movie, provider, streaming)
         return items
@@ -282,46 +301,6 @@ def create_app(load_env: bool = True) -> FastAPI:
 
     @app.get("/api/home")
     def home(provider: Provider, streaming: Streaming, checker: Checker, trailers: Trailers) -> dict:
-        movies = provider.list_movies()
-        pools: dict[str, list[Movie]] = {}
-        for w in WORLDS:
-            in_world = sorted((m for m in movies if w.id in m.world_ids), key=lambda m: m.ml_rating_count, reverse=True)
-            pool = [m.model_copy(deep=True) for m in in_world[: ROW_SIZE * 4]]
-            _row_trailers(pool, checker, trailers)
-            # popular films with a playable trailer first, so hovering a tile usually plays something
-            pools[w.id] = sorted(pool, key=lambda m: (m.youtube_key is not None, m.ml_rating_count), reverse=True)
-        rows: dict[str, list[Movie]] = {w.id: [] for w in WORLDS}
-        used: set[str] = set()  # each film in one row only; worlds take turns so none is starved
-        for _ in range(ROW_SIZE):
-            for w in WORLDS:
-                nxt = next((m for m in pools[w.id] if m.id not in used), None)
-                if nxt is not None:
-                    rows[w.id].append(nxt)
-                    used.add(nxt.id)
-        for w in WORLDS:
-            rows[w.id] = [_with_images(m, provider, streaming) for m in rows[w.id]]
-        titles = []
-        for w in WORLDS:
-            titles += [m.title for m in rows[w.id][:2] if m.title not in titles]
-        tiles = [m for w in WORLDS for m in rows[w.id][:4]]
-        return {"worlds": list(WORLDS), "rows": rows, "tiles": tiles, "titles": titles}
+        return home_cache.get(lambda: build_home(provider, streaming, checker, trailers))
 
     return app
-
-
-def _row_trailers(movies: list[Movie], checker, trailers) -> list[Movie]:
-    """Trailers for tiles that play on hover, without waiting or spending quota: known-bad ids drop out (unknown
-    ones are checked in the background), and a film left without one gets the trailer a YouTube search already
-    found for it (the Matrix: its Wikidata trailer is gone, the detail page found another)."""
-    if checker is not None:
-        checker.filter_known(movies)
-    cached = getattr(trailers, "cached", None)
-    missing = [m for m in movies if m.youtube_key is None]
-    if cached is None or not missing:
-        return movies
-    found = cached([m.id for m in missing])
-    for m in missing:
-        m.youtube_key = found.get(m.id)
-    if checker is not None:
-        checker.filter_known(missing)  # a reported fallback trailer is never offered again
-    return movies
