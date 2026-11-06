@@ -16,5 +16,9 @@ wheels/
 # Local-only working material: design and plans, video recording scripts and output, prompt drafts
 docs/superpowers/
 docs/video/
+docs/brief/
 docs/*.txt
+# local study aids: the one-file LangGraph demo and its debugger setup
+backend/scripts/langgraph_demo.py
+.vscode/
 

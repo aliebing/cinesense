@@ -8,7 +8,7 @@ CineSense ("Don't choose a movie. Choose a feeling.") is a Turing College AI Eng
 
 Local only (git-ignored, like `docs/video/` and the prompt drafts in `docs/`): the approved design is in `docs/superpowers/specs/2026-10-29-cinesense-design.md`. Read it before changing behaviour or look. Implementation plans and the 4-week roadmap are in `docs/superpowers/plans/`. Approved mockups are in `docs/superpowers/specs/mockups/`.
 
-The grading briefs are in `docs/brief/` (`turing-college-capstone.md`, `turing-college-sprint4.md`). `ARCHITECTURE.md` is the reviewer-facing map of the code; keep it true when moving things.
+The grading briefs are in `docs/brief/` (`turing-college-capstone.md`, `turing-college-sprint4.md`; local only, git-ignored). `ARCHITECTURE.md` is the reviewer-facing map of the code; keep it true when moving things.
 
 ## Conventions
 
