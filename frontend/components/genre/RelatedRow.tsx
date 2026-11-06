@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { advance, easeTowards } from "@/components/home/TileRows";
 import { isTyping } from "@/lib/typingPause";
 import HoverTrailer from "@/components/media/HoverTrailer";
@@ -14,6 +14,7 @@ const SLOW_SPEED = 14; // px per second in the middle: still moving, but a card 
 const MAX_SPEED = 1100; // px per second with the pointer at the very edge
 const DEAD_ZONE = 0.3; // middle share of the row where it only creeps on
 const EASE_MS = 220;
+export const SWEEP_MS = 1200; // the fast run to the next (or previous) 50 results
 export const MIN_SLOTS = 14; // until the row is measured: fewer films than this stand still instead of looping
 
 /** Row velocity for a pointer at `ratio` (0 = left edge, 1 = right edge) of the row; null = no pointer.
@@ -34,6 +35,18 @@ export function anchored(offset: number, before: number | null, now: number): nu
   return before === null ? offset : offset - (now - before);
 }
 
+/** Row offset during a sweep: from `start` to `target` in `ms`, slow at both ends and very fast in between. */
+export function sweepOffset(start: number, target: number, elapsed: number, ms = SWEEP_MS): number {
+  const t = Math.min(Math.max(elapsed / ms, 0), 1);
+  const eased = t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2; // ease-in-out (cubic)
+  return start + (target - start) * eased;
+}
+
+/** A run through the row to another page: the row holds both pages, the cards from index `from` on are where the
+ *  old row's first card was, and it ends with card `to` where the first card stands at rest (then the caller swaps
+ *  in the new page alone, at rest — the same picture). */
+export type Sweep = { from: number; to: number; onDone: () => void };
+
 export function LoadingBar() {
   return <div className="loading-bar" role="progressbar" aria-label="Loading results" />;
 }
@@ -49,6 +62,7 @@ export default function RelatedRow({
   busy = false,
   drift = true,
   after,
+  sweep = null,
 }: {
   items: RankedMovie[];
   onSelect: (m: Movie) => void;
@@ -61,6 +75,8 @@ export default function RelatedRow({
   drift?: boolean;
   /** placed after the cards, inside the row (the results page's "load more" arrow) */
   after?: ReactNode;
+  /** run quickly through the row to card `sweep.to` (paging the results), then call `onDone` */
+  sweep?: Sweep | null;
 }) {
   const viewport = useRef<HTMLDivElement | null>(null);
   const track = useRef<HTMLDivElement | null>(null);
@@ -68,6 +84,10 @@ export default function RelatedRow({
   const anchor = useRef<HTMLElement | null>(null); // the card under the pointer
   const trailerRef = useRef(false);
   const reduced = useReducedMotion();
+  const sweepRef = useRef<Sweep | null>(sweep);
+  useLayoutEffect(() => {
+    sweepRef.current = sweep; // before the next frame: the row already holds both pages
+  }, [sweep]);
   // films that all fit in the visible width stand still, left-aligned; only a row wider than the screen loops
   // (looping a short one would need empty boxes). Measured with a ResizeObserver; until then: by count.
   const [fits, setFits] = useState<boolean | null>(null);
@@ -94,6 +114,11 @@ export default function RelatedRow({
     trailerRef.current = activeId !== null; // a playing trailer must not slide away from under the pointer
   }, [activeId]);
 
+  const sweeping = sweep !== null;
+  useEffect(() => {
+    if (sweeping && still) sweepRef.current?.onDone(); // nothing to run through: swap the page at once
+  }, [sweeping, still]);
+
   useEffect(() => {
     if (still) {
       // the loop moves the track by hand: a row that shrank to a few films must start at the left again,
@@ -108,11 +133,35 @@ export default function RelatedRow({
     let dir = -1; // keep the last direction, so the row never turns around on its own
     let anchorEl: HTMLElement | null = null;
     let anchorLeft: number | null = null; // its layout position (offsetLeft ignores our transform)
+    // the caller builds a new Sweep object on every render: one run per from/to, until the row is swapped
+    let run: { from: number; to: number; start: number; target: number; began: number; done: boolean } | null = null;
     const step = (now: number) => {
       const dt = Math.min(now - last, 64); // a background tab must not teleport the row
       last = now;
       const el = track.current;
-      if (isTyping()) {
+      const sweepNow = sweepRef.current;
+      if (el && sweepNow) {
+        if (!run || run.from !== sweepNow.from || run.to !== sweepNow.to) {
+          const left = (i: number) => {
+            const card = el.children[Math.min(i, el.children.length - 1)] as HTMLElement | undefined;
+            const first = el.children[0] as HTMLElement | undefined;
+            return card && first ? card.offsetLeft - first.offsetLeft : 0;
+          };
+          // the old row's cards now start at `from`: shift so they stay where they were, then run to `to`
+          const start = offset - left(sweepNow.from);
+          run = { from: sweepNow.from, to: sweepNow.to, start, target: -left(sweepNow.to), began: now, done: false };
+        }
+        const elapsed = run.start === run.target ? SWEEP_MS : now - run.began;
+        offset = sweepOffset(run.start, run.target, elapsed);
+        speed = 0;
+        el.style.transform = `translate3d(${offset}px, 0, 0)`;
+        if (elapsed >= SWEEP_MS && !run.done) {
+          run.done = true;
+          sweepNow.onDone();
+        }
+      } else if (run) {
+        run = null; // a cancelled sweep (a new search): carry on from where it stopped
+      } else if (isTyping()) {
         speed = 0; // hold still while the visitor types in the chat drawer; ease back up afterwards
       } else if (el) {
         const n = el.children.length / 2;
@@ -147,7 +196,7 @@ export default function RelatedRow({
     anchor.current = (e.target as HTMLElement).closest?.(".related-wrap") ?? null;
   };
   return (
-    <section className={`related ${busy ? "is-busy" : ""}`} aria-label={name} aria-busy={busy}>
+    <section className={`related ${busy ? "is-busy" : ""} ${sweeping ? "is-sweeping" : ""}`} aria-label={name} aria-busy={busy}>
       <h3 className="related-label">
         {label} {!still && <span className="related-hint">· move the mouse left or right to browse</span>}
       </h3>

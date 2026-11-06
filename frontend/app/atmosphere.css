@@ -297,6 +297,7 @@
    label's "Show 50 more" stays clickable; events from the cards still bubble to the viewport for browsing */
 .related-viewport { pointer-events: none; }
 .related-track { pointer-events: auto; }
+.related.is-sweeping .related-track { pointer-events: none; } /* no trailer starts while » / « runs through */
 .related-card { position: relative; flex: none; width: var(--card-w); height: calc(var(--card-w) * 1.5); padding: 0; border: 0; border-radius: 8px; overflow: hidden;
   cursor: pointer; background: #0b0c12; color: #fff; outline: 1px solid #ffffff25; box-shadow: 0 10px 30px #000b; transition: transform .3s, filter .3s, width .45s cubic-bezier(.2, .7, .2, 1) var(--card-shrink-delay); }
 .related-card:hover, .related-card:focus-visible, .related-wrap.is-active .related-card { filter: brightness(1.15); }

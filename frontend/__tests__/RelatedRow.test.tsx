@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, it, vi } from "vitest";
-import RelatedRow, { edgeSpeed } from "@/components/genre/RelatedRow";
+import RelatedRow, { edgeSpeed, SWEEP_MS, sweepOffset } from "@/components/genre/RelatedRow";
 import { mockMatchMedia, sampleRanked } from "./fixtures";
 
 beforeEach(() => mockMatchMedia(() => false));
@@ -156,4 +156,15 @@ it("a card widened by its trailer does not make a fitting row start looping", as
   expect(container.querySelector(".related-viewport")).toHaveClass("is-static");
   Object.defineProperty(HTMLElement.prototype, "offsetWidth", wide);
   undo();
+});
+
+it("sweeps from start to target, slow at both ends and fast in between", () => {
+  expect(sweepOffset(0, -10000, 0)).toBe(0);
+  expect(sweepOffset(0, -10000, SWEEP_MS)).toBe(-10000);
+  expect(sweepOffset(0, -10000, SWEEP_MS * 2)).toBe(-10000); // never past the target
+  expect(sweepOffset(0, -10000, SWEEP_MS / 2)).toBeCloseTo(-5000);
+  const early = -sweepOffset(0, -10000, SWEEP_MS * 0.1);
+  const middle = -sweepOffset(0, -10000, SWEEP_MS * 0.55) + sweepOffset(0, -10000, SWEEP_MS * 0.45);
+  expect(early).toBeLessThan(middle / 5); // the first tenth covers far less than a tenth around the middle
+  expect(sweepOffset(-8000, 0, SWEEP_MS)).toBe(0); // backwards too
 });

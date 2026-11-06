@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import RelatedRow, { LoadingBar } from "@/components/genre/RelatedRow";
+import RelatedRow, { LoadingBar, type Sweep } from "@/components/genre/RelatedRow";
 import { search, type DiscoverResult, type Relaxation } from "@/lib/api";
 import type { Criteria } from "@/lib/searchState";
 import type { Movie, RankedMovie } from "@/lib/types";
@@ -36,6 +36,8 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
   const [more, setMore] = useState<{ key: string; pages: RankedMovie[][] }>({ key: "", pages: [] });
   const [page, setPage] = useState<{ key: string; n: number }>({ key: "", n: 0 });
   const [loadingMore, setLoadingMore] = useState(false);
+  // » / « run quickly through the row to the other page before it is swapped in (the page it goes to)
+  const [sweepTo, setSweepTo] = useState<{ key: string; n: number } | null>(null);
   const key = JSON.stringify(criteria);
   const fromKey = widened ? JSON.stringify(widened.from) : "";
 
@@ -120,18 +122,34 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
   const n = page.key === key ? Math.min(page.n, pages.length - 1) : 0;
   const current = pages[n];
   const first = n * LIMIT; // films before this page
-  const shown = current.filter((r, i) => (n === 0 && i < MIN_SHOWN) || r.match_percent >= MIN_PERCENT);
+  const shownOf = (p: number) => pages[p].filter((r, i) => (p === 0 && i < MIN_SHOWN) || r.match_percent >= MIN_PERCENT);
+  const shown = shownOf(n);
   // a next page only while every film on this one still clears the bar: then the next may hold more that do
   const canNext = !loading && current.length === LIMIT && shown.length === current.length && first + LIMIT < total;
   const next = async () => {
-    if (n + 1 < pages.length) return setPage({ key, n: n + 1 });
+    if (n + 1 < pages.length) return setSweepTo({ key, n: n + 1 });
     setLoadingMore(true);
     const r = await search(criteria, first + LIMIT, LIMIT, widened?.from);
     setLoadingMore(false);
     if (!r.ok || r.data.items.length === 0) return;
     setMore({ key, pages: [...pages.slice(1), r.data.items] });
-    setPage({ key, n: n + 1 });
+    setSweepTo({ key, n: n + 1 });
   };
+  // during a sweep the row holds both pages; it ends where the other page alone starts, then that page is swapped in
+  const to = sweepTo && sweepTo.key === key && sweepTo.n < pages.length ? sweepTo.n : null;
+  const target = to === null ? [] : shownOf(to);
+  const rowItems = to === null ? shown : to > n ? [...shown, ...target] : [...target, ...shown];
+  const sweep: Sweep | null =
+    to === null
+      ? null
+      : {
+          from: to > n ? 0 : target.length,
+          to: to > n ? shown.length : 0,
+          onDone: () => {
+            setPage({ key, n: to });
+            setSweepTo(null);
+          },
+        };
   const label = (
     <>
       {n > 0
@@ -142,8 +160,8 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
       {(n > 0 || total > shown.length) && (
         <span className="related-hint">
           {" "}
-          · out of {count.format(total)}
-          {capped ? "+" : ""} films that fit your filters
+          · out of {capped ? "at least " : ""}
+          {count.format(total)} films that fit your filters
         </span>
       )}
       {extended && <span className="results-extended"> · includes titles just added from Wikidata</span>}
@@ -155,21 +173,22 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
       {widen}
       <RelatedRow
         key={n} // a new page starts at its first film
-        items={shown}
+        items={rowItems}
         onSelect={onOpen}
         label={label}
         name="Results"
         showReasons
         busy={loading || loadingMore}
         drift={false}
+        sweep={sweep}
         after={
           <>
-            {n > 0 && !loading && (
-              <button type="button" className="results-more results-more--back" onClick={() => setPage({ key, n: n - 1 })} aria-label={`Previous ${LIMIT}`} title={`Previous ${LIMIT}`}>
+            {n > 0 && !loading && !sweep && (
+              <button type="button" className="results-more results-more--back" onClick={() => setSweepTo({ key, n: n - 1 })} aria-label={`Previous ${LIMIT}`} title={`Previous ${LIMIT}`}>
                 «
               </button>
             )}
-            {canNext && (
+            {canNext && !sweep && (
               <button type="button" className="results-more" onClick={next} disabled={loadingMore} aria-label={`Next ${LIMIT}`} title={`Next ${LIMIT}`}>
                 »
               </button>
