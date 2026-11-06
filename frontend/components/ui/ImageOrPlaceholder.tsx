@@ -16,7 +16,15 @@ export default function ImageOrPlaceholder({ src, alt, className = "" }: Props) 
     );
   }
   return (
-    // eslint-disable-next-line @next/next/no-img-element -- external TMDB/picsum images, sized by CSS
-    <img src={src} alt={alt} className={`img-cover ${className}`} onError={() => setFailedSrc(src)} draggable={false} />
+    // eslint-disable-next-line @next/next/no-img-element -- external poster CDNs (Wikimedia, streaming API), sized by CSS
+    <img
+      src={src}
+      alt={alt}
+      className={`img-cover ${className}`}
+      loading="lazy" // rows run far beyond the screen: their films load as they come near
+      decoding="async"
+      onError={() => setFailedSrc(src)}
+      draggable={false}
+    />
   );
 }

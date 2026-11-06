@@ -27,11 +27,15 @@ export default function HeroSlides({ worlds, images, activeIndex, onAdvance, pau
     return () => clearInterval(id);
   }, [reduced, paused, worlds.length, onAdvance]);
 
+  const n = worlds.length;
+  // only the slide on show, the one fading out and the next one load their picture (~80 KB each); the next one
+  // has ADVANCE_MS to arrive
+  const near = (i: number) => i === activeIndex || i === (activeIndex + 1) % n || i === (activeIndex - 1 + n) % n;
   return (
     <div className="hero" aria-hidden="true">
       {worlds.map((w, i) => (
         <div key={w.id} className={`hero-slide${i === activeIndex ? " is-on" : ""}`}>
-          <div className="hero-img" style={images[w.id] ? { backgroundImage: `url(${images[w.id]})` } : undefined} />
+          <div className="hero-img" style={images[w.id] && near(i) ? { backgroundImage: `url(${images[w.id]})` } : undefined} />
           <div className="hero-grade" style={{ background: w.tint }} />
         </div>
       ))}

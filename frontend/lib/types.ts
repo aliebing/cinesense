@@ -58,12 +58,17 @@ export type RankedMovie = {
   misses?: string[]; // after a widened search: the parts of the original wish this film misses
 };
 
+/** A homepage tile: only what the rows need (backend/cinesense/web_api/home.py TILE_FIELDS). */
+export type HomeTile = Pick<
+  Movie,
+  "id" | "title" | "year" | "world_ids" | "youtube_key" | "horizontal_poster_url" | "backdrop_url"
+>;
+
 export type HomeData = {
   worlds: MoodWorld[];
-  rows: Record<string, Movie[]>;
-  tiles: Movie[];
+  rows: Record<string, HomeTile[]>;
   titles: string[];
 };
 
 /** `picked`: the search hits on the homepage, shown larger with a gold frame (the short list). */
-export type TileRow = { world: MoodWorld; movies: Movie[]; picked?: boolean; featured?: string[] }; // featured: ids shown larger
+export type TileRow = { world: MoodWorld; movies: HomeTile[]; picked?: boolean; featured?: string[] }; // featured: ids shown larger

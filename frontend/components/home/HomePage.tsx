@@ -18,15 +18,17 @@ import { getHome, getTags, type ApiResult, type Tag } from "@/lib/api";
 import { currentPicks, useChatLog } from "@/lib/chat";
 import { padRows, useSearchRowsWithStatus } from "@/lib/searchRows";
 import { hasAnyCriteria, useSearchState } from "@/lib/searchState";
-import type { HomeData, Movie } from "@/lib/types";
+import type { HomeData, HomeTile } from "@/lib/types";
 import { useActiveTrailer } from "@/lib/useActiveTrailer";
 import { useIsNarrow, useReducedMotion } from "@/lib/useReducedMotion";
 
-export default function HomePage() {
+/** The homepage. `initial`: the rows the server already fetched (app/page.tsx); without them the browser asks. */
+export default function HomePage({ initial = null }: { initial?: HomeData | null }) {
   const router = useRouter();
   const reduced = useReducedMotion();
   const narrow = useIsNarrow();
-  const [result, setResult] = useState<ApiResult<HomeData> | null>(null);
+  const [result, setResult] = useState<ApiResult<HomeData> | null>(initial ? { ok: true, data: initial } : null);
+  const hasInitial = initial !== null;
   const [active, setActive] = useState(0);
   const { activeId } = useActiveTrailer();
   const [criteria, setCriteria] = useSearchState();
@@ -34,16 +36,17 @@ export default function HomePage() {
 
   useEffect(() => {
     let cancelled = false;
-    getHome().then((r) => {
-      if (!cancelled) setResult(r);
-    });
+    if (!hasInitial)
+      getHome().then((r) => {
+        if (!cancelled) setResult(r);
+      });
     getTags().then((r) => {
       if (!cancelled && r.ok) setTags(r.data);
     });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [hasInitial]);
 
   const data = result?.ok ? result.data : null;
   const worlds = useMemo(() => data?.worlds ?? [], [data]);
@@ -65,7 +68,7 @@ export default function HomePage() {
     setCriteria({ ...criteria, availability });
     router.push("/results");
   };
-  const openMovie = (m: Movie) => router.push(`/world/${m.world_ids[0]}?film=${m.id}`);
+  const openMovie = (m: HomeTile) => router.push(`/world/${m.world_ids[0]}?film=${m.id}`);
   const rowCount = narrow ? 1 : 3;
   // a search from the chat (or the chips) takes over the rows: its hits in the middle, the worlds they belong to around
   const [chatLog] = useChatLog();

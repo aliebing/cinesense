@@ -4,9 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { useActiveTrailer } from "@/lib/useActiveTrailer";
 import { isTyping } from "@/lib/typingPause";
 import { useReducedMotion } from "@/lib/useReducedMotion";
-import type { MoodWorld, Movie, TileRow } from "@/lib/types";
+import type { HomeTile, MoodWorld, TileRow } from "@/lib/types";
 
-type Props = { rows: TileRow[]; onSelect: (m: Movie) => void; worldOrder?: string[] };
+type Props = { rows: TileRow[]; onSelect: (m: HomeTile) => void; worldOrder?: string[] };
 
 const SPEED = 40; // px per second, the pace of the genre page's related row
 const POINTING_FACTOR = 0.45; // pointer over the rows: slower, so a tile is easy to catch
@@ -62,7 +62,7 @@ export function visibleWorlds(active: number, worlds: MoodWorld[], count = 4): M
   return Array.from({ length: Math.min(count, worlds.length) }, (_, i) => worlds[(active + i) % worlds.length]);
 }
 
-function TileImage({ movie }: { movie: Movie }) {
+function TileImage({ movie }: { movie: HomeTile }) {
   const [failed, setFailed] = useState(false);
   const src = movie.horizontal_poster_url ?? movie.backdrop_url;
   if (!src || failed) {
@@ -73,7 +73,7 @@ function TileImage({ movie }: { movie: Movie }) {
     );
   }
   // eslint-disable-next-line @next/next/no-img-element -- external poster CDN, sized by CSS
-  return <img className="img-cover" src={src} alt="" draggable={false} onError={() => setFailed(true)} />;
+  return <img className="img-cover" src={src} alt="" loading="lazy" decoding="async" draggable={false} onError={() => setFailed(true)} />;
 }
 
 /** One row per mood world; neighbouring rows run in opposite directions in seamless loops (spec §4).

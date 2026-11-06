@@ -49,7 +49,6 @@ export const sampleHome: HomeData = {
     suspense: movies12.filter((m) => m.world_ids.includes("suspense")),
     action: movies12.filter((m) => m.world_ids.includes("action")),
   },
-  tiles: movies12,
   titles: ["Demo-Film 01", "Demo-Film 02", "Demo-Film 03"],
 };
 

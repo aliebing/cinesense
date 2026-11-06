@@ -17,7 +17,7 @@ vi.mock("@/lib/api", () => ({
   search: (...a: unknown[]) => search(...a),
 }));
 
-import HomePage from "@/app/page";
+import HomePage from "@/components/home/HomePage";
 
 beforeEach(() => {
   push.mockReset();
@@ -136,4 +136,21 @@ it("shows where you are: the home page in the breadcrumb", async () => {
   render(<HomePage />);
   const crumbs = screen.getByRole("navigation", { name: "Breadcrumb" });
   expect(within(crumbs).getByText("Home")).toHaveAttribute("aria-current", "page");
+});
+
+it("uses the rows the server already fetched and does not ask again", async () => {
+  render(<HomePage initial={sampleHome} />);
+  expect(screen.getAllByRole("button", { name: "Demo-Film 01" }).length).toBeGreaterThan(0); // at once, no waiting
+  await act(async () => {});
+  expect(getHome).not.toHaveBeenCalled();
+});
+
+it("loads only the hero pictures on show, fading out and next", () => {
+  const film = sampleHome.rows.action[0];
+  const worlds = Array.from({ length: 6 }, (_, i) => ({ ...sampleHome.worlds[0], id: `w${i}` }));
+  const rows = Object.fromEntries(worlds.map((w, i) => [w.id, [{ ...film, id: `f${i}`, backdrop_url: `b${i}.jpg` }]]));
+  const { container } = render(<HomePage initial={{ ...sampleHome, worlds, rows }} />);
+  const loaded = [...container.querySelectorAll<HTMLElement>(".hero-img")].map((el) => el.style.backgroundImage);
+  expect(loaded).toHaveLength(6);
+  expect(loaded.filter(Boolean)).toEqual(['url("b0.jpg")', 'url("b1.jpg")', 'url("b5.jpg")']); // on show, next, previous
 });

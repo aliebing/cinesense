@@ -49,7 +49,7 @@ Each folder is one role. Read them top to bottom: each builds only on the ones a
 | `catalog_import/` | Offline jobs that build the catalogue: MovieLens + Tag Genome, plots, embeddings, posters, billing, languages | `pipeline.py` | core, data_sources |
 | `chat_agent/` | The LangGraph agent: injection guard, tool loop, deterministic search run, widening, mood coverage of the picks, grounded explanation | `graph.py`, `tools.py`, `grounding.py`, `guard.py`, `prompts.py` | core, search, taste |
 | `evaluation/` | Scenarios against the real agent, automatic checks, LLM judge, two baseline rankers; one run (`session.py`) shared by `make eval` and the admin page | `session.py`, `runner.py`, `checks.py`, `baselines.py` | core, data_sources, search, taste, chat_agent |
-| `web_api/` | The HTTP layer: catalogue and search endpoints, chat as Server-Sent Events, `/api/inspect`, the visitor log (`chat_log.py`, `/api/admin/visitors`), the eval runs (`/api/eval/*`: saved runs, starting one, its live state), taste, the per-visitor and daily turn limits | `app.py`, `chat.py`, `chat_log.py`, `eval_view.py`, `limits.py`, `deps.py` (wiring) | everything above |
+| `web_api/` | The HTTP layer: catalogue and search endpoints, chat as Server-Sent Events, `/api/inspect`, the visitor log (`chat_log.py`, `/api/admin/visitors`), the eval runs (`/api/eval/*`: saved runs, starting one, its live state), taste, the per-visitor and daily turn limits | `app.py`, `home.py` (homepage rows, built once and cached), `chat.py`, `chat_log.py`, `eval_view.py`, `limits.py`, `deps.py` (wiring) | everything above |
 
 The rule in the last column is enforced by `backend/tests/test_architecture.py`: an import that points upwards
 fails the test suite. The search never imports a data source; `web_api/deps.py` builds the adapters once and
@@ -72,9 +72,9 @@ cost and the ranked films.
 
 | Folder | What it holds |
 |---|---|
-| `app/` | Routes: `/` (cinema start page), `/world/[worldId]` (genre page with the stage), `/results`, `/admin/*` (tech, visitors, evaluation), `/credits` |
+| `app/` | Routes: `/` (cinema start page: a static shell, the film rows fetched on the server and streamed in; the page itself is `components/home/HomePage.tsx`), `/world/[worldId]` (genre page with the stage), `/results`, `/admin/*` (tech, visitors, evaluation), `/credits` |
 | `components/` | One folder per part of the screen: `cinema`, `atmosphere`, `home`, `chat`, `search`, `results`, `genre`, `media`, `profile`, `nav`, `ui` |
-| `lib/` | API client (`api.ts`, `chat.ts`), the shared search state (`searchState.ts`, mirrors `core/criteria.py`), types (`types.ts`, mirror `core/models.py`) |
+| `lib/` | API client (`api.ts`, `chat.ts`; `homeServer.ts` on the server, via `API_INTERNAL_URL`), the shared search state (`searchState.ts`, mirrors `core/criteria.py`), types (`types.ts`, mirror `core/models.py`) |
 | `__tests__/` | Vitest tests |
 
 ## Extending it
