@@ -9,10 +9,11 @@ from collections import OrderedDict
 import numpy as np
 
 from cinesense.core.criteria import MUST_THRESHOLD, NOT_THRESHOLD, SearchCriteria
-from cinesense.search.ranking import CombinedResult, Signals, combined_rank
+from cinesense.search.ranking import CombinedResult, Signals, combined_rank, streaming_reason
 
 log = logging.getLogger(__name__)
-STREAM_CHECK_LIMIT = 30  # streaming lookups per search (free plan budget)
+STREAM_CHECK_LIMIT = 30  # streaming API lookups per search (free plan budget); cache hits don't count
+SERVICE_SCAN = 300  # films checked when the user names a service: most top films stream elsewhere
 TAG_LIMIT = 500  # films a catalogue-wide mood search keeps (its best matches)
 EMBED_CACHE_SIZE = 256  # plot-query embeddings kept per service (the chat agent's service lives for the process)
 
@@ -75,7 +76,9 @@ class SearchService:
         result, sig, extended_used = self._candidates(c, profile, offset, allow_live=True)
         p = self.provider
         # a stream filter may drop films that turn out not to stream: rank a few spare ones to fill the page
-        window = limit + STREAM_CHECK_LIMIT if c.availability == "stream" and self.streaming is not None else limit
+        window = limit
+        if c.availability == "stream" and self.streaming is not None:
+            window += SERVICE_SCAN if c.streaming_services else STREAM_CHECK_LIMIT
         if c.has_tags():
             top_ids = [r.movie.id for r in result.items[: offset + window]]
             vectors = p.tag_vectors(top_ids)
@@ -93,7 +96,7 @@ class SearchService:
             titles = {r.movie.id: r.movie.title for r in result.items}
             page.corrected_title = correction(c.title, _best(sig.title, titles))
         if c.availability == "stream":
-            page = self._resolve_streaming(page, limit)
+            page = self._resolve_streaming(page, limit, c)
         page.items = page.items[:limit]
         return page
 
@@ -189,21 +192,32 @@ class SearchService:
             hits += found
         return hits
 
-    def _resolve_streaming(self, page: CombinedResult, limit: int) -> CombinedResult:
-        """Look up candidates in rank order until `limit` of them may stream; at most STREAM_CHECK_LIMIT lookups."""
+    def _resolve_streaming(self, page: CombinedResult, limit: int, c: SearchCriteria) -> CombinedResult:
+        """Look up candidates in rank order until `limit` of them may stream; at most STREAM_CHECK_LIMIT API lookups
+        (cached answers are free)."""
         if self.streaming is None:
             return page
+        cached = getattr(self.streaming, "cached_de", None)
         kept, dropped, lookups, rest = [], 0, 0, list(page.items)
-        while rest and len(kept) < limit and lookups < STREAM_CHECK_LIMIT:
+        while rest and len(kept) < limit:
             r = rest.pop(0)
             m = r.movie
             if m.imdb_id and m.availability.streaming_de is None:
-                m.availability.streaming_de = self.streaming.get_de(m.imdb_id)
-                lookups += 1
-            if m.availability.streaming_de is None or m.availability.subscription_services:
+                m.availability.streaming_de = cached(m.imdb_id) if cached else None
+                if m.availability.streaming_de is None:
+                    if lookups >= STREAM_CHECK_LIMIT:
+                        rest.insert(0, r)
+                        break
+                    m.availability.streaming_de = self.streaming.get_de(m.imdb_id)
+                    lookups += 1
+                if not any(x.startswith("streaming on") for x in r.reasons):
+                    r.reasons.extend(streaming_reason(m, c))  # the explanation may only claim what reasons say
+            if m.availability.streaming_de is None or m.availability.streams_on(c.streaming_services):
                 kept.append(r)  # unknown stays (labelled in the UI); known-not-streaming drops out
             else:
                 dropped += 1
+        if c.streaming_services:  # the user named a service: confirmed films before unknown ones
+            kept.sort(key=lambda r: r.movie.availability.streaming_de is None)
         page.items = kept + rest
         page.total = max(page.total - dropped, len(page.items))
         return page

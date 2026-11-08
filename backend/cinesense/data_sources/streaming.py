@@ -169,6 +169,11 @@ class StreamingClient:
             return None
         return options_from_payload(payload)
 
+    def cached_de(self, imdb_id: str) -> list[StreamingOption] | None:
+        """DE options from a fresh cache entry only — never an API call; None when not cached."""
+        payload = _fresh(self.store.get(imdb_id), STREAMING_TTL)
+        return options_from_payload(payload) if payload is not None else None
+
     def images(self, imdb_id: str) -> ImageSet | None:
         payload = _fresh(self.store.get(imdb_id), IMAGES_TTL) or self._show(imdb_id, limit=self.image_limit)
         return images_from_payload(payload) if payload else None

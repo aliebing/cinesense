@@ -47,3 +47,35 @@ def test_streaming_unknown_is_none():
 
     assert Availability().streaming_de is None
     assert Availability().subscription_services == []
+
+
+def test_free_offers_count_as_streaming_at_no_extra_cost():
+    from cinesense.core.models import Availability, StreamingOption
+
+    a = Availability(
+        streaming_de=[
+            StreamingOption(service="Pluto TV", type="free"),
+            StreamingOption(service="Prime Video", type="addon"),
+            StreamingOption(service="Apple TV", type="buy"),
+        ]
+    )
+    assert a.subscription_services == ["Pluto TV"]
+
+
+def test_service_names_are_normalised():
+    from cinesense.core.models import canonical_service
+
+    assert canonical_service("Amazon Prime") == "Prime Video"
+    assert canonical_service("prime") == "Prime Video"
+    assert canonical_service("netflix") == "Netflix"
+    assert canonical_service("Disney Plus") == "Disney+"
+    assert canonical_service("Foo TV") is None
+
+
+def test_streams_on_named_services():
+    from cinesense.core.models import Availability, StreamingOption
+
+    a = Availability(streaming_de=[StreamingOption(service="Netflix", type="subscription"),
+                                   StreamingOption(service="Prime Video", type="rent")])
+    assert a.streams_on([]) and a.streams_on(["Netflix"])
+    assert not a.streams_on(["Prime Video"])  # renting costs extra

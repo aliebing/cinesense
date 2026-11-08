@@ -247,3 +247,72 @@ def test_a_misspelt_person_does_not_lower_the_match(make_movie):
     exact = combined_rank(movies, SearchCriteria(person="x"), Signals(person={"a": 1.0}))
     typo = combined_rank(movies, SearchCriteria(person="x"), Signals(person={"a": 0.7}))  # found by similarity only
     assert exact.items[0].match_percent == typo.items[0].match_percent
+
+
+def test_stream_filter_keeps_only_the_named_services(make_movie):
+    from cinesense.core.models import Availability, StreamingOption
+
+    def on(service, kind="subscription"):
+        return Availability(streaming_de=[StreamingOption(service=service, type=kind)])
+
+    movies = [
+        make_movie(id="prime", availability=on("Prime Video")),
+        make_movie(id="prime-free", availability=on("Prime Video", "free")),
+        make_movie(id="prime-rent", availability=on("Prime Video", "rent")),
+        make_movie(id="netflix", availability=on("Netflix")),
+        make_movie(id="unknown"),
+    ]
+    c = SearchCriteria(availability="stream", streaming_services=["Prime Video"])
+    res = combined_rank(movies, c, Signals(), offset=0, limit=10)
+    assert {r.movie.id for r in res.items} == {"prime", "prime-free", "unknown"}
+
+
+def test_films_resolved_as_streaming_get_the_streaming_reason(make_movie):
+    """The explanation only says a film streams when its reasons do; a lookup during the search must add it."""
+    from cinesense.search.service import SearchService
+
+    movies = [make_movie(id="m0", imdb_id="tt0")]
+    res = SearchService(FakeProvider(movies), streaming=FakeStreaming({"tt0"})).run(
+        SearchCriteria(availability="stream"), 0, 1
+    )
+    assert "streaming on Netflix" in res.items[0].reasons
+
+
+def test_named_service_drops_films_streaming_elsewhere(make_movie):
+    from cinesense.search.service import SearchService
+
+    movies = [make_movie(id=f"m{i}", imdb_id=f"tt{i}", ml_rating=4.5 - i / 5) for i in range(3)]
+    res = SearchService(FakeProvider(movies), streaming=FakeStreaming({"tt0", "tt1"})).run(
+        SearchCriteria(availability="stream", streaming_services=["Prime Video"]), 0, 3
+    )
+    assert res.items == []
+
+
+class CachedStreaming(FakeStreaming):
+    """Everything is in the cache: lookups cost no API call."""
+
+    def cached_de(self, imdb_id):
+        return self.get_de(imdb_id)
+
+
+def test_cached_lookups_do_not_use_up_the_check_limit(make_movie):
+    """With a named service most top films stream elsewhere; cached answers are free, so the search looks further."""
+    from cinesense.search.service import STREAM_CHECK_LIMIT, SearchService
+
+    n = STREAM_CHECK_LIMIT + 20
+    movies = [make_movie(id=f"m{i}", imdb_id=f"tt{i}", ml_rating=4.9 - i / 100) for i in range(n)]
+    streaming = CachedStreaming({f"tt{n - 1}"})
+    res = SearchService(FakeProvider(movies), streaming=streaming).run(
+        SearchCriteria(availability="stream", streaming_services=["Netflix"]), 0, 1
+    )
+    assert [r.movie.id for r in res.items] == [f"m{n - 1}"]
+
+
+def test_named_service_puts_confirmed_films_before_unknown_ones(make_movie):
+    from cinesense.search.service import SearchService
+
+    movies = [make_movie(id="unknown", imdb_id=None, ml_rating=4.9), make_movie(id="on", imdb_id="tt1", ml_rating=3.0)]
+    res = SearchService(FakeProvider(movies), streaming=FakeStreaming({"tt1"})).run(
+        SearchCriteria(availability="stream", streaming_services=["Netflix"]), 0, 2
+    )
+    assert [r.movie.id for r in res.items] == ["on", "unknown"]

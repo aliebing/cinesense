@@ -31,7 +31,11 @@ export function filterChips(criteria: Criteria): FilterChip[] {
   if (criteria.person) others.push({ key: "person", label: `👤 ${criteria.person}`, clear: { person: null }, aria: `Remove person ${criteria.person}` });
   if (criteria.title) others.push({ key: "title", label: `🔤 “${criteria.title}”`, clear: { title: null }, aria: `Remove title ${criteria.title}` });
   if (criteria.plot_query) others.push({ key: "plot", label: `📖 “${criteria.plot_query}”`, clear: { plot_query: null }, aria: "Remove plot search" });
-  if (criteria.availability === "stream") others.push({ key: "stream", label: "📺 Streaming (DE)", clear: { availability: "any" }, aria: "Remove streaming filter" });
+  if (criteria.availability === "stream") {
+    const services = criteria.streaming_services ?? [];
+    const label = services.length ? `📺 Streaming on ${services.join(" or ")}` : "📺 Streaming (DE)";
+    others.push({ key: "stream", label, clear: { availability: "any", streaming_services: [] }, aria: "Remove streaming filter" });
+  }
   if (criteria.availability === "cinema") others.push({ key: "cinema", label: "🎬 In cinemas", clear: { availability: "any" }, aria: "Remove cinema filter" });
   if (criteria.max_runtime_min) others.push({ key: "runtime", label: `< ${criteria.max_runtime_min} min`, clear: { max_runtime_min: null }, aria: "Remove runtime limit" });
   if (criteria.kind !== "any") others.push({ key: "kind", label: criteria.kind === "documentary" ? "Documentaries" : "Feature films", clear: { kind: "any" }, aria: "Remove kind filter" });

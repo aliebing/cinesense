@@ -69,9 +69,11 @@ def relaxation_options(c: SearchCriteria, tag_names: list[str]) -> list[Relaxati
         add("language", "Any original language", original_language=None)
     if c.world_id:
         add("world", "All mood worlds", world_id=None)
+    if c.streaming_services:
+        add("services", "Any streaming service", streaming_services=[])
     if c.availability != "any":
         label = "Not only in cinemas" if c.availability == "cinema" else "Not only streaming"
-        add("availability", label, availability="any")
+        add("availability", label, availability="any", streaming_services=[])
     return out[:MAX_OPTIONS]
 
 
@@ -128,6 +130,8 @@ def misses(
         out.append("not in cinemas")
     if original.availability == "stream" and not a.subscription_services:
         out.append("streaming not confirmed")
+    elif original.streaming_services and not a.streams_on(original.streaming_services):
+        out.append(f"not on {' or '.join(original.streaming_services)}")
     relevance = tag_relevance or {}
     for t in original.tags:
         if t.mode == "not":

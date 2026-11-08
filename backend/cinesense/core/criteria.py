@@ -24,6 +24,7 @@ class SearchCriteria(BaseModel):
     exclude_people: list[str] = Field(default_factory=list, max_length=5)  # as typed; the person search corrects
     world_id: str | None = None
     availability: Literal["cinema", "stream", "any"] = "any"
+    streaming_services: list[str] = Field(default_factory=list, max_length=5)  # API names, e.g. "Prime Video"
     kind: Literal["film", "documentary", "any"] = "any"
     max_runtime_min: int | None = Field(default=None, ge=30, le=400)
     year_from: int | None = None

@@ -64,7 +64,7 @@ def _passes(m: Movie, c: SearchCriteria) -> bool:
     if (
         c.availability == "stream"
         and m.availability.streaming_de is not None
-        and not m.availability.subscription_services
+        and not m.availability.streams_on(c.streaming_services)
     ):
         return False  # unknown availability stays in; the API resolves it for the top results
     if c.min_rating is not None and catalogue_rating(m.ml_rating, m.ml_rating_count) < c.min_rating:
@@ -158,6 +158,14 @@ def _recency(year: int | None) -> float:
     return min(max((year - RECENCY_FROM) / (RECENCY_TO - RECENCY_FROM), 0.0), 1.0)
 
 
+def streaming_reason(m: Movie, c: SearchCriteria) -> list[str]:
+    """"streaming on …", naming the wished-for services first."""
+    services = m.availability.subscription_services
+    wished = [s for s in services if s in c.streaming_services]
+    ordered = wished + [s for s in services if s not in wished]
+    return [f"streaming on {', '.join(ordered[:2])}"] if ordered else []
+
+
 def _reasons(m: Movie, c: SearchCriteria, s: Signals, taste: dict[str, float]) -> list[str]:
     out: list[str] = []
     rel = s.tag_relevance.get(m.id, {})
@@ -173,8 +181,7 @@ def _reasons(m: Movie, c: SearchCriteria, s: Signals, taste: dict[str, float]) -
         out.append("title match")
     if taste.get(m.id, 0.0) >= TASTE_REASON:
         out.append("fits your taste")
-    if services := m.availability.subscription_services:
-        out.append(f"streaming on {', '.join(services[:2])}")
+    out.extend(streaming_reason(m, c))
     if m.availability.in_cinema_de:
         out.append("in cinemas")
     return out

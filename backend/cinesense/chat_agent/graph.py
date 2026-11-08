@@ -53,6 +53,8 @@ def criteria_summary(criteria: dict, tags: list[str]) -> str:
     for field in ("availability", "kind"):
         if getattr(c, field) != "any":
             out.append(f"{field}: {getattr(c, field)}")
+    if c.streaming_services:
+        out.append(f"streaming services: {', '.join(c.streaming_services)}")
     if c.exclude_genres:
         out.append(f"exclude genres: {', '.join(c.exclude_genres)}")
     if c.exclude_people:

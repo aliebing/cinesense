@@ -208,3 +208,12 @@ def test_set_filters_min_rating_and_clear(kit):
     assert upd["criteria"]["min_rating"] == 3.8 and "min_rating" in msg
     upd2, _ = kit.set_filters({**state(), "criteria": upd["criteria"]}, {"clear": ["min_rating"]})
     assert upd2["criteria"]["min_rating"] is None
+
+
+def test_set_filters_streaming_services_normalises_and_implies_streaming(kit):
+    upd, msg = kit.set_filters(state(), {"streaming_services": ["Amazon Prime", "Foo TV"]})
+    c = upd["criteria"]
+    assert c["streaming_services"] == ["Prime Video"] and c["availability"] == "stream"
+    assert "Foo TV" in msg
+    upd, _ = kit.set_filters(state(criteria=c), {"clear": ["streaming_services"]})
+    assert upd["criteria"]["streaming_services"] == []

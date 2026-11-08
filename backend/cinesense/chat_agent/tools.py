@@ -11,12 +11,13 @@ from pydantic import BaseModel, Field
 
 from cinesense.chat_agent.tag_matching import resolve_tags
 from cinesense.core.criteria import SearchCriteria
-from cinesense.core.models import Movie
+from cinesense.core.models import Movie, canonical_service
 from cinesense.search import widening
 
 STREAMING_PER_TURN = 3
 FILTER_FIELDS = (
     "availability",
+    "streaming_services",
     "max_runtime_min",
     "kind",
     "year_from",
@@ -79,15 +80,30 @@ class ToolKit:
 
     def set_filters(self, state: dict, filters: dict) -> tuple[dict, str]:
         c = self._criteria(state).model_dump()
+        lists = ("exclude_genres", "streaming_services")
         for field in filters.get("clear") or []:
             if field in FILTER_FIELDS:
-                c[field] = [] if field == "exclude_genres" else ("any" if field in ("availability", "kind") else None)
+                c[field] = [] if field in lists else ("any" if field in ("availability", "kind") else None)
+            if field == "availability":
+                c["streaming_services"] = []
+        unknown = []
+        if filters.get("streaming_services") is not None:
+            names = [(n, canonical_service(n)) for n in filters["streaming_services"]]
+            unknown = [n for n, canon in names if canon is None]
+            filters = {**filters, "streaming_services": list(dict.fromkeys(canon for _, canon in names if canon))}
+            if filters["streaming_services"]:
+                filters["availability"] = "stream"
         for k, v in filters.items():
             if k in FILTER_FIELDS and v is not None:
                 c[k] = v
+        if c["availability"] != "stream":
+            c["streaming_services"] = []
         c = SearchCriteria(**c).model_dump()
         shown = {k: c[k] for k in FILTER_FIELDS if c[k] not in (None, [], "any")}
-        return {"criteria": c, "criteria_changed": True}, f"Filters now: {shown or 'none'}."
+        msg = f"Filters now: {shown or 'none'}."
+        if unknown:
+            msg += f" Unknown streaming services (not filtered): {', '.join(unknown)}."
+        return {"criteria": c, "criteria_changed": True}, msg
 
     def search_plot(self, state: dict, query: str) -> tuple[dict, str]:
         c = self._criteria(state).model_copy(update={"plot_query": query})
@@ -243,6 +259,7 @@ def make_tools(kit: ToolKit) -> list:
         state: Annotated[dict, InjectedState],
         tool_call_id: Annotated[str, InjectedToolCallId],
         availability: Literal["cinema", "stream", "any"] | None = None,
+        streaming_services: list[str] | None = None,
         max_runtime_min: int | None = None,
         kind: Literal["film", "documentary", "any"] | None = None,
         year_from: int | None = None,
@@ -252,9 +269,10 @@ def make_tools(kit: ToolKit) -> list:
         min_rating: float | None = None,
         clear: list[str] | None = None,
     ) -> Command:
-        """Set hard filters: availability in Germany, max runtime (minutes), kind, year range, ISO 639-1 original
-        language (e.g. 'en'), excluded MovieLens genres (e.g. ['Horror']), minimum MovieLens rating 0-5
-        ('highly rated' 3.7, 'top rated' 3.9). 'clear' resets named filters."""
+        """Set hard filters: availability in Germany ('stream' = flat rate or free, never rent/buy), streaming
+        services the user names (e.g. ['Prime Video', 'Netflix']; implies 'stream'), max runtime (minutes), kind,
+        year range, ISO 639-1 original language (e.g. 'en'), excluded MovieLens genres (e.g. ['Horror']), minimum
+        MovieLens rating 0-5 ('highly rated' 3.7, 'top rated' 3.9). 'clear' resets named filters."""
         filters = {k: v for k, v in locals().items() if k not in ("state", "tool_call_id")}
         return wrap(*kit.set_filters(state, filters), tool_call_id)
 

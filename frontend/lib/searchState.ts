@@ -16,6 +16,7 @@ export type Criteria = {
   exclude_people: string[]; // "without Stallone": their films drop out (at most 5)
   world_id: string | null;
   availability: "cinema" | "stream" | "any";
+  streaming_services: string[]; // e.g. ["Prime Video"]; only with availability "stream"
   kind: "film" | "documentary" | "any";
   max_runtime_min: number | null;
   year_from: number | null;
@@ -37,6 +38,7 @@ export function emptyCriteria(): Criteria {
     exclude_people: [],
     world_id: null,
     availability: "any",
+    streaming_services: [],
     kind: "any",
     max_runtime_min: null,
     year_from: null,
