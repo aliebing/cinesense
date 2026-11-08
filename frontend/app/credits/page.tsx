@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import FogLight from "@/components/atmosphere/FogLight";
 import CinemaFrame from "@/components/cinema/CinemaFrame";
@@ -42,6 +43,12 @@ const SOURCES = [
     href: "https://unsplash.com/photos/a-red-curtain-with-a-black-background-AwsdyjRm-kw",
   },
 ];
+
+export const metadata: Metadata = {
+  title: "Credits and data sources",
+  description: "The open data behind CineSense: MovieLens, Wikidata, Wikipedia and the Streaming Availability API.",
+  alternates: { canonical: "/credits" },
+};
 
 export default function CreditsPage() {
   return (
