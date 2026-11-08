@@ -59,10 +59,16 @@ def result_titles(results: list[dict]) -> list[str]:
 
 
 def validate_titles(
-    text: str, allowed_titles: list[str], catalogue_titles: set[str], tag_spans: list[str] = ()
+    text: str,
+    allowed_titles: list[str],
+    catalogue_titles: set[str],
+    tag_spans: list[str] = (),
+    source_text: str = "",
 ) -> tuple[bool, list[str]]:
     """tag_spans: mood tags of the current search; an emphasised span that is exactly such a tag ("**creepy**")
-    is a tag, not a film. Tags never take part in the substring check, so they cannot hide real titles."""
+    is a tag, not a film. Tags never take part in the substring check, so they cannot hide real titles.
+    source_text: the plots the model was given; a catalogue title in it ("race to Silver City") may be repeated
+    in running text as the place or name it is there, but never emphasised like a film."""
     tags = {_norm(t) for t in tag_spans}
     allowed = {_norm(t) for t in allowed_titles}
     catalogue = {_norm(t): t for t in catalogue_titles}
@@ -79,8 +85,9 @@ def validate_titles(
     stripped = text
     for t in sorted(allowed_titles, key=len, reverse=True):  # "The Matrix Reloaded" must not match "The Matrix"
         stripped = re.sub(rf"(?<!\w){re.escape(t)}(?!\w)", " ", stripped, flags=re.IGNORECASE)
+    in_source = set(mentioned_titles(source_text, catalogue_titles)) if source_text else set()
     for t in mentioned_titles(stripped, catalogue_titles):
-        if _norm(t) not in allowed and t not in bad:
+        if _norm(t) not in allowed and t not in bad and t not in in_source:
             bad.append(t)
     return not bad, bad
 

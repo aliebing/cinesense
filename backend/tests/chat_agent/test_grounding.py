@@ -129,3 +129,14 @@ def test_a_result_may_be_named_without_its_alternative_title():
         "**Let the Right One In** — creepy.", titles, {"Let the Right One In (Låt den rätte komma in)"}
     )
     assert ok
+
+
+def test_a_place_from_a_results_plot_is_not_a_film():
+    """Rat Race's plot races to Silver City, New Mexico; Silver City is also a film in the catalogue."""
+    plot = "six competitors are to race to Silver City, New Mexico, where $2 million is hidden"
+    text = "**Rat Race** — six racers chase $2 million to Silver City."
+    catalogue = CATALOGUE | {"Rat Race", "Silver City"}
+    assert validate_titles(text, ["Rat Race"], catalogue, source_text=plot) == (True, [])
+    assert validate_titles(text, ["Rat Race"], catalogue) == (False, ["Silver City"])
+    bold = "**Rat Race** fits, and so does **Silver City**."
+    assert validate_titles(bold, ["Rat Race"], catalogue, source_text=plot) == (False, ["Silver City"])

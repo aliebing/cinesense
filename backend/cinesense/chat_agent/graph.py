@@ -274,7 +274,7 @@ def build_graph(llm, explain_llm, tools: list, service, provider, checkpointer):
         names = provider.list_tags()
         tag_spans = [names[t["idx"]] for t in (state.get("criteria") or {}).get("tags", []) if t["idx"] < len(names)]
         tag_spans += [p["tag"] for p in state.get("proposals") or []]
-        ok, bad = validate_titles(text, allowed, titles, tag_spans) if text else (False, ["(empty answer)"])
+        ok, bad = validate_titles(text, allowed, titles, tag_spans, listing) if text else (False, ["(empty answer)"])
         if not ok:
             log.warning("grounding fallback, unlisted titles: %s", bad)
             return {
