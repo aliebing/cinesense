@@ -16,6 +16,15 @@ def fresh_chat_limits():
 
 
 @pytest.fixture(autouse=True)
+def fresh_admin_sessions(monkeypatch):
+    """Every test starts signed out and with no failed sign-ins (both are shared per process)."""
+    from cinesense.web_api import admin_session
+
+    monkeypatch.setattr(admin_session, "SESSIONS", admin_session.Sessions())
+    monkeypatch.setattr(admin_session, "THROTTLE", admin_session.LoginThrottle())
+
+
+@pytest.fixture(autouse=True)
 def memory_chat_log(monkeypatch):
     """No test writes the visitor log to a real database, even with SUPABASE_DB_URL loaded from .env."""
     from cinesense.web_api import chat_log

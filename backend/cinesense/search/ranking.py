@@ -159,7 +159,7 @@ def _recency(year: int | None) -> float:
 
 
 def streaming_reason(m: Movie, c: SearchCriteria) -> list[str]:
-    """"streaming on …", naming the wished-for services first."""
+    """The "streaming on …" reason, naming the wished-for services first."""
     services = m.availability.subscription_services
     wished = [s for s in services if s in c.streaming_services]
     ordered = wished + [s for s in services if s not in wished]

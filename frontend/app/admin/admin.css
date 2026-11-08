@@ -30,3 +30,13 @@
 .tech .admin-back { margin-left: auto; font-size: 13px; }
 .admin-lead { color: #999; max-width: 80ch; margin: 0 0 12px; }
 .vis-tag { margin-left: 6px; font-size: 11px; color: #f3c76b; }
+
+/* sign-in form (no browser prompt): plain like the rest of the admin area */
+.admin-login { max-width: 320px; margin: 12vh auto 0; display: flex; flex-direction: column; gap: 14px; }
+.admin-login h1 { margin: 0; font-size: 20px; color: #eee; }
+.admin-login form { display: flex; flex-direction: column; gap: 12px; }
+.admin-login label { display: flex; flex-direction: column; gap: 4px; color: #aaa; font-size: 13px; }
+.admin-login input { padding: 8px; background: #1b1b1b; color: #eee; border: 1px solid #444; font: inherit; }
+.tech .admin-login button { padding: 8px 16px; border: 1px solid #f3c76b; text-decoration: none; }
+.tech .admin-login button:disabled { opacity: .6; cursor: default; }
+.tech .admin-signout { font-size: 13px; }

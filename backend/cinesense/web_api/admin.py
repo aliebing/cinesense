@@ -5,8 +5,8 @@ from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
+from cinesense.web_api.admin_session import require_tech_login
 from cinesense.web_api.deps import get_chat_log
-from cinesense.web_api.inspect import require_tech_login
 
 router = APIRouter(prefix="/api/admin", dependencies=[Depends(require_tech_login)])
 

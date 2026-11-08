@@ -70,9 +70,12 @@ def test_inspect_needs_the_tech_login_when_one_is_configured(monkeypatch):
     body = {"thread_id": "t1", "message": "hi"}
     r = client.post("/api/inspect", json=body)
     assert r.status_code == 401
-    assert r.headers["www-authenticate"].startswith("Basic")
-    assert client.post("/api/inspect", json=body, auth=("admin", "wrong")).status_code == 401
-    assert client.post("/api/inspect", json=body, auth=("admin", "s3cret")).status_code == 200
+    assert "www-authenticate" not in r.headers  # no browser popup: /admin has its own sign-in form
+    assert client.post("/api/inspect", json=body, auth=("admin", "s3cret")).status_code == 401  # no Basic Auth
+    assert client.post("/api/admin/login", json={"name": "admin", "password": "wrong"}).status_code == 401
+    assert client.post("/api/inspect", json=body).status_code == 401
+    client.post("/api/admin/login", json={"name": "admin", "password": "s3cret"})
+    assert client.post("/api/inspect", json=body).status_code == 200
 
 
 def test_inspect_is_open_without_a_configured_login(monkeypatch):

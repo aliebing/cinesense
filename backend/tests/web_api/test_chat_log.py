@@ -119,8 +119,9 @@ def test_admin_endpoints_need_the_login_and_show_the_log(monkeypatch):
     app.dependency_overrides[get_chat_log] = lambda: log
     client = TestClient(app)
     assert client.get("/api/admin/visitors").status_code == 401
-    page = client.get("/api/admin/visitors", auth=("admin", "s3cret")).json()
+    client.post("/api/admin/login", json={"name": "admin", "password": "s3cret"})
+    page = client.get("/api/admin/visitors").json()
     assert page["total"] == 1 and page["items"][0]["message"] == "dark"
-    assert client.get("/api/admin/visitors/1", auth=("admin", "s3cret")).json()["reply"] == "Try Alien."
-    assert client.get("/api/admin/visitors/9", auth=("admin", "s3cret")).status_code == 404
-    assert client.get("/api/admin/visitors?scope=nope", auth=("admin", "s3cret")).status_code == 422
+    assert client.get("/api/admin/visitors/1").json()["reply"] == "Try Alien."
+    assert client.get("/api/admin/visitors/9").status_code == 404
+    assert client.get("/api/admin/visitors?scope=nope").status_code == 422

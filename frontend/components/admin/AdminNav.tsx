@@ -9,7 +9,7 @@ export const ADMIN_PAGES = [
   { href: "/admin/evaluation", label: "Evaluation" },
 ];
 
-export default function AdminNav() {
+export default function AdminNav({ onSignOut }: { onSignOut?: () => void }) {
   const path = usePathname();
   return (
     <header className="admin-head">
@@ -24,6 +24,11 @@ export default function AdminNav() {
       <Link href="/" className="admin-back">
         Back to the app
       </Link>
+      {onSignOut && (
+        <button type="button" className="admin-signout" onClick={onSignOut}>
+          Sign out
+        </button>
+      )}
     </header>
   );
 }

@@ -26,7 +26,7 @@ import "./eval.css";
 
 /** The evaluation: start a run (model, scenarios, estimated cost) and watch it live, the last runs, and one run
  *  in full: what passed, each check, the ranker comparison, the history and every scenario with its turns.
- *  Behind the admin login (proxy.ts and the backend both check it). */
+ *  Behind the admin sign-in (AdminGate; the backend checks the session). */
 export default function EvalPage() {
   const [runs, setRuns] = useState<EvalRunOverview[] | null>(null);
   const [selected, setSelected] = useState("");

@@ -18,6 +18,7 @@ from cinesense.core.worlds import WORLDS, get_world
 from cinesense.search import widening
 from cinesense.search.service import SearchService
 from cinesense.web_api.admin import router as admin_router
+from cinesense.web_api.admin_session import router as admin_session_router
 from cinesense.web_api.chat import router as chat_router
 from cinesense.web_api.deps import (
     get_embedder,
@@ -95,6 +96,7 @@ def create_app(load_env: bool = True) -> FastAPI:
     app.add_middleware(
         CORSMiddleware,
         allow_origin_regex=r"http://(localhost|127\.0\.0\.1)(:\d+)?",
+        allow_credentials=True,  # local dev: the admin session cookie crosses from :3000 to :8000
         allow_methods=["*"],
         allow_headers=["*"],
     )
@@ -102,6 +104,7 @@ def create_app(load_env: bool = True) -> FastAPI:
     app.include_router(chat_router)
     app.include_router(inspect_router)
     app.include_router(eval_router)
+    app.include_router(admin_session_router)
     app.include_router(admin_router)
     app.include_router(taste_router)
 

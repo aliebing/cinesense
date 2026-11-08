@@ -75,7 +75,11 @@ def test_service_names_are_normalised():
 def test_streams_on_named_services():
     from cinesense.core.models import Availability, StreamingOption
 
-    a = Availability(streaming_de=[StreamingOption(service="Netflix", type="subscription"),
-                                   StreamingOption(service="Prime Video", type="rent")])
+    a = Availability(
+        streaming_de=[
+            StreamingOption(service="Netflix", type="subscription"),
+            StreamingOption(service="Prime Video", type="rent"),
+        ]
+    )
     assert a.streams_on([]) and a.streams_on(["Netflix"])
     assert not a.streams_on(["Prime Video"])  # renting costs extra

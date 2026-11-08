@@ -81,16 +81,14 @@ def client(monkeypatch, tmp_path):
 
 
 def test_start_checks_model_and_scenarios(client):
-    auth = ("admin", "s3cret")
-    assert (
-        client.post("/api/eval/start", json={"model": "x/y", "scenario_ids": ["mood-01"]}, auth=auth).status_code == 422
-    )
-    bad = client.post("/api/eval/start", json={"model": "openai/gpt-5.6-luna", "scenario_ids": ["nope"]}, auth=auth)
-    assert bad.status_code == 422
     assert (
         client.post("/api/eval/start", json={"model": "openai/gpt-5.6-luna", "scenario_ids": ["mood-01"]}).status_code
         == 401
     )
+    client.post("/api/admin/login", json={"name": "admin", "password": "s3cret"})
+    assert client.post("/api/eval/start", json={"model": "x/y", "scenario_ids": ["mood-01"]}).status_code == 422
+    bad = client.post("/api/eval/start", json={"model": "openai/gpt-5.6-luna", "scenario_ids": ["nope"]})
+    assert bad.status_code == 422
 
 
 def test_options_list_models_with_prices_scenarios_and_presets(client, monkeypatch):
@@ -101,7 +99,8 @@ def test_options_list_models_with_prices_scenarios_and_presets(client, monkeypat
             return {"openai/gpt-5.6-luna": (0.3e-6, 1.5e-6)}
 
     monkeypatch.setattr(eval_view, "get_price_list", lambda: Prices())
-    d = client.get("/api/eval/options", auth=("admin", "s3cret")).json()
+    client.post("/api/admin/login", json={"name": "admin", "password": "s3cret"})
+    d = client.get("/api/eval/options").json()
     luna = next(m for m in d["models"] if m["id"] == "openai/gpt-5.6-luna")
     assert luna["input_per_million"] == 0.3 and luna["price_source"] == "openrouter"
     haiku = next(m for m in d["models"] if m["id"] == "anthropic/claude-haiku-5.5")

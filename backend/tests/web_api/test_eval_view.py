@@ -72,4 +72,5 @@ def test_eval_needs_the_tech_login_when_one_is_configured(client, monkeypatch):
     monkeypatch.setenv("TECH_USER", "admin")
     monkeypatch.setenv("TECH_PASSWORD", "s3cret")
     assert client.get("/api/eval/runs").status_code == 401
-    assert client.get("/api/eval/runs", auth=("admin", "s3cret")).status_code == 200
+    client.post("/api/admin/login", json={"name": "admin", "password": "s3cret"})
+    assert client.get("/api/eval/runs").status_code == 200

@@ -20,8 +20,8 @@ from cinesense.chat_agent.llm import PRICES
 from cinesense.core.config import get_settings
 from cinesense.evaluation.scenarios import load_scenarios
 from cinesense.evaluation.session import COMPARE, JUDGE_MODEL, MODELS, PRESETS
+from cinesense.web_api.admin_session import require_tech_login
 from cinesense.web_api.eval_jobs import Busy, EvalJob
-from cinesense.web_api.inspect import require_tech_login
 
 router = APIRouter(dependencies=[Depends(require_tech_login)])
 RUN_ID = re.compile(r"^\d{4}-\d{2}-\d{2}_\d{4}(\d{2})?$")  # the file name a run is saved under (guards the path)

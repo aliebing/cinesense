@@ -11,7 +11,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<ApiResult<T
   let res: Response;
   try {
     const headers = { ...(init?.headers as Record<string, string> | undefined), ...userHeaders() };
-    res = await fetch(`${BASE_URL}${path}`, { cache: "no-store", ...init, headers });
+    // credentials: the admin session cookie also reaches the API on another port in local development
+    res = await fetch(`${BASE_URL}${path}`, { cache: "no-store", credentials: "include", ...init, headers });
   } catch {
     return { ok: false, error: "network" };
   }
