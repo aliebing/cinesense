@@ -73,6 +73,12 @@ One chat turn runs through a LangGraph graph (`backend/cinesense/chat_agent/grap
 
 **The model decides what to look for. Everything that must be reproducible is code.** The full tool table and the personalisation formula are in [docs/details.md](docs/details.md#the-agent-in-detail). The repository map and a 15-minute reading order are in [ARCHITECTURE.md](ARCHITECTURE.md).
 
+### Compared with HikeSense
+
+The same author built a second LangGraph capstone, HikeSense (a hiking planner), with the same tools but the opposite split. CineSense is **agent-first**: the model drives a ReAct loop and builds the search criteria itself, then fixed code steps search, widen and check. HikeSense is **workflow-first**: one structured-output call parses the message and the code picks the branch, with ReAct only for knowledge questions. The diagram marks, row by row, whether the model or the code decides.
+
+![CineSense vs HikeSense: guard, understanding, routing, data, loop, answer, grounding and evaluation side by side](docs/showcase/ai-comparison.png)
+
 ## Why it is built this way
 
 - **Chips instead of a hidden prompt state.** Chat, chips and the advanced search all edit one search state (`core/criteria.py`). You always see and can change what the agent understood, and nothing is filtered silently.
