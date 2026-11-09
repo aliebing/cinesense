@@ -183,95 +183,116 @@ async function icon(name, color) {
     slide.addShape(pres.shapes.LINE, { x: x + 0.375 + cw, y: y + 0.2, w: 0, h: h - 0.4, line: { color: C.accent4, width: 1 }, objectName: "Compare divider" });
   };
 
-  // ---------- 4. Technical 1: the whole flow ----------
+  const PALETTE = { fill: "#1C1916", stroke: "#5B524A", modelFill: "#2B2416", model: "#F3C76B", fg: "#F4EAD8", muted: "#A99D8C", edge: "#8D8275" };
+  const HEAD_COLOR = C.accent1;
+  // ---------- technical slides: diagrams in the style of the comparison video (docs/video/compare_slides.html) ----------
+  // A spec is drawn as SVG and rasterised with sharp: nodes ("model" = a language model, marked ✦; "ext" = a service or store,
+  // dashed), edges as SVG paths ("back" = dashed, "both" = arrow at both ends, "plain" = no arrow), edge labels and end points.
+  const esc = (t) => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const diagramPng = async (spec) => {
+    const P = PALETTE;
+    const out = [`<svg xmlns="http://www.w3.org/2000/svg" width="${spec.w}" height="${spec.h}" viewBox="0 0 ${spec.w} ${spec.h}">`,
+      `<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="${P.edge}"/></marker></defs>`];
+    for (const e of spec.edges) {
+      const [d, kind = ""] = e;
+      const dash = kind.includes("back") || kind.includes("link") ? ' stroke-dasharray="8 7"' : "";
+      const head = kind.includes("plain") || kind.includes("link") ? "" : ' marker-end="url(#a)"';
+      const tail = kind.includes("both") ? ' marker-start="url(#a)"' : "";
+      out.push(`<path d="${d}" fill="none" stroke="${P.edge}" stroke-width="3"${dash}${head}${tail}/>`);
+    }
+    for (const [x, y, w, h, name, sub, kind = ""] of spec.nodes) {
+      const model = kind === "model", ext = kind === "ext";
+      out.push(`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="14" fill="${model ? P.modelFill : P.fill}" stroke="${model ? P.model : P.stroke}" stroke-width="${model ? 2.5 : 2}"${ext ? ' stroke-dasharray="7 6"' : ""}/>`);
+      const cx = x + w / 2, cy = y + h / 2;
+      const label = model ? `${esc(name)} <tspan fill="${P.model}">✦</tspan>` : esc(name);
+      out.push(`<text x="${cx}" y="${sub ? cy - 4 : cy + 9}" fill="${P.fg}" font-family="Ubuntu Sans Mono, DejaVu Sans Mono, monospace" font-weight="600" font-size="26" text-anchor="middle">${label}</text>`);
+      if (sub) out.push(`<text x="${cx}" y="${cy + 26}" fill="${P.muted}" font-family="Ubuntu Sans, DejaVu Sans, sans-serif" font-size="19" text-anchor="middle">${esc(sub)}</text>`);
+    }
+    for (const [x, y, t, anchor = "middle"] of spec.labels || [])
+      out.push(`<text x="${x}" y="${y}" fill="${P.muted}" font-family="Ubuntu Sans Mono, DejaVu Sans Mono, monospace" font-size="21" text-anchor="${anchor}">${esc(t)}</text>`);
+    for (const [x, y] of spec.terms || []) out.push(`<circle cx="${x}" cy="${y}" r="12" fill="${P.edge}"/>`);
+    out.push("</svg>");
+    const png = await sharp(Buffer.from(out.join("")), { density: 160 }).png().toBuffer();
+    return "image/png;base64," + png.toString("base64");
+  };
+  // three short columns of technical description under a diagram
+  const describe = (slide, y, cols) => {
+    const cw = (12.1 - 2 * 0.3) / 3;
+    cols.forEach(([head, body], i) => {
+      const x = 0.6 + i * (cw + 0.3);
+      card(slide, x, y, cw, 6.88 - y, "Description " + head);
+      text(slide, [{ text: head, options: { bold: true, color: HEAD_COLOR, fontSize: 14, breakLine: true } }, { text: body, options: { fontSize: 12 } }],
+        { x: x + 0.2, y: y + 0.1, w: cw - 0.4, h: 6.88 - y - 0.24, paraSpaceAfter: 4, objectName: "Description text " + head });
+    });
+  };
+
+  // the system flow: the main row, the model above, stores and services below, the stream back to the client
+  const SYS = { w: 1800, h: 560, y: 150, hh: 90 };
+  const sysFlow = (main, top, bottom, terms, back) => {
+    const cy = SYS.y + SYS.hh / 2, nodes = [], edges = [["M36," + cy + " H58"]];
+    main.forEach(([x, w, name, sub, kind], i) => {
+      nodes.push([x, SYS.y, w, SYS.hh, name, sub, kind]);
+      if (i < main.length - 1) edges.push([`M${x + w},${cy} H${main[i + 1][0] - 2}`]);
+    });
+    top.forEach(([x, w, name, links]) => {
+      nodes.push([x, 20, w, 64, name, "", "ext"]);
+      links.forEach((lx) => edges.push([`M${lx},${SYS.y} V86`, "link"]));
+    });
+    bottom.forEach((n) => nodes.push([n[0], 380, n[1], 80, n[2], n[3], "ext"]));
+    const labels = [];
+    terms.forEach(([x, t, anchor]) => { edges.push([`M${x},${SYS.y + SYS.hh} V298`]); labels.push([x + (anchor === "end" ? 15 : anchor === "start" ? -15 : 0), 352, t, anchor]); });
+    const last = main[main.length - 1], first = main[0];
+    edges.push([`M${last[0] + last[1] / 2},${SYS.y + SYS.hh} V490 Q${last[0] + last[1] / 2},505 ${last[0] + last[1] / 2 - 15},505 H${first[0] + first[1] / 2 + 15} Q${first[0] + first[1] / 2},505 ${first[0] + first[1] / 2},490 V${SYS.y + SYS.hh + 4}`, "back"]);
+    labels.push([900, 545, back]);
+    return { w: SYS.w, h: SYS.h, nodes, edges, labels, terms: [[24, cy], ...terms.map(([x]) => [x, 312])] };
+  };
+
+  // ---------- 4. Technical 1: system flow ----------
   pres.addSection({ title: "Technical" });
   s = pres.addSlide({ masterName: "Content", sectionTitle: "Technical" });
-  s.addText("Technical 1/2: the whole flow of a request", { placeholder: "title" });
+  s.addText("System flow: from a wish to the answer", { placeholder: "title" });
   {
-    const cw = 2.2, cg = 0.275, cx = (i) => 0.6 + i * (cw + cg);
-    const y1 = 1.45, h1 = 1.3, y2 = 3.25, h2 = 1.45, y3 = 5.15;
-    const lane = [
-      ["Frontend", "Next.js: chat, chips and results edit one search state", "code"],
-      ["Web API", "FastAPI: POST /api/chat streams Server-Sent Events; turn limits", "code"],
-      ["Chat agent", "LangGraph: guard, tool loop, grounded reply", "llm"],
-      ["Search", "deterministic: candidates per signal, one weighted score, widening", "code"],
-      ["Adapters", "data_sources/: one class per outside service", "code"],
-    ];
-    lane.forEach(([head, sub, kind], i) => {
-      node(s, cx(i), y1, cw, h1, head, sub, kind, { valign: "top" });
-      if (i < lane.length - 1) arrow(s, cx(i) + cw + 0.03, y1 + h1 / 2, cx(i + 1) - 0.03, y1 + h1 / 2);
-    });
-    const below = [
-      ["Browser", "a random user id for likes and dislikes, one conversation per tab", "code"],
-      ["LangSmith", "optional tracing, EU endpoint: one trace per turn", "ext"],
-      ["OpenRouter LLM", "Claude Haiku 5.5 for the agent and explain calls", "llm"],
-      ["External APIs", "Streaming Availability · Wikidata · YouTube · embeddings", "ext"],
-      ["Postgres + pgvector", "Supabase: films, mood vectors, plot embeddings, caches", "code"],
-    ];
-    below.forEach(([head, sub, kind], i) => node(s, cx(i), y2, cw, h2, head, sub, kind, { valign: "top" }));
-    arrow(s, cx(0) + cw / 2, y1 + h1 + 0.03, cx(0) + cw / 2, y2 - 0.03, { both: true });
-    arrow(s, cx(2) + 0.35, y1 + h1 + 0.03, cx(1) + cw - 0.35, y2 - 0.03, { dash: "dash", color: C.accent5 });
-    arrow(s, cx(2) + cw / 2, y1 + h1 + 0.03, cx(2) + cw / 2, y2 - 0.03, { both: true });
-    arrow(s, cx(4) + 0.35, y1 + h1 + 0.03, cx(3) + cw - 0.35, y2 - 0.03, { both: true });
-    arrow(s, cx(4) + cw / 2, y1 + h1 + 0.03, cx(4) + cw / 2, y2 - 0.03, { both: true });
-    node(s, cx(3), y3, 2 * cw + cg, 1.0, "Offline: catalog_import",
-      "MovieLens + Tag Genome → Wikidata → Wikipedia plots → embeddings; posters, billing", "code", { valign: "top" });
-    arrow(s, cx(4) + cw / 2, y3 - 0.03, cx(4) + cw / 2, y2 + h2 + 0.03);
-    text(s, [{ text: "Gold: ", options: { bold: true, color: C.accent1 } }, { text: "a language model decides. " },
-      { text: "Dashed: ", options: { bold: true } }, { text: "outside service. Rest: deterministic code." }],
-    { x: cx(3), y: y3 + 1.12, w: 2 * cw + cg, h: 0.5, fontSize: 12, color: C.text2, objectName: "Legend" });
-    compare(s, 0.6, y3, cx(3) - cg - 0.6, 1.7,
-      ["CineSense: ranks the whole catalogue", "One weighted score over moods, plot, people, rating and taste. Streaming is fetched live under a monthly budget. No accounts."],
-      ["HikeSense: filters hard conditions", "PostGIS finds tours near a start; code ticks every condition ✓ / ✗. Only the weather is live. Supabase sign-in."]);
+    const spec = sysFlow(
+      [[60, 190, "client", "Next.js"], [300, 190, "api", "FastAPI · SSE"], [540, 170, "guard", "limits · patterns"],
+        [760, 200, "agent", "LangGraph · tools", "model"], [1010, 210, "search", "ranking · widening"],
+        [1270, 190, "explain", "words the reply", "model"], [1510, 220, "grounding", "real titles only"]],
+      [[760, 700, "OpenRouter · Claude Haiku 5.5", [860, 1365]]],
+      [[735, 225, "catalog_import", "offline"], [1010, 210, "Postgres", "pgvector · 20,600 films"], [1270, 190, "Streaming API", "cached · budget"]],
+      [[625, "injection → fixed reply"]],
+      "reply, chips and films stream back (SSE)");
+    spec.edges.push(["M960,420 H1008"], ["M1115,244 V376", "both"], ["M1200,240 C1200,320 1365,300 1365,376"]);
+    s.addImage({ data: await diagramPng(spec), x: 0.6, y: 1.4, w: 12.1, h: 12.1 * spec.h / spec.w, altText: "System flow of CineSense: client, API, guard, agent (LLM), search, explain (LLM), grounding; OpenRouter above, catalogue import, Postgres and Streaming API below; the reply streams back to the client" });
+    describe(s, 5.28, [
+      ["Request", "Next.js posts the message to FastAPI, which streams the turn back as Server-Sent Events. Turn limits and 10 injection patterns are checked before any model call."],
+      ["Model ✦", "Claude Haiku 5.5 via OpenRouter, twice: the agent calls typed tools that set the search criteria; explain words the reply from the films found."],
+      ["Code", "The search ranks the catalogue in Postgres + pgvector (mood tags, plot, people, rating, taste); streaming comes from a cached API. Grounding lets only returned titles through."],
+    ]);
   }
-  s.addNotes("The whole flow on one slide. The browser talks only to the FastAPI backend; a chat turn is streamed back as Server-Sent Events. The backend runs the LangGraph agent, whose tools only change the search criteria. The deterministic search then ranks the catalogue through adapters, one per outside service: Postgres with pgvector, the Streaming Availability API, Wikidata, YouTube and the embeddings. The model is Claude Haiku 5.5 via OpenRouter. The catalogue is built offline and never touches the streaming budget. The difference to HikeSense is at the bottom: CineSense ranks, it gives every film one weighted score. HikeSense filters: a tour either meets a condition or it does not, and the card shows a tick or a cross. CineSense fetches streaming availability live and has no accounts; HikeSense fetches only the weather and has Supabase sign-in.");
+  s.addNotes("The whole system on one diagram; the sparkle marks where a language model works. The Next.js client posts the message to FastAPI, and the answer streams back as Server-Sent Events. The guard checks the limits and the injection patterns before any model call; a match gets a fixed reply. Then the LangGraph agent lets Claude Haiku, via OpenRouter, call tools that set the search criteria. The search is plain code: it ranks the catalogue in Postgres with pgvector, which was built offline, and checks streaming through a cached API. Explain words the reply, and grounding lets only films through that the search returned. Reply, chips and films stream back to the client.");
 
   // ---------- 5. Technical 2: the LangGraph graph ----------
   s = pres.addSlide({ masterName: "Content", sectionTitle: "Technical" });
-  s.addText("Technical 2/2: the LangGraph flow of one turn", { placeholder: "title" });
+  s.addText("Agent-first: the model drives", { placeholder: "title" });
   {
-    const X = [0.6, 3.15, 5.7, 8.25, 10.8], Y = [1.45, 2.7, 3.95], w = 1.9, h = 0.85;
-    const mx = (c) => X[c] + w / 2, my = (r) => Y[r] + h / 2;
-    const o = { subSize: 11 };
-    node(s, X[0], Y[1], w, h, "guard", "in run_turn, before the graph", "code", o);
-    node(s, X[1], Y[0], w, h, "tick", "rounds + 1", "code", o);
-    node(s, X[2], Y[0], w, h, "tools", "13 tools, one after another", "code", o);
-    node(s, X[1], Y[1], w, h, "agent", "LLM with tools, sees the criteria", "llm", o);
-    node(s, X[2], Y[1], w, h, "present", "deterministic search, top 8", "code", o);
-    node(s, X[3], Y[1], w, h, "verify", "fewer than 3 films? count options", "code", o);
-    node(s, X[4], Y[1], w, h, "explain", "LLM without tools", "llm", o);
-    node(s, X[0], Y[2], w, h, "END", "a question or a direct answer", "code", o);
-    node(s, X[2], Y[2], w, h, "auto_relax", "least intrusive option", "code", o);
-    node(s, X[4], Y[2], w, h, "grounding", "→ reply, chips and films", "ok", o);
-    card(s, X[3], Y[0], X[4] + w - X[3], h, "State card");
-    text(s, [{ text: "Shared state: ", options: { bold: true, color: C.accent1 } },
-      { text: "the criteria every tool edits, the results, the tokens; a MemorySaver per browser tab." }],
-    { x: X[3] + 0.15, y: Y[0] + 0.06, w: X[4] + w - X[3] - 0.3, h: h - 0.12, fontSize: 12, valign: "middle", objectName: "State text" });
-    const g = 0.03;
-    arrow(s, X[0] + w + g, my(1), X[1] - g, my(1));                          // guard -> agent
-    arrow(s, mx(1), Y[1] - g, mx(1), Y[0] + h + g);                          // agent -> tick
-    arrow(s, X[1] + w + g, my(0), X[2] - g, my(0));                          // tick -> tools
-    arrow(s, X[2] + 0.3, Y[0] + h + g, X[1] + w - 0.3, Y[1] - g);            // tools -> agent
-    arrow(s, X[2] + w - 0.45, Y[0] + h + g, X[2] + w - 0.45, Y[1] - g);      // tools -> present
-    arrow(s, X[1] + w + g, my(1), X[2] - g, my(1));                          // agent -> present
-    arrow(s, X[2] + w + g, my(1), X[3] - g, my(1));                          // present -> verify
-    arrow(s, X[3] + w + g, my(1), X[4] - g, my(1));                          // verify -> explain
-    arrow(s, mx(4), Y[1] + h + g, mx(4), Y[2] - g);                          // explain -> grounding
-    arrow(s, X[1] + 0.35, Y[1] + h + g, X[0] + w - 0.35, Y[2] - g);          // agent -> END
-    arrow(s, X[1] + w - 0.2, Y[1] + h + g, X[2] - g, Y[2] + 0.3);            // agent -> auto_relax
-    arrow(s, mx(2), Y[2] - g, mx(2), Y[1] + h + g);                          // auto_relax -> present
-    const ly = Y[2] + h + 0.2;
-    polyline(s, [[mx(3), Y[1] + h + g], [mx(3), ly], [mx(1) + 0.3, ly], [mx(1) + 0.3, Y[1] + h + g]]); // verify -> agent
-    label(s, "tool calls, round < 6", 0.6, Y[0] + h + 0.02, mx(1) - 0.75, 0.36, { align: "right" });
-    label(s, "relax_search picked", X[2] + w - 0.35, Y[0] + h + 0.02, 1.9, 0.36);
-    label(s, "≥ 3", X[3] + w, my(1) - 0.4, X[4] - X[3] - w, 0.3, { align: "center" });
-    label(s, "nothing to search", 0.6, Y[1] + h + 0.02, 1.6, 0.36);
-    label(s, "fewer than 3 films: counted widening options back to the agent, at most 2 rounds", mx(1) + 0.45, ly + 0.02, 7.5, 0.3);
-    compare(s, 0.6, 5.5, 12.1, 1.35,
-      ["CineSense · agent-first: the model steers", "A ReAct loop: the model picks among 13 tools for up to 6 rounds, and the graph loops back (verify → agent) when fewer than 3 films match. Two LLM nodes: agent and explain."],
-      ["HikeSense · workflow-first: the code steers", "At most one structured-output call (understand), then a conditional edge sends the turn to exactly one of 7 branches; no loop back. Tool calling only for knowledge questions."]);
+    const spec = {
+      w: 1660, h: 600,
+      nodes: [[130, 240, 210, 80, "agent", "", "model"], [450, 70, 180, 80, "tick"], [740, 70, 200, 80, "tools"], [580, 240, 210, 80, "present"],
+        [920, 240, 200, 80, "verify"], [1250, 240, 220, 80, "explain", "", "model"], [420, 360, 230, 70, "auto_relax"]],
+      edges: [["M34,280 H128"], ["M300,240 C330,140 380,110 448,110"], ["M630,110 H738"], ["M840,70 C840,10 260,10 250,236", "back"],
+        ["M840,150 C840,200 700,190 690,236"], ["M340,280 H578"], ["M790,280 H918"], ["M1120,280 H1248"], ["M1470,280 H1580"],
+        ["M1020,320 C1020,500 330,500 300,324", "back"], ["M250,320 C250,395 330,395 418,395"], ["M650,395 C690,395 690,340 685,324"], ["M170,320 V528"]],
+      labels: [[420, 200, "tool_calls"], [560, 30, "ReAct"], [900, 200, "relax_search"], [460, 266, "criteria_changed"], [700, 500, "relax_options"],
+        [40, 590, "no tool_calls, nothing changed", "start"]],
+      terms: [[20, 280], [1600, 280], [170, 545]],
+    };
+    s.addImage({ data: await diagramPng(spec), x: 1.15, y: 1.35, w: 11.0, h: 11.0 * spec.h / spec.w, altText: "CineSense LangGraph graph: agent (LLM) loops through tick and tools (ReAct), then present, verify, explain (LLM); verify can send widening options back to the agent; auto_relax" });
+    describe(s, 5.45, [
+      ["✦ The model steers", "agent has 13 tools bound. While it returns tool_calls, the turn loops tick → tools → agent (ReAct), at most 6 rounds; each tool edits the shared criteria."],
+      ["Code checks", "present runs the deterministic search. verify sends relax_options to the agent when fewer than 3 films match, else auto_relax widens."],
+      ["Reply and state", "explain ✦ words the reply, then grounding checks the titles. The criteria and results live in one typed state, a MemorySaver per browser tab."],
+    ]);
   }
-  s.addNotes("This is graph.py. The guard runs before the graph. The agent node calls the model with the tools bound; each round goes through tick, which counts rounds, and tools, which runs the calls one after another on the shared criteria. When the model stops calling tools after changing the criteria, or at six rounds, the graph goes to present, which runs the deterministic search. Verify counts the films: fewer than three, and it sends counted widening options back to the agent, at most twice; if the model does not pick one, auto_relax picks the least intrusive. Explain words the reply, and the grounding check decides whether it is used. The key difference to HikeSense: CineSense is agent-first, the model decides which tools to call and how often, and the graph has a loop. HikeSense is workflow-first: one structured call turns the message into a request, and from there plain code routes it through a fixed branch, with a tool loop only for knowledge questions.");
+  s.addNotes("This is the graph in graph.py; the guard runs before it. CineSense is agent-first: the graph starts at the model. As long as the agent returns tool calls, the turn goes through tick, which counts rounds, and tools, which run one after another and edit the shared criteria, and back to the agent. That is the ReAct loop. When the criteria changed, present runs the deterministic search; when nothing changed, the model's text is the reply. verify counts the films: fewer than three, and the agent gets relax_options to widen the search; if it picks none, auto_relax decides. explain words the reply. In HikeSense, as the next comparison shows, the code drives instead.");
 
   // ---------- 6. Guard ----------
   pres.addSection({ title: "Safety and quality" });
