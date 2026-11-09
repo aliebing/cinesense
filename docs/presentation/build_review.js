@@ -183,7 +183,7 @@ async function icon(name, color) {
     slide.addShape(pres.shapes.LINE, { x: x + 0.375 + cw, y: y + 0.2, w: 0, h: h - 0.4, line: { color: C.accent4, width: 1 }, objectName: "Compare divider" });
   };
 
-  const PALETTE = { fill: "#1C1916", stroke: "#5B524A", modelFill: "#2B2416", model: "#F3C76B", fg: "#F4EAD8", muted: "#A99D8C", edge: "#8D8275" };
+  const PALETTE = { fill: "#1C1916", stroke: "#5B524A", modelFill: "#2B2416", model: "#F3C76B", groupFill: "#16130F", fg: "#F4EAD8", muted: "#A99D8C", edge: "#8D8275" };
   const HEAD_COLOR = C.accent1;
   // ---------- technical slides: diagrams in the style of the comparison video (docs/video/compare_slides.html) ----------
   // A spec is drawn as SVG and rasterised with sharp: nodes ("model" = a language model, marked ✦; "ext" = a service or store,
@@ -193,6 +193,11 @@ async function icon(name, color) {
     const P = PALETTE;
     const out = [`<svg xmlns="http://www.w3.org/2000/svg" width="${spec.w}" height="${spec.h}" viewBox="0 0 ${spec.w} ${spec.h}">`,
       `<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="${P.edge}"/></marker></defs>`];
+    // a dashed frame around the part that runs as the LangGraph graph
+    for (const [x, y, w, h, t] of spec.groups || []) {
+      out.push(`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="20" fill="${P.groupFill}" stroke="${P.model}" stroke-width="2" stroke-dasharray="10 8"/>`);
+      out.push(`<text x="${x + w - 16}" y="${y - 12}" fill="${P.model}" font-family="Ubuntu Sans, DejaVu Sans, sans-serif" font-weight="600" font-size="22" text-anchor="end">${esc(t)}</text>`);
+    }
     for (const e of spec.edges) {
       const [d, kind = ""] = e;
       const dash = kind.includes("back") || kind.includes("link") ? ' stroke-dasharray="8 7"' : "";
@@ -261,6 +266,7 @@ async function icon(name, color) {
       [[625, "injection → fixed reply"]],
       "reply, chips and films stream back (SSE)");
     spec.edges.push(["M960,420 H1008"], ["M1115,244 V376", "both"], ["M1200,240 C1200,320 1365,300 1365,376"]);
+    spec.groups = [[742, 130, 1006, 130, "LangGraph graph · next slide"]];
     s.addImage({ data: await diagramPng(spec), x: 0.6, y: 1.4, w: 12.1, h: 12.1 * spec.h / spec.w, altText: "System flow of CineSense: client, API, guard, agent (LLM), search, explain (LLM), grounding; OpenRouter above, catalogue import, Postgres and Streaming API below; the reply streams back to the client" });
     describe(s, 5.28, [
       ["Request", "Next.js posts the message to FastAPI, which streams the turn back as Server-Sent Events. Turn limits and 10 injection patterns are checked before any model call."],
