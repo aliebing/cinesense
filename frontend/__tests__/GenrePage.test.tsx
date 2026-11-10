@@ -98,13 +98,13 @@ it("« » page the row by 30: the next page is loaded from offset 30", async () 
     Promise.resolve({ ok: true, data: { items: many(offset), total: 100, hidden_by_exclusion: 0, extended_used: false } }),
   );
   render(<GenreView worldId="action" filmId={null} />);
-  expect(await screen.findByText(/1–30 of 99/)).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Previous 30" })).toBeDisabled();
+  expect(await screen.findByText(/1–30 of 100/)).toBeInTheDocument(); // the stage film is not one of them
+  expect(screen.queryByRole("button", { name: "Previous 30" })).toBeNull(); // no page before: no arrow
   await userEvent.click(screen.getByRole("button", { name: "Next 30" }));
-  expect(await screen.findByText(/31–60 of 99/)).toBeInTheDocument();
+  expect(await screen.findByText(/31–60 of 100/)).toBeInTheDocument();
   expect(api.discover.mock.calls.at(-1)?.slice(1, 3)).toEqual([30, 31]);
   await userEvent.click(screen.getByRole("button", { name: "Previous 30" }));
-  expect(await screen.findByText(/1–30 of 99/)).toBeInTheDocument();
+  expect(await screen.findByText(/1–30 of 100/)).toBeInTheDocument();
 });
 
 it("re-ranks the related row with the chip criteria inside the world", async () => {

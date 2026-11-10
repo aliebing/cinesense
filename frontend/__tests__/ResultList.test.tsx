@@ -171,8 +171,8 @@ it("shows up to 6 films from 70% in front, with why, and the films from 50% in t
   expect(screen.getByText("Strong on your moods: dark (95%)")).toHaveClass("best-why");
   expect(screen.getByText("5 more matches from 50%")).toBeInTheDocument(); // few strong films: the row starts at 50%
   expect(screen.getByText(/6–10 of 10/)).toBeInTheDocument(); // their ranks, and every film above the bar
-  expect(screen.getByRole("button", { name: "Previous 30" })).toBeDisabled(); // « » page the row, nothing more here
-  expect(screen.getByRole("button", { name: "Next 30" })).toBeDisabled();
+  expect(screen.queryByRole("button", { name: "Previous 30" })).toBeNull(); // nothing more here: no arrows at all
+  expect(screen.queryByRole("button", { name: "Next 30" })).toBeNull();
   const more = container.querySelectorAll(".results-more-row .related-card");
   expect(new Set([...more].map((c) => c.getAttribute("aria-label"))).size).toBe(5);
 });
@@ -213,7 +213,7 @@ it("the « » arrows page the running row by 30, load the next 50 from the API w
   expect(screen.getByText("30 more matches from 70%")).toBeInTheDocument(); // many strong films: from 70%
   expect(screen.getByText(/7–36 of 50\+/)).toBeInTheDocument(); // more may follow from the API
   expect(screen.queryByRole("button", { name: /Next 20|Previous 20/ })).toBeNull(); // no separate page buttons
-  expect(screen.getByRole("button", { name: "Previous 30" })).toBeDisabled();
+  expect(screen.queryByRole("button", { name: "Previous 30" })).toBeNull();
   await userEvent.click(screen.getByRole("button", { name: "Next 30" })); // only 12 loaded behind: load first
   expect(screen.getByRole("progressbar", { name: "Loading results" })).toBeInTheDocument();
   resolve({ ok: true, data: { items: page(50, 50, (i) => (i < 70 ? 72 : 65)), total: 500, hidden_by_exclusion: 0, extended_used: false } });
@@ -221,7 +221,7 @@ it("the « » arrows page the running row by 30, load the next 50 from the API w
   expect(search.mock.calls[1][1]).toBe(50); // offset
   await userEvent.click(screen.getByRole("button", { name: "Next 30" }));
   expect(await screen.findByText(/67–70 of 70/)).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Next 30" })).toBeDisabled(); // below the bar: nothing further
+  expect(screen.queryByRole("button", { name: "Next 30" })).toBeNull(); // below the bar: nothing further
   expect(search).toHaveBeenCalledTimes(2);
   await userEvent.click(screen.getByRole("button", { name: "Previous 30" }));
   expect(await screen.findByText(/37–66 of 70/)).toBeInTheDocument();

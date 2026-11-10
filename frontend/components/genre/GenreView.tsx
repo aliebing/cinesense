@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import FogLight from "@/components/atmosphere/FogLight";
 import CinemaFrame from "@/components/cinema/CinemaFrame";
 import RelatedRow, { type Sweep } from "@/components/genre/RelatedRow";
+import { pickWidening } from "@/components/results/ResultList";
 import StagePanel from "@/components/genre/StagePanel";
 import Breadcrumb, { type Crumb } from "@/components/nav/Breadcrumb";
 import MoodSummary from "@/components/search/MoodSummary";
@@ -54,6 +55,8 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
   const [tags, setTags] = useState<Tag[]>([]);
   const [hidden, setHidden] = useState(0);
   const [rowFromSearch, setRowFromSearch] = useState(fromSearch);
+  // too few films for every wish: those that match (their ids) and the widening whose films follow them
+  const [widenedRow, setWidenedRow] = useState<{ label: string; exact: Set<string> } | null>(null);
   // the row in pages of PAGE (« »), kept with the search it belongs to; a new search starts on page one
   const [page, setPage] = useState<{ key: string; n: number }>({ key: "", n: 0 });
   // « » run quickly through the row to the other page, which is loaded first (both are in the row meanwhile)
@@ -119,7 +122,16 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
         ? await search(active, pageNo * PAGE, PAGE + 1)
         : await discover({ ...active, world_id: worldId }, pageNo * PAGE, PAGE + 1);
       if (!r.ok) return null;
-      return { items: r.data.items, total: r.data.total, capped: Boolean(r.data.total_capped), hidden: r.data.hidden_by_exclusion, useSearch };
+      const base = { items: r.data.items, total: r.data.total, capped: Boolean(r.data.total_capped), hidden: r.data.hidden_by_exclusion, useSearch };
+      // like the search page: too few films for every wish, so the films of the widening that changes it least
+      // follow them (one page; the search itself stays)
+      const option = useSearch && pageNo === 0 ? pickWidening(r.data.relaxations ?? []) : null;
+      if (!option) return { ...base, widened: null };
+      const w = await search(option.criteria, 0, 50, active);
+      if (!w.ok) return { ...base, widened: null };
+      const exact = new Set(r.data.items.map((x) => x.movie.id));
+      const items = [...r.data.items, ...w.data.items.filter((x) => !exact.has(x.movie.id))];
+      return { ...base, items, total: items.length, widened: { label: option.label, exact: r.data.items } };
     },
     [fromSearch, worldId],
   );
@@ -135,6 +147,7 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
         if (cancelled) return;
         setRelated(r.ok ? r.data : []);
         setFound(null);
+        setWidenedRow(null);
         setRowFromSearch(false);
         setHidden(0);
         loadedFor.current = loadKey;
@@ -147,6 +160,7 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
       if (onStage && p.useSearch) setStageReasons((s) => s ?? { id: onStage.movie.id, reasons: onStage.reasons });
       setRelated(p.items);
       setFound({ total: p.total, capped: p.capped });
+      setWidenedRow(p.widened ? { label: p.widened.label, exact: new Set(p.widened.exact.map((x) => x.movie.id)) } : null);
       setRowFromSearch(p.useSearch);
       setHidden(p.hidden);
       loadedFor.current = loadKey;
@@ -201,10 +215,15 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
 
   const world = state.kind === "ready" ? state.world : null;
   const movie = state.kind === "ready" ? state.movie : null;
-  const pageOf = (raw: RankedMovie[]) => (movie ? raw.filter((r) => r.movie.id !== movie.id).slice(0, PAGE) : []);
+  // one page of the row; a widened row is shown whole (it is loaded as one)
+  const pageOf = (raw: RankedMovie[]) => (movie ? raw.filter((r) => r.movie.id !== movie.id).slice(0, widenedRow ? undefined : PAGE) : []);
   const rowItems = pageOf(related);
-  // the film on stage is one of the found ones, but not in the row (a capped count stays a round "500+")
-  const others = found ? { total: found.capped ? found.total : Math.max(0, found.total - 1), capped: found.capped } : null;
+  // the film on stage is not in the row: it counts off the total only when it is one of the found films (a film
+  // opened from the widened row is not), and a capped count stays a round "500+"
+  const stageFound = movie !== null && related.some((r) => r.movie.id === movie.id);
+  const others = found
+    ? { total: found.capped ? found.total : Math.max(0, found.total - (stageFound ? 1 : 0)), capped: found.capped }
+    : null;
   const target = pending ? pageOf(pending.raw) : [];
   const forward = pending !== null && pending.n > n;
   const shownRow = !pending ? rowItems : forward ? [...rowItems, ...target] : [...target, ...rowItems];
@@ -220,7 +239,7 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
         },
       }
     : null;
-  const canNext = others !== null && ((n + 1) * PAGE < others.total || Boolean(others.capped));
+  const canNext = !widenedRow && others !== null && ((n + 1) * PAGE < others.total || Boolean(others.capped));
 
   return (
     <CinemaFrame>
@@ -252,7 +271,11 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
             key={n} // a new page starts at its first film
             items={shownRow}
             onSelect={select}
-            label={rowLabel(rowItems.length, n * PAGE + 1, others, fromSearch && rowFromSearch, hasAnyCriteria(criteria), world.title)}
+            label={
+              widenedRow
+                ? widenedLabel(rowItems.filter((r) => widenedRow.exact.has(r.movie.id)).length, rowItems.length, widenedRow.label)
+                : rowLabel(rowItems.length, n * PAGE + 1, others, fromSearch && rowFromSearch, hasAnyCriteria(criteria), world.title)
+            }
             name={fromSearch && rowFromSearch ? "Your other matches" : "Also fits your mood"}
             showReasons={fromSearch && rowFromSearch}
             found={found}
@@ -270,6 +293,17 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
 
 const PAGE = 30; // films per page of the row, as on the search page
 const count = new Intl.NumberFormat("en-US");
+
+/** The heading of a widened row, as on the search page: "Only 1 film matches every wish · 48 more with: …". */
+export function widenedLabel(exact: number, all: number, label: string) {
+  const head = exact ? `Only ${exact} ${exact === 1 ? "film matches" : "films match"} every wish` : "No other film matches every wish";
+  return (
+    <>
+      {`${head} · ${all - exact} more with: ${label}`}
+      <span className="related-hint"> · ≠ marks what a film misses</span>
+    </>
+  );
+}
 
 /** The row's heading, like the search page's: how many it shows, their ranks and of how many in all
  *  ("30 more matches · 31–60 of 366"); without a total (the stage film's neighbours) just how many. */

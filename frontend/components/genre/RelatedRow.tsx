@@ -329,29 +329,31 @@ export default function RelatedRow({
           ))}
         </div>
       </div>
-      {arrows && (
-        <>
-          <button
-            type="button"
-            className="row-arrow row-arrow--left"
-            aria-label={paging ? `Previous ${paging.size}` : "Slide left"}
-            title={paging ? `Previous ${paging.size}` : "Slide left"}
-            disabled={paging ? !paging.prev || sweeping : false}
-            onClick={() => (paging ? paging.prev?.() : slide(-1))}
-          >
-            «
-          </button>
-          <button
-            type="button"
-            className="row-arrow row-arrow--right"
-            aria-label={paging ? `Next ${paging.size}` : "Slide right"}
-            title={paging ? `Next ${paging.size}` : "Slide right"}
-            disabled={paging ? !paging.next || sweeping : false}
-            onClick={() => (paging ? paging.next?.() : slide(1))}
-          >
-            »
-          </button>
-        </>
+      {/* « » only where there is somewhere to go: paging shows each arrow only with a page that way, sliding only
+          when the films do not all fit */}
+      {arrows && (paging ? paging.prev : !still) && (
+        <button
+          type="button"
+          className="row-arrow row-arrow--left"
+          aria-label={paging ? `Previous ${paging.size}` : "Slide left"}
+          title={paging ? `Previous ${paging.size}` : "Slide left"}
+          disabled={sweeping}
+          onClick={() => (paging ? paging.prev?.() : slide(-1))}
+        >
+          «
+        </button>
+      )}
+      {arrows && (paging ? paging.next : !still) && (
+        <button
+          type="button"
+          className="row-arrow row-arrow--right"
+          aria-label={paging ? `Next ${paging.size}` : "Slide right"}
+          title={paging ? `Next ${paging.size}` : "Slide right"}
+          disabled={sweeping}
+          onClick={() => (paging ? paging.next?.() : slide(1))}
+        >
+          »
+        </button>
       )}
       {after}
     </section>
