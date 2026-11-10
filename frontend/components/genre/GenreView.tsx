@@ -176,6 +176,10 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
 
   const world = state.kind === "ready" ? state.world : null;
   const movie = state.kind === "ready" ? state.movie : null;
+  const rowItems = movie ? related.filter((r) => r.movie.id !== movie.id) : [];
+  // the film on stage is one of the found ones, but not in the row
+  // (a capped count stays a round "500+")
+  const others = found ? { total: found.capped ? found.total : found.total - (related.length - rowItems.length), capped: found.capped } : null;
 
   return (
     <CinemaFrame>
@@ -186,7 +190,7 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
       />
       <FogLight tint={world?.tint ?? "#1b4a6b"} reduced={reduced} />
       <header className="genre-top">
-        <Breadcrumb items={crumbs(movie, fromSearch)} />
+        <Breadcrumb items={crumbs(movie)} />
       </header>
       {state.kind === "error" && <p className="genre-error">Couldn&apos;t load films</p>}
       {state.kind === "loading" && <p className="genre-loading">Loading …</p>}
@@ -203,29 +207,44 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
           <div className="side-settings side-settings--genre">
             <MoodSummary tags={tags} criteria={criteria} hiddenCount={hidden} />
           </div>
-          {fromSearch && rowFromSearch ? (
-            <RelatedRow
-              items={related.filter((r) => r.movie.id !== movie.id)}
-              onSelect={select}
-              label="Your other matches"
-              name="Your other matches"
-              showReasons
-              found={found}
-              streamCheck={criteria.availability === "stream"}
-              arrows
-            />
-          ) : (
-            <RelatedRow items={related.filter((r) => r.movie.id !== movie.id)} onSelect={select} found={found} arrows />
-          )}
+          <RelatedRow
+            items={rowItems}
+            onSelect={select}
+            label={rowLabel(rowItems.length, others, fromSearch && rowFromSearch, world.title)}
+            name={fromSearch && rowFromSearch ? "Your other matches" : "Also fits your mood"}
+            showReasons={fromSearch && rowFromSearch}
+            found={found}
+            streamCheck={fromSearch && rowFromSearch && criteria.availability === "stream"}
+            arrows
+          />
         </>
       )}
     </CinemaFrame>
   );
 }
 
-/** Opened from the search: Search › film; otherwise just the film (the brand already leads to the start page). */
-function crumbs(movie: Movie | null, fromSearch: boolean): Crumb[] {
-  const out: Crumb[] = fromSearch ? [{ label: "Search", href: "/results" }] : [];
+const count = new Intl.NumberFormat("en-US");
+
+/** The row's heading, like the search page's: how many it shows and of how many in all
+ *  ("47 more matches · 1–47 of 366"); the stage film's world neighbours are just its mood's top films. */
+export function rowLabel(n: number, others: { total: number; capped?: boolean } | null, fromSearch: boolean, worldTitle: string) {
+  if (!others) return `${n} more top-rated ${worldTitle} films`;
+  return (
+    <>
+      {`${n} more matches`}
+      <span className="related-hint">
+        {" "}
+        · 1–{n} of {count.format(others.total)}
+        {others.capped ? "+" : ""}
+        {fromSearch ? "" : ` in ${worldTitle}`}
+      </span>
+    </>
+  );
+}
+
+/** CineSense › Search › film: the search is always one step back (a world crumb would just repeat the brand). */
+function crumbs(movie: Movie | null): Crumb[] {
+  const out: Crumb[] = [{ label: "Search", href: "/results" }]; // always: the search is one step back from any film
   if (movie) out.push({ label: movie.title });
   return out;
 }

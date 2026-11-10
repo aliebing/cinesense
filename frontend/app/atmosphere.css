@@ -655,6 +655,10 @@
 /* the running row looks the same on the search and the detail page: card size, gap, zoom and the wide trailer */
 .related.has-arrows { --card-w: clamp(52px, 4.8cqw, 120px); --card-hover-scale: 1.1; }
 .results-more-row .related-label, .results-count { text-align: center; }
+/* the running row's count and heading, centred like the search page's, on a dark pill: readable over any backdrop */
+.related.has-arrows > .related-count, .related.has-arrows > .related-label { width: fit-content; max-width: 100%; margin-inline: auto;
+  padding: .2em .9em; border-radius: 999px; background: #07080cd9; opacity: 1; text-align: center; }
+.related.has-arrows .related-hint { color: #c9c9d4; }
 .results-more-row .related-viewport { padding-top: 1.6cqw; margin-top: -.9cqw; }
 .results-more-row .related-viewport.is-static { scrollbar-width: none; } /* a row that fits needs no scrollbar */
 .results-more-row .related-viewport.is-static::-webkit-scrollbar { display: none; }
