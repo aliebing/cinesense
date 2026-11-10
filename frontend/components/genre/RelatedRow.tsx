@@ -64,6 +64,7 @@ export default function RelatedRow({
   after,
   sweep = null,
   found = null,
+  streamCheck = false,
 }: {
   items: RankedMovie[];
   onSelect: (m: Movie) => void;
@@ -71,6 +72,8 @@ export default function RelatedRow({
   name?: string;
   /** how many films the search found, as a readable line above the label ("65 films found"); null: no line */
   found?: { total: number; capped?: boolean } | null;
+  /** the streaming filter is on: cards whose streaming was not looked up yet say so */
+  streamCheck?: boolean;
   showReasons?: boolean;
   /** new results are loading: a running bar above the cards, the old cards dimmed */
   busy?: boolean;
@@ -230,6 +233,9 @@ export default function RelatedRow({
                 <span>
                   {r.movie.title}
                   {showReasons && r.reasons.length > 0 && <small className="related-why">{r.reasons.slice(0, 2).join(" · ")}</small>}
+                  {streamCheck && r.movie.availability.streaming_de === null && (
+                    <small className="result-unchecked">? streaming not checked</small>
+                  )}
                   {showReasons &&
                     r.misses?.map((m) => (
                       <small key={m} className="result-miss">

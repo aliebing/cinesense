@@ -62,7 +62,7 @@ it("renders the four feedback buttons disabled", () => {
 
 it("streaming states: unknown, not in Germany, and rent/buy collapsed", () => {
   const { rerender } = render(<StagePanel movie={{ ...base, availability: { in_cinema_de: false, streaming_de: null, subscription_services: [] } }} world={world} why="x" />);
-  expect(screen.getByText("Streaming availability unknown")).toBeInTheDocument();
+  expect(screen.getByText("Streaming not checked yet")).toHaveClass("stage-tag--unchecked");
   rerender(<StagePanel movie={{ ...base, availability: { in_cinema_de: false, streaming_de: [], subscription_services: [] } }} world={world} why="x" />);
   expect(screen.getByText("Not streaming in Germany")).toBeInTheDocument();
   rerender(

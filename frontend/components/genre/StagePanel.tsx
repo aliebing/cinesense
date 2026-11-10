@@ -109,7 +109,7 @@ function Streaming({ movie }: { movie: Movie }) {
   if (options === null)
     return (
       <>
-        <span className="stage-tag--muted">Streaming availability unknown</span>
+        <span className="stage-tag--unchecked" title="Not looked up yet: the streaming check has a small monthly budget">Streaming not checked yet</span>
         {search}
       </>
     );

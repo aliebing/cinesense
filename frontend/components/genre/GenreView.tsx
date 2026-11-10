@@ -210,6 +210,7 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
               name="Your other matches"
               showReasons
               found={found}
+              streamCheck={criteria.availability === "stream"}
             />
           ) : (
             <RelatedRow items={related.filter((r) => r.movie.id !== movie.id)} onSelect={select} found={found} />

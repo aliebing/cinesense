@@ -150,6 +150,7 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
             setSweepTo(null);
           },
         };
+  const streaming = criteria.availability === "stream";
   const label = (
     <>
       {n > 0
@@ -157,6 +158,13 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
         : total > shown.length
           ? `The ${shown.length} best matches`
           : "All matches"}
+      {streaming && (
+        <span className="related-hint">
+          {" "}
+          · {shown.filter((r) => r.movie.availability.streaming_de?.length).length} of these {shown.length} confirmed on
+          streaming
+        </span>
+      )}
       {extended && <span className="results-extended"> · includes titles just added from Wikidata</span>}
     </>
   );
@@ -170,6 +178,7 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
         onSelect={onOpen}
         label={label}
         found={{ total, capped }}
+        streamCheck={streaming}
         name="Results"
         showReasons
         busy={loading || loadingMore}

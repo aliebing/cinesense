@@ -244,3 +244,30 @@ it("says at least 500 when the mood search kept only its best films", async () =
   render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} />);
   expect(await screen.findByText("At least 500 films found")).toBeInTheDocument();
 });
+
+it("with the streaming filter, marks films whose streaming is not checked and counts the confirmed ones", async () => {
+  const items = sampleRanked(3).map((r, i) => ({
+    ...r,
+    match_percent: 80,
+    movie: {
+      ...r.movie,
+      availability: {
+        in_cinema_de: false,
+        streaming_de: i === 0 ? [{ service: "Netflix", type: "subscription", link: "https://x" }] : null,
+        subscription_services: i === 0 ? ["Netflix"] : [],
+      },
+    },
+  }));
+  search.mockResolvedValue({ ok: true, data: { items, total: 3, hidden_by_exclusion: 0, extended_used: false } });
+  const { container } = render(<ResultList criteria={{ ...emptyCriteria(), availability: "stream" }} onOpen={() => {}} />);
+  expect(await screen.findByText(/1 of these 3 confirmed on streaming/)).toBeInTheDocument();
+  expect(container.querySelectorAll(".result-unchecked")).toHaveLength(2);
+});
+
+it("without the streaming filter, no streaming marks", async () => {
+  search.mockResolvedValue({ ok: true, data: { items: sampleRanked(3), total: 3, hidden_by_exclusion: 0, extended_used: false } });
+  const { container } = render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} />);
+  await screen.findByText("3 films found");
+  expect(container.querySelectorAll(".result-unchecked")).toHaveLength(0);
+  expect(screen.queryByText(/confirmed on streaming/)).toBeNull();
+});
