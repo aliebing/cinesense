@@ -53,6 +53,8 @@ export type DiscoverResult = {
   total_capped?: boolean; // the mood search kept only its best films: total is a lower bound ("500+")
   hidden_by?: Record<string, number>; // per exclusion ("genre:Horror", "tag:284"): films it hid in this search
   relaxations?: Relaxation[];
+  /** no film reaches 50%: the same search without one mood, which does (count: its films from 50% on) */
+  drop_mood?: Relaxation | null;
 };
 
 export const getTags = () => apiGet<Tag[]>("/api/tags");

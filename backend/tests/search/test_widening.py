@@ -179,3 +179,43 @@ def test_misses_flag_prefer_tags_without_mood_data():
     original = SearchCriteria(tags=[TagCriterion(idx=7), TagCriterion(idx=9)])
     assert misses(_film(), original, TAGS, {7: float("nan"), 9: 0.2}) == ["no mood data for 'funny'"]
     assert misses(_film(), original, TAGS, {7: 0.1, 9: 0.2}) == []  # a weak preference only ranks, never misses
+
+
+def test_drop_one_mood_leaves_out_the_mood_whose_absence_finds_most_strong_films():
+    from types import SimpleNamespace
+
+    from cinesense.search.widening import drop_one_mood
+
+    class Service:
+        def run(self, c, offset, limit):
+            kept = {t.idx for t in c.tags if t.mode != "not"}
+            # without "funny" (7): 4 films from 50%; without "dark" (9): 1
+            percents = [60, 55, 52, 51, 40] if kept == {9} else [51, 30] if kept == {7} else [20]
+            return SimpleNamespace(items=[SimpleNamespace(match_percent=p) for p in percents])
+
+    tags = [TagCriterion(idx=9), TagCriterion(idx=7), TagCriterion(idx=3, mode="not")]
+    c = SearchCriteria(person="Tom Cruise", tags=tags)
+    out = drop_one_mood(Service(), c, TAGS)
+    assert out.id == "drop-tag:7" and out.count == 4
+    assert out.label.startswith("‘funny’ left out")
+    assert [t.idx for t in out.criteria.tags] == [9, 3]  # the not-tag stays, and so does the person
+    assert out.criteria.person == "Tom Cruise"
+
+
+def test_drop_one_mood_needs_something_left_to_search_by():
+    from cinesense.search.widening import drop_one_mood
+
+    class Service:
+        def run(self, *a):
+            raise AssertionError("no probe expected")
+
+    assert drop_one_mood(Service(), SearchCriteria(tags=[TagCriterion(idx=7)]), TAGS) is None  # the only wish
+
+
+def test_misses_flag_a_left_out_mood_on_films_without_it():
+    from cinesense.search.widening import misses
+
+    original = SearchCriteria(tags=[TagCriterion(idx=7), TagCriterion(idx=9)])
+    assert misses(_film(), original, TAGS, {7: 0.1, 9: 0.8}, dropped={7}) == ["little 'funny'"]
+    assert misses(_film(), original, TAGS, {7: 0.6, 9: 0.8}, dropped={7}) == []  # funny enough after all
+    assert misses(_film(), original, TAGS, {7: 0.1, 9: 0.8}) == []  # a weak preference alone is no miss

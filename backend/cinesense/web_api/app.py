@@ -73,6 +73,8 @@ class DiscoverResponse(BaseModel):
     hidden_by: dict[str, int] = Field(default_factory=dict)  # per exclusion ("genre:Horror", "tag:284"): films hidden
     total_capped: bool = False  # total is a lower bound: the mood search kept only its best films ("500+")
     relaxations: list[RelaxationOut] = Field(default_factory=list)  # ways to widen a thin search (/api/search)
+    # no film reaches 50%: the same search without one mood, which does find some (count: films from 50% on)
+    drop_mood: RelaxationOut | None = None
 
 
 def create_app(load_env: bool = True) -> FastAPI:
@@ -220,10 +222,14 @@ def create_app(load_env: bool = True) -> FastAPI:
     ) -> DiscoverResponse:
         res = _discover(req, provider, streaming, embedder, live, tasks, profile, checker, trailers)
         if req.relaxed_from is not None:
-            widening.mark_misses(res.items, req.relaxed_from, provider)
+            widening.mark_misses(res.items, req.relaxed_from, provider, req.criteria)
+        # probes never use the Streaming API or the live search
+        probe_service = SearchService(provider, None, embedder)
+        if req.offset == 0 and res.items and all(r.match_percent < widening.STRONG_PERCENT for r in res.items):
+            o = widening.drop_one_mood(probe_service, req.criteria, provider.list_tags())
+            if o is not None:
+                res.drop_mood = RelaxationOut(id=o.id, label=o.label, count=o.count, criteria=o.criteria)
         if req.offset == 0 and res.total < widening.MIN_RESULTS:
-            # probes never use the Streaming API or the live search
-            probe_service = SearchService(provider, None, embedder)
             options = widening.probe(probe_service, req.criteria, provider.list_tags(), res.total)
             res.relaxations = [
                 RelaxationOut(id=o.id, label=o.label, count=o.count, criteria=o.criteria) for o in options

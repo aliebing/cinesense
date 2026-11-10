@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import RelatedRow, { foundText, LoadingBar, type Sweep } from "@/components/genre/RelatedRow";
 import BestMatches from "@/components/results/BestMatches";
 import { search, type DiscoverResult, type Relaxation } from "@/lib/api";
@@ -15,7 +15,8 @@ const LIMIT = 50;
 const MIN_SHOWN = 3;
 const BEST_MAX = 8;
 const BEST_PERCENT = 70;
-const MORE_PERCENT = 50;
+const MORE_FLOORS = [70, 60, 50]; // the row below starts at the highest of these that still holds about MORE_MAX films
+const MORE_PERCENT = 50; // the lowest floor: below it a search leaves one mood out instead (drop_mood)
 const MORE_MAX = 30; // films in the running row at a time; its « » arrows run quickly to the previous / next ones
 const count = new Intl.NumberFormat("en-US");
 
@@ -29,7 +30,17 @@ type Props = {
 
 /** The best matches as one endless row at the bottom, like the genre page; the header gives the real number and
  *  never claims completeness, and every card says why it matches. */
+/** The floor of the row below: with many strong films from 70%, with a middling number from 60%, else from 50%,
+ *  counted on the first page (the API ranks by match, so it holds the strongest). */
+export function moreFloor(percents: number[]): number {
+  return MORE_FLOORS.find((f) => percents.filter((p) => p >= f).length >= MORE_MAX) ?? MORE_PERCENT;
+}
+
 export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened }: Props) {
+  const relaxRef = useRef(onRelax);
+  useEffect(() => {
+    relaxRef.current = onRelax;
+  }, [onRelax]);
   const [items, setItems] = useState<RankedMovie[]>([]);
   const [total, setTotal] = useState<number | null>(null);
   const [capped, setCapped] = useState(false);
@@ -64,6 +75,10 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
       setCapped(Boolean(r.data.total_capped));
       setExtended(r.data.extended_used);
       setRelaxFor({ key, options: r.data.relaxations ?? [] });
+      // nothing reaches 50% with every wish: search again without the mood whose leaving out finds the most
+      // (the page then says which mood was left out, and the films lacking it are marked ≠)
+      const drop = r.data.drop_mood;
+      if (drop && relaxRef.current) relaxRef.current(drop.criteria, drop.label);
       onMeta?.({
         total: r.data.total,
         hidden_by_exclusion: r.data.hidden_by_exclusion,
@@ -126,14 +141,15 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
     );
   const all = [items, ...(more.key === key ? more.pages : [])].flat();
   const best = all.slice(0, BEST_MAX).filter((r, i) => i < MIN_SHOWN || r.match_percent >= BEST_PERCENT);
-  const rest = all.slice(best.length).filter((r) => r.match_percent >= MORE_PERCENT);
+  const floor = moreFloor(items.map((r) => r.match_percent));
+  const rest = all.slice(best.length).filter((r) => r.match_percent >= floor);
   const chunks = Math.max(1, Math.ceil(rest.length / MORE_MAX));
   const n = page.key === key ? Math.min(page.n, chunks - 1) : 0;
   const shownOf = (p: number) => rest.slice(p * MORE_MAX, (p + 1) * MORE_MAX);
   const shown = shownOf(n);
   // the API may hold more above the bar: the loaded films fill whole pages and the last still clears it
   const last = all[all.length - 1];
-  const canLoad = all.length < total && all.length % LIMIT === 0 && last.match_percent >= MORE_PERCENT;
+  const canLoad = all.length < total && all.length % LIMIT === 0 && last.match_percent >= floor;
   const canNext = !loading && ((n + 1) * MORE_MAX < rest.length || canLoad);
   const next = async () => {
     // the next page from what is loaded, unless they would be fewer and the API holds more: then load first
@@ -143,7 +159,7 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
     setLoadingMore(false);
     if (!r.ok || r.data.items.length === 0) return;
     setMore({ key, pages: [...(more.key === key ? more.pages : []), r.data.items] });
-    if (r.data.items.some((x) => x.match_percent >= MORE_PERCENT)) setSweepTo({ key, n: n + 1 });
+    if (r.data.items.some((x) => x.match_percent >= floor)) setSweepTo({ key, n: n + 1 });
   };
   // during a sweep the row holds both pages; it ends where the other page alone starts, then that page is swapped in
   const to = sweepTo && sweepTo.key === key && sweepTo.n < chunks ? sweepTo.n : null;
@@ -177,7 +193,7 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
   );
   const moreLabel = (
     <>
-      {`${shown.length} more matches`}
+      {`${shown.length} more matches from ${floor}%`}
       <span className="related-hint">
         {" "}
         · {start + 1}–{start + shown.length} of {available}

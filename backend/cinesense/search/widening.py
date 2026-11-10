@@ -15,6 +15,8 @@ from cinesense.search.rating import DEFAULT_PRIOR_MEAN, catalogue_rating
 log = logging.getLogger(__name__)
 
 MIN_RESULTS = 3  # fewer films than this and the search is widened
+STRONG_PERCENT = 50  # a search with no film from this match on leaves out one mood (drop_one_mood)
+DROP_PROBE = 50  # films each "without this mood" probe ranks to count its strong ones
 MAX_OPTIONS = 8
 RUNTIME_STEP, RUNTIME_MAX = 30, 400
 YEAR_STEP = 10
@@ -94,6 +96,33 @@ def probe(service, c: SearchCriteria, tag_names: list[str], current: int) -> lis
     return kept
 
 
+def drop_one_mood(service, c: SearchCriteria, tag_names: list[str]) -> Relaxation | None:
+    """A search where no film reaches STRONG_PERCENT: the same search without one of its wanted moods, the one
+    whose leaving out finds the most films from STRONG_PERCENT on (count = those films). None when no mood can go
+    (fewer than two wanted moods and nothing else to search by) or leaving one out does not help either.
+    Person, title and the hard limits (not-tags, exclusions) always stay: they are the wish itself."""
+    wanted = [t for t in c.tags if t.mode != "not"]
+    other = c.person or c.title or c.plot_query
+    if len(wanted) < 2 and not (wanted and other):
+        return None
+    best: Relaxation | None = None
+    for t in wanted:
+        opt = Relaxation(
+            f"drop-tag:{t.idx}",
+            f"‘{_name(tag_names, t.idx)}’ left out: nothing reached {STRONG_PERCENT}% with every wish",
+            c.model_copy(update={"tags": [x for x in c.tags if x.idx != t.idx]}, deep=True),
+        )
+        try:
+            items = service.run(opt.criteria, 0, DROP_PROBE).items
+        except Exception as exc:  # noqa: BLE001 — a probe that fails is not offered
+            log.warning("drop-tag probe %s failed: %s", opt.id, exc)
+            continue
+        opt.count = sum(1 for r in items if r.match_percent >= STRONG_PERCENT)
+        if opt.count and (best is None or opt.count > best.count):
+            best = opt
+    return best
+
+
 def pick_auto(options: list[Relaxation]) -> Relaxation | None:
     """The least intrusive option that finds enough films, else the one that finds the most."""
     enough = [o for o in options if o.count >= MIN_RESULTS]
@@ -107,7 +136,11 @@ def apply(c: SearchCriteria, option_id: str, tag_names: list[str]) -> Relaxation
 
 
 def misses(
-    movie: Movie, original: SearchCriteria, tag_names: list[str], tag_relevance: dict[int, float] | None = None
+    movie: Movie,
+    original: SearchCriteria,
+    tag_names: list[str],
+    tag_relevance: dict[int, float] | None = None,
+    dropped: set[int] | None = None,
 ) -> list[str]:
     """What part of the original wish a film from a widened search does not meet — only the relaxable fields
     (exclusions are never widened, so a film never misses them). Unknown values are not reported as misses."""
@@ -142,6 +175,8 @@ def misses(
             out.append(f"no mood data for '{name}'")
         elif t.mode == "must" and value < MUST_THRESHOLD:
             out.append(f"little '{name}'")  # a weak preference only ranks lower, it is no miss
+        elif dropped and t.idx in dropped and value < REASON_MIN:
+            out.append(f"little '{name}'")  # a mood left out of the search: the films without it say so
     return out
 
 
@@ -156,13 +191,15 @@ def applied_update(state: dict, opt: Relaxation) -> dict:
     }
 
 
-def mark_misses(items: list, original: SearchCriteria, provider) -> None:
-    """Fill RankedMovie.misses against the original criteria (in place)."""
+def mark_misses(items: list, original: SearchCriteria, provider, current: SearchCriteria | None = None) -> None:
+    """Fill RankedMovie.misses against the original criteria (in place); moods the widened search (`current`) left
+    out are flagged on the films that lack them."""
     wanted = [t.idx for t in original.tags if t.mode != "not"]
+    dropped = set(wanted) - {t.idx for t in current.tags} if current is not None else set()
     vectors = provider.tag_vectors([r.movie.id for r in items]) if wanted and items else None
     for row, r in enumerate(items):
         relevance = {i: float(vectors[row][i]) for i in wanted} if vectors is not None else None
-        r.misses = misses(r.movie, original, provider.list_tags(), relevance)
+        r.misses = misses(r.movie, original, provider.list_tags(), relevance, dropped)
 
 
 @dataclass
