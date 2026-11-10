@@ -64,8 +64,8 @@ export default function AdvancedSearch({
 }: {
   criteria: Criteria;
   onSubmit: (c: Criteria) => void;
-  /** one line like the other bars (results page): a gold title, fields named by their placeholders, the further
-   *  options and hints open as a panel below it */
+  /** a two-row box like the other bars (results page): a gold title, the fields named by their placeholders and
+   *  Search in the first row, role, kind and the extended search in the second */
   bar?: boolean;
 }) {
   const [title, setTitle] = useState(criteria.title ?? "");
@@ -158,11 +158,13 @@ export default function AdvancedSearch({
       </label>
       <div className="advanced-search__buttons">
         <button type="submit">Search</button>
-        <button type="button" className="advanced-search__more" aria-expanded={more} aria-controls="adv-more" onClick={() => setMore((m) => !m)}>
-          {more ? (bar ? "Fewer ▴" : "Fewer options ▴") : bar ? "More ▾" : "More options ▾"}
-        </button>
+        {!bar && (
+          <button type="button" className="advanced-search__more" aria-expanded={more} aria-controls="adv-more" onClick={() => setMore((m) => !m)}>
+            {more ? "Fewer options ▴" : "More options ▾"}
+          </button>
+        )}
       </div>
-      {more && (
+      {(bar || more) && (
         <div id="adv-more" className="advanced-search__more-row">
           <Choice label="Role" options={ROLES} value={role} onChange={setRole} />
           <Choice label="Kind" options={KINDS} value={kind} onChange={setKind} />

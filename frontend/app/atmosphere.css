@@ -715,23 +715,28 @@
 .related.has-arrows { --card-gap: calc(var(--card-w) * .16); }
 /* the advanced search as the third bar: one line, the fields named by their placeholders (labels for screen readers);
    the further options and hints open as a panel below it, over the films, so nothing moves */
-.results-adv { position: relative; z-index: 20; }
-.advanced-search--bar { display: flex; flex-wrap: nowrap; align-items: center; gap: .6em; position: relative; }
+/* the advanced search on demand: a button on the right under the bars; it opens a two-row box over the films
+   (fields and Search above, role, kind and the extended search below), so nothing moves */
+.results-adv { position: relative; z-index: 20; text-align: right; }
+.results-adv .advanced-search--bar { position: absolute; top: calc(100% + .5em); right: 0; width: 100%; text-align: left;
+  background: #0d0d14; box-shadow: 0 20px 60px #000d; }
+.advanced-search--bar { display: flex; flex-wrap: wrap; align-items: center; gap: .6em; }
 .advanced-search--bar .adv-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .advanced-search--bar label { flex-direction: row; font-size: 1em; color: #fff; }
-.advanced-search--bar .suggest { flex: 1 1 14em; min-width: 0; }
+.advanced-search--bar .suggest { flex: 1 1 12em; min-width: 0; }
 .advanced-search--bar .adv-year { flex: 0 0 7em; }
 .advanced-search--bar input { width: 100%; padding: .3em .8em; border-radius: 999px; font-size: .92em; }
 .advanced-search--bar .search-bar__title { white-space: nowrap; }
 .advanced-search--bar .advanced-search__buttons { align-items: center; }
 .advanced-search--bar .advanced-search__buttons button { padding: .3em 1em; font-size: .92em; }
-.advanced-search--bar .advanced-search__more-row, .advanced-search--bar .advanced-search__hint {
-  position: absolute; top: calc(100% + .5em); right: 0; padding: .9em 1em; border-radius: 14px; border: 1px solid #ffffff26;
-  background: #0d0d14f2; box-shadow: 0 20px 60px #000d; }
-.advanced-search--bar .advanced-search__hint { left: 0; right: auto; }
+/* the second row: role, kind, extended */
+.advanced-search--bar .advanced-search__more-row { flex: 1 0 100%; padding-top: .5em; margin-top: .1em; }
 .advanced-search--bar .advanced-search__more-row label, .advanced-search--bar .advanced-search__more-row .adv-field { font-size: .9em; color: var(--muted); }
 .advanced-search--bar .advanced-search__more-row .adv-field { flex-direction: row; align-items: center; gap: .6em; }
 .advanced-search--bar .advanced-search__more-row .adv-label { position: static; width: auto; height: auto; clip-path: none; }
+.advanced-search--bar .advanced-search__hint { flex: 1 0 100%; }
+.advanced-search--bar input[type="checkbox"] { width: auto; }
+.advanced-search--bar .advanced-search__check { white-space: nowrap; }
 .results-films { display: flex; flex-direction: column; gap: .7cqw; margin-top: 2cqw; }
 .results-page .advanced-search .crit__modes { width: auto; } /* not the mood pills' fixed switch width */
 /* homepage without a search: when the mood changes, the two rows run on and their new films fade in */

@@ -46,7 +46,7 @@ it("says in the exclusions row what each exclusion does in this search", async (
   setSearchState(emptyCriteria());
 });
 
-it("shows the filters on top, then the moods, then the advanced search as a third bar", async () => {
+it("shows the filters on top, then the moods; the advanced search opens on demand as a two-row box", async () => {
   setSearchState({ ...emptyCriteria(), tags: [{ idx: 1, weight: 6, mode: "must" }], year_from: 1990, year_to: 1999, exclude_people: ["Sylvester Stallone"] });
   render(<ResultsPage />);
   const moods = await screen.findByRole("region", { name: "Search criteria" });
@@ -57,10 +57,12 @@ it("shows the filters on top, then the moods, then the advanced search as a thir
   expect(within(row).getByText(/without Sylvester Stallone/)).toBeInTheDocument();
   await userEvent.click(within(row).getByRole("button", { name: "Remove year range" }));
   expect(within(row).queryByText("1990–1999")).toBeNull();
+  expect(screen.queryByRole("form", { name: "Advanced search" })).toBeNull();
+  await userEvent.click(screen.getByRole("button", { name: /Advanced search/ }));
   const adv = screen.getByRole("form", { name: "Advanced search" });
-  expect(moods.compareDocumentPosition(adv) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   expect(within(adv).getByRole("heading", { name: "Advanced search" })).toBeInTheDocument();
   expect(within(adv).getByLabelText("Title")).toBeInTheDocument(); // named for screen readers, shown as placeholder
+  expect(within(adv).getByRole("group", { name: "Kind" })).toBeInTheDocument(); // the second row, no extra step
   setSearchState(emptyCriteria());
 });
 
