@@ -179,7 +179,7 @@ it("shows at least the 3 best matches, and says how many were found", async () =
   expect(search.mock.calls[0][2]).toBe(50); // at most 50
 });
 
-it("shows up to 8 films from 70% in front, with why, and the films from 50% in the running row below", async () => {
+it("shows up to 6 films from 70% in front, with why, and the films from 50% in the running row below", async () => {
   const percents = [95, 88, 81, 77, 72, 69, 66, 61, 58, 50];
   const items = sampleRanked(10).map((r, i) => ({ ...r, match_percent: percents[i], reasons: i === 0 ? ["dark 95%"] : [] }));
   search.mockResolvedValue({ ok: true, data: { items, total: 39, hidden_by_exclusion: 0, extended_used: false } });
@@ -195,13 +195,13 @@ it("shows up to 8 films from 70% in front, with why, and the films from 50% in t
   expect(new Set([...more].map((c) => c.getAttribute("aria-label"))).size).toBe(5);
 });
 
-it("never more than 8 in front, the other strong films run in the row below", async () => {
+it("never more than 6 in front, the other strong films run in the row below", async () => {
   const items = sampleRanked(12).map((r) => ({ ...r, match_percent: 85 }));
   search.mockResolvedValue({ ok: true, data: { items, total: 12, hidden_by_exclusion: 0, extended_used: false } });
   const { container } = render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} />);
-  expect(await screen.findByText(/The 8 best matches/)).toBeInTheDocument();
+  expect(await screen.findByText(/The 6 best matches/)).toBeInTheDocument();
   const more = container.querySelectorAll(".results-more-row .related-card");
-  expect(new Set([...more].map((c) => c.getAttribute("aria-label"))).size).toBe(4);
+  expect(new Set([...more].map((c) => c.getAttribute("aria-label"))).size).toBe(6);
 });
 
 it("a weak search still shows its 3 best, and no row below 50% (+ horror lowers every score)", async () => {
@@ -227,23 +227,23 @@ it("the « » arrows page the running row by 30, load the next 50 from the API w
   let resolve: (v: unknown) => void = () => {};
   search.mockImplementationOnce(() => new Promise((r) => (resolve = r)));
   render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} />);
-  expect(await screen.findByText(/The 8 best matches/)).toBeInTheDocument();
+  expect(await screen.findByText(/The 6 best matches/)).toBeInTheDocument();
   expect(screen.getByText("30 more matches from 70%")).toBeInTheDocument(); // many strong films: from 70%
-  expect(screen.getByText(/9–38 of 50\+/)).toBeInTheDocument(); // more may follow from the API
+  expect(screen.getByText(/7–36 of 50\+/)).toBeInTheDocument(); // more may follow from the API
   expect(screen.queryByRole("button", { name: /Next 20|Previous 20/ })).toBeNull(); // no separate page buttons
   expect(screen.getByRole("button", { name: "Previous 30" })).toBeDisabled();
   await userEvent.click(screen.getByRole("button", { name: "Next 30" })); // only 12 loaded behind: load first
   expect(screen.getByRole("progressbar", { name: "Loading results" })).toBeInTheDocument();
   resolve({ ok: true, data: { items: page(50, 50, (i) => (i < 70 ? 72 : 65)), total: 500, hidden_by_exclusion: 0, extended_used: false } });
-  expect(await screen.findByText(/39–68 of 70/)).toBeInTheDocument(); // 70 films from the 70% floor up in all
+  expect(await screen.findByText(/37–66 of 70/)).toBeInTheDocument(); // 70 films from the 70% floor up in all
   expect(search.mock.calls[1][1]).toBe(50); // offset
   await userEvent.click(screen.getByRole("button", { name: "Next 30" }));
-  expect(await screen.findByText(/69–70 of 70/)).toBeInTheDocument();
+  expect(await screen.findByText(/67–70 of 70/)).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Next 30" })).toBeDisabled(); // below the bar: nothing further
   expect(search).toHaveBeenCalledTimes(2);
   await userEvent.click(screen.getByRole("button", { name: "Previous 30" }));
-  expect(await screen.findByText(/39–68 of 70/)).toBeInTheDocument();
-  expect(screen.getByText(/The 8 best matches/)).toBeInTheDocument(); // the best stay in front throughout
+  expect(await screen.findByText(/37–66 of 70/)).toBeInTheDocument();
+  expect(screen.getByText(/The 6 best matches/)).toBeInTheDocument(); // the best stay in front throughout
 });
 
 it("offers no more button when the row already stops at the bar", async () => {
@@ -304,7 +304,9 @@ it("no film has all the moods: it says the films fit one of them, and explains h
   const criteria = { ...emptyCriteria(), person: "Tom Cruise", tags: [{ idx: 1, weight: 8, mode: "prefer" as const }, { idx: 2, weight: 10, mode: "prefer" as const }] };
   render(<ResultList criteria={criteria} onOpen={() => {}} tagNames={{ 1: "space travel", 2: "funny" }} />);
   expect(await screen.findByText("8 films fit one of your moods · none has them all")).toBeInTheDocument();
-  const note = screen.getByRole("complementary", { name: "How these results came about" }); // always open
+  expect(screen.queryByRole("complementary")).toBeNull(); // folded until asked
+  await userEvent.click(screen.getByRole("button", { name: /How these results came about/ }));
+  const note = screen.getByRole("complementary", { name: "How these results came about" });
   expect(note).toHaveTextContent("Searched for your moods space travel (★★★★) and funny (★★★★★), with Tom Cruise.");
   expect(note).toHaveTextContent("these fit at least one (space travel: 1, funny: 7)");
 });

@@ -13,7 +13,7 @@ import type { Movie, RankedMovie } from "@/lib/types";
 // every score, and a gap would then let in more films
 const LIMIT = 50;
 const MIN_SHOWN = 3;
-const BEST_MAX = 8;
+const BEST_MAX = 6;
 const BEST_PERCENT = 70;
 const MORE_FLOORS = [70, 60, 50]; // the row below starts at the highest of these that still holds about MORE_MAX films
 const MORE_PERCENT = 50; // the lowest floor: with no film from it, the films that fit one of the moods (one_mood)
@@ -48,7 +48,7 @@ export function explainLines(criteria: Criteria, names: Record<number, string>, 
   const out = [
     `Searched for ${wish}.`,
     "Match %: fit to this search, moods first (MovieLens Tag Genome), then plot, people, 👍/👎, rating and fame. Not a review score.",
-    `Top: the 8 best from 70% (at least 3). Below: more from ${floor}% (70% with many strong films, else 60 or 50%).`,
+    `Top: the 6 best from 70% (at least 3). Below: more from ${floor}% (70% with many strong films, else 60 or 50%).`,
   ];
   if (oneMood)
     out.push(
@@ -79,6 +79,7 @@ export function countText(good: number, more: boolean, floor: number, total: num
 }
 
 export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened, tagNames = {} }: Props) {
+  const [explain, setExplain] = useState(false);
   const [oneMood, setOneMood] = useState<{ key: string; parts: OneMood | null }>({ key: "", parts: null });
   const [items, setItems] = useState<RankedMovie[]>([]);
   const [total, setTotal] = useState<number | null>(null);
@@ -245,14 +246,18 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened,
           {note}
           {widen}
         </div>
-        <aside className="results-explain" aria-label="How these results came about">
-          <h3 className="results-explain__title">ⓘ How these results came about</h3>
-          <ul>
-            {explainLines(criteria, tagNames, floor, parts).map((l) => (
-              <li key={l}>{l}</li>
-            ))}
-          </ul>
-        </aside>
+        <button type="button" className="results-explain-btn" aria-expanded={explain} onClick={() => setExplain((v) => !v)}>
+          ⓘ How these results came about
+        </button>
+        {explain && (
+          <aside className="results-explain" aria-label="How these results came about">
+            <ul>
+              {explainLines(criteria, tagNames, floor, parts).map((l) => (
+                <li key={l}>{l}</li>
+              ))}
+            </ul>
+          </aside>
+        )}
       </div>
       <div className="results-count-line">
         <p className="related-count results-count">
