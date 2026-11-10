@@ -79,6 +79,14 @@ class ToolKit:
         return {"criteria": c.model_dump(), "criteria_changed": True}, msg
 
     def set_filters(self, state: dict, filters: dict) -> tuple[dict, str]:
+        """Hard filters, including the people whose films drop out ("without Stallone")."""
+        people = filters.get("exclude_people")
+        clear_people = "exclude_people" in (filters.get("clear") or [])
+        if people is not None or clear_people:
+            upd, people_msg = self.exclude_people(state, people or [], replace=clear_people)
+            state = {**state, **upd}
+        else:
+            people_msg = ""
         c = self._criteria(state).model_dump()
         lists = ("exclude_genres", "streaming_services")
         for field in filters.get("clear") or []:
@@ -103,6 +111,8 @@ class ToolKit:
         msg = f"Filters now: {shown or 'none'}."
         if unknown:
             msg += f" Unknown streaming services (not filtered): {', '.join(unknown)}."
+        if people_msg:
+            msg += f" {people_msg}"
         return {"criteria": c, "criteria_changed": True}, msg
 
     def search_plot(self, state: dict, query: str) -> tuple[dict, str]:
@@ -229,6 +239,18 @@ class ToolKit:
             return {}, f"Option '{option_id}' is not available."
         return widening.applied_update(state, opt), f"Search widened: {opt.label}."
 
+    def find(self, state: dict, kind: str, name: str, role: str = "any") -> tuple[dict, str]:
+        """A film (kind 'title') or a person (kind 'person') the user names."""
+        return self.find_title(state, name) if kind == "title" else self.find_person(state, name, role)
+
+    def film_info(self, state: dict, title: str, streaming: bool = False) -> tuple[dict, str]:
+        """Facts about one film; with `streaming` also where it streams in Germany (budgeted per turn)."""
+        upd, facts = self.film_facts(state, title)
+        if not streaming:
+            return upd, facts
+        upd2, where = self.check_streaming(state, title)
+        return {**upd, **upd2}, f"{facts}\n{where}"
+
     def show_on_stage(self, state: dict, title: str) -> tuple[dict, str]:
         film = self._find_film(title)
         if film is None:
@@ -238,8 +260,17 @@ class ToolKit:
 
 
 def make_tools(kit: ToolKit) -> list:
+    """The ten tools the model can call each turn (finding titles and people, filters and excluded people, facts and
+    streaming are one tool each: fewer, clearer choices)."""
+
     def wrap(update: dict, msg: str, call_id: str) -> Command:
         return Command(update={**update, "messages": [ToolMessage(msg, tool_call_id=call_id)]})
+
+    @tool
+    def new_search(state: Annotated[dict, InjectedState], tool_call_id: Annotated[str, InjectedToolCallId]) -> Command:
+        """Clear every criterion (moods, person, title, filters, exclusions) before a new wish that does not build on
+        the current search. Call it first, then set the new wish's criteria."""
+        return wrap(*kit.new_search(state), tool_call_id)
 
     @tool
     def set_mood_tags(
@@ -266,13 +297,15 @@ def make_tools(kit: ToolKit) -> list:
         year_to: int | None = None,
         original_language: str | None = None,
         exclude_genres: list[str] | None = None,
+        exclude_people: list[str] | None = None,
         min_rating: float | None = None,
         clear: list[str] | None = None,
     ) -> Command:
         """Set hard filters: availability in Germany ('stream' = flat rate or free, never rent/buy), streaming
         services the user names (e.g. ['Prime Video', 'Netflix']; implies 'stream'), max runtime (minutes), kind,
-        year range, ISO 639-1 original language (e.g. 'en'), excluded MovieLens genres (e.g. ['Horror']), minimum
-        MovieLens rating 0-5 ('highly rated' 3.7, 'top rated' 3.9). 'clear' resets named filters."""
+        year range, ISO 639-1 original language (e.g. 'en'), excluded MovieLens genres (e.g. ['Horror']), people
+        whose films drop out ("without Stallone" -> exclude_people ['Stallone'], typos are fine), minimum MovieLens
+        rating 0-5 ('highly rated' 3.7, 'top rated' 3.9). 'clear' resets named filters (also 'exclude_people')."""
         filters = {k: v for k, v in locals().items() if k not in ("state", "tool_call_id")}
         return wrap(*kit.set_filters(state, filters), tool_call_id)
 
@@ -285,39 +318,17 @@ def make_tools(kit: ToolKit) -> list:
         return wrap(*kit.search_plot(state, query), tool_call_id)
 
     @tool
-    def new_search(state: Annotated[dict, InjectedState], tool_call_id: Annotated[str, InjectedToolCallId]) -> Command:
-        """Clear every criterion (moods, person, title, filters, exclusions) before a new wish that does not build on
-        the current search. Call it first, then set the new wish's criteria."""
-        return wrap(*kit.new_search(state), tool_call_id)
-
-    @tool
-    def exclude_people(
-        names: list[str],
-        state: Annotated[dict, InjectedState],
-        tool_call_id: Annotated[str, InjectedToolCallId],
-        replace: bool = False,
-    ) -> Command:
-        """Exclude actors or directors: their films drop out ("without Stallone"). Typos are fine. replace=true
-        sets the list to exactly these names (an empty list clears it)."""
-        return wrap(*kit.exclude_people(state, names, replace), tool_call_id)
-
-    @tool
-    def find_title(
-        title: str, state: Annotated[dict, InjectedState], tool_call_id: Annotated[str, InjectedToolCallId]
-    ) -> Command:
-        """Find a film the user names (typo-tolerant), also films outside the catalogue, which are looked up live,
-        e.g. 'Winnetou'. Sets the title as a search criterion."""
-        return wrap(*kit.find_title(state, title), tool_call_id)
-
-    @tool
-    def find_person(
+    def find(
+        kind: Literal["title", "person"],
         name: str,
         state: Annotated[dict, InjectedState],
         tool_call_id: Annotated[str, InjectedToolCallId],
         role: Literal["cast", "director", "any"] = "any",
     ) -> Command:
-        """Restrict to films with an actor or director (typo-tolerant)."""
-        return wrap(*kit.find_person(state, name, role), tool_call_id)
+        """Find what the user names and search by it (typo-tolerant). kind 'title': a film or series ('Winnetou',
+        'show me Inception'; films outside the catalogue are looked up live). kind 'person': restrict to films with
+        an actor or director (role 'cast' or 'director' when the user says which)."""
+        return wrap(*kit.find(state, kind, name, role), tool_call_id)
 
     @tool
     def similar_to(
@@ -327,18 +338,15 @@ def make_tools(kit: ToolKit) -> list:
         return wrap(*kit.similar_to(state, title), tool_call_id)
 
     @tool
-    def check_streaming(
-        title: str, state: Annotated[dict, InjectedState], tool_call_id: Annotated[str, InjectedToolCallId]
+    def film_info(
+        title: str,
+        state: Annotated[dict, InjectedState],
+        tool_call_id: Annotated[str, InjectedToolCallId],
+        streaming: bool = False,
     ) -> Command:
-        """Check where one film streams in Germany (max 3 per turn)."""
-        return wrap(*kit.check_streaming(state, title), tool_call_id)
-
-    @tool
-    def film_facts(
-        title: str, state: Annotated[dict, InjectedState], tool_call_id: Annotated[str, InjectedToolCallId]
-    ) -> Command:
-        """Facts about one film from the catalogue (year, runtime, people, rating, mood, plot)."""
-        return wrap(*kit.film_facts(state, title), tool_call_id)
+        """Facts about one film from the catalogue (year, runtime, people, rating, mood, plot). streaming=true also
+        checks where it streams in Germany (max 3 per turn): only when the user asks where to watch it."""
+        return wrap(*kit.film_info(state, title, streaming), tool_call_id)
 
     @tool
     def propose_exclusions(
@@ -369,12 +377,9 @@ def make_tools(kit: ToolKit) -> list:
         set_mood_tags,
         set_filters,
         search_plot,
-        find_title,
-        find_person,
-        exclude_people,
+        find,
         similar_to,
-        check_streaming,
-        film_facts,
+        film_info,
         propose_exclusions,
         show_on_stage,
         relax_search,

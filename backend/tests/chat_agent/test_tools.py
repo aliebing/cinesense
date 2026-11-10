@@ -119,10 +119,13 @@ def test_find_title_without_matches_says_so(kit):
     assert upd == {} and "no film" in msg.lower()
 
 
-def test_the_agent_gets_the_find_title_tool(kit):
+def test_the_agent_gets_ten_tools(kit):
     from cinesense.chat_agent.tools import make_tools
 
-    assert "find_title" in [t.name for t in make_tools(kit)]
+    names = [t.name for t in make_tools(kit)]
+    assert len(names) == 10 and "find" in names
+    for gone in ("find_title", "find_person", "exclude_people", "check_streaming", "film_facts"):
+        assert gone not in names  # merged into find, set_filters and film_info
 
 
 def test_a_live_hit_never_lowers_a_better_catalogue_title_match():
@@ -217,3 +220,25 @@ def test_set_filters_streaming_services_normalises_and_implies_streaming(kit):
     assert "Foo TV" in msg
     upd, _ = kit.set_filters(state(criteria=c), {"clear": ["streaming_services"]})
     assert upd["criteria"]["streaming_services"] == []
+
+
+def test_find_looks_up_a_title_or_a_person(kit):
+    upd, msg = kit.find(state(), "person", "keanu reevs")
+    assert upd["criteria"]["person"] == "Keanu Reeves"
+    upd, msg = kit.find(state(), "title", "the matrix")
+    assert upd["criteria"]["title"] == "the matrix" and "The Matrix" in msg
+
+
+def test_set_filters_also_excludes_people(kit):
+    upd, msg = kit.set_filters(state(), {"exclude_people": ["keanu reevs"], "max_runtime_min": 120})
+    assert upd["criteria"]["exclude_people"] == ["Keanu Reeves"] and upd["criteria"]["max_runtime_min"] == 120
+    assert "Keanu Reeves" in msg
+    upd2, _ = kit.set_filters({**state(), "criteria": upd["criteria"]}, {"clear": ["exclude_people"]})
+    assert upd2["criteria"]["exclude_people"] == [] and upd2["criteria"]["max_runtime_min"] == 120
+
+
+def test_film_info_checks_streaming_only_when_asked(kit):
+    upd, msg = kit.film_info(state(), "the matrix")
+    assert "The Matrix (1999)" in msg and kit.streaming.calls == 0
+    upd, msg = kit.film_info(state(), "the matrix", streaming=True)
+    assert "subscription on Netflix" in msg and upd["streaming_checks"] == 1

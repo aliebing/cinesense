@@ -24,3 +24,4 @@ class AgentState(TypedDict, total=False):
     relaxed: list[str]  # labels of the relaxations applied this turn, in order
     original_criteria: dict | None  # the criteria before the first relaxation (to mark what results miss)
     mood_gaps: dict  # {missing: [...], split: [...]}: wanted moods the presented films miss or never combine
+    one_mood: list[dict] | None  # {tag, count}: no film carried every mood, the results fit one each

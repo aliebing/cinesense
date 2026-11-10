@@ -171,15 +171,27 @@ def build_graph(llm, explain_llm, tools: list, service, provider, checkpointer):
                 ToolMessage("Not run: tool limit reached.", tool_call_id=c["id"]) for c in last.tool_calls
             ]
         try:
-            result = service.run(SearchCriteria(**(state.get("criteria") or {})), 0, RESULTS, **_profile_kw(state))
+            c = SearchCriteria(**(state.get("criteria") or {}))
+            update["one_mood"] = None
+            result = service.run(c, 0, RESULTS, **_profile_kw(state))
+            items = result.items
             if state.get("original_criteria"):
-                widening.mark_misses(result.items, SearchCriteria(**state["original_criteria"]), provider)
-            update["results"] = [r.model_dump(mode="json") for r in result.items]
+                widening.mark_misses(items, SearchCriteria(**state["original_criteria"]), provider)
+            elif items and all(r.match_percent < widening.STRONG_PERCENT for r in items):
+                # like the search page: no film carries every mood, so the films that fit at least one of them
+                found = widening.one_mood_at_a_time(
+                    lambda one: service.run(one, 0, 50, **_profile_kw(state)).items, c, provider.list_tags()
+                )
+                if found is not None:
+                    items = found[0][:RESULTS]
+                    widening.mark_misses(items, c, provider, c.model_copy(update={"tags": []}))
+                    update["one_mood"] = [{"tag": p.tag, "count": p.count} for p in found[1]]
+            update["results"] = [r.model_dump(mode="json") for r in items]
         except Exception:  # noqa: BLE001 — keep the history valid; explain answers with "no films"
             log.exception("present: search failed")
             update["results"] = []
             return update
-        update["mood_gaps"] = _mood_gaps(result.items[: pick_count(update["results"])], state)
+        update["mood_gaps"] = _mood_gaps(items[: pick_count(update["results"])], state)
         return update
 
     def _mood_gaps(top: list, state: AgentState) -> dict:
@@ -259,6 +271,10 @@ def build_graph(llm, explain_llm, tools: list, service, provider, checkpointer):
             prompt += f"\nNot met by the top films: {', '.join(gaps['missing'])}"
         if gaps.get("split"):
             prompt += f"\nNo top film combines: {', '.join(gaps['split'])}"
+        if state.get("one_mood"):
+            parts = ", ".join(f"{p['tag']} ({p['count']})" for p in state["one_mood"])
+            prompt += "\nEach fits one mood: no film carries all the moods together; shown are films that fit one: "
+            prompt += parts
         usage = state.get("usage") or {}
         system = SystemMessage(EXPLAIN_PROMPT.format(picks=pick_count(results)))
         prompts = {**(state.get("prompts") or {}), "explain": str(system.content), "explain_input": prompt}
@@ -309,13 +325,10 @@ TOOL_STATUS = {
     "set_mood_tags": "Setting mood tags…",
     "set_filters": "Applying filters…",
     "search_plot": "Searching plots…",
-    "find_title": "Looking up the title…",
-    "find_person": "Looking up people…",
+    "find": "Looking it up…",
     "similar_to": "Finding similar moods…",
-    "exclude_people": "Leaving people out…",
     "new_search": "Starting a new search…",
-    "check_streaming": "Checking streaming in Germany…",
-    "film_facts": "Reading film facts…",
+    "film_info": "Reading film facts…",
     "propose_exclusions": "Suggesting exclusions…",
     "show_on_stage": "Preparing the stage…",
     "relax_search": "Widening the search…",
@@ -351,6 +364,7 @@ def run_turn(
         "prompts": {},
         "profile": profile.model_dump() if profile is not None else None,
         "relax_rounds": 0,
+        "one_mood": None,
         "relax_options": [],
         "relaxed": [],
         "original_criteria": None,

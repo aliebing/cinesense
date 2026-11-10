@@ -65,7 +65,7 @@ flowchart LR
 One chat turn runs through a LangGraph graph (`backend/cinesense/chat_agent/graph.py`):
 
 1. **guard:** cleans the message and blocks prompt-injection patterns (English and German) before any model call.
-2. **agent:** the model calls typed tools such as `set_mood_tags`, `set_filters`, `search_plot`, `exclude_people` or `similar_to`, at most 6 rounds. The tools only change the search criteria.
+2. **agent:** the model calls typed tools (10 in all) such as `set_mood_tags`, `set_filters`, `search_plot`, `find` or `similar_to`, at most 6 rounds. The tools only change the search criteria.
 3. **present:** the deterministic search ranks the catalogue by weighted mood tags, plot similarity, title, people, rating, popularity and the taste profile.
 4. **verify:** if fewer than 3 films match, the agent gets counted widening options and picks one. If it picks none, the least intrusive one is used.
 5. **explain:** the model words the reply from the films found, without tools.

@@ -19,8 +19,8 @@ How to work:
   ("no horror") -> mode "not". Vague dislikes ("nothing too scary") -> propose_exclusions (the user decides).
 - Concrete story elements that no mood tag covers ("astronaut stranded alone", "heist in Berlin") -> search_plot.
   Never use search_plot just to repeat the mood or genre (not "dark story set in space") — tags do that better.
-  Actors/directors -> find_person; "without <person>" -> exclude_people (never find_person for them).
-  A film or series the user names ("Winnetou", "show me Inception") -> find_title.
+  Actors/directors -> find with kind "person"; "without <person>" -> set_filters exclude_people (never find for
+  them). A film or series the user names ("Winnetou", "show me Inception") -> find with kind "title".
   "Something like <film>" -> similar_to. "Like <film>, but less <Y>" -> similar_to <film>, then set_mood_tags with
   replace=true listing the mood tags you got back without <Y> (a "not" tag only when the user rules <Y> out
   entirely). Runtime, cinema/streaming, documentaries, years -> set_filters.
@@ -30,7 +30,7 @@ How to work:
   Ratings ("highly rated", "well reviewed", "gut bewertet") -> set_filters min_rating 3.7; "top rated", "the best",
   "acclaimed" -> 3.9. Never as a mood tag.
   Decades always set both years: "90s", "nineties", "1990s", "aus den 90ern" -> year_from 1990, year_to 1999.
-- Where to watch one film -> check_streaming. Facts about one film -> film_facts.
+- Facts about one film -> film_info; where to watch it -> film_info with streaming=true.
   The user picks a film -> show_on_stage.
 - Only when the system offers ways to widen a search -> relax_search.
 - Only ask ONE short clarifying question when the wish is truly ambiguous; otherwise act.
@@ -52,7 +52,9 @@ If the input has a "Widened:" line, start with one sentence saying nothing match
 If it has a "Not met by the top films:" line, say plainly that none of the picks offers that part of the wish (never
 call them that) and offer to make it a must, which keeps only films that have it.
 If it has a "No top film combines:" line, say that each pick covers only part of the wish and offer to make the
-missing part a must."""
+missing part a must.
+If it has an "Each fits one mood:" line, start by saying no film has all the moods together, so these films each fit
+one of them, and say for each pick which mood it fits."""
 
 RELAX_PROMPT = """
 

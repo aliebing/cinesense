@@ -69,7 +69,7 @@ def _all_calls_answered(g, thread):
 
 
 def test_round_limit_with_read_only_tools_closes_all_calls(make_agent):
-    looping = [ai(calls=[("film_facts", {"title": f"Alien {i}"})]) for i in range(10)]
+    looping = [ai(calls=[("film_info", {"title": f"Alien {i}"})]) for i in range(10)]
     g = make_agent(looping)
     out = run_turn(g, "t8", "tell me about Alien and where I can watch it", empty())
     assert out["rounds"] == 6 and out["reply"].strip()
@@ -77,7 +77,7 @@ def test_round_limit_with_read_only_tools_closes_all_calls(make_agent):
 
 
 def test_factual_answer_is_not_replaced_by_results(make_agent):
-    g = make_agent([ai(calls=[("film_facts", {"title": "The Matrix"})]), ai("The Matrix is from 1999.")])
+    g = make_agent([ai(calls=[("film_info", {"title": "The Matrix"})]), ai("The Matrix is from 1999.")])
     out = run_turn(g, "t9", "Tell me more about the movie The Matrix", empty())
     assert out["reply"] == "The Matrix is from 1999." and out["results"] == []
 
@@ -166,7 +166,7 @@ def test_the_explanation_may_name_a_film_by_its_german_title():
     p = FixtureProvider()
     p.upsert_live([Movie(id="imdb-tt0057687", title="Apache Gold", title_de="Winnetou 1. Teil", year=1963)])
     service = SearchService(p)
-    agent = FakeToolLLM(messages=iter([ai(calls=[("find_title", {"title": "Winnetou"})]), ai("Done.")]))
+    agent = FakeToolLLM(messages=iter([ai(calls=[("find", {"kind": "title", "name": "Winnetou"})]), ai("Done.")]))
     explain = FakeToolLLM(messages=iter([AIMessage("**Winnetou 1. Teil** (1963) — the first part of the trilogy.")]))
     g = build_graph(agent, explain, make_tools(ToolKit(service, p, None)), service, p, MemorySaver())
     out = run_turn(g, "t-de", "Winnetou", empty())
@@ -186,3 +186,26 @@ def test_highly_rated_is_a_filter_in_the_explain_criteria(make_agent):
     out = run_turn(g, "t-rated", "highly rated films", empty())
     assert out["criteria"]["min_rating"] == 4.1
     assert "min_rating: 4.1" in out["prompts"]["explain_input"]
+
+
+def test_like_the_search_page_no_film_with_every_mood_shows_the_films_that_fit_one(make_agent, monkeypatch):
+    from types import SimpleNamespace
+
+    from cinesense.search import widening
+
+    calls = []
+
+    def one_mood(run, c, names):
+        calls.append([t.idx for t in c.tags])
+        film = run(c.model_copy(update={"tags": c.tags[:1]}))[0]  # the real search, one mood
+        return [film], [SimpleNamespace(tag="funny", count=1), SimpleNamespace(tag="dark", count=0)]
+
+    monkeypatch.setattr(widening, "one_mood_at_a_time", one_mood)
+    tags = [{"name": "funny", "weight": 8}, {"name": "dark", "weight": 8}]
+    calls_ = [("find", {"kind": "person", "name": "Keanu Reeves"}), ("set_mood_tags", {"tags": tags})]
+    g = make_agent([ai(calls=calls_), ai("Done.")])
+    out = run_turn(g, "t-one-mood", "keanu reeves, funny and dark", empty())
+    assert calls  # the fixture's films stay below 50% with both moods
+    assert len(out["results"]) == 1
+    assert "Each fits one mood: no film carries all the moods together" in out["prompts"]["explain_input"]
+    assert "funny (1), dark (0)" in out["prompts"]["explain_input"]
