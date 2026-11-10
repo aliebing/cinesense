@@ -186,26 +186,3 @@ def test_highly_rated_is_a_filter_in_the_explain_criteria(make_agent):
     out = run_turn(g, "t-rated", "highly rated films", empty())
     assert out["criteria"]["min_rating"] == 4.1
     assert "min_rating: 4.1" in out["prompts"]["explain_input"]
-
-
-def test_like_the_search_page_no_film_with_every_mood_shows_the_films_that_fit_one(make_agent, monkeypatch):
-    from types import SimpleNamespace
-
-    from cinesense.search import widening
-
-    calls = []
-
-    def one_mood(run, c, names):
-        calls.append([t.idx for t in c.tags])
-        film = run(c.model_copy(update={"tags": c.tags[:1]}))[0]  # the real search, one mood
-        return [film], [SimpleNamespace(tag="funny", count=1), SimpleNamespace(tag="dark", count=0)]
-
-    monkeypatch.setattr(widening, "one_mood_at_a_time", one_mood)
-    tags = [{"name": "funny", "weight": 8}, {"name": "dark", "weight": 8}]
-    calls_ = [("find", {"kind": "person", "name": "Keanu Reeves"}), ("set_mood_tags", {"tags": tags})]
-    g = make_agent([ai(calls=calls_), ai("Done.")])
-    out = run_turn(g, "t-one-mood", "keanu reeves, funny and dark", empty())
-    assert calls  # the fixture's films stay below 50% with both moods
-    assert len(out["results"]) == 1
-    assert "Each fits one mood: no film carries all the moods together" in out["prompts"]["explain_input"]
-    assert "funny (1), dark (0)" in out["prompts"]["explain_input"]

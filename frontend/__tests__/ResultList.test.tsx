@@ -279,26 +279,25 @@ it("the row below starts higher when there are many strong films", async () => {
   expect(moreFloor([...Array(10).fill(65), ...Array(10).fill(55)])).toBe(50);
 });
 
-it("no film has all the moods: it says the films fit one of them, and explains how on demand", async () => {
-  const items = sampleRanked(8).map((r, i) => ({ ...r, match_percent: 85 - i * 4 }));
-  search.mockResolvedValue({
-    ok: true,
-    data: { items, total: 8, hidden_by_exclusion: 0, extended_used: false, one_mood: [{ tag: "space travel", count: 1 }, { tag: "funny", count: 7 }] },
-  });
-  const criteria = { ...emptyCriteria(), person: "Tom Cruise", tags: [{ idx: 1, weight: 8, mode: "prefer" as const }, { idx: 2, weight: 10, mode: "prefer" as const }] };
-  render(<ResultList criteria={criteria} onOpen={() => {}} tagNames={{ 1: "space travel", 2: "funny" }} />);
-  expect(await screen.findByText("8 films fit one of your moods · none has them all")).toBeInTheDocument();
-  expect(screen.queryByRole("complementary")).toBeNull(); // folded until asked
-  await userEvent.click(screen.getByRole("button", { name: /How these results came about/ }));
-  const note = screen.getByRole("complementary", { name: "How these results came about" });
-  expect(note).toHaveTextContent("Searched for your moods space travel (★★★★) and funny (★★★★★), with Tom Cruise.");
-  expect(note).toHaveTextContent("these fit at least one (space travel: 1, funny: 7)");
-});
-
 it("counts the good matches, with every film searched after them", async () => {
   const { countText } = await import("@/components/results/ResultList");
   expect(countText(31, false, 70, 20668, false, 8)).toBe("31 good matches from 70% · 20,668 films searched");
   expect(countText(50, true, 60, 500, true, 8)).toBe("50+ good matches from 60% · 500+ films searched");
   expect(countText(3, false, 50, 3, false, 3)).toBe("3 films found"); // all of them match well
   expect(countText(0, false, 50, 50, false, 3)).toBe("No film matches well · the 3 closest of 50 films searched");
+});
+
+it("few strong films: the 3 best in front, then weaker ones below, and the explanation says so on demand", async () => {
+  const items = sampleRanked(12).map((r, i) => ({ ...r, match_percent: [69, 39, 35, 33, 31, 30, 28, 26, 24, 22, 21, 15][i] }));
+  search.mockResolvedValue({ ok: true, data: { items, total: 50, hidden_by_exclusion: 0, extended_used: false } });
+  const criteria = { ...emptyCriteria(), person: "Tom Cruise", tags: [{ idx: 1, weight: 8, mode: "prefer" as const }] };
+  const { container } = render(<ResultList criteria={criteria} onOpen={() => {}} tagNames={{ 1: "space travel" }} />);
+  expect(await screen.findByText(/The 3 best matches/)).toBeInTheDocument();
+  expect(container.querySelectorAll(".best .related-card")).toHaveLength(3);
+  expect(screen.getByText("8 weaker matches (below 50%)")).toBeInTheDocument(); // down to 20%, the 15% one stays out
+  expect(screen.queryByRole("complementary")).toBeNull(); // folded until asked
+  await userEvent.click(screen.getByRole("button", { name: /How these results came about/ }));
+  const note = screen.getByRole("complementary", { name: "How these results came about" });
+  expect(note).toHaveTextContent("Searched for your moods space travel (★★★★), with Tom Cruise.");
+  expect(note).toHaveTextContent("the row below goes on with weaker ones");
 });

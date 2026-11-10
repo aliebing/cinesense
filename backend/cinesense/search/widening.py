@@ -15,7 +15,6 @@ from cinesense.search.rating import DEFAULT_PRIOR_MEAN, catalogue_rating
 log = logging.getLogger(__name__)
 
 MIN_RESULTS = 3  # fewer films than this and the search is widened
-STRONG_PERCENT = 50  # no film from this match on with every mood: show the films that fit one (one_mood_at_a_time)
 MAX_OPTIONS = 8
 RUNTIME_STEP, RUNTIME_MAX = 30, 400
 YEAR_STEP = 10
@@ -93,41 +92,6 @@ def probe(service, c: SearchCriteria, tag_names: list[str], current: int) -> lis
         if opt.count > current:
             kept.append(opt)
     return kept
-
-
-@dataclass
-class MoodPart:
-    tag: str
-    count: int  # films with this mood (and everything else wished for) from STRONG_PERCENT on
-
-
-def one_mood_at_a_time(run, c: SearchCriteria, tag_names: list[str]) -> tuple[list, list[MoodPart]] | None:
-    """A search where no film reaches STRONG_PERCENT with every mood at once: the films that fit at least one of
-    them. `run(criteria)` ranks one search; it runs once per wanted mood with the others left out (person, title,
-    years and the hard limits always stay), keeps each run's films from STRONG_PERCENT on and merges them, a film
-    found twice with its better match. None with fewer than two wanted moods, or when no single mood finds any."""
-    wanted = [t for t in c.tags if t.mode != "not"]
-    if len(wanted) < 2:
-        return None
-    merged: dict[str, object] = {}
-    parts: list[MoodPart] = []
-    for t in wanted:
-        only = c.model_copy(update={"tags": [x for x in c.tags if x.mode == "not" or x.idx == t.idx]}, deep=True)
-        try:
-            items = run(only)
-        except Exception as exc:  # noqa: BLE001 — a mood we cannot search is left out of the merge
-            log.warning("one-mood search %s failed: %s", t.idx, exc)
-            continue
-        strong = [r for r in items if r.match_percent >= STRONG_PERCENT]
-        parts.append(MoodPart(_name(tag_names, t.idx), len(strong)))
-        for r in strong:
-            known = merged.get(r.movie.id)
-            if known is None or r.score > known.score:
-                merged[r.movie.id] = r
-    if not merged:
-        return None
-    items = sorted(merged.values(), key=lambda r: (r.score, r.movie.ml_rating_count), reverse=True)
-    return items, parts
 
 
 def pick_auto(options: list[Relaxation]) -> Relaxation | None:

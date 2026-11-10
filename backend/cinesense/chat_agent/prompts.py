@@ -52,9 +52,7 @@ If the input has a "Widened:" line, start with one sentence saying nothing match
 If it has a "Not met by the top films:" line, say plainly that none of the picks offers that part of the wish (never
 call them that) and offer to make it a must, which keeps only films that have it.
 If it has a "No top film combines:" line, say that each pick covers only part of the wish and offer to make the
-missing part a must.
-If it has an "Each fits one mood:" line, start by saying no film has all the moods together, so these films each fit
-one of them, and say for each pick which mood it fits."""
+missing part a must."""
 
 RELAX_PROMPT = """
 
