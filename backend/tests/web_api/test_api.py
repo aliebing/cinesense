@@ -82,6 +82,16 @@ def test_home_rows_per_world():
     assert data["titles"] and all(isinstance(t, str) for t in data["titles"])
 
 
+def test_home_rows_lead_with_the_best_rated_films_of_each_world():
+    from cinesense.data_sources.fixture import FixtureProvider
+    from cinesense.search.rating import catalogue_rating
+
+    rating = {m.id: catalogue_rating(m.ml_rating, m.ml_rating_count) for m in FixtureProvider().list_movies()}
+    for films in client().get("/api/home").json()["rows"].values():
+        scores = [rating[f["id"]] for f in films]
+        assert scores[0] == max(scores)  # the row starts with its best-rated film
+
+
 def test_home_tiles_carry_only_what_a_tile_needs():
     film = next(iter(client().get("/api/home").json()["rows"].values()))[0]
     assert {"id", "title", "world_ids", "horizontal_poster_url", "backdrop_url"} <= set(film)

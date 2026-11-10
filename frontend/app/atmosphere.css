@@ -698,3 +698,7 @@
   background: #0d0d14f2; box-shadow: 0 20px 60px #000d; }
 .results-films { display: flex; flex-direction: column; gap: .7cqw; margin-top: 2cqw; }
 .results-page .advanced-search .crit__modes { width: auto; } /* not the mood pills' fixed switch width */
+/* homepage without a search: when the mood changes, the two rows run on and their new films fade in */
+.tile-row-wrap[data-world^="mood-"] .tile-wrap { animation: tileIn .9s ease both; }
+@keyframes tileIn { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .tile-row-wrap[data-world^="mood-"] .tile-wrap { animation: none; } }

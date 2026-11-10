@@ -33,9 +33,9 @@ it("shows the claim and navigates to the genre page when a tile is clicked", asy
   render(<HomePage />);
   expect(screen.getByText("Don't choose a movie.")).toBeInTheDocument();
   expect(screen.getByText("Choose a feeling.")).toBeInTheDocument();
-  const tile = await screen.findAllByRole("button", { name: "Demo-Film 01" });
+  const tile = await screen.findAllByRole("button", { name: "Demo-Film 02" });
   await userEvent.click(tile[0]);
-  expect(push).toHaveBeenCalledWith("/world/action?film=demo-01");
+  expect(push).toHaveBeenCalledWith("/world/suspense?film=demo-02");
 });
 
 it("a search (chat or chips) takes over the rows: its hits first, then the worlds they belong to", async () => {
@@ -97,17 +97,21 @@ it("shows English quick filters without a language chip", async () => {
   expect(screen.queryByText(/Englisch|English/)).toBeNull();
 });
 
-it("top tile row follows the hero world and advances after 12 s", async () => {
+it("shows the films of the mood on screen in two rows running against each other, and follows the hero after 12 s", async () => {
   vi.useFakeTimers({ shouldAdvanceTime: true });
   getHome.mockResolvedValue({ ok: true, data: sampleHome });
   render(<HomePage />);
-  const firstWorld = () => screen.getAllByTestId("tile-row")[0].closest(".tile-row-wrap")!.getAttribute("data-world");
   await screen.findAllByTestId("tile-row");
-  expect(firstWorld()).toBe("suspense");
+  const rowIds = () => [...document.querySelectorAll(".tile-row-wrap")].map((r) => r.getAttribute("data-world"));
+  expect(rowIds()).toEqual(["mood-0", "mood-1"]);
+  expect(screen.getAllByRole("button", { name: "Demo-Film 02" }).length).toBeGreaterThan(0); // suspense
+  expect(screen.queryAllByRole("button", { name: "Demo-Film 01" })).toHaveLength(0); // action: not on show yet
   await act(async () => {
     await vi.advanceTimersByTimeAsync(12100);
   });
-  expect(firstWorld()).toBe("action");
+  expect(rowIds()).toEqual(["mood-0", "mood-1"]); // the same rows run on, only their films change
+  expect(screen.getAllByRole("button", { name: "Demo-Film 01" }).length).toBeGreaterThan(0);
+  expect(screen.queryAllByRole("button", { name: "Demo-Film 02" })).toHaveLength(0);
   vi.useRealTimers();
 });
 
@@ -140,7 +144,7 @@ it("shows where you are: the home page in the breadcrumb", async () => {
 
 it("uses the rows the server already fetched and does not ask again", async () => {
   render(<HomePage initial={sampleHome} />);
-  expect(screen.getAllByRole("button", { name: "Demo-Film 01" }).length).toBeGreaterThan(0); // at once, no waiting
+  expect(screen.getAllByRole("button", { name: "Demo-Film 02" }).length).toBeGreaterThan(0); // at once, no waiting
   await act(async () => {});
   expect(getHome).not.toHaveBeenCalled();
 });

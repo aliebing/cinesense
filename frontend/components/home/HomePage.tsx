@@ -18,9 +18,21 @@ import { getHome, getTags, type ApiResult, type Tag } from "@/lib/api";
 import { currentPicks, useChatLog } from "@/lib/chat";
 import { padRows, useSearchRowsWithStatus } from "@/lib/searchRows";
 import { hasAnyCriteria, useSearchState } from "@/lib/searchState";
-import type { HomeData, HomeTile } from "@/lib/types";
+import type { HomeData, HomeTile, MoodWorld, TileRow } from "@/lib/types";
 import { useActiveTrailer } from "@/lib/useActiveTrailer";
 import { useIsNarrow, useReducedMotion } from "@/lib/useReducedMotion";
+
+/** Without a search: the top-rated films of the mood on screen (the hero world) in `count` rows running against each
+ *  other, its films dealt out in turn. The rows keep their ids when the mood changes, so they run on and only their
+ *  films change (no new rows, no jump). */
+export function moodRows(world: MoodWorld | undefined, data: HomeData | null, count: number): TileRow[] {
+  if (!world || !data) return [];
+  const films = data.rows[world.id] ?? [];
+  return Array.from({ length: count }, (_, r) => ({
+    world: { ...world, id: `mood-${r}` },
+    movies: films.filter((_, i) => i % count === r),
+  })).filter((row) => row.movies.length > 0);
+}
 
 /** The homepage. `initial`: the rows the server already fetched (app/page.tsx); without them the browser asks. */
 export default function HomePage({ initial = null }: { initial?: HomeData | null }) {
@@ -77,7 +89,7 @@ export default function HomePage({ initial = null }: { initial?: HomeData | null
   const { rows: searchRows, loading: searching } = useSearchRowsWithStatus(criteria, worlds, rowCount, picks);
   const worldRows = (n: number) => (data ? visibleWorlds(active, worlds, n).map((w) => ({ world: w, movies: data.rows[w.id] ?? [] })) : []);
   // a search with few hits fills up with world rows: the homepage always shows its full set of rows
-  const rows = searchRows ? padRows(searchRows, worldRows(worlds.length), rowCount) : worldRows(rowCount);
+  const rows = searchRows ? padRows(searchRows, worldRows(worlds.length), rowCount) : moodRows(world, data, narrow ? 1 : 2);
 
   return (
     <CinemaFrame>

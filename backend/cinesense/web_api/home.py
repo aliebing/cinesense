@@ -1,4 +1,4 @@
-"""The homepage rows: the most popular films per mood world, each film in one row only.
+"""The homepage rows: the best-rated of the well-known films per mood world, each film in one row only.
 
 The answer is the same for every visitor, so it is built once and kept for HOME_TTL seconds; a stale copy is
 served while a background thread builds the next one. It carries only what a tile needs (the full film costs
@@ -11,6 +11,7 @@ from collections.abc import Callable
 
 from cinesense.core.models import Movie
 from cinesense.core.worlds import WORLDS
+from cinesense.search.rating import catalogue_rating
 from cinesense.web_api.images import with_images
 
 log = logging.getLogger(__name__)
@@ -45,8 +46,9 @@ def build_home(provider, streaming, checker, trailers) -> dict:
         in_world = sorted((m for m in movies if w.id in m.world_ids), key=lambda m: m.ml_rating_count, reverse=True)
         pool = [m.model_copy(deep=True) for m in in_world[: ROW_SIZE * 4]]
         row_trailers(pool, checker, trailers)
-        # popular films with a playable trailer first, so hovering a tile usually plays something
-        pools[w.id] = sorted(pool, key=lambda m: (m.youtube_key is not None, m.ml_rating_count), reverse=True)
+        # the best-rated of the well-known films (Bayesian, so a handful of votes cannot win): the homepage shows
+        # what is top-rated in each mood
+        pools[w.id] = sorted(pool, key=lambda m: catalogue_rating(m.ml_rating, m.ml_rating_count), reverse=True)
     rows: dict[str, list[Movie]] = {w.id: [] for w in WORLDS}
     used: set[str] = set()  # each film in one row only; worlds take turns so none is starved
     for _ in range(ROW_SIZE):
