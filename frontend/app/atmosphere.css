@@ -355,7 +355,7 @@
 .hover-trailer__player { position: absolute; inset: 0; z-index: 3; background: #000; border-radius: inherit; overflow: hidden;
   opacity: 0; transition: opacity .35s; pointer-events: none; }
 /* invisible until YouTube reports playback: no black box, no "video unavailable" screen */
-.hover-trailer__player.is-playing { opacity: 1; pointer-events: auto; }
+.hover-trailer__player.is-playing { opacity: 1; pointer-events: auto; cursor: pointer; }
 .hover-trailer__player iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; pointer-events: none; }
 .hover-trailer__sound, .hover-trailer__play {
   position: absolute; z-index: 4; right: 6px; bottom: 6px; width: 30px; height: 30px; border-radius: 50%;
@@ -501,6 +501,8 @@
 .results-more--back { right: auto; left: calc(-1 * (var(--card-w) + var(--card-gap))); }
 /* the matches run in one row at the bottom, like "Also fits your mood" on the genre page */
 .results-page .related { position: relative; inset: auto; } /* relative: room for the arrow */
+/* detail page: the row ends a card's width earlier, so its » stays on the stage */
+@media (min-width: 760px) { .related.has-arrows:not(.results-page .related) { right: calc(var(--safe-x) + var(--card-w)); } }
 /* centred, with two cards' room on either side (not across the whole screen) */
 /* on a phone there is no room beside the row: the arrow sits over its right end */
 @media (max-width: 759px) {
@@ -668,7 +670,10 @@
 .results-page .crit__modes { margin-top: 0; width: 13em; }
 .results-page .crit-add { margin-top: 0; padding: .35em 1.2em; }
 .results-page .chip-add { position: relative; }
-.results-page .tag-picker { position: absolute; z-index: 30; left: 0; bottom: 100%; width: 18em; margin: 0 0 .4em; }
+/* the tag picker opens downwards (upwards the stage's top edge cut it off), over the bars and films below */
+.results-page .tag-picker { position: absolute; z-index: 30; left: 0; top: 100%; width: 18em; margin: .4em 0 0; max-height: 22em; overflow-y: auto;
+  box-shadow: 0 20px 60px #000d; }
+.results-page .search-bar:has(.tag-picker) { position: relative; z-index: 30; }
 .search-bar__end { margin-left: auto; }
 .sb-chip__note { font-size: .78em; color: #ffb3b3; }
 .sb-chip__note.is-idle { color: var(--muted); font-style: italic; }
@@ -685,13 +690,31 @@
 /* no jumping: a trailer in the running row plays inside its poster instead of widening the card and pushing the
    others aside, and the gap already leaves room for the hover zoom */
 .results-more-row { --card-gap: calc(var(--card-w) * .14); }
-.results-more-row .related-wrap:has(.hover-trailer__player.is-playing) { transform: scale(var(--card-hover-scale)); }
+.results-more-row .related-wrap:has(.hover-trailer__player.is-playing) { transform: none; }
 .results-more-row .related-wrap:has(.hover-trailer__player.is-playing) .related-card { width: var(--card-w); }
-.results-more-row .related-wrap:has(.hover-trailer__player.is-playing) .hover-trailer__player iframe { left: 50%; width: calc(100% * 1.5 * 16 / 9); transform: translateX(-50%); }
-.results-adv { position: relative; z-index: 20; text-align: right; margin-top: -.2cqw; }
-/* a panel over the films, right under its button, so opening it moves nothing */
-.results-adv .advanced-search { position: absolute; top: calc(100% + .5em); right: 0; width: min(100%, 62em); text-align: left;
+/* the trailer plays wide (16:9 at the card's height) over its neighbours instead of pushing them aside */
+.results-more-row .related-wrap .hover-trailer__player { left: 50%; right: auto; width: calc(var(--card-w) * 1.5 * 16 / 9); transform: translateX(-50%);
+  border-radius: 8px; box-shadow: 0 0 0 var(--glow-width, 3px) var(--gold), 0 20px 60px #000d; }
+.results-more-row .related-wrap .hover-trailer__player iframe { left: 0; width: 100%; transform: none; }
+/* the advanced search as the third bar: one line, the fields named by their placeholders (labels for screen readers);
+   the further options and hints open as a panel below it, over the films, so nothing moves */
+.results-adv { position: relative; z-index: 20; }
+.advanced-search--bar { display: flex; flex-wrap: nowrap; align-items: center; gap: .6em; position: relative; }
+.advanced-search--bar .adv-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.advanced-search--bar label { flex-direction: row; font-size: 1em; color: #fff; }
+.advanced-search--bar .suggest { flex: 1 1 14em; min-width: 0; }
+.advanced-search--bar .adv-year { flex: 0 0 7em; }
+.advanced-search--bar input { width: 100%; padding: .3em .8em; border-radius: 999px; font-size: .92em; }
+.advanced-search--bar .search-bar__title { white-space: nowrap; }
+.advanced-search--bar .advanced-search__buttons { align-items: center; }
+.advanced-search--bar .advanced-search__buttons button { padding: .3em 1em; font-size: .92em; }
+.advanced-search--bar .advanced-search__more-row, .advanced-search--bar .advanced-search__hint {
+  position: absolute; top: calc(100% + .5em); right: 0; padding: .9em 1em; border-radius: 14px; border: 1px solid #ffffff26;
   background: #0d0d14f2; box-shadow: 0 20px 60px #000d; }
+.advanced-search--bar .advanced-search__hint { left: 0; right: auto; }
+.advanced-search--bar .advanced-search__more-row label, .advanced-search--bar .advanced-search__more-row .adv-field { font-size: .9em; color: var(--muted); }
+.advanced-search--bar .advanced-search__more-row .adv-field { flex-direction: row; align-items: center; gap: .6em; }
+.advanced-search--bar .advanced-search__more-row .adv-label { position: static; width: auto; height: auto; clip-path: none; }
 .results-films { display: flex; flex-direction: column; gap: .7cqw; margin-top: 2cqw; }
 .results-page .advanced-search .crit__modes { width: auto; } /* not the mood pills' fixed switch width */
 /* homepage without a search: when the mood changes, the two rows run on and their new films fade in */

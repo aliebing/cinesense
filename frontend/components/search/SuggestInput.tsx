@@ -41,7 +41,7 @@ export default function SuggestInput({ id, label, placeholder, value, onType, on
   const items = wanted && found.q === q ? found.items : [];
   return (
     <label className="suggest">
-      {label}
+      <span className="adv-label">{label}</span>
       <input
         id={id}
         value={value}

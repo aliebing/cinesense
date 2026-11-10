@@ -57,7 +57,11 @@ export default function HoverTrailer({ movie, children, className = "" }: { movi
     >
       {children}
       {active && key && (
-        <div className={`hover-trailer__player ${playing ? "is-playing" : ""}`}>
+        <div
+          className={`hover-trailer__player ${playing ? "is-playing" : ""}`}
+          // the playing trailer lies over the card: a click on it opens the film like a click on the card
+          onClick={(e) => (e.currentTarget.parentElement?.firstElementChild as HTMLElement | null)?.click()}
+        >
           <iframe
             ref={frame}
             onLoad={listen}

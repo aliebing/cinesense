@@ -19,7 +19,6 @@ export default function ResultsPage() {
   const [tags, setTags] = useState<Tag[]>([]);
   const [hidden, setHidden] = useState(0);
   const [hiddenBy, setHiddenBy] = useState<Record<string, number> | undefined>(undefined);
-  const [showAdvanced, setShowAdvanced] = useState(false);
   // a widening chosen on this page: the original criteria and what was widened (any other change ends it)
   const [widened, setWidened] = useState<{ from: Criteria; labels: string[] } | null>(null);
   const change = useCallback(
@@ -58,20 +57,15 @@ export default function ResultsPage() {
         {/* what steers the search on top (filters, moods, the advanced search on the right), the films below */}
         <ExclusionsBar tags={tags} criteria={criteria} onChange={change} hiddenCount={hidden} hiddenBy={hiddenBy} />
         <SearchChips tags={tags} criteria={criteria} onChange={change} moodOnly />
-        {/* the advanced search opens over the gap below the bars: the film rows never move */}
+        {/* the third bar: title, person and years in one line; its further options open over the films */}
         <div className="results-adv">
-          <button type="button" className="results-toggle" aria-expanded={showAdvanced} onClick={() => setShowAdvanced((v) => !v)}>
-            {showAdvanced ? "Hide advanced search ▴" : "Advanced search ▾"}
-          </button>
-          {showAdvanced && (
-            <AdvancedSearch
-              criteria={criteria}
-              onSubmit={(c) => {
-                change(c);
-                setShowAdvanced(false);
-              }}
-            />
-          )}
+          <AdvancedSearch
+            bar
+            // its fields start from the search: a filter removed above (a year, a person) empties them too
+            key={JSON.stringify([criteria.title, criteria.person, criteria.person_role, criteria.year_from, criteria.year_to, criteria.kind, criteria.extended])}
+            criteria={criteria}
+            onSubmit={change}
+          />
         </div>
         <div className="results-films">
           <ResultList criteria={criteria} onOpen={open} onMeta={onMeta} onRelax={relax} widened={widened} />

@@ -44,7 +44,7 @@ export function checkYears(
 function Choice<T extends string>({ label, options, value, onChange }: { label: string; options: { value: T; label: string }[]; value: T; onChange: (v: T) => void }) {
   return (
     <div className="adv-field">
-      <span>{label}</span>
+      <span className="adv-label">{label}</span>
       <div className="crit__modes adv-switch" role="group" aria-label={label}>
         {options.map((o) => (
           <button key={o.value} type="button" className="crit__mode" aria-pressed={value === o.value} onClick={() => onChange(o.value)}>
@@ -57,7 +57,17 @@ function Choice<T extends string>({ label, options, value, onChange }: { label: 
 }
 
 /** Title / actor-director / year / kind search; "extended" reaches beyond the catalogue (newer films). */
-export default function AdvancedSearch({ criteria, onSubmit }: { criteria: Criteria; onSubmit: (c: Criteria) => void }) {
+export default function AdvancedSearch({
+  criteria,
+  onSubmit,
+  bar = false,
+}: {
+  criteria: Criteria;
+  onSubmit: (c: Criteria) => void;
+  /** one line like the other bars (results page): a gold title, fields named by their placeholders, the further
+   *  options and hints open as a panel below it */
+  bar?: boolean;
+}) {
   const [title, setTitle] = useState(criteria.title ?? "");
   const [person, setPerson] = useState(criteria.person ?? "");
   // a title or name counts only when picked from the suggestions (what is already set counts as picked)
@@ -102,11 +112,12 @@ export default function AdvancedSearch({ criteria, onSubmit }: { criteria: Crite
   };
 
   return (
-    <form className="advanced-search" onSubmit={submit} aria-label="Advanced search">
+    <form className={bar ? "advanced-search advanced-search--bar search-bar" : "advanced-search"} onSubmit={submit} aria-label="Advanced search">
+      {bar && <h2 className="search-bar__title">Advanced search</h2>}
       <SuggestInput
         id="adv-title"
         label="Title"
-        placeholder="type 4 letters for suggestions"
+        placeholder={bar ? "Title (4 letters for suggestions)" : "type 4 letters for suggestions"}
         value={title}
         picked={titlePicked}
         onType={(t) => {
@@ -123,7 +134,7 @@ export default function AdvancedSearch({ criteria, onSubmit }: { criteria: Crite
       <SuggestInput
         id="adv-person"
         label="Actor or director"
-        placeholder="e.g. Sandra Hüller"
+        placeholder={bar ? "Actor or director" : "e.g. Sandra Hüller"}
         value={person}
         picked={personPicked}
         onType={(t) => {
@@ -137,18 +148,18 @@ export default function AdvancedSearch({ criteria, onSubmit }: { criteria: Crite
         }}
         load={loadPeople}
       />
-      <label>
-        From year
-        <input id="adv-from" inputMode="numeric" placeholder="e.g. 1990" aria-invalid={badYear === "from"} value={yearFrom} onChange={(e) => setYearFrom(e.target.value)} />
+      <label className="adv-year">
+        <span className="adv-label">From year</span>
+        <input id="adv-from" inputMode="numeric" placeholder={bar ? "From year" : "e.g. 1990"} aria-invalid={badYear === "from"} value={yearFrom} onChange={(e) => setYearFrom(e.target.value)} />
       </label>
-      <label>
-        To year
-        <input id="adv-to" inputMode="numeric" placeholder="e.g. 1999" aria-invalid={badYear === "to"} value={yearTo} onChange={(e) => setYearTo(e.target.value)} />
+      <label className="adv-year">
+        <span className="adv-label">To year</span>
+        <input id="adv-to" inputMode="numeric" placeholder={bar ? "To year" : "e.g. 1999"} aria-invalid={badYear === "to"} value={yearTo} onChange={(e) => setYearTo(e.target.value)} />
       </label>
       <div className="advanced-search__buttons">
         <button type="submit">Search</button>
         <button type="button" className="advanced-search__more" aria-expanded={more} aria-controls="adv-more" onClick={() => setMore((m) => !m)}>
-          {more ? "Fewer options ▴" : "More options ▾"}
+          {more ? (bar ? "Fewer ▴" : "Fewer options ▴") : bar ? "More ▾" : "More options ▾"}
         </button>
       </div>
       {more && (
