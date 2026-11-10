@@ -704,8 +704,12 @@
 .results-more-row .related-viewport.is-static { scrollbar-width: none; } /* a row that fits needs no scrollbar */
 .results-more-row .related-viewport.is-static::-webkit-scrollbar { display: none; }
 /* moods in one line: each tag is a slim pill with its stars and its prefer / must / exclude switch */
-.results-page .criteria-panel { display: flex; flex-wrap: wrap; align-items: center; gap: .5em .8em; padding: .5em .8em; }
-.results-page .criteria-title { margin: 0; }
+/* the title keeps its place on the left; the mood pills and "+ Tag" wrap in their own column next to it, so a second
+   line of moods starts under the first one and "+ Tag" follows the last mood */
+.results-page .criteria-panel { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: .5em;
+  padding: .5em .8em .5em calc(.8em + 12.8em); }
+.results-page .criteria-title { position: absolute; left: .8em; top: .62em; height: 3.3em; display: flex; align-items: center; margin: 0; } /* level with the first line of pills */
+.results-page .criteria-panel > .criteria-list { display: contents; }
 .results-page .criteria-empty { font-size: .9em; }
 .results-page .criteria-list { gap: .5em; }
 .results-page .crit { width: auto; display: flex; align-items: center; gap: .6em; padding: .25em .4em .25em .8em; }
