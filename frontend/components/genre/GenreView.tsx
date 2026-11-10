@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import FogLight from "@/components/atmosphere/FogLight";
 import CinemaFrame from "@/components/cinema/CinemaFrame";
 import RelatedRow, { type Sweep } from "@/components/genre/RelatedRow";
-import { pickWidening } from "@/components/results/ResultList";
+import { pickWidening, selectRow } from "@/components/results/ResultList";
 import StagePanel from "@/components/genre/StagePanel";
 import Breadcrumb, { type Crumb } from "@/components/nav/Breadcrumb";
 import MoodSummary from "@/components/search/MoodSummary";
@@ -118,14 +118,22 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
   const fetchPage = useCallback(
     async (active: Criteria, pageNo: number) => {
       const useSearch = fromSearch && hasAnyCriteria(active);
+      // from the search: its first 50 films at once, chosen as the search page shows them (paged here by 30)
       const r = useSearch
-        ? await search(active, pageNo * PAGE, PAGE + 1)
+        ? await search(active, 0, 50)
         : await discover({ ...active, world_id: worldId }, pageNo * PAGE, PAGE + 1);
       if (!r.ok) return null;
-      const base = { items: r.data.items, total: r.data.total, capped: Boolean(r.data.total_capped), hidden: r.data.hidden_by_exclusion, useSearch };
+      const chosen = useSearch ? selectRow(r.data.items) : r.data.items;
+      const base = {
+        items: chosen,
+        total: useSearch ? chosen.length : r.data.total,
+        capped: useSearch ? false : Boolean(r.data.total_capped),
+        hidden: r.data.hidden_by_exclusion,
+        useSearch,
+      };
       // like the search page: too few films for every wish, so the films of the widening that changes it least
       // follow them (one page; the search itself stays)
-      const option = useSearch && pageNo === 0 ? pickWidening(r.data.relaxations ?? []) : null;
+      const option = useSearch ? pickWidening(r.data.relaxations ?? []) : null;
       if (!option) return { ...base, widened: null };
       const w = await search(option.criteria, 0, 50, active);
       if (!w.ok) return { ...base, widened: null };
@@ -172,6 +180,7 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
   }, [stageId, worldId, criteriaKey, n, loadKey, fetchPage]);
   const turn = async (to: number) => {
     if (pending) return;
+    if (rowFromSearch && found) return setPending({ n: to, raw: related }); // all loaded: just another page of it
     const p = await fetchPage(JSON.parse(criteriaKey) as Criteria, to);
     if (p && p.items.some((x) => x.movie.id !== stageId)) setPending({ n: to, raw: p.items });
   };
@@ -216,15 +225,20 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
   const world = state.kind === "ready" ? state.world : null;
   const movie = state.kind === "ready" ? state.movie : null;
   // one page of the row; a widened row is shown whole (it is loaded as one)
-  const pageOf = (raw: RankedMovie[]) => (movie ? raw.filter((r) => r.movie.id !== movie.id).slice(0, widenedRow ? undefined : PAGE) : []);
-  const rowItems = pageOf(related);
+  // one page of the row: from the search every film is loaded, a page is a slice of it; otherwise each page is fetched
+  const allLoaded = rowFromSearch && found !== null;
+  const others_ = (raw: RankedMovie[]) => (movie ? raw.filter((r) => r.movie.id !== movie.id) : []);
+  // a few films over a page stay on it (the search page's 3 + 29 less the stage film): no page for a single film
+  const size = allLoaded && others_(related).length <= PAGE + 5 ? Number.MAX_SAFE_INTEGER : PAGE;
+  const pageOf = (raw: RankedMovie[], p: number) => others_(raw).slice(allLoaded ? p * size : 0, allLoaded ? (p + 1) * size : PAGE);
+  const rowItems = pageOf(related, n);
   // the film on stage is not in the row: it counts off the total only when it is one of the found films (a film
   // opened from the widened row is not), and a capped count stays a round "500+"
   const stageFound = movie !== null && related.some((r) => r.movie.id === movie.id);
   const others = found
     ? { total: found.capped ? found.total : Math.max(0, found.total - (stageFound ? 1 : 0)), capped: found.capped }
     : null;
-  const target = pending ? pageOf(pending.raw) : [];
+  const target = pending ? pageOf(pending.raw, pending.n) : [];
   const forward = pending !== null && pending.n > n;
   const shownRow = !pending ? rowItems : forward ? [...rowItems, ...target] : [...target, ...rowItems];
   const sweep: Sweep | null = pending
@@ -239,7 +253,9 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
         },
       }
     : null;
-  const canNext = !widenedRow && others !== null && ((n + 1) * PAGE < others.total || Boolean(others.capped));
+  const canNext = allLoaded
+    ? (n + 1) * size < others_(related).length
+    : others !== null && ((n + 1) * PAGE < others.total || Boolean(others.capped));
 
   return (
     <CinemaFrame>

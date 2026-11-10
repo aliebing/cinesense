@@ -69,6 +69,18 @@ export function pickWidening(options: Relaxation[]): Relaxation | null {
   return options.find((o) => o.count >= MIN_SHOWN) ?? [...options].sort((a, b) => b.count - a.count)[0] ?? null;
 }
 
+/** The films the search page shows for a first page of results, in order: the best in front, then the row below
+ *  (from its floor, or with few strong films the weaker ones down to WEAK_FLOOR, at most WEAK_MAX). The detail page
+ *  opened from the search shows exactly these. */
+export function selectRow(items: RankedMovie[]): RankedMovie[] {
+  const best = items.slice(0, BEST_MAX).filter((r, i) => i < MIN_SHOWN || r.match_percent >= BEST_PERCENT);
+  const floor = moreFloor(items.map((r) => r.match_percent));
+  const strong = items.slice(best.length).filter((r) => r.match_percent >= floor);
+  const filled = strong.length < MORE_MAX ? items.slice(best.length).filter((r) => r.match_percent >= WEAK_FLOOR) : strong;
+  const weak = filled.length > strong.length;
+  return [...best, ...(weak ? filled.slice(0, Math.max(strong.length, WEAK_MAX)) : filled)];
+}
+
 /** The floor of the row below: with many strong films from 70%, with a middling number from 60%, else from 50%,
  *  counted on the first page (the API ranks by match, so it holds the strongest). */
 export function moreFloor(percents: number[]): number {
