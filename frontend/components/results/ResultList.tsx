@@ -246,7 +246,7 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened,
       {`${items.length ? `Only ${total} ${total === 1 ? "film matches" : "films match"}` : "No film matches"} every wish · ${rest.length} more with: ${widenedRow.label}`}
       <span className="related-hint">
         {" "}
-        · {n * MORE_MAX + 1}–{n * MORE_MAX + shown.length} · ≠ marks what a film misses
+        · {n * MORE_MAX + 1}–{n * MORE_MAX + shown.length}
       </span>
     </>
   ) : (

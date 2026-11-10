@@ -24,7 +24,7 @@ it("renders a placeholder for a film without poster", () => {
 it("has no arrow buttons; the mouse steers the row", () => {
   render(<RelatedRow items={sampleRanked(14)} onSelect={() => {}} />);
   expect(screen.queryByRole("button", { name: /Next films|Previous films/ })).toBeNull();
-  expect(screen.getByText(/move the mouse left or right/)).toBeInTheDocument();
+  expect(screen.queryByText(/move the mouse/)).toBeNull(); // no hint: the row simply follows the mouse
 });
 
 it("edgeSpeed: creeps on in the middle, faster towards the edges, opposite directions, drifts without a pointer", () => {
@@ -48,11 +48,10 @@ it("few films stand still, once each, without empty boxes or the browse hint", a
   expect(container.textContent).not.toContain("move the mouse");
 });
 
-it("enough films: the row loops (two copies) and invites browsing", async () => {
+it("enough films: the row loops (two copies)", async () => {
   const { MIN_SLOTS } = await import("@/components/genre/RelatedRow");
   const { container } = render(<RelatedRow items={sampleRanked(MIN_SLOTS)} onSelect={() => {}} />);
   expect(container.querySelectorAll(".related-card")).toHaveLength(2 * MIN_SLOTS);
-  expect(container.textContent).toContain("move the mouse");
 });
 
 it("a card that changes width never moves the card under the pointer: the row offset absorbs the shift", async () => {
@@ -175,4 +174,11 @@ it("braked: a row with ends runs at full speed up to an end and stops dead there
   expect(braked(-600, -3000, -3000)).toBe(0); // at the end: no further
   expect(braked(600, 0, -3000)).toBe(0); // at the start: no further back
   expect(braked(600, -3000, -3000)).toBe(600); // from the end it may go back freely
+});
+
+it("edgeSpeed beside the row: past its end the run goes on, faster than at the edge", () => {
+  expect(Math.abs(edgeSpeed(1.15, -1, false))).toBeGreaterThan(Math.abs(edgeSpeed(1, -1, false)));
+  expect(edgeSpeed(1.15, -1, false)).toBeLessThan(0); // still the same way
+  expect(Math.abs(edgeSpeed(1.5, -1, false))).toBeCloseTo(3 * Math.abs(edgeSpeed(1, -1, false))); // at most three times
+  expect(edgeSpeed(-0.3, -1, false)).toBeGreaterThan(0); // beside the left end: back towards the start
 });

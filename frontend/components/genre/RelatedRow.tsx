@@ -13,6 +13,8 @@ const IDLE_SPEED = 40; // px per second while the pointer is elsewhere: the row 
 const SLOW_SPEED = 14; // px per second in the middle: still moving, but a card is easy to catch
 const MAX_SPEED = 650; // px per second with the pointer at the very edge
 const DEAD_ZONE = 0.3; // middle share of the row where it only creeps on
+const OUTSIDE_BOOST = 3; // beside the row (the pointer moved past its end) it runs up to three times the top speed
+const BAND_PX = 40; // how far above or below the row the pointer still steers it
 const EASE_MS = 650; // smooth: the row picks up speed gently and slows down gently
 export const SWEEP_MS = 1500; // the run to the next (or previous) page of results
 const SWEEP_LAPS = 1; // extra laps round the endless row on the way: a long, very fast run
@@ -26,10 +28,13 @@ const LOOP_MIN = 4; // a forced loop (results page) needs at least this many fil
  *  `drift` is off (search results: the best matches stay in front until the mouse browses). */
 export function edgeSpeed(ratio: number | null, dir = -1, drift = true): number {
   if (ratio === null) return drift ? dir * IDLE_SPEED : 0;
-  const d = (Math.min(Math.max(ratio, 0), 1) - 0.5) * 2; // -1 … 1
-  const reach = (Math.abs(d) - DEAD_ZONE) / (1 - DEAD_ZONE);
+  const d = (ratio - 0.5) * 2; // -1 … 1 over the row, beyond it outside (the pointer left the row sideways)
+  const inside = Math.min(Math.abs(d), 1);
+  const reach = (inside - DEAD_ZONE) / (1 - DEAD_ZONE);
   if (reach <= 0) return drift ? dir * SLOW_SPEED : 0;
-  return -Math.sign(d) * Math.max(reach * reach * MAX_SPEED, SLOW_SPEED);
+  // past the row's end the run goes on and grows faster still, up to OUTSIDE_BOOST times the top speed
+  const outside = 1 + Math.min(Math.max(Math.abs(d) - 1, 0) * 4, 1) * (OUTSIDE_BOOST - 1);
+  return -Math.sign(d) * Math.max(reach * reach * MAX_SPEED * outside, SLOW_SPEED);
 }
 
 const MOVING_SPEED = 30; // px per second above which a row counts as moving: hover trailers wait until it rests
@@ -148,6 +153,28 @@ export default function RelatedRow({
   useEffect(() => {
     trailerRef.current = activeId !== null; // a playing trailer must not slide away from under the pointer
   }, [activeId]);
+
+  useEffect(() => {
+    // the pointer steers the row while it is level with it, also beside it: moved out past an end, the row goes on
+    // (faster); above or below it, the row stops
+    const move = (e: PointerEvent) => {
+      const box = viewport.current?.getBoundingClientRect();
+      if (!box || box.width <= 0) return;
+      // anywhere level with the row (also over the curtains beside the stage), but not over the chat panel
+      const overChat = (e.target as Element | null)?.closest?.(".chat-panel") != null;
+      const level = !overChat && e.clientY >= box.top - BAND_PX && e.clientY <= box.bottom + BAND_PX;
+      pointer.current = level ? (e.clientX - box.left) / box.width : null;
+    };
+    const leave = () => {
+      pointer.current = null;
+    };
+    window.addEventListener("pointermove", move, { passive: true });
+    document.documentElement.addEventListener("pointerleave", leave);
+    return () => {
+      window.removeEventListener("pointermove", move);
+      document.documentElement.removeEventListener("pointerleave", leave);
+    };
+  }, []);
 
   const sweeping = sweep !== null;
   useEffect(() => {
@@ -278,15 +305,13 @@ export default function RelatedRow({
     else nudge.current -= dir * width; // the loop moves the track: a negative offset shows later films
   };
   const onMove = (e: React.PointerEvent) => {
-    const box = viewport.current?.getBoundingClientRect();
-    if (box && box.width > 0) pointer.current = (e.clientX - box.left) / box.width;
     anchor.current = (e.target as HTMLElement).closest?.(".related-wrap") ?? null;
   };
   return (
     <section className={`related ${busy ? "is-busy" : ""} ${sweeping ? "is-sweeping" : ""} ${arrows ? "has-arrows" : ""} ${bounded ? "has-ends" : ""}`} aria-label={name} aria-busy={busy}>
       {found && <p className="related-count">{foundText(found.total, found.capped)}</p>}
       <h3 className="related-label">
-        {label} {!still && <span className="related-hint">· move the mouse left or right to browse</span>}
+        {label}
       </h3>
       {busy && bar && <LoadingBar />}
       <div
@@ -294,7 +319,6 @@ export default function RelatedRow({
         className={`related-viewport ${still ? "is-static" : ""}`}
         onPointerMove={onMove}
         onPointerLeave={() => {
-          pointer.current = null;
           anchor.current = null;
         }}
       >

@@ -300,7 +300,6 @@ export function widenedLabel(exact: number, all: number, label: string) {
   return (
     <>
       {`${head} · ${all - exact} more with: ${label}`}
-      <span className="related-hint"> · ≠ marks what a film misses</span>
     </>
   );
 }
