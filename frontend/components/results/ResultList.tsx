@@ -36,6 +36,17 @@ export function moreFloor(percents: number[]): number {
   return MORE_FLOORS.find((f) => percents.filter((p) => p >= f).length >= MORE_MAX) ?? MORE_PERCENT;
 }
 
+const fmt = new Intl.NumberFormat("en-US");
+
+/** The count above the films: the good matches (from the row's floor), not every film the hard limits let through
+ *  ("50 films found" for Tom Cruise read as fifty matches when none reached 50%); the whole number comes after. */
+export function countText(good: number, more: boolean, floor: number, total: number, capped: boolean, closest: number): string {
+  const all = `${fmt.format(total)}${capped ? "+" : ""} films searched`;
+  if (good === 0) return `No film matches well · the ${closest} closest of ${all}`;
+  if (good >= total && !more && !capped) return foundText(total);
+  return `${fmt.format(good)}${more ? "+" : ""} good ${good === 1 ? "match" : "matches"} from ${floor}% · ${all}`;
+}
+
 export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened }: Props) {
   const relaxRef = useRef(onRelax);
   useEffect(() => {
@@ -204,7 +215,9 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
     <>
       {note}
       {widen}
-      <p className="related-count results-count">{foundText(total, capped)}</p>
+      <p className="related-count results-count">
+        {countText(best.filter((r) => r.match_percent >= floor).length + rest.length, canLoad, floor, total, capped, best.length)}
+      </p>
       {(loading || loadingMore) && <LoadingBar />}
       <BestMatches items={best} onSelect={onOpen} label={bestLabel} streamCheck={streaming} busy={loading} />
       {rowItems.length > 0 && (

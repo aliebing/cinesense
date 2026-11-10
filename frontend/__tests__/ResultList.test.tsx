@@ -174,7 +174,7 @@ it("shows at least the 3 best matches, and says how many were found", async () =
   search.mockResolvedValue({ ok: true, data: { items, total: 39, hidden_by_exclusion: 0, extended_used: false } });
   const { container } = render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} />);
   expect(await screen.findByText(/The 3 best matches/)).toBeInTheDocument(); // none reaches 50%: the 3 best
-  expect(screen.getByText("39 films found")).toHaveClass("related-count");
+  expect(screen.getByText("No film matches well · the 3 closest of 39 films searched")).toHaveClass("related-count");
   expect(container.querySelectorAll(".related-card")).toHaveLength(3);
   expect(search.mock.calls[0][2]).toBe(50); // at most 50
 });
@@ -258,7 +258,7 @@ it("says at least 500 when the mood search kept only its best films", async () =
   const items = sampleRanked(10).map((r) => ({ ...r, match_percent: 40 }));
   search.mockResolvedValue({ ok: true, data: { items, total: 500, total_capped: true, hidden_by_exclusion: 0, extended_used: false } });
   render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} />);
-  expect(await screen.findByText("At least 500 films found")).toBeInTheDocument();
+  expect(await screen.findByText("No film matches well · the 3 closest of 500+ films searched")).toBeInTheDocument();
 });
 
 it("with the streaming filter, marks films whose streaming is not checked and counts the confirmed ones", async () => {
@@ -311,4 +311,12 @@ it("nothing reaches 50%: the search goes on without the mood the backend names, 
   });
   render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} onRelax={onRelax} />);
   await waitFor(() => expect(onRelax).toHaveBeenCalledWith(without, "‘funny’ left out: nothing reached 50% with every wish"));
+});
+
+it("counts the good matches, with every film searched after them", async () => {
+  const { countText } = await import("@/components/results/ResultList");
+  expect(countText(31, false, 70, 20668, false, 8)).toBe("31 good matches from 70% · 20,668 films searched");
+  expect(countText(50, true, 60, 500, true, 8)).toBe("50+ good matches from 60% · 500+ films searched");
+  expect(countText(3, false, 50, 3, false, 3)).toBe("3 films found"); // all of them match well
+  expect(countText(0, false, 50, 50, false, 3)).toBe("No film matches well · the 3 closest of 50 films searched");
 });
