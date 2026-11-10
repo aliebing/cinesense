@@ -58,10 +58,10 @@ export default function ResultsPage() {
         {/* what steers the search on top (filters, moods, the advanced search on the right), the films below */}
         <ExclusionsBar tags={tags} criteria={criteria} onChange={change} hiddenCount={hidden} hiddenBy={hiddenBy} />
         <SearchChips tags={tags} criteria={criteria} onChange={change} moodOnly />
-        {/* optional: the button opens the advanced search as a two-row box over the films, so nothing moves */}
+        {/* optional: the button on the right slides the advanced search in to its left, in the same row */}
         <div className="results-adv">
           <button type="button" className="results-toggle" aria-expanded={showAdvanced} onClick={() => setShowAdvanced((v) => !v)}>
-            {showAdvanced ? "Hide advanced search ▴" : "Advanced search ▾"}
+            {showAdvanced ? "Close ▸" : "◂ Advanced search"}
           </button>
           {showAdvanced && (
             <AdvancedSearch

@@ -715,11 +715,16 @@
 .related.has-arrows { --card-gap: calc(var(--card-w) * .16); }
 /* the advanced search as the third bar: one line, the fields named by their placeholders (labels for screen readers);
    the further options and hints open as a panel below it, over the films, so nothing moves */
-/* the advanced search on demand: a button on the right under the bars; it opens one row over the films (narrow
-   title and person fields, years, role, kind, extended, Search), so nothing moves */
-.results-adv { position: relative; z-index: 20; text-align: right; }
-.results-adv .advanced-search--bar { position: absolute; top: calc(100% + .5em); right: 0; width: 100%; text-align: left;
-  background: #0d0d14; box-shadow: 0 20px 60px #000d; }
+/* the advanced search on demand: a button on the right under the bars slides it in to its left, in the same row
+   and over the gap, so nothing moves */
+.results-adv { position: relative; z-index: 20; text-align: right; --adv-btn: 11em; }
+.results-adv .results-toggle { width: var(--adv-btn); }
+.results-adv .advanced-search--bar { position: absolute; top: 50%; right: calc(var(--adv-btn) + .6em); width: calc(100% - var(--adv-btn) - .6em);
+  text-align: left; background: #0d0d14; box-shadow: 0 20px 60px #000d; transform: translateY(-50%);
+  animation: advIn .45s cubic-bezier(.2, .7, .2, 1) backwards; } /* no clip left afterwards: the suggestions drop out below */
+@keyframes advIn { from { clip-path: inset(0 0 0 100% round 14px); transform: translate(3em, -50%); opacity: .4; }
+  to { clip-path: inset(0 0 0 0 round 14px); transform: translate(0, -50%); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .results-adv .advanced-search--bar { animation: none; } }
 .advanced-search--bar { display: flex; flex-wrap: nowrap; align-items: center; gap: .55em; }
 .advanced-search--bar .adv-label, .advanced-search--bar .adv-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .advanced-search--bar label { flex-direction: row; font-size: 1em; color: #fff; }
