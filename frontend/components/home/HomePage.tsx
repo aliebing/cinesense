@@ -10,13 +10,10 @@ import ChatPanel from "@/components/chat/ChatPanel";
 import Breadcrumb from "@/components/nav/Breadcrumb";
 import ProfilePanel from "@/components/profile/ProfilePanel";
 import FilmTitles from "@/components/home/FilmTitles";
-import { LoadingBar } from "@/components/genre/RelatedRow";
-import TileRows, { visibleWorlds } from "@/components/home/TileRows";
+import TileRows from "@/components/home/TileRows";
 import WorldLabel from "@/components/home/WorldLabel";
 import SearchChips from "@/components/search/SearchChips";
 import { getHome, getTags, type ApiResult, type Tag } from "@/lib/api";
-import { currentPicks, useChatLog } from "@/lib/chat";
-import { padRows, useSearchRowsWithStatus } from "@/lib/searchRows";
 import { hasAnyCriteria, useSearchState } from "@/lib/searchState";
 import type { HomeData, HomeTile, MoodWorld, TileRow } from "@/lib/types";
 import { useActiveTrailer } from "@/lib/useActiveTrailer";
@@ -85,15 +82,9 @@ export default function HomePage({ initial = null }: { initial?: HomeData | null
     router.push("/results");
   };
   const openMovie = (m: HomeTile) => router.push(`/world/${m.world_ids[0]}?film=${m.id}`);
-  const rowCount = narrow ? 1 : 3;
-  // a search from the chat (or the chips) takes over the rows: its hits in the middle, the worlds they belong to around
-  const [chatLog] = useChatLog();
-  // the films the chat just suggested lead the middle row, lit, until the settings are changed
-  const picks = useMemo(() => currentPicks(chatLog, criteria).map((r) => r.movie), [chatLog, criteria]);
-  const { rows: searchRows, loading: searching } = useSearchRowsWithStatus(criteria, worlds, rowCount, picks);
-  const worldRows = (n: number) => (data ? visibleWorlds(active, worlds, n).map((w) => ({ world: w, movies: data.rows[w.id] ?? [] })) : []);
-  // a search with few hits fills up with world rows: the homepage always shows its full set of rows
-  const rows = searchRows ? padRows(searchRows, worldRows(worlds.length), rowCount) : moodRows(world, data, narrow ? 1 : 2);
+  // always the mood on screen: its top-rated films in two equal rows (one on a narrow screen); a search is shown on
+  // the search page, not here
+  const rows = moodRows(world, data, narrow ? 1 : 2);
 
   return (
     <CinemaFrame>
@@ -139,10 +130,9 @@ export default function HomePage({ initial = null }: { initial?: HomeData | null
       </div>
 
       {data && !narrow && <FilmTitles titles={moodTitles} />}
-      {(rows.length > 0 || searching) && (
-        <div className={`home-rows${searching ? " is-busy" : ""}`} aria-busy={searching}>
-          {searching && <LoadingBar />}
-          <TileRows rows={rows.slice(0, rowCount)} onSelect={openMovie} worldOrder={worldIds} />
+      {rows.length > 0 && (
+        <div className="home-rows">
+          <TileRows rows={rows} onSelect={openMovie} worldOrder={worldIds} />
         </div>
       )}
       {world && <WorldLabel world={world} href={`/world/${world.id}`} />}

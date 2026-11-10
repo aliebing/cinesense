@@ -38,31 +38,15 @@ it("shows the claim and navigates to the genre page when a tile is clicked", asy
   expect(push).toHaveBeenCalledWith("/world/suspense?film=demo-02");
 });
 
-it("a search (chat or chips) takes over the rows: its hits first, then the worlds they belong to", async () => {
+it("a search does not change the rows: they keep showing the top films of the mood on screen", async () => {
   getHome.mockResolvedValue({ ok: true, data: sampleHome });
-  discover.mockResolvedValue({ ok: true, data: { items: sampleRanked(6), total: 6, hidden_by_exclusion: 0, extended_used: false } });
   setSearchState({ ...emptyCriteria(), tags: [{ idx: 7, weight: 8, mode: "prefer" }] });
   render(<HomePage />);
-  await waitFor(() => expect(document.querySelector('.tile-row-wrap[data-world="search-hits"]')).not.toBeNull());
-  const worlds = [...document.querySelectorAll(".tile-row-wrap")].map((r) => r.getAttribute("data-world"));
-  expect(worlds[0]).toBe("search-hits");
-  expect(discover).toHaveBeenCalledWith(expect.objectContaining({ world_id: null }), 0, expect.any(Number));
-});
-
-it("shows a loading bar while a search loads its rows, and dims the rows meanwhile", async () => {
-  getHome.mockResolvedValue({ ok: true, data: sampleHome });
-  let answer: (v: unknown) => void = () => {};
-  const hits = { ok: true, data: { items: sampleRanked(6), total: 6, hidden_by_exclusion: 0, extended_used: false } };
-  discover.mockResolvedValue(hits); // the world rows after the hits
-  discover.mockImplementationOnce(() => new Promise((r) => (answer = r))); // the hits wait
-  setSearchState({ ...emptyCriteria(), tags: [{ idx: 7, weight: 8, mode: "prefer" }] });
-  render(<HomePage />);
-  expect(await screen.findByRole("progressbar", { name: "Loading results" })).toBeInTheDocument();
-  expect(document.querySelector(".home-rows")).toHaveClass("is-busy");
-  await waitFor(() => expect(discover).toHaveBeenCalled());
-  await act(async () => answer(hits));
-  await waitFor(() => expect(screen.queryByRole("progressbar")).toBeNull());
-  expect(document.querySelector(".home-rows")).not.toHaveClass("is-busy");
+  await screen.findAllByTestId("tile-row");
+  const rowIds = [...document.querySelectorAll(".tile-row-wrap")].map((r) => r.getAttribute("data-world"));
+  expect(rowIds).toEqual(["mood-0", "mood-1"]);
+  expect(discover).not.toHaveBeenCalled();
+  setSearchState(emptyCriteria());
 });
 
 it("shows the mood settings panel even before any tag is set", async () => {
