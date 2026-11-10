@@ -651,7 +651,9 @@
 .best-why { margin: 0; font-size: .8em; line-height: 1.3; color: #f3c76bd9; text-shadow: 0 1px 4px #000;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .best-item .result-unchecked, .best-item .result-miss { display: block; font-size: .75em; }
-.results-more-row { --card-w: clamp(52px, 4.8cqw, 120px); margin-top: 1.8cqw; }
+.results-more-row { margin-top: 1.8cqw; }
+/* the running row looks the same on the search and the detail page: card size, gap, zoom and the wide trailer */
+.related.has-arrows { --card-w: clamp(52px, 4.8cqw, 120px); --card-hover-scale: 1.1; }
 .results-more-row .related-label, .results-count { text-align: center; }
 .results-more-row .related-viewport { padding-top: 1.6cqw; margin-top: -.9cqw; }
 .results-more-row .related-viewport.is-static { scrollbar-width: none; } /* a row that fits needs no scrollbar */
@@ -689,13 +691,13 @@
 @media (max-width: 759px) { .row-arrow--left { right: auto; left: 0; } .row-arrow--right { left: auto; right: 0; } .row-arrow { background: #000b; border-radius: 50%; } }
 /* no jumping: a trailer in the running row plays inside its poster instead of widening the card and pushing the
    others aside, and the gap already leaves room for the hover zoom */
-.results-more-row { --card-gap: calc(var(--card-w) * .14); }
-.results-more-row .related-wrap:has(.hover-trailer__player.is-playing) { transform: none; }
-.results-more-row .related-wrap:has(.hover-trailer__player.is-playing) .related-card { width: var(--card-w); }
+.related.has-arrows { --card-gap: calc(var(--card-w) * .14); }
+.has-arrows .related-wrap:has(.hover-trailer__player.is-playing) { transform: none; }
+.has-arrows .related-wrap:has(.hover-trailer__player.is-playing) .related-card { width: var(--card-w); }
 /* the trailer plays wide (16:9 at the card's height) over its neighbours instead of pushing them aside */
-.results-more-row .related-wrap .hover-trailer__player { left: 50%; right: auto; width: calc(var(--card-w) * 1.5 * 16 / 9); transform: translateX(-50%);
+.has-arrows .related-wrap .hover-trailer__player { left: 50%; right: auto; width: calc(var(--card-w) * 1.5 * 16 / 9); transform: translateX(-50%);
   border-radius: 8px; box-shadow: 0 0 0 var(--glow-width, 3px) var(--gold), 0 20px 60px #000d; }
-.results-more-row .related-wrap .hover-trailer__player iframe { left: 0; width: 100%; transform: none; }
+.has-arrows .related-wrap .hover-trailer__player iframe { left: 0; width: 100%; transform: none; }
 /* the advanced search as the third bar: one line, the fields named by their placeholders (labels for screen readers);
    the further options and hints open as a panel below it, over the films, so nothing moves */
 .results-adv { position: relative; z-index: 20; }
