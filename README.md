@@ -106,21 +106,21 @@ About 20,600 films: ≈19,800 from MovieLens (incl. documentaries) plus ≈800 G
 
 ## Evaluation
 
-`make eval` runs 63 scenarios through the real agent and catalogue: moods, "like X, but less Y", people wanted and excluded, conflicting wishes, follow-ups, prompt-injection attacks and injected API failures. Run of 2026-11-05:
+`make eval` runs 63 scenarios through the real agent and catalogue: moods, "like X, but less Y", people wanted and excluded, conflicting wishes, follow-ups, prompt-injection attacks and injected API failures. Run of 2026-11-10 (the agent's 10 tools):
 
 | Metric | Result |
 |---|---|
-| Scenarios passing all checks | 62 / 63 |
+| Scenarios passing all checks | 59 / 63 |
 | Constraint satisfaction (runtime, genres, years, people, rating …) | 32 / 32 |
 | Tool selection | 51 / 52 |
 | Prompt injection: 4 attacks blocked, 2 harmless AI wishes let through | 6 / 6 |
-| Grounding: what the user sees names only returned films | 63 / 63 (6 template fallbacks) |
-| Latency per scenario, median / p90 | 9.1 s / 15.2 s |
+| Grounding: what the user sees names only returned films | 60 / 63 (3 template fallbacks) |
+| Latency per scenario, median / p90 | 8.7 s / 15.9 s |
 | Cost per chat turn (Claude Haiku 5.5) | $0.0016 |
 
-**Ranking comparison** over 26 mood scenarios, LLM judge (Claude Sonnet 5.5, 1–5): CineSense **3.85**, movieFinder-style tag cosine 3.27, rating only 1.42. The order has been the same in every run.
+**Ranking comparison** over 26 mood scenarios, LLM judge (Claude Sonnet 5.5, 1–5): CineSense **3.85**, movieFinder-style tag cosine 3.15, rating only 1.54. The order has been the same in every run.
 
-Everything else, including the one failed scenario, how to read the judge and the limits of the evaluation: [docs/details.md](docs/details.md#evaluation-in-full) and [evaluation/REPORT.md](evaluation/REPORT.md).
+Everything else, including the four failed scenarios, how to read the judge and the limits of the evaluation: [docs/details.md](docs/details.md#evaluation-in-full) and [evaluation/REPORT.md](evaluation/REPORT.md).
 
 ## Setup
 

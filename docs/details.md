@@ -90,25 +90,25 @@ The chat streams its progress (`POST /api/chat`, Server-Sent Events). A typical 
 
 `make eval` runs 63 scenarios through the real agent and catalogue: mood, "like X", "like X, but less Y", runtime, exclusions, documentaries, people (wanted and excluded), plot, conflicting wishes (including "romantic, funny, a bit scary, well rated", where the reply must say which part the picks miss), ratings, follow-ups that must narrow the search and new wishes that must start over, decades, facts, ambiguous input, an unknown person, searches that must (or must not) widen, prompt-injection attacks and harmless wishes about AIs, and two injected failures (Streaming Availability API down, embedding service down). Streaming data comes from the cache only in every scenario, so the run never spends API budget and also tests the "budget exhausted" path. Full results: [`evaluation/REPORT.md`](../evaluation/REPORT.md) and, graphically, `/admin/evaluation`; raw data in `evaluation/results/` (earlier runs are kept, including the ones where the checks themselves had bugs).
 
-**Automatic metrics (run of 2026-11-05, 16:13).** Each rate counts only the scenarios that define the check; every check judges the final turn of a scenario:
+**Automatic metrics (run of 2026-11-10, 23:36, with the agent's 10 tools).** Each rate counts only the scenarios that define the check; every check judges the final turn of a scenario:
 
 | Metric | Result |
 |---|---|
-| Scenarios passing all checks | 62 / 63 |
+| Scenarios passing all checks | 59 / 63 |
 | Constraint satisfaction (runtime, genres, kind, years, person, excluded people, minimum rating, criteria cleared on a new wish) | 32 / 32 |
 | Tool selection (an expected tool was called, none it must not call) | 51 / 52 |
 | Factual reply checks | 3 / 3 |
 | No streaming claim without known availability | 63 / 63 |
 | Search widening: widened exactly when the scenario expects it | 4 / 4 |
 | Prompt injection: 4 attacks blocked before the model, 2 wishes about AIs let through | 6 / 6 |
-| Grounding **before** the guard: the model's own explanation named only returned films | 57 / 63 (90%) |
-| Grounding **after** the guard: what the user sees | 63 / 63 (6 template fallbacks) |
-| Latency per scenario, median / p90 | 9.1 s / 15.2 s |
+| Grounding **before** the guard: the model's own explanation named only returned films | 60 / 63 (90%, 3 fallbacks) |
+| Grounding **after** the guard: what the user sees | 60 / 63 (3 template fallbacks) |
+| Latency per scenario, median / p90 | 8.7 s / 15.9 s |
 | Cost per chat turn (Claude Haiku 5.5) | $0.0016 |
 
 Until this run the tool check counted the tools of all turns together. A follow-up such as "rather from the 90s" then failed when the agent had (harmlessly) called `new_search` in the first turn on empty criteria, although the follow-up itself refined correctly. It now judges the final turn like every other check, and the run saves the tools per turn so this stays visible.
 
-The one failure (`ambiguous-01`, the bare wish "Solaris") is in tool selection: the scenario predates the `find_title` tool and expects `similar_to`, `film_facts` or `set_mood_tags`. The agent called `find_title` and showed all three Solaris films (1968, 1972, 2002), which is a sensible answer; the scenario was left unchanged so the number stays honest.
+Four scenarios fail. `ambiguous-01`, the bare wish "Solaris", is in tool selection: the scenario predates title search and expects `similar_to`, `film_info` or `set_mood_tags`. The agent called `find` (title) and showed all three Solaris films (1968, 1972, 2002), which is a sensible answer; the scenario was left unchanged so the number stays honest. The other three are grounding misses that got past the guard: two replies to "films with Keanu Reeves" spoke of "John Wick" (the series; the results held "John Wick: Chapter Two" and "Chapter 3"), and one follow-up named "South Central", a title the guard let through as part of a plot. The run before (2026-11-05, 13 tools) had 62 of 63 and no grounding miss after the guard.
 
 "Tool success 100%" only means that no tool raised an exception. A degraded source (embeddings down) still returns a result, with weaker relevance.
 
@@ -116,18 +116,18 @@ The one failure (`ambiguous-01`, the bare wish "Solaris") is in tool selection: 
 
 | Ranker | Tag relevance@10 | Tag cosine@10 | Median MovieLens rating count | LLM judge 1–5 |
 |---|---|---|---|---|
-| Baseline A: filters + Bayesian rating | 0.33 | 0.05 | 35,000 | 1.42 |
-| Baseline B: movieFinder (tag cosine + rating) | 0.76 | **0.20** | 489 | 3.27 |
+| Baseline A: filters + Bayesian rating | 0.35 | 0.05 | 35,000 | 1.54 |
+| Baseline B: movieFinder (tag cosine + rating) | 0.78 | **0.20** | 639 | 3.15 |
 | **CineSense** | **0.79** | 0.15 | 10,145 | **3.85** |
 
 How to read the comparison:
 - Each ranker wins on its own objective. *Tag relevance* (weighted mean of the requested tags) is what CineSense ranks by. *Tag cosine* is what movieFinder ranks by.
-- The independent signal is the LLM judge (Claude Sonnet 5.5, subjective). It prefers CineSense (3.85 vs 3.27). The absolute scores vary from run to run (earlier runs gave 3.96 vs 3.24, 3.95 vs 3.43, 3.76 vs 3.48 and 4.05 vs 3.67), but the order has stayed the same in every run.
-- The judge sees only titles and years, which may favour well-known films. CineSense's picks are clearly better known than movieFinder's (median 10,145 vs 489 ratings).
+- The independent signal is the LLM judge (Claude Sonnet 5.5, subjective). It prefers CineSense (3.85 vs 3.15). The absolute scores vary from run to run (earlier runs gave 3.85 vs 3.27, 3.96 vs 3.24, 3.95 vs 3.43, 3.76 vs 3.48 and 4.05 vs 3.67), but the order has stayed the same in every run.
+- The judge sees only titles and years, which may favour well-known films. CineSense's picks are clearly better known than movieFinder's (median 10,145 vs 639 ratings).
 - The rating-only baseline ignores the wish.
-- The judge gives the agent's own top 5 a mean of 3.67/5 over 55 scenarios. Between runs it moves by about ±0.2 even where nothing changed (3.60, 3.65 and 3.43 in earlier runs).
+- The judge gives the agent's own top 5 a mean of 3.65/5 over 55 scenarios. Between runs it moves by about ±0.2 even where nothing changed (3.67, 3.60, 3.65 and 3.43 in earlier runs).
 
-The whole evaluation costs about $0.40: $0.11 for agent turns and $0.28 for the judge.
+The whole evaluation costs about $0.42: $0.12 for agent turns and $0.30 for the judge.
 
 Limits of the evaluation:
 - The automatic checks are narrow, and relevance is only judged subjectively.
