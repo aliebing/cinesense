@@ -300,6 +300,35 @@ async function icon(name, color) {
   }
   s.addNotes("This is the graph in graph.py; the guard runs before it. CineSense is agent-first: the graph starts at the model. As long as the agent returns tool calls, the turn goes through tick, which counts rounds, and tools, which run one after another and edit the shared criteria, and back to the agent. That is the ReAct loop. When the criteria changed, present runs the deterministic search; when nothing changed, the model's text is the reply. verify counts the films: fewer than three, and the agent gets relax_options to widen the search; if it picks none, auto_relax decides. explain words the reply. In HikeSense, as the next comparison shows, the code drives instead.");
 
+  // ---------- Data ----------
+  pres.addSection({ title: "Data" });
+  s = pres.addSlide({ masterName: "Content", sectionTitle: "Data" });
+  s.addText("Data: real catalogue data, no invented facts", { placeholder: "title" });
+  {
+    const sources = [
+      ["FaTags", "MovieLens Tag Genome", "1,128 mood tags per film from real user tagging; ratings and genres"],
+      ["FaGlobeEurope", "Wikidata", "people, runtime, original language, German titles and release dates, trailer ids"],
+      ["FaBookOpen", "Wikipedia plots", "chunked and embedded (1,536 dims) into pgvector with an HNSW index, for plot search (RAG)"],
+      ["FaTv", "Streaming Availability API", "where a film streams in Germany; 1,000 calls a month behind a 7-day cache and a budget guard that stops at 900"],
+    ];
+    for (const [i, [ic, h1, body]] of sources.entries()) {
+      const y = 1.5 + i * 1.12;
+      await iconDot(s, 0.6, y + 0.05, ic, 0.66);
+      text(s, h1, { x: 1.5, y, w: 6.3, h: 0.4, fontSize: 18, bold: true, objectName: "Source " + (i + 1) });
+      text(s, body, { x: 1.5, y: y + 0.42, w: 6.3, h: 0.62, fontSize: 14, color: C.text2, objectName: "Source detail " + (i + 1) });
+    }
+    card(s, 8.3, 1.5, 4.4, 4.35, "Numbers card");
+    const stats = [["~20,600", "films in the catalogue"], ["No TMDB", "its terms forbid AI apps"], ["~$0.30", "to embed every plot"]];
+    for (const [i, [big, small]] of stats.entries()) {
+      text(s, big, { x: 8.7, y: 1.75 + i * 1.35, w: 3.7, h: 0.7, fontSize: 38, bold: true, color: C.accent1, fontFace: THEME.headFontFace, objectName: "Stat " + (i + 1) });
+      text(s, small, { x: 8.7, y: 2.47 + i * 1.35, w: 3.7, h: 0.4, fontSize: 15, color: C.text2, objectName: "Stat label " + (i + 1) });
+    }
+    text(s, [{ text: "How it is prepared: ", options: { bold: true, color: C.accent1 } },
+      { text: "catalog_import builds the catalogue offline and can resume; posters, cast billing and German titles come from Wikipedia and Wikidata. The MovieLens file is never committed, and the import never calls the Streaming API." }],
+    { x: 0.6, y: 6.05, w: 12.1, h: 0.75, fontSize: 14, objectName: "Preparation" });
+  }
+  s.addNotes("The data is open data only. TMDB would have been easier, but its terms forbid AI applications. The Tag Genome is what makes mood measurable: 1,128 tags per film, scored from real user tagging. Wikidata adds the facts, Wikipedia the plots, which are chunked and embedded into pgvector for the plot search. Streaming data comes from the Streaming Availability API; its free plan allows 1,000 calls a month, so every call goes through a cache and a budget guard. The catalogue is built offline by resumable import jobs; the MovieLens file itself is never committed.");
+
   // ---------- 6. Guard ----------
   pres.addSection({ title: "Safety and quality" });
   s = pres.addSlide({ masterName: "Content", sectionTitle: "Safety and quality" });
@@ -412,6 +441,33 @@ async function icon(name, color) {
   text(s, "26 mood scenarios, same criteria and filters for all three rankers. Tag relevance@10: 0.33 · 0.76 · 0.79. The judge sees titles only.",
     { x: 7.2, y: 5.85, w: 5.5, h: 0.7, fontSize: 13, color: C.text2, objectName: "Chart caption" });
   s.addNotes("The evaluation runs 63 scenarios through the real agent and catalogue: moods, like-X, runtime, exclusions, people, plots, follow-ups, injection attempts and injected failures. Streaming comes from the cache only, so a run never spends API budget. Code checks the final turn; 62 of 63 pass every check. Hard filters are always kept, and no reply names a film the search did not return. A turn costs about a fifth of a cent. For ranking, the same criteria go to two baselines, and an LLM judge prefers CineSense, with the caveat that it only sees titles. HikeSense, by contrast, checks everything by code and uses no judge.");
+
+  // ---------- Challenges ----------
+  pres.addSection({ title: "Challenges" });
+  s = pres.addSlide({ masterName: "Content", sectionTitle: "Challenges" });
+  s.addText("Challenges: what was hard, and how I solved it", { placeholder: "title" });
+  {
+    const items = [
+      ["FaSortAmountDown", "Ranking flattered obscure films", "Cosine similarity over all 1,128 tags rewarded films that are a little of everything.",
+        "Score only the requested tags, as a weighted mean. LLM judge: 3.85 against 3.27 for the cosine baseline."],
+      ["FaRandom", "Parallel tool calls overwrote each other", "The model called several tools at once; each changed the shared criteria from the same old state.",
+        "Tools run one after another, each on the state the previous one left."],
+      ["FaCheckDouble", "Grounding rejected correct replies", "A town in a plot (\"Silver City\") is also a film title, so a correct reply became a template.",
+        "Names from the plots the model was shown no longer count as film titles."],
+      ["FaTv", "A real wish was silently ignored", "\"free on Prime\" set no filter, until a live user tried it.",
+        "Named services and \"free\" are now filters: flat rate or free, never rent or buy."],
+    ];
+    for (const [i, [ic, h1, problem, fix]] of items.entries()) {
+      const x = 0.6 + (i % 2) * 6.15, y = 1.5 + Math.floor(i / 2) * 2.7;
+      card(s, x, y, 5.95, 2.45, "Challenge card " + (i + 1));
+      await iconDot(s, x + 0.3, y + 0.3, ic, 0.58);
+      text(s, h1, { x: x + 1.1, y: y + 0.35, w: 4.65, h: 0.5, fontSize: 18, bold: true, objectName: "Challenge " + (i + 1) });
+      text(s, [{ text: "Problem: ", options: { bold: true } }, { text: problem, options: { breakLine: true } },
+        { text: "Fix: ", options: { bold: true, color: C.accent1 } }, { text: fix }],
+      { x: x + 0.3, y: y + 1.0, w: 5.35, h: 1.35, fontSize: 13.5, paraSpaceAfter: 6, objectName: "Challenge text " + (i + 1) });
+    }
+  }
+  s.addNotes("Four problems that cost the most time. First, the ranking: cosine similarity over all 1,128 tags looked elegant, but it surfaced obscure films that are a little of everything. Scoring only the requested tags fixed it, and the LLM judge now prefers CineSense over the cosine baseline. Second, the model sometimes called several tools at once, and they overwrote each other's criteria; tools now run one after another. Third, the grounding check rejected a correct reply because a plot mentioned Silver City, which is also a film title; names from the plots no longer count. Fourth, a real user asked for something funny and free on Prime, and the app quietly ignored it; named services and 'free' are now filters.");
 
   // ---------- 9. Improve and go further ----------
   pres.addSection({ title: "Outlook" });
