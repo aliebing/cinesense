@@ -175,11 +175,14 @@ export default function AdvancedSearch({
         <div id="adv-more" className="advanced-search__more-row">
           <Choice label="Role" options={ROLES} value={role} onChange={setRole} />
           <Choice label="Kind" options={bar ? KINDS_SHORT : KINDS} value={kind} onChange={setKind} />
-          <label className="advanced-search__check" title="Extended search: more and newer films, slower">
+          <label
+            className="advanced-search__check"
+            title="Also searches Wikidata for films that are not in the catalogue yet, mostly newer ones (slower)"
+          >
             <input id="adv-extended" type="checkbox" checked={extended} onChange={(e) => setExtended(e.target.checked)} />
             {bar ? (
               <>
-                Extended<span className="adv-sr"> search (more and newer films, slower)</span>
+                + newer films<span className="adv-sr"> (extended search, slower)</span>
               </>
             ) : (
               "Extended search (more and newer films, slower)"

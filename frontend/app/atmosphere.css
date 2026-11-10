@@ -735,6 +735,11 @@
 .advanced-search--bar .advanced-search__more-row .adv-field { flex-direction: row; align-items: center; gap: .45em; }
 .advanced-search--bar .advanced-search__more-row .adv-label { position: static; width: auto; height: auto; clip-path: none; }
 .advanced-search--bar .crit__mode { padding-inline: .7em; }
+/* air between the groups (title and person · years · role · kind · newer films), each after a thin rule */
+.advanced-search--bar .search-bar__title { margin-right: .5em; }
+.advanced-search--bar label:has(#adv-from), .advanced-search--bar .adv-field, .advanced-search--bar .advanced-search__check {
+  margin-left: .8em; padding-left: 1.1em; border-left: 1px solid #ffffff1f; }
+.advanced-search--bar label:has(#adv-from) { flex-basis: 7.3em; min-width: 5.6em; } /* the rule's padding on top */
 .advanced-search--bar .advanced-search__hint { position: absolute; top: calc(100% + .4em); left: 0; padding: .5em .9em; border-radius: 10px; background: #0d0d14; border: 1px solid #ffffff26; }
 .advanced-search--bar input[type="checkbox"] { width: auto; }
 .advanced-search--bar .advanced-search__check { white-space: nowrap; }
