@@ -9,6 +9,8 @@ from cinesense.web_api.app import create_app
 from cinesense.web_api.eval_jobs import Busy, EvalJob
 from cinesense.web_api.eval_view import get_eval_job
 
+S3CRET_HASH = "$2b$04$Si0ybM4ydQhrtkGwRjbL3uPiSpgKscLp4d1dUZRmqtSMIsVwHaLPq"  # bcrypt (cost 4) of "s3cret"
+
 
 def result(id_, passed):
     return {
@@ -71,7 +73,7 @@ def test_a_failing_run_is_reported():
 def client(monkeypatch, tmp_path):
     monkeypatch.setenv("CINESENSE_EVAL_DIR", str(tmp_path))
     monkeypatch.setenv("TECH_USER", "admin")
-    monkeypatch.setenv("TECH_PASSWORD", "s3cret")
+    monkeypatch.setenv("TECH_PASSWORD_HASH", S3CRET_HASH)
     monkeypatch.setenv("SUPABASE_DB_URL", "postgresql://unused")
     monkeypatch.setenv("OPENROUTER_API_KEY", "unused")
     app = create_app(load_env=False)

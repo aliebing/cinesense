@@ -1,4 +1,5 @@
-"""The operator's sign-in for /admin (as in HikeSense): name + password from TECH_USER / TECH_PASSWORD, then a
+"""The operator's sign-in for /admin (as in HikeSense): name from TECH_USER, password checked against the bcrypt hash
+in TECH_PASSWORD_HASH (`make admin-password`), then a
 signed HttpOnly session cookie that the server also remembers, so signing out ends a copied cookie too. Five
 failed attempts per address block the sign-in for 15 minutes. Sessions live in this process (one uvicorn worker);
 a restart signs the operator out. No HTTP Basic Auth: the browser never shows its own login prompt."""
@@ -12,6 +13,7 @@ import time
 from collections import defaultdict, deque
 from collections.abc import Callable
 
+import bcrypt
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
@@ -104,9 +106,28 @@ def _same(a: str, b: str) -> bool:
     return secrets.compare_digest(a.encode(), b.encode())
 
 
+MAX_PASSWORD_BYTES = 72  # bcrypt refuses anything longer
+
+
+def hash_password(password: str) -> str:
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt(rounds=12)).decode()
+
+
+def check_password(password: str, bcrypt_hash: str) -> bool:
+    raw = password.encode()
+    if not bcrypt_hash or len(raw) > MAX_PASSWORD_BYTES:
+        return False
+    try:
+        return bcrypt.checkpw(raw, bcrypt_hash.encode())
+    except ValueError:  # not a bcrypt hash
+        return False
+
+
 def _configured() -> tuple[str, str] | None:
+    """(user, hash); None only without TECH_USER (local development). A user without a valid hash keeps the admin
+    closed: no password matches."""
     s = get_settings()
-    return (s.tech_user, s.tech_password) if s.tech_user and s.tech_password else None
+    return (s.tech_user, s.tech_password_hash or "") if s.tech_user else None
 
 
 def _secure(request: Request) -> bool:
@@ -143,7 +164,8 @@ def login(body: LoginBody, request: Request) -> JSONResponse:
     wait = THROTTLE.try_acquire(ip)
     if wait:
         return JSONResponse({"detail": "too_many_attempts"}, status_code=429, headers={"Retry-After": str(wait)})
-    if not (_same(body.name.strip(), configured[0]) & _same(body.password, configured[1])):
+    name_ok = _same(body.name.strip(), configured[0])
+    if not (check_password(body.password, configured[1]) and name_ok):
         return JSONResponse({"detail": "login_failed"}, status_code=401)
     THROTTLE.succeeded(ip)
     r = JSONResponse({"name": configured[0]})
@@ -173,3 +195,24 @@ def me(request: Request) -> JSONResponse:
         return JSONResponse({"detail": "login_required"}, status_code=401)
     configured = _configured()
     return JSONResponse({"name": configured[0] if configured else "local"})
+
+
+def main() -> int:
+    """`make admin-password`: asks for the password twice and prints the .env line; writes nothing."""
+    import getpass
+    import sys
+
+    pw = getpass.getpass("New admin password: ")
+    if len(pw) < 8 or len(pw.encode()) > MAX_PASSWORD_BYTES:
+        print("The password needs 8 to 72 bytes.", file=sys.stderr)
+        return 2
+    if getpass.getpass("Again: ") != pw:
+        print("The two entries differ.", file=sys.stderr)
+        return 2
+    print("Put into .env (single quotes because of the $ signs):")
+    print(f"TECH_PASSWORD_HASH='{hash_password(pw)}'")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

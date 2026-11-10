@@ -3,7 +3,8 @@
     python -m venv /tmp/pw && /tmp/pw/bin/pip install playwright
     /tmp/pw/bin/python docs/showcase/shots.py [--base http://localhost:8080] [01 02 …]
 
-Needs the local stack (`make up`) and TECH_USER / TECH_PASSWORD from .env for the admin shot. Two chat
+Needs the local stack (`make up`) and TECH_USER from .env plus the plain password in
+the shell variable ADMIN_PASSWORD for the admin shot (.env only holds its hash). Two chat
 turns with the real model (well under a cent). Posters, stills and trailers are copyrighted, so every
 picture in the page is blurred before a shot; text, chips and controls stay sharp.
 The 👍 given for the profile shot is reset at the end.
@@ -13,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import os
 from pathlib import Path
 
 from playwright.async_api import async_playwright
@@ -146,7 +148,7 @@ async def main(base: str, only: set[str]) -> None:
             )
             creds = {
                 "username": env["TECH_USER"].strip().strip('"'),
-                "password": env["TECH_PASSWORD"].strip().strip('"'),
+                "password": os.environ["ADMIN_PASSWORD"],
             }
             admin = await browser.new_context(viewport={"width": 1600, "height": 900}, http_credentials=creds)
             p3 = await admin.new_page()

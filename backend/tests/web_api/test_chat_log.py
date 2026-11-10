@@ -10,6 +10,8 @@ from tests.web_api.test_chat import chat_client, fake_runner
 from tests.web_api.test_inspect import make_app as inspect_app
 from tests.web_api.test_inspect import runner as inspect_runner
 
+S3CRET_HASH = "$2b$04$Si0ybM4ydQhrtkGwRjbL3uPiSpgKscLp4d1dUZRmqtSMIsVwHaLPq"  # bcrypt (cost 4) of "s3cret"
+
 
 def turn(**kw):
     out = {
@@ -101,7 +103,7 @@ def test_a_chat_turn_is_logged():
 
 def test_a_tech_turn_is_logged_as_tech(monkeypatch):
     monkeypatch.delenv("TECH_USER", raising=False)
-    monkeypatch.delenv("TECH_PASSWORD", raising=False)
+    monkeypatch.delenv("TECH_PASSWORD_HASH", raising=False)
     app = inspect_app(inspect_runner)
     log = MemoryChatLog()
     app.dependency_overrides[get_chat_log] = lambda: log
@@ -112,7 +114,7 @@ def test_a_tech_turn_is_logged_as_tech(monkeypatch):
 
 def test_admin_endpoints_need_the_login_and_show_the_log(monkeypatch):
     monkeypatch.setenv("TECH_USER", "admin")
-    monkeypatch.setenv("TECH_PASSWORD", "s3cret")
+    monkeypatch.setenv("TECH_PASSWORD_HASH", S3CRET_HASH)
     app = inspect_app(inspect_runner)
     log = MemoryChatLog()
     log.write(turn())

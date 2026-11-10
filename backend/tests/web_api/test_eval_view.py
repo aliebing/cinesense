@@ -7,6 +7,8 @@ from fastapi.testclient import TestClient
 
 from cinesense.web_api.app import create_app
 
+S3CRET_HASH = "$2b$04$Si0ybM4ydQhrtkGwRjbL3uPiSpgKscLp4d1dUZRmqtSMIsVwHaLPq"  # bcrypt (cost 4) of "s3cret"
+
 
 def scenario(id_, passed, judge):
     return {
@@ -38,7 +40,7 @@ ROW = {
 def client(tmp_path, monkeypatch):
     monkeypatch.setenv("CINESENSE_EVAL_DIR", str(tmp_path))
     monkeypatch.delenv("TECH_USER", raising=False)
-    monkeypatch.delenv("TECH_PASSWORD", raising=False)
+    monkeypatch.delenv("TECH_PASSWORD_HASH", raising=False)
     (tmp_path / "2026-11-01_1000.json").write_text(json.dumps(run_file([scenario("a", True, 4)], [ROW])))
     (tmp_path / "2026-11-02_1000.json").write_text(
         json.dumps(run_file([scenario("a", True, 5), scenario("b", False, None), scenario("c", True, 2)], [ROW, ROW]))
@@ -70,7 +72,7 @@ def test_unknown_or_malformed_run_is_404(client):
 
 def test_eval_needs_the_tech_login_when_one_is_configured(client, monkeypatch):
     monkeypatch.setenv("TECH_USER", "admin")
-    monkeypatch.setenv("TECH_PASSWORD", "s3cret")
+    monkeypatch.setenv("TECH_PASSWORD_HASH", S3CRET_HASH)
     assert client.get("/api/eval/runs").status_code == 401
     client.post("/api/admin/login", json={"name": "admin", "password": "s3cret"})
     assert client.get("/api/eval/runs").status_code == 200

@@ -174,7 +174,7 @@ def get_chat_log():
 def log_secret() -> str:
     """Keys the visitor and conversation hashes of the log: a server secret, never stored with them."""
     s = get_settings()
-    return s.database_url or s.tech_password or "cinesense-local"
+    return s.database_url or s.tech_password_hash or "cinesense-local"
 
 
 @lru_cache

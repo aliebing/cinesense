@@ -3,12 +3,14 @@ from fastapi.testclient import TestClient
 
 from cinesense.web_api.admin_session import LoginThrottle, Sessions
 
+S3CRET_HASH = "$2b$04$Si0ybM4ydQhrtkGwRjbL3uPiSpgKscLp4d1dUZRmqtSMIsVwHaLPq"  # bcrypt (cost 4) of "s3cret"
+
 
 @pytest.fixture
 def client(monkeypatch, tmp_path):
     monkeypatch.setenv("CINESENSE_EVAL_DIR", str(tmp_path))
     monkeypatch.setenv("TECH_USER", "admin")
-    monkeypatch.setenv("TECH_PASSWORD", "s3cret")
+    monkeypatch.setenv("TECH_PASSWORD_HASH", S3CRET_HASH)
     from cinesense.web_api.app import create_app
 
     return TestClient(create_app())
@@ -62,3 +64,18 @@ def test_throttle_frees_the_ip_after_success():
     assert t.try_acquire("ip") > 0
     t.succeeded("ip")
     assert t.try_acquire("ip") == 0
+
+
+def test_a_user_without_a_valid_hash_keeps_the_admin_closed(monkeypatch, tmp_path):
+    """An old plain TECH_PASSWORD or a broken hash must never leave the admin open."""
+    monkeypatch.setenv("CINESENSE_EVAL_DIR", str(tmp_path))
+    monkeypatch.setenv("TECH_USER", "admin")
+    monkeypatch.delenv("TECH_PASSWORD_HASH", raising=False)
+    monkeypatch.setenv("TECH_PASSWORD", "s3cret")
+    from cinesense.web_api.app import create_app
+
+    client = TestClient(create_app())
+    assert client.get("/api/admin/visitors").status_code == 401
+    assert client.post("/api/admin/login", json={"name": "admin", "password": "s3cret"}).status_code == 401
+    monkeypatch.setenv("TECH_PASSWORD_HASH", "not-a-bcrypt-hash")
+    assert client.post("/api/admin/login", json={"name": "admin", "password": "s3cret"}).status_code == 401

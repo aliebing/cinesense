@@ -1,4 +1,4 @@
-.PHONY: up down logs dev-api dev-web test test-api test-web lint db-init ingest eval
+.PHONY: up down logs dev-api dev-web test test-api test-web lint db-init ingest eval admin-password
 
 # Python commands run in backend/ (its own pyproject and .venv); the frontend lives in frontend/.
 API = cd backend && uv run
@@ -31,6 +31,10 @@ test-api:
 
 test-web:
 	cd frontend && npx vitest run
+
+# bcrypt hash of a new /admin password, printed as the TECH_PASSWORD_HASH line for .env
+admin-password:
+	cd backend && uv run python -m cinesense.web_api.admin_session
 
 lint:
 	$(API) ruff check .

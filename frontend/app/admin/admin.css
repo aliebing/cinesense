@@ -37,6 +37,10 @@
 .admin-login form { display: flex; flex-direction: column; gap: 12px; }
 .admin-login label { display: flex; flex-direction: column; gap: 4px; color: #aaa; font-size: 13px; }
 .admin-login input { padding: 8px; background: #1b1b1b; color: #eee; border: 1px solid #444; font: inherit; }
+.admin-pw { position: relative; display: flex; }
+.admin-pw input { flex: 1; padding-right: 40px; }
+.tech .admin-login .admin-pw-eye { position: absolute; right: 0; top: 0; bottom: 0; width: 38px; padding: 0; border: 0; background: none; color: #aaa; cursor: pointer; display: grid; place-items: center; }
+.tech .admin-login .admin-pw-eye:hover, .tech .admin-login .admin-pw-eye:focus-visible { color: #f3c76b; }
 .tech .admin-login button { padding: 8px 16px; border: 1px solid #f3c76b; text-decoration: none; }
 .tech .admin-login button:disabled { opacity: .6; cursor: default; }
 .tech .admin-signout { font-size: 13px; }

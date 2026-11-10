@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "CineSense: mood-based movie discovery with an AI agent"
 requires-python = ">=3.12"
 dependencies = [
+    "bcrypt>=5.0.0",
     "fastapi==0.162.0",
     "httpx==0.28.1",
     "langchain-core==1.7.1",

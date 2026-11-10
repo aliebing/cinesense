@@ -20,7 +20,7 @@ The [README](../README.md) gives the overview. This page keeps the full text: ev
 **Plans 1–6 are done:** the cinema UI runs on a real catalogue of about 20,600 films (≈19,800 from MovieLens incl. documentaries, plus ≈800 German releases since 2021). The chat agent works on the homepage and in the genre drawer. Personalisation works on the genre page and in all rankings. Plan 6 added a search that widens itself when too few films match, and says which part of the wish each widened result misses. The evaluation results are below.
 
 **For reviewers:** `/admin` (e.g. http://localhost:8080/admin) is the operator's area, with three pages in one
-navigation. On the public server it asks for a login (`TECH_USER` / `TECH_PASSWORD`, checked by the frontend and again
+navigation. On the public server it asks for a login (`TECH_USER` / `TECH_PASSWORD_HASH`, a bcrypt hash from `make admin-password`, checked by the frontend and again
 by every API behind it); locally it is open. The old addresses `/tech` and `/tech/eval` redirect here.
 
 - **Tech** (`/admin/tech`): a plain technical view of one agent turn: the reply, the criteria with tag names, every

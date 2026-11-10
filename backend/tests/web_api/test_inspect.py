@@ -14,6 +14,8 @@ from cinesense.web_api.deps import (
     get_trailers,
 )
 
+S3CRET_HASH = "$2b$04$Si0ybM4ydQhrtkGwRjbL3uPiSpgKscLp4d1dUZRmqtSMIsVwHaLPq"  # bcrypt (cost 4) of "s3cret"
+
 
 def make_app(runner):
     app = create_app(load_env=False)
@@ -65,7 +67,7 @@ def test_inspect_without_an_llm_key_says_so():
 
 def test_inspect_needs_the_tech_login_when_one_is_configured(monkeypatch):
     monkeypatch.setenv("TECH_USER", "admin")
-    monkeypatch.setenv("TECH_PASSWORD", "s3cret")
+    monkeypatch.setenv("TECH_PASSWORD_HASH", S3CRET_HASH)
     client = TestClient(make_app(runner))
     body = {"thread_id": "t1", "message": "hi"}
     r = client.post("/api/inspect", json=body)
@@ -80,7 +82,7 @@ def test_inspect_needs_the_tech_login_when_one_is_configured(monkeypatch):
 
 def test_inspect_is_open_without_a_configured_login(monkeypatch):
     monkeypatch.delenv("TECH_USER", raising=False)
-    monkeypatch.delenv("TECH_PASSWORD", raising=False)
+    monkeypatch.delenv("TECH_PASSWORD_HASH", raising=False)
     assert (
         TestClient(make_app(runner)).post("/api/inspect", json={"thread_id": "t1", "message": "hi"}).status_code == 200
     )

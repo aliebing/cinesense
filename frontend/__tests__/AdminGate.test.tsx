@@ -49,3 +49,15 @@ it("signing out returns to the form", async () => {
   expect(await screen.findByLabelText("Password")).toBeInTheDocument();
   expect(screen.queryByText("secret page")).toBeNull();
 });
+
+it("shows and hides the password with the eye button", async () => {
+  adminMe.mockResolvedValue({ ok: false, status: 401 });
+  render(<AdminGate>secret page</AdminGate>);
+  const input = await screen.findByLabelText("Password");
+  await userEvent.type(input, "pw");
+  expect(input).toHaveAttribute("type", "password");
+  await userEvent.click(screen.getByRole("button", { name: "Show password" }));
+  expect(input).toHaveAttribute("type", "text");
+  await userEvent.click(screen.getByRole("button", { name: "Hide password" }));
+  expect(input).toHaveAttribute("type", "password");
+});
