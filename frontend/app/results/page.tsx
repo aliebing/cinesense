@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import FogLight from "@/components/atmosphere/FogLight";
 import CinemaFrame from "@/components/cinema/CinemaFrame";
 import Breadcrumb from "@/components/nav/Breadcrumb";
@@ -50,6 +50,7 @@ export default function ResultsPage() {
     if (m.corrected_title) patch.title = m.corrected_title;
     if (Object.keys(patch).length) patchSearchState(patch);
   }, []);
+  const tagNames = useMemo(() => Object.fromEntries(tags.map((t) => [t.idx, t.tag])), [tags]);
   const open = (m: Movie) => router.push(`/world/${m.world_ids[0] ?? "suspense"}?film=${m.id}&from=search`); // the row below the stage keeps the other matches
 
   return (
@@ -86,7 +87,7 @@ export default function ResultsPage() {
           )}
         </div>
         <div className="results-films">
-          <ResultList criteria={criteria} onOpen={open} onMeta={onMeta} onRelax={relax} widened={widened} />
+          <ResultList criteria={criteria} onOpen={open} onMeta={onMeta} onRelax={relax} widened={widened} tagNames={tagNames} />
         </div>
       </div>
     </CinemaFrame>

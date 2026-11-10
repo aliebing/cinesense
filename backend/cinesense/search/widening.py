@@ -15,8 +15,7 @@ from cinesense.search.rating import DEFAULT_PRIOR_MEAN, catalogue_rating
 log = logging.getLogger(__name__)
 
 MIN_RESULTS = 3  # fewer films than this and the search is widened
-STRONG_PERCENT = 50  # a search with no film from this match on leaves out one mood (drop_one_mood)
-DROP_PROBE = 50  # films each "without this mood" probe ranks to count its strong ones
+STRONG_PERCENT = 50  # no film from this match on with every mood: show the films that fit one (one_mood_at_a_time)
 MAX_OPTIONS = 8
 RUNTIME_STEP, RUNTIME_MAX = 30, 400
 YEAR_STEP = 10
@@ -96,31 +95,39 @@ def probe(service, c: SearchCriteria, tag_names: list[str], current: int) -> lis
     return kept
 
 
-def drop_one_mood(service, c: SearchCriteria, tag_names: list[str]) -> Relaxation | None:
-    """A search where no film reaches STRONG_PERCENT: the same search without one of its wanted moods, the one
-    whose leaving out finds the most films from STRONG_PERCENT on (count = those films). None when no mood can go
-    (fewer than two wanted moods and nothing else to search by) or leaving one out does not help either.
-    Person, title and the hard limits (not-tags, exclusions) always stay: they are the wish itself."""
+@dataclass
+class MoodPart:
+    tag: str
+    count: int  # films with this mood (and everything else wished for) from STRONG_PERCENT on
+
+
+def one_mood_at_a_time(run, c: SearchCriteria, tag_names: list[str]) -> tuple[list, list[MoodPart]] | None:
+    """A search where no film reaches STRONG_PERCENT with every mood at once: the films that fit at least one of
+    them. `run(criteria)` ranks one search; it runs once per wanted mood with the others left out (person, title,
+    years and the hard limits always stay), keeps each run's films from STRONG_PERCENT on and merges them, a film
+    found twice with its better match. None with fewer than two wanted moods, or when no single mood finds any."""
     wanted = [t for t in c.tags if t.mode != "not"]
-    other = c.person or c.title or c.plot_query
-    if len(wanted) < 2 and not (wanted and other):
+    if len(wanted) < 2:
         return None
-    best: Relaxation | None = None
+    merged: dict[str, object] = {}
+    parts: list[MoodPart] = []
     for t in wanted:
-        opt = Relaxation(
-            f"drop-tag:{t.idx}",
-            f"‘{_name(tag_names, t.idx)}’ left out: nothing reached {STRONG_PERCENT}% with every wish",
-            c.model_copy(update={"tags": [x for x in c.tags if x.idx != t.idx]}, deep=True),
-        )
+        only = c.model_copy(update={"tags": [x for x in c.tags if x.mode == "not" or x.idx == t.idx]}, deep=True)
         try:
-            items = service.run(opt.criteria, 0, DROP_PROBE).items
-        except Exception as exc:  # noqa: BLE001 — a probe that fails is not offered
-            log.warning("drop-tag probe %s failed: %s", opt.id, exc)
+            items = run(only)
+        except Exception as exc:  # noqa: BLE001 — a mood we cannot search is left out of the merge
+            log.warning("one-mood search %s failed: %s", t.idx, exc)
             continue
-        opt.count = sum(1 for r in items if r.match_percent >= STRONG_PERCENT)
-        if opt.count and (best is None or opt.count > best.count):
-            best = opt
-    return best
+        strong = [r for r in items if r.match_percent >= STRONG_PERCENT]
+        parts.append(MoodPart(_name(tag_names, t.idx), len(strong)))
+        for r in strong:
+            known = merged.get(r.movie.id)
+            if known is None or r.score > known.score:
+                merged[r.movie.id] = r
+    if not merged:
+        return None
+    items = sorted(merged.values(), key=lambda r: (r.score, r.movie.ml_rating_count), reverse=True)
+    return items, parts
 
 
 def pick_auto(options: list[Relaxation]) -> Relaxation | None:

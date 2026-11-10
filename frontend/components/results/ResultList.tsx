@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import RelatedRow, { foundText, LoadingBar, type Sweep } from "@/components/genre/RelatedRow";
 import BestMatches from "@/components/results/BestMatches";
 import { search, type DiscoverResult, type Relaxation } from "@/lib/api";
@@ -16,7 +16,7 @@ const MIN_SHOWN = 3;
 const BEST_MAX = 8;
 const BEST_PERCENT = 70;
 const MORE_FLOORS = [70, 60, 50]; // the row below starts at the highest of these that still holds about MORE_MAX films
-const MORE_PERCENT = 50; // the lowest floor: below it a search leaves one mood out instead (drop_mood)
+const MORE_PERCENT = 50; // the lowest floor: with no film from it, the films that fit one of the moods (one_mood)
 const MORE_MAX = 30; // films in the running row at a time; its « » arrows run quickly to the previous / next ones
 const count = new Intl.NumberFormat("en-US");
 
@@ -26,7 +26,38 @@ type Props = {
   onMeta?: (meta: Omit<DiscoverResult, "items">) => void;
   onRelax?: (c: Criteria, label: string) => void; // a search that finds too little offers ways to widen it
   widened?: { from: Criteria; labels: string[] } | null; // the user widened the search: say so, mark what films miss
+  tagNames?: Record<number, string>; // for the explanation: the moods by name
 };
+
+type OneMood = { tag: string; count: number }[];
+
+/** "How these results came about": what was searched, what the match means, why the rows start where they do,
+ *  and how a search no film fully meets was answered. */
+export function explainLines(criteria: Criteria, names: Record<number, string>, floor: number, oneMood: OneMood | null): string[] {
+  const moods = criteria.tags
+    .filter((t) => t.mode !== "not")
+    .map((t) => `${names[t.idx] ?? "a mood"} (${"★".repeat(Math.round(t.weight / 2))}${t.mode === "must" ? ", must" : ""})`);
+  const not = criteria.tags.filter((t) => t.mode === "not").map((t) => names[t.idx] ?? "a mood");
+  const also = [
+    criteria.person ? `with ${criteria.person}` : null,
+    criteria.title ? `titled “${criteria.title}”` : null,
+    criteria.year_from || criteria.year_to ? `from ${criteria.year_from ?? "…"} to ${criteria.year_to ?? "…"}` : null,
+    not.length ? `without ${not.join(", ")}` : null,
+  ].filter(Boolean);
+  const wish = [moods.length ? `your moods ${moods.join(" and ")}` : "your taste", ...also].join(", ");
+  const out = [
+    `Searched for ${wish}.`,
+    "Match % says how well a film fits this search: mostly how strongly it carries your moods (MovieLens Tag Genome), then the plot, the people, your 👍/👎, its rating and how well known it is. It is not a review score.",
+    `Top row: up to 8 best films from 70% (always at least the 3 best). Row below: the further films from ${floor}%; it starts at 70% when many films are strong, at 60% for a middling number, else at 50%.`,
+  ];
+  if (oneMood)
+    out.push(
+      `No film carries all your moods together (none reached 50%). Shown instead: the films that fit at least one of them (${oneMood
+        .map((m) => `${m.tag}: ${m.count}`)
+        .join(", ")}); ≠ marks the mood a film lacks.`,
+    );
+  return out;
+}
 
 /** The best matches as one endless row at the bottom, like the genre page; the header gives the real number and
  *  never claims completeness, and every card says why it matches. */
@@ -47,11 +78,9 @@ export function countText(good: number, more: boolean, floor: number, total: num
   return `${fmt.format(good)}${more ? "+" : ""} good ${good === 1 ? "match" : "matches"} from ${floor}% · ${all}`;
 }
 
-export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened }: Props) {
-  const relaxRef = useRef(onRelax);
-  useEffect(() => {
-    relaxRef.current = onRelax;
-  }, [onRelax]);
+export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened, tagNames = {} }: Props) {
+  const [oneMood, setOneMood] = useState<{ key: string; parts: OneMood | null }>({ key: "", parts: null });
+  const [explain, setExplain] = useState(false);
   const [items, setItems] = useState<RankedMovie[]>([]);
   const [total, setTotal] = useState<number | null>(null);
   const [capped, setCapped] = useState(false);
@@ -86,10 +115,7 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
       setCapped(Boolean(r.data.total_capped));
       setExtended(r.data.extended_used);
       setRelaxFor({ key, options: r.data.relaxations ?? [] });
-      // nothing reaches 50% with every wish: search again without the mood whose leaving out finds the most
-      // (the page then says which mood was left out, and the films lacking it are marked ≠)
-      const drop = r.data.drop_mood;
-      if (drop && relaxRef.current) relaxRef.current(drop.criteria, drop.label);
+      setOneMood({ key, parts: r.data.one_mood ?? null });
       onMeta?.({
         total: r.data.total,
         hidden_by_exclusion: r.data.hidden_by_exclusion,
@@ -153,6 +179,7 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
   const all = [items, ...(more.key === key ? more.pages : [])].flat();
   const best = all.slice(0, BEST_MAX).filter((r, i) => i < MIN_SHOWN || r.match_percent >= BEST_PERCENT);
   const floor = moreFloor(items.map((r) => r.match_percent));
+  const parts = oneMood.key === key ? oneMood.parts : null; // the films fit one mood each, none all of them
   const rest = all.slice(best.length).filter((r) => r.match_percent >= floor);
   const chunks = Math.max(1, Math.ceil(rest.length / MORE_MAX));
   const n = page.key === key ? Math.min(page.n, chunks - 1) : 0;
@@ -192,7 +219,7 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
   const streaming = criteria.availability === "stream";
   const bestLabel = (
     <>
-      {total > best.length ? `The ${best.length} best matches` : "All matches"}
+      {parts ? `The ${best.length} best of them` : total > best.length ? `The ${best.length} best matches` : "All matches"}
       {streaming && (
         <span className="related-hint">
           {" "}
@@ -215,9 +242,25 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
     <>
       {note}
       {widen}
-      <p className="related-count results-count">
-        {countText(best.filter((r) => r.match_percent >= floor).length + rest.length, canLoad, floor, total, capped, best.length)}
-      </p>
+      <div className="results-count-line">
+        <p className="related-count results-count">
+          {parts
+            ? `${fmt.format(total)} ${total === 1 ? "film fits" : "films fit"} one of your moods · none has them all`
+            : countText(best.filter((r) => r.match_percent >= floor).length + rest.length, canLoad, floor, total, capped, best.length)}
+        </p>
+        <button type="button" className="results-explain-btn" aria-expanded={explain} onClick={() => setExplain((v) => !v)}>
+          ⓘ How these results came about
+        </button>
+        {explain && (
+          <div className="results-explain" role="note" aria-label="How these results came about">
+            <ul>
+              {explainLines(criteria, tagNames, floor, parts).map((l) => (
+                <li key={l}>{l}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
       {(loading || loadingMore) && <LoadingBar />}
       <BestMatches items={best} onSelect={onOpen} label={bestLabel} streamCheck={streaming} busy={loading} />
       {rowItems.length > 0 && (

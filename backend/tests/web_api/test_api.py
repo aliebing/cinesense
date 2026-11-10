@@ -416,18 +416,17 @@ def test_misses_name_moods_the_film_has_no_data_for():
     assert items["Toy Story"] == ["little 'funny'"]  # the widened search left funny out; Toy Story lacks it here
 
 
-def test_a_search_without_any_strong_film_offers_itself_without_one_mood():
+def test_a_search_no_film_carries_fully_shows_the_films_that_fit_one_mood():
     p = FixtureProvider()
     tags = p.list_tags()
     wish = {"tags": [{"idx": tags.index("funny")}, {"idx": tags.index("dark")}], "person": "Keanu Reeves"}
     res = client(provider=p).post("/api/search", json={"criteria": wish}).json()
-    if res["items"] and all(i["match_percent"] < 50 for i in res["items"]):
-        drop = res["drop_mood"]
-        assert drop is None or (drop["count"] > 0 and drop["id"].startswith("drop-tag:"))
-        if drop:
-            assert drop["criteria"]["person"] == "Keanu Reeves" and len(drop["criteria"]["tags"]) == 1
-    else:
-        assert res["drop_mood"] is None  # a strong film: nothing is left out
+    if res["one_mood"] is not None:
+        assert [m["tag"] for m in res["one_mood"]] == ["funny", "dark"]
+        assert res["items"] and all(i["match_percent"] >= 50 for i in res["items"])
+        assert res["total"] == len(res["items"])
+    else:  # a film carries both well enough, or no single mood finds a strong film either: the normal search
+        assert res["items"] and res["total"] >= len(res["items"])
 
 
 def test_search_reports_what_each_exclusion_hides():

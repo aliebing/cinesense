@@ -63,6 +63,11 @@ class RelaxationOut(BaseModel):
     criteria: SearchCriteria
 
 
+class MoodPartOut(BaseModel):
+    tag: str
+    count: int
+
+
 class DiscoverResponse(BaseModel):
     items: list[RankedMovie]
     total: int
@@ -73,8 +78,9 @@ class DiscoverResponse(BaseModel):
     hidden_by: dict[str, int] = Field(default_factory=dict)  # per exclusion ("genre:Horror", "tag:284"): films hidden
     total_capped: bool = False  # total is a lower bound: the mood search kept only its best films ("500+")
     relaxations: list[RelaxationOut] = Field(default_factory=list)  # ways to widen a thin search (/api/search)
-    # no film reaches 50%: the same search without one mood, which does find some (count: films from 50% on)
-    drop_mood: RelaxationOut | None = None
+    # no film reaches 50% with every mood at once: the items are the films that fit at least one of them, and
+    # this says how many each mood found
+    one_mood: list[MoodPartOut] | None = None
 
 
 def create_app(load_env: bool = True) -> FastAPI:
@@ -223,13 +229,24 @@ def create_app(load_env: bool = True) -> FastAPI:
         res = _discover(req, provider, streaming, embedder, live, tasks, profile, checker, trailers)
         if req.relaxed_from is not None:
             widening.mark_misses(res.items, req.relaxed_from, provider, req.criteria)
-        # probes never use the Streaming API or the live search
-        probe_service = SearchService(provider, None, embedder)
-        if req.offset == 0 and res.items and all(r.match_percent < widening.STRONG_PERCENT for r in res.items):
-            o = widening.drop_one_mood(probe_service, req.criteria, provider.list_tags())
-            if o is not None:
-                res.drop_mood = RelaxationOut(id=o.id, label=o.label, count=o.count, criteria=o.criteria)
+        weak = res.items and all(r.match_percent < widening.STRONG_PERCENT for r in res.items)
+        if req.offset == 0 and weak and req.relaxed_from is None:
+
+            def one(c: SearchCriteria) -> list[RankedMovie]:  # one mood's search, no YouTube searches or live import
+                part = DiscoverRequest(criteria=c, limit=50)
+                found = _discover(part, provider, streaming, embedder, None, None, profile, checker, trailers, False)
+                return found.items
+
+            found = widening.one_mood_at_a_time(one, req.criteria, provider.list_tags())
+            if found is not None:
+                items, parts = found
+                # the films lack the other moods: each says which it misses
+                widening.mark_misses(items, req.criteria, provider, req.criteria.model_copy(update={"tags": []}))
+                res.items, res.total, res.total_capped = items[: req.limit], len(items), False
+                res.one_mood = [MoodPartOut(tag=p.tag, count=p.count) for p in parts]
         if req.offset == 0 and res.total < widening.MIN_RESULTS:
+            # probes never use the Streaming API or the live search
+            probe_service = SearchService(provider, None, embedder)
             options = widening.probe(probe_service, req.criteria, provider.list_tags(), res.total)
             res.relaxations = [
                 RelaxationOut(id=o.id, label=o.label, count=o.count, criteria=o.criteria) for o in options

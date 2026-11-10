@@ -181,35 +181,40 @@ def test_misses_flag_prefer_tags_without_mood_data():
     assert misses(_film(), original, TAGS, {7: 0.1, 9: 0.2}) == []  # a weak preference only ranks, never misses
 
 
-def test_drop_one_mood_leaves_out_the_mood_whose_absence_finds_most_strong_films():
+def test_one_mood_at_a_time_merges_the_strong_films_of_each_mood():
     from types import SimpleNamespace
 
-    from cinesense.search.widening import drop_one_mood
+    from cinesense.search.widening import one_mood_at_a_time
 
-    class Service:
-        def run(self, c, offset, limit):
-            kept = {t.idx for t in c.tags if t.mode != "not"}
-            # without "funny" (7): 4 films from 50%; without "dark" (9): 1
-            percents = [60, 55, 52, 51, 40] if kept == {9} else [51, 30] if kept == {7} else [20]
-            return SimpleNamespace(items=[SimpleNamespace(match_percent=p) for p in percents])
+    def film(fid, percent):
+        movie = SimpleNamespace(id=fid, ml_rating_count=1)
+        return SimpleNamespace(movie=movie, match_percent=percent, score=percent / 100)
+
+    searched = []
+
+    def run(c):
+        kept = {t.idx for t in c.tags if t.mode != "not"}
+        searched.append((kept, c.person, [t.idx for t in c.tags if t.mode == "not"]))
+        if kept == {9}:  # dark: one strong film
+            return [film("oblivion", 85), film("x", 30)]
+        return [film("edge", 59), film("oblivion", 52), film("rain-man", 53), film("y", 20)]  # funny
 
     tags = [TagCriterion(idx=9), TagCriterion(idx=7), TagCriterion(idx=3, mode="not")]
-    c = SearchCriteria(person="Tom Cruise", tags=tags)
-    out = drop_one_mood(Service(), c, TAGS)
-    assert out.id == "drop-tag:7" and out.count == 4
-    assert out.label.startswith("‘funny’ left out")
-    assert [t.idx for t in out.criteria.tags] == [9, 3]  # the not-tag stays, and so does the person
-    assert out.criteria.person == "Tom Cruise"
+    items, parts = one_mood_at_a_time(run, SearchCriteria(person="Tom Cruise", tags=tags), TAGS)
+    assert [r.movie.id for r in items] == ["oblivion", "edge", "rain-man"]  # merged, Oblivion with its better 85%
+    assert [(p.tag, p.count) for p in parts] == [("dark", 1), ("funny", 3)]
+    assert searched == [({9}, "Tom Cruise", [3]), ({7}, "Tom Cruise", [3])]  # person and not-tags always stay
 
 
-def test_drop_one_mood_needs_something_left_to_search_by():
-    from cinesense.search.widening import drop_one_mood
+def test_one_mood_at_a_time_needs_two_moods_and_a_strong_film():
+    from cinesense.search.widening import one_mood_at_a_time
 
-    class Service:
-        def run(self, *a):
-            raise AssertionError("no probe expected")
+    def run(c):
+        raise AssertionError("no search expected")
 
-    assert drop_one_mood(Service(), SearchCriteria(tags=[TagCriterion(idx=7)]), TAGS) is None  # the only wish
+    assert one_mood_at_a_time(run, SearchCriteria(tags=[TagCriterion(idx=7)]), TAGS) is None
+    two = SearchCriteria(tags=[TagCriterion(idx=7), TagCriterion(idx=9)])
+    assert one_mood_at_a_time(lambda c: [], two, TAGS) is None
 
 
 def test_misses_flag_a_left_out_mood_on_films_without_it():

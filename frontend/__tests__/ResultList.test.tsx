@@ -295,22 +295,20 @@ it("the row below starts higher when there are many strong films", async () => {
   expect(moreFloor([...Array(10).fill(65), ...Array(10).fill(55)])).toBe(50);
 });
 
-it("nothing reaches 50%: the search goes on without the mood the backend names, and says so", async () => {
-  const onRelax = vi.fn();
-  const without = { ...emptyCriteria(), person: "Tom Cruise" };
-  const items = sampleRanked(5).map((r) => ({ ...r, match_percent: 40 }));
+it("no film has all the moods: it says the films fit one of them, and explains how on demand", async () => {
+  const items = sampleRanked(8).map((r, i) => ({ ...r, match_percent: 85 - i * 4 }));
   search.mockResolvedValue({
     ok: true,
-    data: {
-      items,
-      total: 50,
-      hidden_by_exclusion: 0,
-      extended_used: false,
-      drop_mood: { id: "drop-tag:7", label: "‘funny’ left out: nothing reached 50% with every wish", count: 12, criteria: without },
-    },
+    data: { items, total: 8, hidden_by_exclusion: 0, extended_used: false, one_mood: [{ tag: "space travel", count: 1 }, { tag: "funny", count: 7 }] },
   });
-  render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} onRelax={onRelax} />);
-  await waitFor(() => expect(onRelax).toHaveBeenCalledWith(without, "‘funny’ left out: nothing reached 50% with every wish"));
+  const criteria = { ...emptyCriteria(), person: "Tom Cruise", tags: [{ idx: 1, weight: 8, mode: "prefer" as const }, { idx: 2, weight: 10, mode: "prefer" as const }] };
+  render(<ResultList criteria={criteria} onOpen={() => {}} tagNames={{ 1: "space travel", 2: "funny" }} />);
+  expect(await screen.findByText("8 films fit one of your moods · none has them all")).toBeInTheDocument();
+  expect(screen.queryByRole("note")).toBeNull();
+  await userEvent.click(screen.getByRole("button", { name: /How these results came about/ }));
+  const note = screen.getByRole("note", { name: "How these results came about" });
+  expect(note).toHaveTextContent("Searched for your moods space travel (★★★★) and funny (★★★★★), with Tom Cruise.");
+  expect(note).toHaveTextContent("films that fit at least one of them (space travel: 1, funny: 7)");
 });
 
 it("counts the good matches, with every film searched after them", async () => {
