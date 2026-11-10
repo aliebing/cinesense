@@ -35,8 +35,8 @@ export default function ExclusionsBar({ tags, criteria, onChange, hiddenCount = 
   };
 
   return (
-    <section className="search-bar" aria-label="Exclusions and filters">
-      <h2 className="search-bar__title">Excluded &amp; filters</h2>
+    <section className="search-bar" aria-label="Filters">
+      <h2 className="search-bar__title">Filters</h2>
       {empty ? (
         <span className="search-bar__empty">None</span>
       ) : (

@@ -8,13 +8,15 @@ import type { Criteria } from "@/lib/searchState";
 import type { Movie, RankedMovie } from "@/lib/types";
 
 // two rows: in front up to BEST_MAX films from BEST_PERCENT (at least the MIN_SHOWN best, so a weak search still shows
-// something), large and with why they fit; below them every further film from MORE_PERCENT, as a running row paged by
-// 50. Fixed bars, not a gap to the best match: another tag lowers every score, and a gap would then let in more films
+// something), large and with why they fit; below them the further films from MORE_PERCENT, MORE_MAX at a time in a
+// running row (loaded from the API in pages of LIMIT). Fixed bars, not a gap to the best match: another tag lowers
+// every score, and a gap would then let in more films
 const LIMIT = 50;
 const MIN_SHOWN = 3;
 const BEST_MAX = 8;
 const BEST_PERCENT = 70;
-const MORE_PERCENT = 60;
+const MORE_PERCENT = 50;
+const MORE_MAX = 20; // films in the running row at a time; « Previous / Next » page through the rest
 const count = new Intl.NumberFormat("en-US");
 
 type Props = {
@@ -122,27 +124,29 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
         {widen}
       </>
     );
-  const pages = [items, ...(more.key === key ? more.pages : [])];
-  const n = page.key === key ? Math.min(page.n, pages.length - 1) : 0;
-  const current = pages[n];
-  const first = n * LIMIT; // films before this page
-  const best = pages[0].slice(0, BEST_MAX).filter((r, i) => i < MIN_SHOWN || r.match_percent >= BEST_PERCENT);
-  const shownOf = (p: number) => (p === 0 ? pages[0].slice(best.length) : pages[p]).filter((r) => r.match_percent >= MORE_PERCENT);
+  const all = [items, ...(more.key === key ? more.pages : [])].flat();
+  const best = all.slice(0, BEST_MAX).filter((r, i) => i < MIN_SHOWN || r.match_percent >= BEST_PERCENT);
+  const rest = all.slice(best.length).filter((r) => r.match_percent >= MORE_PERCENT);
+  const chunks = Math.max(1, Math.ceil(rest.length / MORE_MAX));
+  const n = page.key === key ? Math.min(page.n, chunks - 1) : 0;
+  const shownOf = (p: number) => rest.slice(p * MORE_MAX, (p + 1) * MORE_MAX);
   const shown = shownOf(n);
-  // a next page only while this one still ends above the bar: then the next may hold more that do
-  const last = current[current.length - 1];
-  const canNext = !loading && current.length === LIMIT && last.match_percent >= MORE_PERCENT && first + LIMIT < total;
+  // the API may hold more above the bar: the loaded films fill whole pages and the last still clears it
+  const last = all[all.length - 1];
+  const canLoad = all.length < total && all.length % LIMIT === 0 && last.match_percent >= MORE_PERCENT;
+  const canNext = !loading && ((n + 1) * MORE_MAX < rest.length || canLoad);
   const next = async () => {
-    if (n + 1 < pages.length) return setSweepTo({ key, n: n + 1 });
+    // the next 20 from what is loaded, unless they would be fewer and the API holds more: then load first
+    if ((n + 2) * MORE_MAX <= rest.length || (!canLoad && (n + 1) * MORE_MAX < rest.length)) return setSweepTo({ key, n: n + 1 });
     setLoadingMore(true);
-    const r = await search(criteria, first + LIMIT, LIMIT, widened?.from);
+    const r = await search(criteria, all.length, LIMIT, widened?.from);
     setLoadingMore(false);
     if (!r.ok || r.data.items.length === 0) return;
-    setMore({ key, pages: [...pages.slice(1), r.data.items] });
-    setSweepTo({ key, n: n + 1 });
+    setMore({ key, pages: [...(more.key === key ? more.pages : []), r.data.items] });
+    if (r.data.items.some((x) => x.match_percent >= MORE_PERCENT)) setSweepTo({ key, n: n + 1 });
   };
   // during a sweep the row holds both pages; it ends where the other page alone starts, then that page is swapped in
-  const to = sweepTo && sweepTo.key === key && sweepTo.n < pages.length ? sweepTo.n : null;
+  const to = sweepTo && sweepTo.key === key && sweepTo.n < chunks ? sweepTo.n : null;
   const target = to === null ? [] : shownOf(to);
   const rowItems = to === null ? shown : to > n ? [...shown, ...target] : [...target, ...shown];
   const sweep: Sweep | null =
@@ -156,6 +160,8 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
             setSweepTo(null);
           },
         };
+  const start = best.length + n * MORE_MAX; // films ranked before this row
+  const available = `${best.length + rest.length}${canLoad ? "+" : ""}`; // every film above the bar loaded so far
   const streaming = criteria.availability === "stream";
   const bestLabel = (
     <>
@@ -171,15 +177,19 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
   );
   const moreLabel = (
     <>
-      {n > 0 ? `Matches ${first + 1}–${first + shown.length}` : `${shown.length} more matches from ${MORE_PERCENT}%`}
+      {`${shown.length} more matches`}
+      <span className="related-hint">
+        {" "}
+        · {start + 1}–{start + shown.length} of {available}
+      </span>
       {n > 0 && !loading && !sweep && (
-        <button type="button" className="results-page-btn" onClick={() => setSweepTo({ key, n: n - 1 })} aria-label={`Previous ${LIMIT}`} title={`Previous ${LIMIT}`}>
-          ‹ Previous {LIMIT}
+        <button type="button" className="results-page-btn" onClick={() => setSweepTo({ key, n: n - 1 })} aria-label={`Previous ${MORE_MAX}`} title={`Previous ${MORE_MAX}`}>
+          ‹ Previous {MORE_MAX}
         </button>
       )}
       {canNext && !sweep && (
-        <button type="button" className="results-page-btn" onClick={next} disabled={loadingMore} aria-label={`Next ${LIMIT}`} title={`Next ${LIMIT}`}>
-          Next {LIMIT} ›
+        <button type="button" className="results-page-btn" onClick={next} disabled={loadingMore} aria-label={`Next ${MORE_MAX}`} title={`Next ${MORE_MAX}`}>
+          Next {MORE_MAX} ›
         </button>
       )}
     </>
@@ -190,8 +200,8 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
       {widen}
       <p className="related-count results-count">{foundText(total, capped)}</p>
       {(loading || loadingMore) && <LoadingBar />}
-      {n === 0 && <BestMatches items={best} onSelect={onOpen} label={bestLabel} streamCheck={streaming} busy={loading} />}
-      {(rowItems.length > 0 || n > 0) && (
+      <BestMatches items={best} onSelect={onOpen} label={bestLabel} streamCheck={streaming} busy={loading} />
+      {rowItems.length > 0 && (
         <div className="results-more-row">
           <RelatedRow
             key={n} // a new page starts at its first film

@@ -41,17 +41,17 @@ it("autocorrects a misspelt person and title to the names the search found", asy
 it("says in the exclusions row what each exclusion does in this search", async () => {
   setSearchState({ ...emptyCriteria(), person: "Sandra Bullock", exclude_genres: ["Horror"] });
   render(<ResultsPage />);
-  const row = await screen.findByRole("region", { name: "Exclusions and filters" });
+  const row = await screen.findByRole("region", { name: "Filters" });
   expect(await within(row).findByText("changes nothing here")).toBeInTheDocument();
   setSearchState(emptyCriteria());
 });
 
-it("shows the moods on top, then exclusions and filters to remove; the advanced search opens from the top", async () => {
+it("shows the filters on top, then the moods; the advanced search opens below them", async () => {
   setSearchState({ ...emptyCriteria(), tags: [{ idx: 1, weight: 6, mode: "must" }], year_from: 1990, year_to: 1999, exclude_people: ["Sylvester Stallone"] });
   render(<ResultsPage />);
   const moods = await screen.findByRole("region", { name: "Search criteria" });
-  const row = screen.getByRole("region", { name: "Exclusions and filters" });
-  expect(moods.compareDocumentPosition(row) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  const row = screen.getByRole("region", { name: "Filters" });
+  expect(row.compareDocumentPosition(moods) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy(); // filters first
   expect(within(moods).getByRole("button", { name: /Weight 3 of 5/ })).toBeInTheDocument(); // stars stay editable
   expect(within(moods).queryByText(/Sylvester Stallone/)).toBeNull(); // exclusions only in their own row
   expect(within(row).getByText(/without Sylvester Stallone/)).toBeInTheDocument();
