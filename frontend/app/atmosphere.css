@@ -677,12 +677,14 @@
 .related.has-arrows { --card-w: clamp(52px, 4.8cqw, 120px); --card-hover-scale: 1; } /* hover: only the gold frame */
 .results-more-row .related-label, .results-count { text-align: center; }
 /* the count with "How these results came about": the explanation opens over the films, so nothing moves */
-.results-count-line { position: relative; z-index: 18; display: flex; justify-content: center; align-items: baseline; gap: .8em; flex-wrap: wrap; }
+/* the count stays centred over the films; the button sits at the right edge, its explanation opens below it */
+.results-count-line { position: relative; z-index: 18; display: flex; justify-content: center; align-items: center; min-height: 1.6em; }
+.results-count-line .results-explain-btn { position: absolute; right: 0; top: 50%; transform: translateY(-50%); }
 .results-count-line .results-count { margin: 0; }
-.results-explain-btn { font: inherit; font-size: .8em; cursor: pointer; padding: .15em .8em; border-radius: 999px; background: #0d0d14c4;
+.results-explain-btn { font: inherit; font-size: .92em; cursor: pointer; padding: .3em 1em; border-radius: 999px; background: #0d0d14c4;
   color: var(--muted); border: 1px solid #ffffff2e; }
 .results-explain-btn:hover, .results-explain-btn:focus-visible, .results-explain-btn[aria-expanded="true"] { color: var(--gold); border-color: #f3c76b80; }
-.results-explain { position: absolute; top: calc(100% + .5em); left: 50%; transform: translateX(-50%); width: min(100%, 52em);
+.results-explain { position: absolute; top: calc(100% + .5em); right: 0; width: min(100%, 38em);
   padding: .8em 1.1em; border-radius: 14px; background: #0d0d14; border: 1px solid #f3c76b59; box-shadow: 0 20px 60px #000d;
   font-size: .88em; line-height: 1.45; text-align: left; }
 .results-explain ul { margin: 0; padding-left: 1.1em; display: grid; gap: .35em; }
