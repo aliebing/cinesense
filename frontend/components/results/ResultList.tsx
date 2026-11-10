@@ -38,6 +38,7 @@ export function explainLines(
   floor: number,
   oneMood: OneMood | null,
   widenedBy: string | null = null,
+  weak = false,
 ): string[] {
   const moods = criteria.tags
     .filter((t) => t.mode !== "not")
@@ -55,6 +56,7 @@ export function explainLines(
     "Match %: fit to this search, moods first (MovieLens Tag Genome), then plot, people, 👍/👎, rating and fame. Not a review score.",
     `Top: the 6 best from 70% (at least 3). Below: more from ${floor}% (70% with many strong films, else 60 or 50%).`,
   ];
+  if (weak) out.push(`Only the films in front fit well; the row below shows the other films of this search, all below ${floor}%.`);
   if (widenedBy)
     out.push(`Too few films match every wish, so the row below shows the search with “${widenedBy}”, the change that alters your wish least; your search itself stays as it is.`);
   if (oneMood)
@@ -192,14 +194,18 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened,
   const floor = moreFloor(items.map((r) => r.match_percent));
   const parts = oneMood.key === key ? oneMood.parts : null; // the films fit one mood each, none all of them
   // too few films for every wish: the row below shows the widened search's films instead, all of them
-  const rest = widenedRow ? widenedRow.items : all.slice(best.length).filter((r) => r.match_percent >= floor);
+  const strong = all.slice(best.length).filter((r) => r.match_percent >= floor);
+  // nothing above the floor beyond the front row: the row below shows the weaker films anyway, saying so (a search
+  // like "Tom Cruise + space travel" has one strong film and 49 more with Tom Cruise)
+  const weak = !widenedRow && strong.length === 0 && all.length > best.length;
+  const rest = widenedRow ? widenedRow.items : weak ? all.slice(best.length) : strong;
   const chunks = Math.max(1, Math.ceil(rest.length / MORE_MAX));
   const n = page.key === key ? Math.min(page.n, chunks - 1) : 0;
   const shownOf = (p: number) => rest.slice(p * MORE_MAX, (p + 1) * MORE_MAX);
   const shown = shownOf(n);
   // the API may hold more above the bar: the loaded films fill whole pages and the last still clears it
   const last = all[all.length - 1];
-  const canLoad = !widenedRow && all.length < total && all.length % LIMIT === 0 && last.match_percent >= floor;
+  const canLoad = !widenedRow && all.length < total && all.length % LIMIT === 0 && (weak || last.match_percent >= floor);
   const canNext = !loading && ((n + 1) * MORE_MAX < rest.length || canLoad);
   const next = async () => {
     // the next page from what is loaded, unless they would be fewer and the API holds more: then load first
@@ -209,7 +215,7 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened,
     setLoadingMore(false);
     if (!r.ok || r.data.items.length === 0) return;
     setMore({ key, pages: [...(more.key === key ? more.pages : []), r.data.items] });
-    if (r.data.items.some((x) => x.match_percent >= floor)) setSweepTo({ key, n: n + 1 });
+    if (weak || r.data.items.some((x) => x.match_percent >= floor)) setSweepTo({ key, n: n + 1 });
   };
   // during a sweep the row holds both pages; it ends where the other page alone starts, then that page is swapped in
   const to = sweepTo && sweepTo.key === key && sweepTo.n < chunks ? sweepTo.n : null;
@@ -249,6 +255,14 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened,
         · {n * MORE_MAX + 1}–{n * MORE_MAX + shown.length}
       </span>
     </>
+  ) : weak ? (
+    <>
+      {`${shown.length} weaker matches (below ${floor}%)`}
+      <span className="related-hint">
+        {" "}
+        · {start + 1}–{start + shown.length} of {available}
+      </span>
+    </>
   ) : (
     <>
       {`${shown.length} more matches from ${floor}%`}
@@ -271,7 +285,7 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened,
         {explain && (
           <aside className="results-explain" aria-label="How these results came about">
             <ul>
-              {explainLines(criteria, tagNames, floor, parts, widenedRow?.label ?? null).map((l) => (
+              {explainLines(criteria, tagNames, floor, parts, widenedRow?.label ?? null, weak).map((l) => (
                 <li key={l}>{l}</li>
               ))}
             </ul>
@@ -284,7 +298,7 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened,
             ? "No film matches every wish"
             : parts
             ? `${fmt.format(total)} ${total === 1 ? "film fits" : "films fit"} one of your moods · none has them all`
-            : countText(best.filter((r) => r.match_percent >= floor).length + rest.length, canLoad, floor, total, capped, best.length)}
+            : countText(best.filter((r) => r.match_percent >= floor).length + (weak ? 0 : rest.length), canLoad, floor, total, capped, best.length)}
         </p>
       </div>
       {(loading || loadingMore) && <LoadingBar />}

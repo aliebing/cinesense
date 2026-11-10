@@ -157,7 +157,8 @@ it("shows at least the 3 best matches, and says how many were found", async () =
   const { container } = render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} />);
   expect(await screen.findByText(/The 3 best matches/)).toBeInTheDocument(); // none reaches 50%: the 3 best
   expect(screen.getByText("No film matches well · the 3 closest of 39 films searched")).toHaveClass("related-count");
-  expect(container.querySelectorAll(".related-card")).toHaveLength(3);
+  expect(container.querySelectorAll(".best .related-card")).toHaveLength(3);
+  expect(screen.getByText("9 weaker matches (below 50%)")).toBeInTheDocument(); // the rest, said honestly
   expect(search.mock.calls[0][2]).toBe(50); // at most 50
 });
 
@@ -186,13 +187,14 @@ it("never more than 6 in front, the other strong films run in the row below", as
   expect(new Set([...more].map((c) => c.getAttribute("aria-label"))).size).toBe(6);
 });
 
-it("a weak search still shows its 3 best, and no row below 50% (+ horror lowers every score)", async () => {
+it("a weak search still shows its 3 best, and the rest as weaker matches below (+ horror lowers every score)", async () => {
   const percents = [55, 55, 54, 49, 49, 44, 44, 30, 22, 20];
   const items = sampleRanked(10).map((r, i) => ({ ...r, match_percent: percents[i] }));
   search.mockResolvedValue({ ok: true, data: { items, total: 39, hidden_by_exclusion: 0, extended_used: false } });
   const { container } = render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} />);
   expect(await screen.findByText(/The 3 best matches/)).toBeInTheDocument();
-  expect(container.querySelector(".results-more-row")).toBeNull();
+  expect(container.querySelector(".results-more-row")).not.toBeNull();
+  expect(screen.getByText("7 weaker matches (below 50%)")).toBeInTheDocument();
 });
 
 it("a search with only a few hits just counts them", async () => {
