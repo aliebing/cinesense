@@ -47,14 +47,14 @@ export function explainLines(criteria: Criteria, names: Record<number, string>, 
   const wish = [moods.length ? `your moods ${moods.join(" and ")}` : "your taste", ...also].join(", ");
   const out = [
     `Searched for ${wish}.`,
-    "Match % says how well a film fits this search: mostly how strongly it carries your moods (MovieLens Tag Genome), then the plot, the people, your 👍/👎, its rating and how well known it is. It is not a review score.",
-    `Top row: up to 8 best films from 70% (always at least the 3 best). Row below: the further films from ${floor}%; it starts at 70% when many films are strong, at 60% for a middling number, else at 50%.`,
+    "Match %: fit to this search, moods first (MovieLens Tag Genome), then plot, people, 👍/👎, rating and fame. Not a review score.",
+    `Top: the 8 best from 70% (at least 3). Below: more from ${floor}% (70% with many strong films, else 60 or 50%).`,
   ];
   if (oneMood)
     out.push(
-      `No film carries all your moods together (none reached 50%). Shown instead: the films that fit at least one of them (${oneMood
+      `No film has all your moods (none reached 50%): these fit at least one (${oneMood
         .map((m) => `${m.tag}: ${m.count}`)
-        .join(", ")}); ≠ marks the mood a film lacks.`,
+        .join(", ")}); ≠ marks what a film lacks.`,
     );
   return out;
 }
@@ -80,7 +80,6 @@ export function countText(good: number, more: boolean, floor: number, total: num
 
 export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened, tagNames = {} }: Props) {
   const [oneMood, setOneMood] = useState<{ key: string; parts: OneMood | null }>({ key: "", parts: null });
-  const [explain, setExplain] = useState(false);
   const [items, setItems] = useState<RankedMovie[]>([]);
   const [total, setTotal] = useState<number | null>(null);
   const [capped, setCapped] = useState(false);
@@ -240,26 +239,27 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened,
   );
   return (
     <>
-      {note}
-      {widen}
+      {/* the notes about this search on the left, how its results came about on the right, side by side */}
+      <div className="results-info">
+        <div className="results-info__left">
+          {note}
+          {widen}
+        </div>
+        <aside className="results-explain" aria-label="How these results came about">
+          <h3 className="results-explain__title">ⓘ How these results came about</h3>
+          <ul>
+            {explainLines(criteria, tagNames, floor, parts).map((l) => (
+              <li key={l}>{l}</li>
+            ))}
+          </ul>
+        </aside>
+      </div>
       <div className="results-count-line">
         <p className="related-count results-count">
           {parts
             ? `${fmt.format(total)} ${total === 1 ? "film fits" : "films fit"} one of your moods · none has them all`
             : countText(best.filter((r) => r.match_percent >= floor).length + rest.length, canLoad, floor, total, capped, best.length)}
         </p>
-        <button type="button" className="results-explain-btn" aria-expanded={explain} onClick={() => setExplain((v) => !v)}>
-          ⓘ How these results came about
-        </button>
-        {explain && (
-          <div className="results-explain" role="note" aria-label="How these results came about">
-            <ul>
-              {explainLines(criteria, tagNames, floor, parts).map((l) => (
-                <li key={l}>{l}</li>
-              ))}
-            </ul>
-          </div>
-        )}
       </div>
       {(loading || loadingMore) && <LoadingBar />}
       <BestMatches items={best} onSelect={onOpen} label={bestLabel} streamCheck={streaming} busy={loading} />

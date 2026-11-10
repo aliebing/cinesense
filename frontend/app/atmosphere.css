@@ -529,8 +529,7 @@
 @media (min-width: 760px) {
   /* the count, the best matches and the running row share one left edge, with room for the arrows */
   .results-page { --row-inset: calc(2 * (clamp(52px, 4.8cqw, 120px) + var(--card-gap))); }
-  .results-page .related, .results-page .best, .results-page .results-count,
-  .results-page .results-widened { margin-inline: var(--row-inset); }
+  .results-page .related, .results-page .best, .results-page .results-count { margin-inline: var(--row-inset); }
   /* the film row, header and advanced search always show in full; the mood panel takes what is left and
      scrolls inside itself when it holds many chips */
   .results-page > * { flex-shrink: 0; }
@@ -676,18 +675,18 @@
 /* the running row looks the same on the search and the detail page: card size, gap, zoom and the wide trailer */
 .related.has-arrows { --card-w: clamp(52px, 4.8cqw, 120px); --card-hover-scale: 1; } /* hover: only the gold frame */
 .results-more-row .related-label, .results-count { text-align: center; }
-/* the count with "How these results came about": the explanation opens over the films, so nothing moves */
-/* the count stays centred over the films; the button sits at the right edge, its explanation opens below it */
-.results-count-line { position: relative; z-index: 18; display: flex; justify-content: center; align-items: center; min-height: 1.6em; }
-.results-count-line .results-explain-btn { position: absolute; right: 0; top: 50%; transform: translateY(-50%); }
+/* above the films: the notes about the search on the left (too few films, widened), how its results came about on
+   the right, always open and compact; the count stays centred below */
+/* out of the flow (the page must fit unscrolled): a narrow column at the right edge, from the height of the notes
+   on the left down beside the best matches, which leave that strip free even with 8 films */
+.results-info { position: relative; z-index: 17; }
+.results-info__left { display: flex; flex-direction: column; gap: .5em; min-width: 0; padding-right: 18em; }
+.results-explain { position: absolute; top: 0; right: 0; width: 16.5em; padding: .5em .8em; border-radius: 12px; background: #0d0d14c4;
+  border: 1px solid #ffffff1f; font-size: .74em; line-height: 1.4; text-align: left; color: #d6d6de; }
+.results-explain__title { margin: 0 0 .25em; font-size: 1em; font-weight: 600; letter-spacing: .04em; color: var(--gold); }
+.results-explain ul { margin: 0; padding-left: 1.1em; display: grid; gap: .15em; }
+.results-count-line { display: flex; justify-content: center; }
 .results-count-line .results-count { margin: 0; }
-.results-explain-btn { font: inherit; font-size: .92em; cursor: pointer; padding: .3em 1em; border-radius: 999px; background: #0d0d14c4;
-  color: var(--muted); border: 1px solid #ffffff2e; }
-.results-explain-btn:hover, .results-explain-btn:focus-visible, .results-explain-btn[aria-expanded="true"] { color: var(--gold); border-color: #f3c76b80; }
-.results-explain { position: absolute; top: calc(100% + .5em); right: 0; width: min(100%, 38em);
-  padding: .8em 1.1em; border-radius: 14px; background: #0d0d14; border: 1px solid #f3c76b59; box-shadow: 0 20px 60px #000d;
-  font-size: .88em; line-height: 1.45; text-align: left; }
-.results-explain ul { margin: 0; padding-left: 1.1em; display: grid; gap: .35em; }
 /* the running row's count and heading, centred like the search page's, on a dark pill: readable over any backdrop */
 .related.has-arrows > .related-count, .related.has-arrows > .related-label { width: fit-content; max-width: 100%; margin-inline: auto;
   padding: .2em .9em; border-radius: 999px; background: #07080cd9; opacity: 1; text-align: center; }

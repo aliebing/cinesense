@@ -304,11 +304,9 @@ it("no film has all the moods: it says the films fit one of them, and explains h
   const criteria = { ...emptyCriteria(), person: "Tom Cruise", tags: [{ idx: 1, weight: 8, mode: "prefer" as const }, { idx: 2, weight: 10, mode: "prefer" as const }] };
   render(<ResultList criteria={criteria} onOpen={() => {}} tagNames={{ 1: "space travel", 2: "funny" }} />);
   expect(await screen.findByText("8 films fit one of your moods · none has them all")).toBeInTheDocument();
-  expect(screen.queryByRole("note")).toBeNull();
-  await userEvent.click(screen.getByRole("button", { name: /How these results came about/ }));
-  const note = screen.getByRole("note", { name: "How these results came about" });
+  const note = screen.getByRole("complementary", { name: "How these results came about" }); // always open
   expect(note).toHaveTextContent("Searched for your moods space travel (★★★★) and funny (★★★★★), with Tom Cruise.");
-  expect(note).toHaveTextContent("films that fit at least one of them (space travel: 1, funny: 7)");
+  expect(note).toHaveTextContent("these fit at least one (space travel: 1, funny: 7)");
 });
 
 it("counts the good matches, with every film searched after them", async () => {
