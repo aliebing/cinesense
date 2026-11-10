@@ -18,7 +18,8 @@ const BEST_PERCENT = 70;
 const MORE_FLOORS = [70, 60, 50]; // the row below starts at the highest of these that still holds about MORE_MAX films
 const MORE_PERCENT = 50; // the lowest floor for "good" matches
 const MORE_MAX = 30;
-const WEAK_FLOOR = 20; // fewer than MORE_MAX strong films: the row below goes on with weaker ones down to this // films in the running row at a time; its « » arrows run quickly to the previous / next ones
+const WEAK_FLOOR = 20; // fewer than MORE_MAX strong films: the row below goes on with weaker ones down to this
+const WEAK_MAX = 29; // ... but only one page of them, so a thin search needs no « » // films in the running row at a time; its « » arrows run quickly to the previous / next ones
 
 type Props = {
   criteria: Criteria;
@@ -188,14 +189,14 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened,
   // ("Tom Cruise + space travel" has one strong film and many more with Tom Cruise)
   const filled = strong.length < MORE_MAX ? all.slice(best.length).filter((r) => r.match_percent >= WEAK_FLOOR) : strong;
   const weak = !widenedRow && filled.length > strong.length;
-  const rest = widenedRow ? widenedRow.items : filled;
+  const rest = widenedRow ? widenedRow.items : weak ? filled.slice(0, Math.max(strong.length, WEAK_MAX)) : filled;
   const chunks = Math.max(1, Math.ceil(rest.length / MORE_MAX));
   const n = page.key === key ? Math.min(page.n, chunks - 1) : 0;
   const shownOf = (p: number) => rest.slice(p * MORE_MAX, (p + 1) * MORE_MAX);
   const shown = shownOf(n);
   // the API may hold more above the bar: the loaded films fill whole pages and the last still clears it
   const last = all[all.length - 1];
-  const canLoad = !widenedRow && all.length < total && all.length % LIMIT === 0 && last.match_percent >= (weak ? WEAK_FLOOR : floor);
+  const canLoad = !widenedRow && all.length < total && all.length % LIMIT === 0 && !weak && last.match_percent >= floor;
   const canNext = !loading && ((n + 1) * MORE_MAX < rest.length || canLoad);
   const next = async () => {
     // the next page from what is loaded, unless they would be fewer and the API holds more: then load first

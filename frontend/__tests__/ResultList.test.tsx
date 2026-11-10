@@ -301,3 +301,11 @@ it("few strong films: the 3 best in front, then weaker ones below, and the expla
   expect(note).toHaveTextContent("Searched for your moods space travel (★★★★), with Tom Cruise.");
   expect(note).toHaveTextContent("the row below goes on with weaker ones");
 });
+
+it("a thin search shows one page of weaker films, at most 29, so no « » are needed", async () => {
+  const items = sampleRanked(50).map((r, i) => ({ ...r, movie: { ...r.movie, id: `t-${i}` }, match_percent: i === 0 ? 60 : 45 - Math.floor(i / 3) }));
+  search.mockResolvedValue({ ok: true, data: { items, total: 200, hidden_by_exclusion: 0, extended_used: false } });
+  render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} />);
+  expect(await screen.findByText("29 weaker matches (below 50%)")).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Next 30" })).toBeNull();
+});
