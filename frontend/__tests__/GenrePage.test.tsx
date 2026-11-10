@@ -143,7 +143,7 @@ it("opened from the search, the row holds the other matches of the whole search 
   expect(api.search.mock.calls[0][0]).toMatchObject({ person: "Gérard Depardieu" });
   expect(screen.getByText("3 films found")).toBeInTheDocument();
   expect(api.discover).not.toHaveBeenCalled();
-  expect(screen.getByText("with Gérard Depardieu", { selector: ".stage-why span" })).toBeInTheDocument();
+  expect(screen.getByText("with Gérard Depardieu", { selector: ".stage-why p" })).toBeInTheDocument();
   const crumbs = screen.getByRole("navigation", { name: "Breadcrumb" });
   expect(within(crumbs).getByRole("link", { name: "Search" })).toHaveAttribute("href", "/results"); // back to the overview
   setSearchState(emptyCriteria());
@@ -211,4 +211,10 @@ it("⚡ shows up in the read-only mood settings", async () => {
   await userEvent.click(screen.getByRole("button", { name: "⚡ More action" }));
   expect(await within(panel).findByText("action")).toBeInTheDocument();
   setSearchState(emptyCriteria());
+});
+
+it("words the stage's reasons as a readable line", async () => {
+  const { whyText } = await import("@/components/genre/GenreView");
+  expect(whyText(["action 97%", "dark 78%", "with Keanu Reeves"])).toBe("Strong on your moods: action (97%), dark (78%) · with Keanu Reeves");
+  expect(whyText(["streaming on Netflix"])).toBe("streaming on Netflix");
 });

@@ -13,6 +13,7 @@ it("submits title, person with role, years, kind and extended", async () => {
   render(<AdvancedSearch criteria={emptyCriteria()} onSubmit={onSubmit} />);
   await userEvent.type(screen.getByLabelText("Title"), "interstelar");
   await userEvent.type(screen.getByLabelText("Actor or director"), "Sandra Hueller");
+  await userEvent.click(screen.getByRole("button", { name: /More options/ }));
   await userEvent.click(within(screen.getByRole("group", { name: "Role" })).getByRole("button", { name: "Actor" }));
   await userEvent.type(screen.getByLabelText("From year"), "2010");
   await userEvent.click(within(screen.getByRole("group", { name: "Kind" })).getByRole("button", { name: "Documentaries" }));
@@ -62,6 +63,7 @@ it("extended search may use typed text (newer films are not in the suggestions)"
   const onSubmit = vi.fn();
   render(<AdvancedSearch criteria={emptyCriteria()} onSubmit={onSubmit} />);
   await userEvent.type(screen.getByLabelText("Title"), "Some new film");
+  await userEvent.click(screen.getByRole("button", { name: /More options/ }));
   await userEvent.click(screen.getByLabelText(/Extended search/));
   await userEvent.click(screen.getByRole("button", { name: "Search" }));
   expect(onSubmit.mock.calls[0][0]).toMatchObject({ title: "Some new film", extended: true });
@@ -94,4 +96,15 @@ it("years before films existed or far in the future are pointed out", async () =
   await userEvent.click(screen.getByRole("button", { name: "Search" }));
   expect(onSubmit).not.toHaveBeenCalled();
   expect(screen.getByText(/between 1888 and/)).toBeInTheDocument();
+});
+
+it("shows title, person and years first; role, kind and the extended search behind More options", async () => {
+  render(<AdvancedSearch criteria={emptyCriteria()} onSubmit={vi.fn()} />);
+  expect(screen.getByLabelText("Title")).toBeInTheDocument();
+  expect(screen.getByLabelText("From year")).toBeInTheDocument();
+  expect(screen.queryByRole("group", { name: "Role" })).toBeNull();
+  expect(screen.queryByLabelText(/Extended search/)).toBeNull();
+  await userEvent.click(screen.getByRole("button", { name: /More options/ }));
+  expect(screen.getByRole("group", { name: "Kind" })).toBeInTheDocument();
+  expect(screen.getByLabelText(/Extended search/)).toBeInTheDocument();
 });

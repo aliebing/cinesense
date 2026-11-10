@@ -70,6 +70,8 @@ export default function AdvancedSearch({ criteria, onSubmit }: { criteria: Crite
   const [yearTo, setYearTo] = useState(criteria.year_to?.toString() ?? "");
   const [kind, setKind] = useState(criteria.kind);
   const [extended, setExtended] = useState(criteria.extended);
+  // second step: role, kind and the extended search, open from the start when one of them is already set
+  const [more, setMore] = useState(criteria.person_role !== "any" || criteria.kind !== "any" || criteria.extended);
   const loadTitles = useCallback((q: string) => suggest("title", q).then((r) => (r.ok ? r.data : [])), []);
   const loadPeople = useCallback((q: string) => suggest("person", q, role).then((r) => (r.ok ? r.data : [])), [role]);
 
@@ -135,7 +137,6 @@ export default function AdvancedSearch({ criteria, onSubmit }: { criteria: Crite
         }}
         load={loadPeople}
       />
-      <Choice label="Role" options={ROLES} value={role} onChange={setRole} />
       <label>
         From year
         <input id="adv-from" inputMode="numeric" placeholder="e.g. 1990" aria-invalid={badYear === "from"} value={yearFrom} onChange={(e) => setYearFrom(e.target.value)} />
@@ -144,12 +145,22 @@ export default function AdvancedSearch({ criteria, onSubmit }: { criteria: Crite
         To year
         <input id="adv-to" inputMode="numeric" placeholder="e.g. 1999" aria-invalid={badYear === "to"} value={yearTo} onChange={(e) => setYearTo(e.target.value)} />
       </label>
-      <Choice label="Kind" options={KINDS} value={kind} onChange={setKind} />
-      <label className="advanced-search__check">
-        <input id="adv-extended" type="checkbox" checked={extended} onChange={(e) => setExtended(e.target.checked)} />
-        Extended search (more and newer films, slower)
-      </label>
-      <button type="submit">Search</button>
+      <div className="advanced-search__buttons">
+        <button type="submit">Search</button>
+        <button type="button" className="advanced-search__more" aria-expanded={more} aria-controls="adv-more" onClick={() => setMore((m) => !m)}>
+          {more ? "Fewer options ▴" : "More options ▾"}
+        </button>
+      </div>
+      {more && (
+        <div id="adv-more" className="advanced-search__more-row">
+          <Choice label="Role" options={ROLES} value={role} onChange={setRole} />
+          <Choice label="Kind" options={KINDS} value={kind} onChange={setKind} />
+          <label className="advanced-search__check">
+            <input id="adv-extended" type="checkbox" checked={extended} onChange={(e) => setExtended(e.target.checked)} />
+            Extended search (more and newer films, slower)
+          </label>
+        </div>
+      )}
       {hint && (
         <p className="advanced-search__hint" role="alert">
           {hint}

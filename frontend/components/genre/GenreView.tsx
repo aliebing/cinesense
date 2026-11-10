@@ -170,7 +170,7 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
 
   const stageWhy = (m: Movie, w: MoodWorld) => {
     const reasons = stageReasons?.id === m.id ? stageReasons.reasons : [];
-    return reasons.length ? reasons.join(" · ") : `Highly rated in the “${w.title}” world`;
+    return reasons.length ? whyText(reasons) : `Highly rated in the “${w.title}” world`;
   };
 
   const world = state.kind === "ready" ? state.world : null;
@@ -227,3 +227,18 @@ function crumbs(movie: Movie | null, fromSearch: boolean): Crumb[] {
   if (movie) out.push({ label: movie.title });
   return out;
 }
+
+/** The ranking's reasons as a readable line: the mood scores ("action 97%") first as one phrase, then the rest
+ *  ("with Keanu Reeves", "streaming on Netflix"). */
+export function whyText(reasons: string[]): string {
+  const moods: string[] = [];
+  const rest: string[] = [];
+  for (const r of reasons) {
+    const m = /^(.+) (\d+)%$/.exec(r);
+    if (m) moods.push(`${m[1]} (${m[2]}%)`);
+    else rest.push(r);
+  }
+  const parts = moods.length ? [`Strong on your moods: ${moods.join(", ")}`, ...rest] : rest;
+  return parts.join(" · ");
+}
+

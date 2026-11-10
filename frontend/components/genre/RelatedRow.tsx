@@ -229,7 +229,7 @@ export default function RelatedRow({
                 onClick={() => onSelect(r.movie)}
               >
                 <ImageOrPlaceholder src={r.movie.poster_url} alt="" />
-                <i>{r.match_percent}%</i>
+                <i title={MATCH_HINT}>{r.match_percent}% match</i>
                 <span>
                   {r.movie.title}
                   {showReasons && r.reasons.length > 0 && <small className="related-why">{r.reasons.slice(0, 2).join(" · ")}</small>}
@@ -256,6 +256,9 @@ export default function RelatedRow({
 const fmt = new Intl.NumberFormat("en-US");
 
 /** "65 films found", "1 film found", "At least 500 films found" (a capped mood search) */
+/** what the percentage on a card means: fit to this search, not a review score (that is the MovieLens rating) */
+export const MATCH_HINT = "How well the film fits your search (moods, plot, people, rating), not a review score";
+
 export function foundText(total: number, capped = false): string {
   const films = `${fmt.format(total)} ${total === 1 ? "film" : "films"} found`;
   return capped ? `At least ${films}` : films;

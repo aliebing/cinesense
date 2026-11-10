@@ -181,6 +181,10 @@ export default function StagePanel({ movie, world, why, feedback = 0, onFeedback
         {movie.title_de && movie.title_de !== movie.title && <p className="stage-title-de">{movie.title_de}</p>}
         <p className="stage-meta">{metaLine(movie)}</p>
         {people.length > 0 && <p className="stage-people">{people.join(" · ")}</p>}
+        <section className="stage-why" aria-label="Why it fits you">
+          <h3 className="stage-why__title">✦ Why it fits you</h3>
+          <p>{why}</p>
+        </section>
         <Overview key={movie.id} text={movie.overview} />
         <div className="stage-tags">
           {movie.is_placeholder && <span className="stage-tag--placeholder">Placeholder</span>}
@@ -212,9 +216,6 @@ export default function StagePanel({ movie, world, why, feedback = 0, onFeedback
               Wikipedia
             </a>
           )}
-        </div>
-        <div className="stage-why">
-          <b>Why it fits you:</b> <span>{why}</span>
         </div>
         <div className="stage-feedback">
           <button

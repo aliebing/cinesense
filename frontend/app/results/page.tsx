@@ -7,9 +7,10 @@ import CinemaFrame from "@/components/cinema/CinemaFrame";
 import Breadcrumb from "@/components/nav/Breadcrumb";
 import ResultList from "@/components/results/ResultList";
 import AdvancedSearch from "@/components/search/AdvancedSearch";
+import CompactCriteria from "@/components/search/CompactCriteria";
 import SearchChips from "@/components/search/SearchChips";
 import { type DiscoverResult, getTags, type Tag } from "@/lib/api";
-import { type Criteria, patchSearchState, useSearchState } from "@/lib/searchState";
+import { type Criteria, hasAnyCriteria, patchSearchState, useSearchState } from "@/lib/searchState";
 import type { Movie } from "@/lib/types";
 
 export default function ResultsPage() {
@@ -19,6 +20,9 @@ export default function ResultsPage() {
   const [hidden, setHidden] = useState(0);
   const [hiddenBy, setHiddenBy] = useState<Record<string, number> | undefined>(undefined);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  // the full mood panel: closed by default so the films come early; open while there is nothing to show yet
+  const [panel, setPanel] = useState<boolean | null>(null);
+  const panelOpen = panel ?? !hasAnyCriteria(criteria);
   // a widening chosen on this page: the original criteria and what was widened (any other change ends it)
   const [widened, setWidened] = useState<{ from: Criteria; labels: string[] } | null>(null);
   const change = useCallback(
@@ -68,7 +72,15 @@ export default function ResultsPage() {
             }}
           />
         )}
-        <SearchChips tags={tags} criteria={criteria} onChange={change} hiddenCount={hidden} hiddenBy={hiddenBy} />
+        <CompactCriteria
+          tags={tags}
+          criteria={criteria}
+          onChange={change}
+          hiddenCount={hidden}
+          open={panelOpen}
+          onToggle={() => setPanel(!panelOpen)}
+        />
+        {panelOpen && <SearchChips tags={tags} criteria={criteria} onChange={change} hiddenCount={hidden} hiddenBy={hiddenBy} />}
         <ResultList criteria={criteria} onOpen={open} onMeta={onMeta} onRelax={relax} widened={widened} />
       </div>
     </CinemaFrame>

@@ -173,7 +173,10 @@ export default function ChatPanel({ mode, horrorIdx = null }: { mode: "static" |
         </button>
       </form>
       {!live && <p className="chat-hint">The chat agent is coming soon</p>}
-      <div className="chat-chips">
+      <div className="chat-chips" role="group" aria-label="Quick filters">
+        <span className="chat-chips__label" aria-hidden="true">
+          Quick filters
+        </span>
         {quick.map((q) => (
           <button key={q.label} type="button" aria-pressed={q.on} className={q.on ? "is-on" : ""} disabled={busy} onClick={q.toggle}>
             {q.label}

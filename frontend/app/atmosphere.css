@@ -118,8 +118,8 @@
 /* ---------- homepage layout (proportions from the approved mockup at ~2400px) ---------- */
 .cinema-stage {
   --safe-x: 4.5%; /* clear of the curtains, which overlap 2.5% of the stage on each side */
-  --chat-w: clamp(380px, 28cqw, 680px);
-  --chat-x: 37%; /* chat column between the first third and the centre */
+  --chat-w: clamp(440px, 35cqw, 850px); /* the chat is the main way in: the widest element in the middle */
+  --chat-x: 40%; /* chat column between the settings panel and the centre */
   --ui: clamp(12px, 0.62cqw, 16px);
   --panel-w: clamp(190px, 15cqw, 330px); /* settings panel on the left */
   --featured-scale: 1.45; /* tiles of the middle row (the closest matches) are drawn this much larger */
@@ -170,16 +170,20 @@
 .chat-input { display: flex; gap: .6em; margin-top: .4em; }
 .chat-input input {
   flex: 1; min-width: 0; font: inherit; color: #fff; background: #ffffff10; border: 1px solid #ffffff30;
-  border-radius: 999px; padding: .8em 1.2em; outline: none;
+  border-radius: 999px; padding: 1.05em 1.4em; outline: none; font-size: 1.08em;
 }
 .chat-input input::placeholder { color: #ffffff90; }
 .chat-input input:focus-visible { border-color: var(--gold); }
-.chat-input button { width: 3em; border: 0; border-radius: 999px; background: var(--gold); color: #16130c; cursor: pointer; }
+.chat-input button { width: 3.4em; font-size: 1.1em; border: 0; border-radius: 999px; background: var(--gold); color: #16130c; cursor: pointer; }
 .chat-input :disabled { cursor: not-allowed; opacity: .7; }
 .chat-hint { margin: .5em 0 0; font-size: .85em; color: var(--muted); }
-.chat-chips { display: flex; flex-wrap: wrap; gap: .45em; margin-top: .7em; }
+.chat-chips { display: flex; flex-wrap: wrap; align-items: center; gap: .45em; margin-top: .7em; }
+.chat-chips__label { font-size: .72em; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin-right: .2em; }
 .chat-chips button { font: inherit; font-size: .85em; padding: .35em .75em; border-radius: 999px; border: 1px solid #ffffff30; background: #ffffff0c; color: #fff; cursor: pointer; }
-.chat-chips button.is-on { border-color: var(--gold); background: #f3c76b26; color: var(--gold); }
+/* off: a dashed suggestion to click; on: a solid gold filter with a tick */
+.chat-chips button[aria-pressed="false"] { border-style: dashed; }
+.chat-chips button.is-on { border-color: var(--gold); background: var(--gold); color: #16130c; font-weight: 600; }
+.chat-chips button.is-on::before { content: "✓ "; }
 .chat-chips .chat-reset { margin-left: auto; border-color: transparent; background: none; opacity: .75; } /* quieter than the filters */
 .chat-chips .chat-reset:hover { opacity: 1; border-color: #ffffff30; }
 .chat-results { margin-top: .7em; }
@@ -275,7 +279,9 @@
 .stage-tags { display: flex; flex-wrap: wrap; gap: .4em; }
 .stage-tags span { font-size: .8em; padding: .25em .7em; border-radius: 999px; border: 1px solid #ffffff40; }
 .stage-tags .stage-tag--placeholder { border-color: var(--gold); color: var(--gold); }
-.stage-why { margin-top: .7em; font-size: .9em; background: #f3c76b1f; border-left: 2px solid var(--gold); padding: .5em .7em; border-radius: 4px; }
+.stage-why { margin: .2em 0 .7em; background: #f3c76b24; border: 1px solid #f3c76b66; border-left: 3px solid var(--gold); padding: .6em .85em; border-radius: 8px; }
+.stage-why__title { margin: 0 0 .25em; font-size: .78em; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--gold); }
+.stage-why p { margin: 0; font-size: 1em; line-height: 1.4; }
 .stage-feedback { display: flex; flex-wrap: wrap; gap: .45em; margin-top: .8em; }
 .stage-feedback button { font: inherit; font-size: .82em; padding: .35em .8em; border-radius: 999px; background: #ffffff14; color: #fff; border: 1px solid transparent; }
 .stage-feedback button:disabled { opacity: .55; cursor: not-allowed; }
@@ -494,7 +500,7 @@
 .results-more:disabled { opacity: .5; cursor: wait; }
 .results-more--back { right: auto; left: calc(-1 * (var(--card-w) + var(--card-gap))); }
 /* the matches run in one row at the bottom, like "Also fits your mood" on the genre page */
-.results-page .related { position: relative; inset: auto; margin-top: auto; } /* relative: room for the arrow */
+.results-page .related { position: relative; inset: auto; margin-block: auto; } /* relative: room for the arrow; centred in the free space */
 /* centred, with two cards' room on either side (not across the whole screen) */
 /* on a phone there is no room beside the row: the arrow sits over its right end */
 @media (max-width: 759px) {
@@ -592,3 +598,33 @@
 @media (max-width: 759px) { .profile-panel { position: fixed; inset: 16px; width: auto; max-height: none; } }
 
 .results-actions { display: flex; gap: .8em; align-items: flex-start; }
+
+/* results page: the search in one line of chips; the full mood panel opens below it on demand */
+.search-bar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: .5em .8em; padding: .6em .9em; border-radius: 14px;
+  background: #0d0d14d9; border: 1px solid #f3c76b59; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+}
+.search-bar__title { margin: 0; font-size: .8em; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--gold); }
+.search-bar__empty { color: var(--muted); font-size: .9em; }
+.search-bar__chips { display: flex; flex-wrap: wrap; gap: .4em; margin: 0; padding: 0; list-style: none; }
+.sb-chip { display: inline-flex; align-items: center; gap: .35em; padding: .25em .3em .25em .8em; border-radius: 999px;
+  font-size: .92em; background: #ffffff10; border: 1px solid #ffffff2e; color: #fff; }
+.sb-chip--must { border-color: var(--gold); background: #f3c76b1c; }
+.sb-chip--must em { font-style: normal; font-size: .75em; letter-spacing: .1em; text-transform: uppercase; color: var(--gold); }
+.sb-chip--excluded { border-color: #e2565a; background: #3a0e12c4; color: #ffd6d6; }
+.sb-chip__stars { color: var(--gold); font-size: .85em; letter-spacing: -.05em; }
+.sb-chip__x { width: 1.45em; height: 1.45em; border: 0; border-radius: 50%; font: inherit; line-height: 1; cursor: pointer; background: #ffffff14; color: #fff; }
+.sb-chip__x:hover, .sb-chip__x:focus-visible { background: #ffffff30; }
+.search-bar__hidden { font-size: .85em; color: #ffb3b3; }
+.search-bar__edit { margin-left: auto; }
+/* advanced search in two steps: title, person and years first; role, kind and extended behind "More options" */
+.advanced-search__buttons { display: flex; gap: .5em; align-items: end; grid-column: span 2; }
+.advanced-search__more { font: inherit; cursor: pointer; border-radius: 999px; padding: .45em 1.1em; background: none; color: #fff; border: 1px solid #ffffff30; }
+.advanced-search__more:hover, .advanced-search__more:focus-visible { border-color: var(--gold); color: var(--gold); }
+.advanced-search__buttons button { white-space: nowrap; }
+.advanced-search__more-row { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: .6em 1.6em; align-items: end;
+  padding-top: .6em; border-top: 1px solid #ffffff1a; }
+.advanced-search__more-row .adv-switch { grid-template-columns: repeat(3, auto); }
+.advanced-search__more-row .crit__mode { white-space: nowrap; padding-inline: 1em; }
+/* with the one-line search bar there is room: larger posters on the results page (desktop only) */
+@media (min-width: 760px) { .results-page { --card-w: 9cqw; } }

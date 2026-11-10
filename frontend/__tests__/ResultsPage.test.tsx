@@ -1,4 +1,5 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { emptyCriteria, setSearchState } from "@/lib/searchState";
 import { expect, it, vi } from "vitest";
 
@@ -40,6 +41,28 @@ it("autocorrects a misspelt person and title to the names the search found", asy
 it("passes what each exclusion hides on to the mood panel", async () => {
   setSearchState({ ...emptyCriteria(), person: "Sandra Bullock", exclude_genres: ["Horror"] });
   render(<ResultsPage />);
+  await userEvent.click(await screen.findByRole("button", { name: /Edit moods & filters/ }));
   expect(await screen.findByText("none of these films are Horror: changes nothing")).toBeInTheDocument();
   setSearchState(emptyCriteria());
+});
+
+it("shows the search as one line of chips and opens the full mood panel on demand", async () => {
+  setSearchState({ ...emptyCriteria(), tags: [{ idx: 1, weight: 6, mode: "must" }], year_from: 1990, year_to: 1999, exclude_people: ["Sylvester Stallone"] });
+  render(<ResultsPage />);
+  const bar = await screen.findByRole("region", { name: "Your search" });
+  expect(within(bar).getByText("1990–1999")).toBeInTheDocument();
+  expect(within(bar).getByText(/without Sylvester Stallone/)).toBeInTheDocument();
+  expect(within(bar).getByText("must")).toBeInTheDocument();
+  expect(screen.queryByRole("region", { name: "Search criteria" })).toBeNull(); // the full panel stays closed
+  await userEvent.click(within(bar).getByRole("button", { name: /Edit moods & filters/ }));
+  expect(screen.getByRole("region", { name: "Search criteria" })).toBeInTheDocument();
+  await userEvent.click(within(bar).getByRole("button", { name: "Remove year range" }));
+  expect(within(bar).queryByText("1990–1999")).toBeNull();
+  setSearchState(emptyCriteria());
+});
+
+it("opens the full mood panel at once when there is no search yet", async () => {
+  setSearchState(emptyCriteria());
+  render(<ResultsPage />);
+  expect(await screen.findByRole("region", { name: "Search criteria" })).toBeInTheDocument();
 });
