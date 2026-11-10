@@ -685,7 +685,7 @@
   border-radius: 999px; background: #0d0d14c4; color: var(--muted); border: 1px solid #ffffff2e; }
 .results-explain-btn:hover, .results-explain-btn:focus-visible, .results-explain-btn[aria-expanded="true"] { color: var(--gold); border-color: #f3c76b80; }
 .results-explain { position: absolute; top: 2.6em; right: 0; width: 22em; padding: .5em .8em; border-radius: 12px; background: #0d0d14c4;
-  border: 1px solid #ffffff1f; font-size: 1.12em; line-height: 1.45; text-align: left; color: #e6e6ec; }
+  border: 1px solid #ffffff1f; font-size: .93em; line-height: 1.45; text-align: left; color: #e6e6ec; }
 .results-explain__title { margin: 0 0 .25em; font-size: 1em; font-weight: 600; letter-spacing: .04em; color: var(--gold); }
 .results-explain ul { margin: 0; padding-left: 1.1em; display: grid; gap: .15em; }
 .results-count-line { display: flex; justify-content: center; }
