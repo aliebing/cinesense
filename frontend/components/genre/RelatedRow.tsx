@@ -283,7 +283,7 @@ export default function RelatedRow({
     anchor.current = (e.target as HTMLElement).closest?.(".related-wrap") ?? null;
   };
   return (
-    <section className={`related ${busy ? "is-busy" : ""} ${sweeping ? "is-sweeping" : ""} ${arrows ? "has-arrows" : ""}`} aria-label={name} aria-busy={busy}>
+    <section className={`related ${busy ? "is-busy" : ""} ${sweeping ? "is-sweeping" : ""} ${arrows ? "has-arrows" : ""} ${bounded ? "has-ends" : ""}`} aria-label={name} aria-busy={busy}>
       {found && <p className="related-count">{foundText(found.total, found.capped)}</p>}
       <h3 className="related-label">
         {label} {!still && <span className="related-hint">· move the mouse left or right to browse</span>}
