@@ -719,12 +719,16 @@
    and over the gap, so nothing moves */
 .results-adv { position: relative; z-index: 20; text-align: right; --adv-btn: 11em; }
 .results-adv .results-toggle { width: var(--adv-btn); }
-.results-adv .advanced-search--bar { position: absolute; top: 50%; right: calc(var(--adv-btn) + .6em); width: calc(100% - var(--adv-btn) - .6em);
-  text-align: left; background: #0d0d14; box-shadow: 0 20px 60px #000d; transform: translateY(-50%);
+/* the box starts at the row's top, like the bars above it start after the same gap */
+.results-adv__box { position: absolute; top: 0; right: calc(var(--adv-btn) + .6em); width: calc(100% - var(--adv-btn) - .6em);
   animation: advIn .45s cubic-bezier(.2, .7, .2, 1) backwards; } /* no clip left afterwards: the suggestions drop out below */
-@keyframes advIn { from { clip-path: inset(0 0 0 100% round 14px); transform: translate(3em, -50%); opacity: .4; }
-  to { clip-path: inset(0 0 0 0 round 14px); transform: translate(0, -50%); opacity: 1; } }
-@media (prefers-reduced-motion: reduce) { .results-adv .advanced-search--bar { animation: none; } }
+.results-adv__box.is-closing { animation: advOut .35s cubic-bezier(.5, 0, .8, .3) forwards; pointer-events: none; }
+.results-adv .advanced-search--bar { text-align: left; background: #0d0d14; box-shadow: 0 20px 60px #000d; }
+@keyframes advIn { from { clip-path: inset(0 0 0 100% round 14px); transform: translateX(3em); opacity: .4; }
+  to { clip-path: inset(0 0 0 0 round 14px); transform: none; opacity: 1; } }
+@keyframes advOut { from { clip-path: inset(0 0 0 0 round 14px); transform: none; opacity: 1; }
+  to { clip-path: inset(0 0 0 100% round 14px); transform: translateX(3em); opacity: .4; } }
+@media (prefers-reduced-motion: reduce) { .results-adv__box { animation-duration: .01s !important; } } /* still ends, so closing completes */
 .advanced-search--bar { display: flex; flex-wrap: nowrap; align-items: center; gap: .55em; }
 .advanced-search--bar .adv-label, .advanced-search--bar .adv-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .advanced-search--bar label { flex-direction: row; font-size: 1em; color: #fff; }

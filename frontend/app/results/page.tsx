@@ -20,7 +20,8 @@ export default function ResultsPage() {
   const [hidden, setHidden] = useState(0);
   const [hiddenBy, setHiddenBy] = useState<Record<string, number> | undefined>(undefined);
   // a widening chosen on this page: the original criteria and what was widened (any other change ends it)
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  // closed → open; closing: the box slides out first, then it is gone
+  const [advanced, setAdvanced] = useState<"closed" | "open" | "closing">("closed");
   const [widened, setWidened] = useState<{ from: Criteria; labels: string[] } | null>(null);
   const change = useCallback(
     (c: Criteria) => {
@@ -60,18 +61,25 @@ export default function ResultsPage() {
         <SearchChips tags={tags} criteria={criteria} onChange={change} moodOnly />
         {/* optional: the button on the right slides the advanced search in to its left, in the same row */}
         <div className="results-adv">
-          <button type="button" className="results-toggle" aria-expanded={showAdvanced} onClick={() => setShowAdvanced((v) => !v)}>
-            {showAdvanced ? "Close ▸" : "◂ Advanced search"}
+          <button
+            type="button"
+            className="results-toggle"
+            aria-expanded={advanced === "open"}
+            onClick={() => setAdvanced((a) => (a === "open" ? "closing" : "open"))}
+          >
+            {advanced === "open" ? "Close ▸" : "◂ Advanced search"}
           </button>
-          {showAdvanced && (
-            <AdvancedSearch
-              bar
-              criteria={criteria}
-              onSubmit={(c) => {
-                change(c);
-                setShowAdvanced(false);
-              }}
-            />
+          {advanced !== "closed" && (
+            <div className={`results-adv__box ${advanced === "closing" ? "is-closing" : ""}`} onAnimationEnd={() => setAdvanced((a) => (a === "closing" ? "closed" : a))}>
+              <AdvancedSearch
+                bar
+                criteria={criteria}
+                onSubmit={(c) => {
+                  change(c);
+                  setAdvanced("closing");
+                }}
+              />
+            </div>
           )}
         </div>
         <div className="results-films">
