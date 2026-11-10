@@ -1,4 +1,4 @@
-"""The homepage rows: the best-rated of the well-known films per mood world, each film in one row only.
+"""The homepage rows per mood world: its newest top-rated films and its top classics, each film shown once.
 
 The answer is the same for every visitor, so it is built once and kept for HOME_TTL seconds; a stale copy is
 served while a background thread builds the next one. It carries only what a tile needs (the full film costs
@@ -16,7 +16,10 @@ from cinesense.web_api.images import with_images
 
 log = logging.getLogger(__name__)
 
-ROW_SIZE = 16
+ROW_SIZE = 10  # films per row; a world shows two rows (newest top-rated, top classics)
+NEWEST_YEARS = 10  # "newest": from the last ten years of the catalogue
+CLASSIC_BEFORE = 2000  # "classics": made before this year
+POOL = 40  # the best-known films each row is chosen from (Bayesian rating over them)
 HOME_TTL = 300  # seconds
 TILE_FIELDS = {"id", "title", "year", "world_ids", "youtube_key", "horizontal_poster_url", "backdrop_url"}
 
@@ -41,30 +44,49 @@ def row_trailers(movies: list[Movie], checker, trailers) -> list[Movie]:
 
 def build_home(provider, streaming, checker, trailers) -> dict:
     movies = provider.list_movies()
-    pools: dict[str, list[Movie]] = {}
-    for w in WORLDS:
-        in_world = sorted((m for m in movies if w.id in m.world_ids), key=lambda m: m.ml_rating_count, reverse=True)
-        pool = [m.model_copy(deep=True) for m in in_world[: ROW_SIZE * 4]]
-        row_trailers(pool, checker, trailers)
-        # the best-rated of the well-known films (Bayesian, so a handful of votes cannot win): the homepage shows
-        # what is top-rated in each mood
-        pools[w.id] = sorted(pool, key=lambda m: catalogue_rating(m.ml_rating, m.ml_rating_count), reverse=True)
-    rows: dict[str, list[Movie]] = {w.id: [] for w in WORLDS}
-    used: set[str] = set()  # each film in one row only; worlds take turns so none is starved
+    newest_year = max((m.year for m in movies if m.year), default=CLASSIC_BEFORE + NEWEST_YEARS)
+    recent_from = newest_year - NEWEST_YEARS + 1
+
+    def pool(world_id: str, keep) -> list[Movie]:
+        """The best-known films of a world that `keep` accepts, best-rated first (Bayesian, so a handful of votes
+        cannot win)."""
+        in_world = sorted(
+            (m for m in movies if world_id in m.world_ids and m.year and keep(m.year)),
+            key=lambda m: m.ml_rating_count,
+            reverse=True,
+        )
+        films = [m.model_copy(deep=True) for m in in_world[:POOL]]
+        row_trailers(films, checker, trailers)
+        return sorted(films, key=lambda m: catalogue_rating(m.ml_rating, m.ml_rating_count), reverse=True)
+
+    pools = {
+        kind: {w.id: pool(w.id, keep) for w in WORLDS}
+        for kind, keep in (("newest", lambda y: y >= recent_from), ("classics", lambda y: y < CLASSIC_BEFORE))
+    }
+    chosen: dict[str, dict[str, list[Movie]]] = {kind: {w.id: [] for w in WORLDS} for kind in pools}
+    used: set[str] = set()  # each film once; the worlds take turns so none is starved
     for _ in range(ROW_SIZE):
+        for kind in pools:
+            for w in WORLDS:
+                nxt = next((m for m in pools[kind][w.id] if m.id not in used), None)
+                if nxt is not None:
+                    chosen[kind][w.id].append(nxt)
+                    used.add(nxt.id)
+    for kind in chosen:
         for w in WORLDS:
-            nxt = next((m for m in pools[w.id] if m.id not in used), None)
-            if nxt is not None:
-                rows[w.id].append(nxt)
-                used.add(nxt.id)
-    for w in WORLDS:
-        rows[w.id] = [with_images(m, provider, streaming) for m in rows[w.id]]
+            chosen[kind][w.id] = [with_images(m, provider, streaming) for m in chosen[kind][w.id]]
+    # the films of a world in the order the page uses them: its hero picture and drifting titles come from the
+    # newest top-rated first, then the classics
+    rows = {w.id: chosen["newest"][w.id] + chosen["classics"][w.id] for w in WORLDS}
     titles: list[str] = []
     for w in WORLDS:
         titles += [m.title for m in rows[w.id][:2] if m.title not in titles]
     return {
         "worlds": [w.model_dump() for w in WORLDS],
         "rows": {wid: _tiles(films) for wid, films in rows.items()},
+        "newest": {w.id: [t["id"] for t in _tiles(chosen["newest"][w.id])] for w in WORLDS},
+        "newest_from": recent_from,
+        "classics_before": CLASSIC_BEFORE,
         "titles": titles,
     }
 

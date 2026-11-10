@@ -89,19 +89,27 @@ def test_home_rows_per_world():
     assert len(data["worlds"]) == 6
     assert set(data["rows"]) == {"suspense", "scifi", "romance", "adventure", "comedy", "action"}
     for wid, films in data["rows"].items():
-        assert 0 < len(films) <= 16 and all(wid in f["world_ids"] for f in films)
+        assert 0 < len(films) <= 20 and all(wid in f["world_ids"] for f in films)
     assert "tiles" not in data  # the frontend never used it
     assert data["titles"] and all(isinstance(t, str) for t in data["titles"])
 
 
-def test_home_rows_lead_with_the_best_rated_films_of_each_world():
+def test_home_rows_are_the_newest_top_rated_then_the_top_classics_of_each_world():
     from cinesense.data_sources.fixture import FixtureProvider
     from cinesense.search.rating import catalogue_rating
 
-    rating = {m.id: catalogue_rating(m.ml_rating, m.ml_rating_count) for m in FixtureProvider().list_movies()}
-    for films in client().get("/api/home").json()["rows"].values():
-        scores = [rating[f["id"]] for f in films]
-        assert scores[0] == max(scores)  # the row starts with its best-rated film
+    films_by_id = {m.id: m for m in FixtureProvider().list_movies()}
+    rating = {i: catalogue_rating(m.ml_rating, m.ml_rating_count) for i, m in films_by_id.items()}
+    data = client().get("/api/home").json()
+    for wid, films in data["rows"].items():
+        newest = [f for f in films if f["id"] in set(data["newest"][wid])]
+        classics = [f for f in films if f["id"] not in set(data["newest"][wid])]
+        assert films[: len(newest)] == newest  # the newest first: they give the hero picture and the titles
+        assert all(f["year"] >= data["newest_from"] for f in newest)
+        assert all(f["year"] < data["classics_before"] for f in classics)
+        for row in (newest, classics):
+            scores = [rating[f["id"]] for f in row]
+            assert scores == sorted(scores, reverse=True)  # best-rated first
 
 
 def test_home_tiles_carry_only_what_a_tile_needs():

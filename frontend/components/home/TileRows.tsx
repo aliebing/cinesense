@@ -171,8 +171,9 @@ export default function TileRows({ rows, onSelect, worldOrder = [] }: Props) {
         pointingRef.current = false;
       }}
     >
-      {rows.map(({ world, movies, picked, featured = [] }) => (
+      {rows.map(({ world, movies, picked, featured = [], label }) => (
         <div key={world.id} className={`tile-row-wrap${picked ? " tile-row-wrap--picked" : ""}`} data-world={world.id}>
+          {label && <p className="tile-row-label">{label}</p>}
           <div className="tile-row-viewport">
           <div
             className="tile-row"

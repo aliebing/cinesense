@@ -43,12 +43,17 @@ export function sampleRanked(n: number): RankedMovie[] {
 }
 
 const movies12 = sampleMovies(12);
+const homeRows = {
+  suspense: movies12.filter((m) => m.world_ids.includes("suspense")),
+  action: movies12.filter((m) => m.world_ids.includes("action")),
+};
 export const sampleHome: HomeData = {
   worlds: sampleWorlds,
-  rows: {
-    suspense: movies12.filter((m) => m.world_ids.includes("suspense")),
-    action: movies12.filter((m) => m.world_ids.includes("action")),
-  },
+  rows: homeRows,
+  // the first half of each world's films are its newest top-rated, the rest its classics
+  newest: Object.fromEntries(Object.entries(homeRows).map(([w, ms]) => [w, ms.slice(0, Math.ceil(ms.length / 2)).map((m) => m.id)])),
+  newest_from: 2014,
+  classics_before: 2000,
   titles: ["Demo-Film 01", "Demo-Film 02", "Demo-Film 03"],
 };
 

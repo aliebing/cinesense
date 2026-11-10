@@ -66,9 +66,14 @@ export type HomeTile = Pick<
 
 export type HomeData = {
   worlds: MoodWorld[];
+  /** per world: its newest top-rated films, then its top classics */
   rows: Record<string, HomeTile[]>;
+  /** per world: the ids of its newest top-rated films (the rest of its row are the classics) */
+  newest?: Record<string, string[]>;
+  newest_from?: number; // the newest are from this year on
+  classics_before?: number; // the classics are older than this year
   titles: string[];
 };
 
 /** `picked`: the search hits on the homepage, shown larger with a gold frame (the short list). */
-export type TileRow = { world: MoodWorld; movies: HomeTile[]; picked?: boolean; featured?: string[] }; // featured: ids shown larger
+export type TileRow = { world: MoodWorld; movies: HomeTile[]; picked?: boolean; featured?: string[]; label?: string }; // featured: ids shown larger; label: the row's heading

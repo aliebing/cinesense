@@ -399,6 +399,10 @@
   transition-delay: 0s; } /* opens at once; the base rule's delay holds it open a moment after the trailer stops */
 .related-wrap:has(.hover-trailer__player.is-playing) .hover-trailer__player iframe { left: 0; width: 100%; transform: none; }
 .tile-row-wrap { position: relative; display: flex; align-items: center; gap: .6cqw; animation: rowIn .8s ease both; }
+/* the heading of a homepage row ("Newest top-rated", "Top classics"): a small pill over its top left corner */
+.tile-row-label { position: absolute; z-index: 7; left: var(--safe-x, 2cqw); top: 0; transform: translateY(-55%); margin: 0;
+  padding: .15em .8em; border-radius: 999px; background: #07080cd9; color: var(--gold); font-size: .8em; font-weight: 600;
+  letter-spacing: .12em; text-transform: uppercase; pointer-events: none; }
 .tile-row-viewport {
   flex: 1; min-width: 0; overflow-x: clip; overflow-y: visible;
   padding-block: var(--tile-lift); margin-block: calc(-1 * var(--tile-lift)); /* the mask must not cut the hover glow */

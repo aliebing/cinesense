@@ -21,16 +21,26 @@ import { useIsNarrow, useReducedMotion } from "@/lib/useReducedMotion";
 
 const TITLES_PER_MOOD = 6;
 
-/** Without a search: the top-rated films of the mood on screen (the hero world) in `count` rows running against each
- *  other, its films dealt out in turn. The rows keep their ids when the mood changes, so they run on and only their
- *  films change (no new rows, no jump). */
+/** The mood on screen (the hero world) in two rows running against each other: its newest top-rated films above,
+ *  its top classics below, each with a heading. One row on a narrow screen. The rows keep their ids when the mood
+ *  changes, so they run on and only their films change (no new rows, no jump). */
 export function moodRows(world: MoodWorld | undefined, data: HomeData | null, count: number): TileRow[] {
   if (!world || !data) return [];
   const films = data.rows[world.id] ?? [];
-  return Array.from({ length: count }, (_, r) => ({
-    world: { ...world, id: `mood-${r}` },
-    movies: films.filter((_, i) => i % count === r),
-  })).filter((row) => row.movies.length > 0);
+  const newest = new Set(data.newest?.[world.id] ?? []);
+  const rows: TileRow[] = [
+    {
+      world: { ...world, id: "mood-0" },
+      movies: films.filter((m) => newest.has(m.id)),
+      label: `Newest top-rated${data.newest_from ? ` · since ${data.newest_from}` : ""}`,
+    },
+    {
+      world: { ...world, id: "mood-1" },
+      movies: films.filter((m) => !newest.has(m.id)),
+      label: `Top classics${data.classics_before ? ` · before ${data.classics_before}` : ""}`,
+    },
+  ];
+  return rows.slice(0, count).filter((row) => row.movies.length > 0);
 }
 
 /** The homepage. `initial`: the rows the server already fetched (app/page.tsx); without them the browser asks. */

@@ -149,3 +149,13 @@ it("the titles drifting over the stage belong to the mood on screen", async () =
   const title = await screen.findByTestId("film-title");
   expect(sampleHome.rows.suspense.map((m) => m.title)).toContain(title.textContent); // the hero world is suspense
 });
+
+it("the mood on screen in two rows with headings: its newest top-rated above, its top classics below", async () => {
+  getHome.mockResolvedValue({ ok: true, data: sampleHome });
+  render(<HomePage />);
+  await screen.findAllByTestId("tile-row");
+  expect(screen.getByText("Newest top-rated · since 2014")).toBeInTheDocument();
+  expect(screen.getByText("Top classics · before 2000")).toBeInTheDocument();
+  const rowIds = [...document.querySelectorAll(".tile-row-wrap")].map((r) => r.getAttribute("data-world"));
+  expect(rowIds).toEqual(["mood-0", "mood-1"]);
+});
