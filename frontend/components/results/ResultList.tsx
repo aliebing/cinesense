@@ -169,17 +169,17 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
       {extended && <span className="results-extended"> · includes titles just added from Wikidata</span>}
     </>
   );
-  const moreLabel = n > 0 ? `Matches ${first + 1}–${first + shown.length}` : `More matches from ${MORE_PERCENT}%`;
-  const arrows = (
+  const moreLabel = (
     <>
+      {n > 0 ? `Matches ${first + 1}–${first + shown.length}` : `${shown.length} more matches from ${MORE_PERCENT}%`}
       {n > 0 && !loading && !sweep && (
-        <button type="button" className="results-more results-more--back" onClick={() => setSweepTo({ key, n: n - 1 })} aria-label={`Previous ${LIMIT}`} title={`Previous ${LIMIT}`}>
-          «
+        <button type="button" className="results-page-btn" onClick={() => setSweepTo({ key, n: n - 1 })} aria-label={`Previous ${LIMIT}`} title={`Previous ${LIMIT}`}>
+          ‹ Previous {LIMIT}
         </button>
       )}
       {canNext && !sweep && (
-        <button type="button" className="results-more" onClick={next} disabled={loadingMore} aria-label={`Next ${LIMIT}`} title={`Next ${LIMIT}`}>
-          »
+        <button type="button" className="results-page-btn" onClick={next} disabled={loadingMore} aria-label={`Next ${LIMIT}`} title={`Next ${LIMIT}`}>
+          Next {LIMIT} ›
         </button>
       )}
     </>
@@ -206,7 +206,7 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
             drift={false}
             loop // an endless row the mouse slides left or right, even when its films would fit
             sweep={sweep}
-            after={arrows}
+            arrows
           />
         </div>
       )}

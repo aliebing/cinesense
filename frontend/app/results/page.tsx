@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import FogLight from "@/components/atmosphere/FogLight";
 import CinemaFrame from "@/components/cinema/CinemaFrame";
 import Breadcrumb from "@/components/nav/Breadcrumb";
@@ -20,6 +20,10 @@ export default function ResultsPage() {
   const [hidden, setHidden] = useState(0);
   const [hiddenBy, setHiddenBy] = useState<Record<string, number> | undefined>(undefined);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const advanced = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (showAdvanced) advanced.current?.scrollIntoView?.({ behavior: "smooth", block: "nearest" }); // it opens below the films
+  }, [showAdvanced]);
   // a widening chosen on this page: the original criteria and what was widened (any other change ends it)
   const [widened, setWidened] = useState<{ from: Criteria; labels: string[] } | null>(null);
   const change = useCallback(
@@ -54,12 +58,16 @@ export default function ResultsPage() {
       <div className="results-page">
         <header className="genre-top results-top">
           <Breadcrumb items={[{ label: "Search" }]} />
-          <div className="results-actions">
-            <button type="button" className="results-toggle" aria-expanded={showAdvanced} onClick={() => setShowAdvanced((v) => !v)}>
-              {showAdvanced ? "Hide advanced search" : "Advanced search"}
-            </button>
-          </div>
         </header>
+        {/* what steers the search on top (moods, then exclusions and filters), the films below, the advanced search last */}
+        <SearchChips tags={tags} criteria={criteria} onChange={change} moodOnly />
+        <ExclusionsBar tags={tags} criteria={criteria} onChange={change} hiddenCount={hidden} hiddenBy={hiddenBy} />
+        <ResultList criteria={criteria} onOpen={open} onMeta={onMeta} onRelax={relax} widened={widened} />
+        <div className="results-adv" ref={advanced}>
+          <button type="button" className="results-toggle" aria-expanded={showAdvanced} onClick={() => setShowAdvanced((v) => !v)}>
+            {showAdvanced ? "Hide advanced search ▴" : "Advanced search ▾"}
+          </button>
+        </div>
         {showAdvanced && (
           <AdvancedSearch
             criteria={criteria}
@@ -69,10 +77,6 @@ export default function ResultsPage() {
             }}
           />
         )}
-        {/* what steers the search on top (moods, then exclusions and filters), the films below */}
-        <SearchChips tags={tags} criteria={criteria} onChange={change} moodOnly />
-        <ExclusionsBar tags={tags} criteria={criteria} onChange={change} hiddenCount={hidden} hiddenBy={hiddenBy} />
-        <ResultList criteria={criteria} onOpen={open} onMeta={onMeta} onRelax={relax} widened={widened} />
       </div>
     </CinemaFrame>
   );

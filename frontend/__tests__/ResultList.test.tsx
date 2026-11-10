@@ -187,7 +187,9 @@ it("shows up to 8 films from 70% in front, with why, and the films from 60% in t
   expect(await screen.findByText(/The 5 best matches/)).toBeInTheDocument();
   expect(container.querySelectorAll(".best .related-card")).toHaveLength(5);
   expect(screen.getByText("Strong on your moods: dark (95%)")).toHaveClass("best-why");
-  expect(screen.getByText("More matches from 60%")).toBeInTheDocument();
+  expect(screen.getByText("3 more matches from 60%")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Slide left" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Slide right" })).toBeInTheDocument();
   const more = container.querySelectorAll(".results-more-row .related-card");
   expect(new Set([...more].map((c) => c.getAttribute("aria-label"))).size).toBe(3); // 69, 66, 61: not 58 and 50
 });

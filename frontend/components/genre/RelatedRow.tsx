@@ -16,6 +16,7 @@ const DEAD_ZONE = 0.3; // middle share of the row where it only creeps on
 const EASE_MS = 220;
 export const SWEEP_MS = 1200; // the fast run to the next (or previous) 50 results
 export const MIN_SLOTS = 14; // until the row is measured: fewer films than this stand still instead of looping
+const SLIDE_CARDS = 4; // how far one « » click slides the row
 const LOOP_MIN = 4; // a forced loop (results page) needs at least this many films, fewer stand still
 
 /** Row velocity for a pointer at `ratio` (0 = left edge, 1 = right edge) of the row; null = no pointer.
@@ -68,6 +69,7 @@ export default function RelatedRow({
   streamCheck = false,
   bar = true,
   loop = false,
+  arrows = false,
 }: {
   items: RankedMovie[];
   onSelect: (m: Movie) => void;
@@ -84,6 +86,8 @@ export default function RelatedRow({
   bar?: boolean;
   /** run as an endless row even when the films would fit (from LOOP_MIN films on; repeated to fill the width) */
   loop?: boolean;
+  /** « » buttons on both sides that slide the row by most of its width */
+  arrows?: boolean;
   /** false: the row moves only when the mouse steers towards an edge (it starts with the best match) */
   drift?: boolean;
   /** placed after the cards, inside the row (the results page's "load more" arrow) */
@@ -96,6 +100,7 @@ export default function RelatedRow({
   const pointer = useRef<number | null>(null);
   const anchor = useRef<HTMLElement | null>(null); // the card under the pointer
   const trailerRef = useRef(false);
+  const nudge = useRef(0); // px the « » buttons still want the running row to slide (eased off over a few frames)
   const reduced = useReducedMotion();
   const sweepRef = useRef<Sweep | null>(sweep);
   useLayoutEffect(() => {
@@ -190,6 +195,11 @@ export default function RelatedRow({
           offset = anchored(offset, anchorLeft, anchorEl.offsetLeft);
           anchorLeft = anchorEl.offsetLeft;
         }
+        if (nudge.current !== 0) {
+          const part = Math.abs(nudge.current) < 1 ? nudge.current : nudge.current * Math.min(1, dt / 160);
+          nudge.current -= part;
+          offset = advance(offset, part, period);
+        }
         const target = edgeSpeed(pointer.current, dir, drift);
         if (Math.abs(target) > SLOW_SPEED) dir = Math.sign(target);
         speed = easeTowards(speed, trailerRef.current ? 0 : target, dt, EASE_MS);
@@ -205,6 +215,16 @@ export default function RelatedRow({
   if (items.length === 0) return null;
   // a forced loop repeats short rows until they are wider than the screen, so the run has no gap at its seam
   const slots = looping && !still && items.length < MIN_SLOTS ? Array.from({ length: Math.ceil(MIN_SLOTS / items.length) }, () => items).flat() : items;
+  const slide = (dir: 1 | -1) => {
+    // SLIDE_CARDS cards at a time: a run of the whole width could be exactly one loop and look like no move at all
+    const el = track.current;
+    const a = el?.children[0] as HTMLElement | undefined;
+    const b = el?.children[1] as HTMLElement | undefined;
+    const step = a && b ? b.offsetLeft - a.offsetLeft : 0;
+    const width = step > 0 ? step * SLIDE_CARDS : (viewport.current?.clientWidth ?? 0) * 0.5;
+    if (still) viewport.current?.scrollBy?.({ left: dir * width, behavior: reduced ? "auto" : "smooth" });
+    else nudge.current -= dir * width; // the loop moves the track: a negative offset shows later films
+  };
   const onMove = (e: React.PointerEvent) => {
     const box = viewport.current?.getBoundingClientRect();
     if (box && box.width > 0) pointer.current = (e.clientX - box.left) / box.width;
@@ -257,6 +277,16 @@ export default function RelatedRow({
           ))}
         </div>
       </div>
+      {arrows && (
+        <>
+          <button type="button" className="row-arrow row-arrow--left" aria-label="Slide left" title="Slide left" onClick={() => slide(-1)}>
+            «
+          </button>
+          <button type="button" className="row-arrow row-arrow--right" aria-label="Slide right" title="Slide right" onClick={() => slide(1)}>
+            »
+          </button>
+        </>
+      )}
       {after}
     </section>
   );
