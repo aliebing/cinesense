@@ -72,10 +72,13 @@
 .spot {
   position: absolute; z-index: 2; top: -6%; width: 72%; height: 112%; pointer-events: none;
   mix-blend-mode: screen; filter: blur(var(--spot-blur)); opacity: var(--spot-opacity);
-  -webkit-mask-image: linear-gradient(to bottom, #000 15%, #0008 55%, transparent 95%);
-  mask-image: linear-gradient(to bottom, #000 15%, #0008 55%, transparent 95%);
   animation: spotSway 19s ease-in-out infinite alternate;
+  /* the light fades out in a curve round its lamp and is gone before the box's edges: a straight fade downward
+     left the cone cut off square where it met the bottom and the side of its box */
+  --spot-fade: #000 12%, #000b 38%, #0005 62%, #0001 84%, transparent 100%;
 }
+.spot--right { -webkit-mask-image: radial-gradient(ellipse farthest-side at 100% 0, var(--spot-fade)); mask-image: radial-gradient(ellipse farthest-side at 100% 0, var(--spot-fade)); }
+.spot--left { -webkit-mask-image: radial-gradient(ellipse farthest-side at 0 0, var(--spot-fade)); mask-image: radial-gradient(ellipse farthest-side at 0 0, var(--spot-fade)); }
 .spot--right {
   right: -3%; transform-origin: 100% 0;
   background:
