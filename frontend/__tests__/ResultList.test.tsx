@@ -28,26 +28,6 @@ it("shows reasons and the streaming state on cards", async () => {
   expect((await screen.findAllByText("Strong on your moods: dark (91%) · streaming on Netflix"))[0]).toBeInTheDocument();
 });
 
-it("offers ways to widen a search that finds too little", async () => {
-  const onRelax = vi.fn();
-  const wider = { ...emptyCriteria(), availability: "any" as const };
-  search.mockResolvedValue({
-    ok: true,
-    data: {
-      items: [],
-      total: 0,
-      hidden_by_exclusion: 0,
-      extended_used: false,
-      relaxations: [{ id: "availability", label: "Not only in cinemas", count: 12, criteria: wider }],
-    },
-  });
-  render(<ResultList criteria={{ ...emptyCriteria(), availability: "cinema" }} onOpen={() => {}} onRelax={onRelax} />);
-  expect(await screen.findByText("No matches in the CineSense catalogue")).toBeInTheDocument();
-  expect(screen.getByText("Nothing matches every wish. Try:")).toBeInTheDocument();
-  await userEvent.click(screen.getByRole("button", { name: "Not only in cinemas · 12 films" }));
-  expect(onRelax).toHaveBeenCalledWith(wider, "Not only in cinemas");
-});
-
 it("shows no relaxation buttons without onRelax", async () => {
   search.mockResolvedValue({
     ok: true,
@@ -76,45 +56,6 @@ it("sends what the search was widened from, says so, and marks misses on cards",
   expect((await screen.findAllByText("≠ not in cinemas"))[0]).toBeInTheDocument();
 });
 
-it("passes the label along when a relaxation is chosen", async () => {
-  const onRelax = vi.fn();
-  const wider = { ...emptyCriteria(), max_runtime_min: 90 };
-  search.mockResolvedValue({
-    ok: true,
-    data: {
-      items: [],
-      total: 0,
-      hidden_by_exclusion: 0,
-      extended_used: false,
-      relaxations: [{ id: "runtime", label: "Allow up to 90 min", count: 2, criteria: wider }],
-    },
-  });
-  render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} onRelax={onRelax} />);
-  await userEvent.click(await screen.findByRole("button", { name: "Allow up to 90 min · 2 films" }));
-  expect(onRelax).toHaveBeenCalledWith(wider, "Allow up to 90 min");
-});
-
-it("hides old relaxation buttons as soon as the criteria change", async () => {
-  const wider = { ...emptyCriteria(), max_runtime_min: 90 };
-  search.mockResolvedValueOnce({
-    ok: true,
-    data: {
-      items: [],
-      total: 0,
-      hidden_by_exclusion: 0,
-      extended_used: false,
-      relaxations: [{ id: "runtime", label: "Allow up to 90 min", count: 2, criteria: wider }],
-    },
-  });
-  search.mockReturnValueOnce(new Promise(() => {})); // the next search is still loading
-  const { rerender } = render(
-    <ResultList criteria={{ ...emptyCriteria(), max_runtime_min: 60 }} onOpen={() => {}} onRelax={() => {}} />,
-  );
-  expect(await screen.findByRole("button", { name: "Allow up to 90 min · 2 films" })).toBeInTheDocument();
-  rerender(<ResultList criteria={wider} onOpen={() => {}} onRelax={() => {}} />);
-  expect(screen.queryByRole("button", { name: /Allow up to 90 min/ })).toBeNull();
-});
-
 it("nothing found with a person: says so and offers the search without that person", async () => {
   search.mockResolvedValue({ ok: true, data: { items: [], total: 0, hidden_by_exclusion: 0, extended_used: false, relaxations: [] } });
   const onRelax = vi.fn();
@@ -135,21 +76,62 @@ it("nothing found with a title: offers the search without that title", async () 
   expect(onRelax).toHaveBeenCalledWith({ ...criteria, title: null }, "without “xyzzy”");
 });
 
-it("a thin search says how many films match before offering to widen it", async () => {
-  const wider = emptyCriteria();
-  search.mockResolvedValue({
-    ok: true,
-    data: {
-      items: sampleRanked(2),
-      total: 2,
-      hidden_by_exclusion: 0,
-      extended_used: false,
-      relaxations: [{ id: "tags-to-plot", label: "Search the mood in plots", count: 4, criteria: wider }],
-    },
-  });
-  render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} onRelax={() => {}} />);
-  expect(await screen.findByText("Only 2 films match every wish. More with:")).toBeInTheDocument();
-  expect(screen.queryByText(/Nothing matches/)).toBeNull();
+const films = (from: number, n: number) =>
+  sampleRanked(n).map((r, i) => ({ ...r, movie: { ...r.movie, id: `w-${from + i}`, title: `Wide ${from + i}` }, match_percent: 60 }));
+
+it("too few films for every wish: the row below shows the least intrusive widening, the search stays as it is", async () => {
+  const onRelax = vi.fn();
+  const plot = { ...emptyCriteria(), plot_query: "space" };
+  const original = { ...emptyCriteria(), year_from: 1990, year_to: 1999 };
+  search.mockImplementation((c: { plot_query?: string | null }) =>
+    Promise.resolve(
+      c.plot_query
+        ? { ok: true, data: { items: films(0, 5), total: 5, hidden_by_exclusion: 0, extended_used: false } }
+        : {
+            ok: true,
+            data: {
+              items: sampleRanked(2),
+              total: 2,
+              hidden_by_exclusion: 0,
+              extended_used: false,
+              relaxations: [
+                { id: "runtime", label: "Allow up to 120 min", count: 2, criteria: emptyCriteria() }, // too few: skipped
+                { id: "tags-to-plot", label: "Search the mood in plots", count: 12, criteria: plot },
+              ],
+            },
+          },
+    ),
+  );
+  const { container } = render(<ResultList criteria={original} onOpen={() => {}} onRelax={onRelax} />);
+  expect(await screen.findByText(/Only 2 films match every wish · 5 more with: Search the mood in plots/)).toBeInTheDocument();
+  expect(search.mock.calls[1][0]).toEqual(plot);
+  expect(search.mock.calls[1][3]).toEqual(original); // marks what each widened film misses
+  expect(container.querySelectorAll(".best .related-card")).toHaveLength(2);
+  expect(screen.queryByRole("button", { name: /Search the mood in plots/ })).toBeNull(); // information, not a button
+  expect(onRelax).not.toHaveBeenCalled(); // the user's search is left alone
+});
+
+it("no film for every wish: says so, and the widened films fill the row", async () => {
+  const wider = { ...emptyCriteria(), availability: "any" as const };
+  search.mockImplementation((c: { availability?: string }) =>
+    Promise.resolve(
+      c.availability === "any"
+        ? { ok: true, data: { items: films(0, 4), total: 4, hidden_by_exclusion: 0, extended_used: false } }
+        : {
+            ok: true,
+            data: {
+              items: [],
+              total: 0,
+              hidden_by_exclusion: 0,
+              extended_used: false,
+              relaxations: [{ id: "availability", label: "Not only in cinemas", count: 12, criteria: wider }],
+            },
+          },
+    ),
+  );
+  render(<ResultList criteria={{ ...emptyCriteria(), availability: "cinema" }} onOpen={() => {}} />);
+  expect(await screen.findByText("No film matches every wish")).toBeInTheDocument();
+  expect(screen.getByText(/No film matches every wish · 4 more with: Not only in cinemas/)).toBeInTheDocument();
 });
 
 it("shows a loading bar while results load, and dims the old row", async () => {

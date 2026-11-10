@@ -18,7 +18,6 @@ const BEST_PERCENT = 70;
 const MORE_FLOORS = [70, 60, 50]; // the row below starts at the highest of these that still holds about MORE_MAX films
 const MORE_PERCENT = 50; // the lowest floor: with no film from it, the films that fit one of the moods (one_mood)
 const MORE_MAX = 30; // films in the running row at a time; its « » arrows run quickly to the previous / next ones
-const count = new Intl.NumberFormat("en-US");
 
 type Props = {
   criteria: Criteria;
@@ -33,7 +32,13 @@ type OneMood = { tag: string; count: number }[];
 
 /** "How these results came about": what was searched, what the match means, why the rows start where they do,
  *  and how a search no film fully meets was answered. */
-export function explainLines(criteria: Criteria, names: Record<number, string>, floor: number, oneMood: OneMood | null): string[] {
+export function explainLines(
+  criteria: Criteria,
+  names: Record<number, string>,
+  floor: number,
+  oneMood: OneMood | null,
+  widenedBy: string | null = null,
+): string[] {
   const moods = criteria.tags
     .filter((t) => t.mode !== "not")
     .map((t) => `${names[t.idx] ?? "a mood"} (${"★".repeat(Math.round(t.weight / 2))}${t.mode === "must" ? ", must" : ""})`);
@@ -50,6 +55,8 @@ export function explainLines(criteria: Criteria, names: Record<number, string>, 
     "Match %: fit to this search, moods first (MovieLens Tag Genome), then plot, people, 👍/👎, rating and fame. Not a review score.",
     `Top: the 6 best from 70% (at least 3). Below: more from ${floor}% (70% with many strong films, else 60 or 50%).`,
   ];
+  if (widenedBy)
+    out.push(`Too few films match every wish, so the row below shows the search with “${widenedBy}”, the change that alters your wish least; your search itself stays as it is.`);
   if (oneMood)
     out.push(
       `No film has all your moods (none reached 50%): these fit at least one (${oneMood
@@ -61,6 +68,12 @@ export function explainLines(criteria: Criteria, names: Record<number, string>, 
 
 /** The best matches as one endless row at the bottom, like the genre page; the header gives the real number and
  *  never claims completeness, and every card says why it matches. */
+/** The widening shown when too few films match every wish: the least intrusive one that finds enough films
+ *  (the options come least intrusive first), else the one that finds the most (as the agent picks). */
+export function pickWidening(options: Relaxation[]): Relaxation | null {
+  return options.find((o) => o.count >= MIN_SHOWN) ?? [...options].sort((a, b) => b.count - a.count)[0] ?? null;
+}
+
 /** The floor of the row below: with many strong films from 70%, with a middling number from 60%, else from 50%,
  *  counted on the first page (the API ranks by match, so it holds the strongest). */
 export function moreFloor(percents: number[]): number {
@@ -87,6 +100,9 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened,
   const [extended, setExtended] = useState(false);
   // the options belong to the search they were computed for; while the next one loads they are stale
   const [relaxFor, setRelaxFor] = useState<{ key: string; options: Relaxation[] }>({ key: "", options: [] });
+  // too few films match every wish: the films of the widening that changes the wish least, shown in the row below
+  // as information (the search itself stays as the user set it, so there is nothing to undo)
+  const [alt, setAlt] = useState<{ key: string; label: string; items: RankedMovie[] } | null>(null);
   const [error, setError] = useState(false);
   const [shownKey, setShownKey] = useState<string | null>(null); // the search the shown results belong to
   // further pages of 50 (» / «), kept with the search they belong to so a new search starts on page one again
@@ -115,6 +131,13 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened,
       setCapped(Boolean(r.data.total_capped));
       setExtended(r.data.extended_used);
       setRelaxFor({ key, options: r.data.relaxations ?? [] });
+      const option = pickWidening(r.data.relaxations ?? []);
+      if (option) {
+        const w = await search(option.criteria, 0, LIMIT, JSON.parse(key) as Criteria); // ≠ marks what each film misses
+        if (cancelled) return;
+        const exact = new Set(r.data.items.map((x) => x.movie.id));
+        setAlt(w.ok ? { key, label: option.label, items: w.data.items.filter((x) => !exact.has(x.movie.id)) } : null);
+      } else setAlt(null);
       setOneMood({ key, parts: r.data.one_mood ?? null });
       onMeta?.({
         total: r.data.total,
@@ -134,18 +157,7 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened,
   const loading = shownKey !== key;
   if (error && !loading) return <p className="results-error">Couldn&apos;t load films</p>;
   if (total === null) return <LoadingBar />;
-  const relaxations = relaxFor.key === key ? relaxFor.options : [];
-  const widen =
-    onRelax && relaxations.length > 0 ? (
-      <div className="results-relax-bar">
-        <span>{items.length ? `Only ${count.format(total)} films match every wish. More with:` : "Nothing matches every wish. Try:"}</span>
-        {relaxations.map((o) => (
-          <button key={o.id} type="button" className="results-relax" onClick={() => onRelax(o.criteria, o.label)}>
-            {o.label} · {count.format(o.count)} films
-          </button>
-        ))}
-      </div>
-    ) : null;
+  const widenedRow = alt && alt.key === key && alt.items.length > 0 ? alt : null;
   const note = widened?.labels.length ? (
     <p className="results-widened">Widened: {widened.labels.join("; ")} — films marked ≠ miss part of your wish</p>
   ) : null;
@@ -156,7 +168,7 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened,
     : criteria.title
       ? { text: `🔤 “${criteria.title}”`, what: "title", without: { ...criteria, title: null }, label: `without “${criteria.title}”` }
       : null;
-  if (items.length === 0)
+  if (items.length === 0 && !widenedRow)
     return (
       <>
         {loading && <LoadingBar />}
@@ -173,21 +185,21 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened,
           <p className="results-head">No matches in the CineSense catalogue</p>
         )}
         {note}
-        {widen}
       </>
     );
   const all = [items, ...(more.key === key ? more.pages : [])].flat();
   const best = all.slice(0, BEST_MAX).filter((r, i) => i < MIN_SHOWN || r.match_percent >= BEST_PERCENT);
   const floor = moreFloor(items.map((r) => r.match_percent));
   const parts = oneMood.key === key ? oneMood.parts : null; // the films fit one mood each, none all of them
-  const rest = all.slice(best.length).filter((r) => r.match_percent >= floor);
+  // too few films for every wish: the row below shows the widened search's films instead, all of them
+  const rest = widenedRow ? widenedRow.items : all.slice(best.length).filter((r) => r.match_percent >= floor);
   const chunks = Math.max(1, Math.ceil(rest.length / MORE_MAX));
   const n = page.key === key ? Math.min(page.n, chunks - 1) : 0;
   const shownOf = (p: number) => rest.slice(p * MORE_MAX, (p + 1) * MORE_MAX);
   const shown = shownOf(n);
   // the API may hold more above the bar: the loaded films fill whole pages and the last still clears it
   const last = all[all.length - 1];
-  const canLoad = all.length < total && all.length % LIMIT === 0 && last.match_percent >= floor;
+  const canLoad = !widenedRow && all.length < total && all.length % LIMIT === 0 && last.match_percent >= floor;
   const canNext = !loading && ((n + 1) * MORE_MAX < rest.length || canLoad);
   const next = async () => {
     // the next page from what is loaded, unless they would be fewer and the API holds more: then load first
@@ -229,7 +241,15 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened,
       {extended && <span className="results-extended"> · includes titles just added from Wikidata</span>}
     </>
   );
-  const moreLabel = (
+  const moreLabel = widenedRow ? (
+    <>
+      {`${items.length ? `Only ${total} ${total === 1 ? "film matches" : "films match"}` : "No film matches"} every wish · ${rest.length} more with: ${widenedRow.label}`}
+      <span className="related-hint">
+        {" "}
+        · {n * MORE_MAX + 1}–{n * MORE_MAX + shown.length} · ≠ marks what a film misses
+      </span>
+    </>
+  ) : (
     <>
       {`${shown.length} more matches from ${floor}%`}
       <span className="related-hint">
@@ -244,7 +264,6 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened,
       <div className="results-info">
         <div className="results-info__left">
           {note}
-          {widen}
         </div>
         <button type="button" className="results-explain-btn" aria-expanded={explain} onClick={() => setExplain((v) => !v)}>
           ⓘ How these results came about
@@ -252,7 +271,7 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened,
         {explain && (
           <aside className="results-explain" aria-label="How these results came about">
             <ul>
-              {explainLines(criteria, tagNames, floor, parts).map((l) => (
+              {explainLines(criteria, tagNames, floor, parts, widenedRow?.label ?? null).map((l) => (
                 <li key={l}>{l}</li>
               ))}
             </ul>
@@ -261,13 +280,15 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened,
       </div>
       <div className="results-count-line">
         <p className="related-count results-count">
-          {parts
+          {items.length === 0
+            ? "No film matches every wish"
+            : parts
             ? `${fmt.format(total)} ${total === 1 ? "film fits" : "films fit"} one of your moods · none has them all`
             : countText(best.filter((r) => r.match_percent >= floor).length + rest.length, canLoad, floor, total, capped, best.length)}
         </p>
       </div>
       {(loading || loadingMore) && <LoadingBar />}
-      <BestMatches items={best} onSelect={onOpen} label={bestLabel} streamCheck={streaming} busy={loading} />
+      {best.length > 0 && <BestMatches items={best} onSelect={onOpen} label={bestLabel} streamCheck={streaming} busy={loading} />}
       {rowItems.length > 0 && (
         <div className="results-more-row">
           <RelatedRow
