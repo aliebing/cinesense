@@ -509,7 +509,7 @@
 }
 @media (min-width: 760px) {
   /* the count, the best matches and the running row share one left edge, with room for the arrows */
-  .results-page { --row-inset: calc(2 * (clamp(84px, 6.4cqw, 160px) + var(--card-gap))); }
+  .results-page { --row-inset: calc(2 * (clamp(60px, 5.5cqw, 140px) + var(--card-gap))); }
   .results-page .related, .results-page .best, .results-page .results-count,
   .results-page .results-relax-bar, .results-page .results-widened { margin-inline: var(--row-inset); }
   /* the film row, header and advanced search always show in full; the mood panel takes what is left and
@@ -629,19 +629,45 @@
   padding-top: .6em; border-top: 1px solid #ffffff1a; }
 .advanced-search__more-row .adv-switch { grid-template-columns: repeat(3, auto); }
 .advanced-search__more-row .crit__mode { white-space: nowrap; padding-inline: 1em; }
-/* results page, top to bottom: best matches (large, with why), more matches (running row), moods, exclusions */
+/* results page, top to bottom: best matches (large, with why), more matches (running row), moods, exclusions.
+   Everything is sized in cqw (the stage is 2.25:1, so its height is ~44cqw) so the page fits the stage unscrolled */
+.results-page { gap: .7cqw; --card-hover-scale: 1.1; }
 .results-page > .criteria-panel { flex-shrink: 0; overflow: visible; min-height: 0; }
 .results-count { margin: 0; }
-.best { --card-w: clamp(110px, 9.2cqw, 230px); }
+.best { --card-w: clamp(78px, 8cqw, 200px); }
+.best .related-label { margin-bottom: .35em; }
 .best.is-busy .best-list { opacity: .35; transition: opacity .2s; pointer-events: none; }
-.best-list { display: flex; gap: 1.2cqw; margin: 0; padding: .6cqw 0 0; list-style: none; }
-.best-item { flex: 1 1 0; min-width: 0; max-width: var(--card-w); display: flex; flex-direction: column; gap: .3em; }
+.best-list { display: flex; gap: 1.1cqw; margin: 0; padding: 0; list-style: none; }
+.best-item { flex: 1 1 0; min-width: 0; max-width: var(--card-w); display: flex; flex-direction: column; gap: .2em; }
 .best-item .related-card { width: 100%; height: auto; aspect-ratio: 2 / 3; }
-.best-title { margin: .35em 0 0; font-weight: 600; line-height: 1.25; text-shadow: 0 1px 4px #000; }
+/* a large poster grows only a little on hover, and its trailer plays inside it instead of widening it */
+.best .related-wrap:hover, .best .related-wrap:focus-within, .best .related-wrap.is-active { transform: scale(1.05); }
+.best .related-wrap:has(.hover-trailer__player.is-playing) .related-card { width: 100%; }
+.best .related-wrap:has(.hover-trailer__player.is-playing) .hover-trailer__player iframe { left: 50%; width: calc(100% * 1.5 * 16 / 9); transform: translateX(-50%); }
+.best-title { margin: .3em 0 0; font-size: .92em; font-weight: 600; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 4px #000; }
 .best-title span { font-weight: 400; color: var(--muted); }
-.best-why { margin: 0; font-size: .85em; line-height: 1.35; color: #f3c76bd9; text-shadow: 0 1px 4px #000; }
-.best-item .result-unchecked, .best-item .result-miss { display: block; font-size: .8em; }
-.results-more-row { --card-w: clamp(84px, 6.4cqw, 160px); margin-top: .6cqw; }
+.best-why { margin: 0; font-size: .8em; line-height: 1.3; color: #f3c76bd9; text-shadow: 0 1px 4px #000;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.best-item .result-unchecked, .best-item .result-miss { display: block; font-size: .75em; }
+.results-more-row { --card-w: clamp(60px, 5.5cqw, 140px); }
+.results-more-row .related-viewport { padding-top: 1.2cqw; margin-top: -1cqw; }
+.results-more-row .related-viewport.is-static { scrollbar-width: none; } /* a row that fits needs no scrollbar */
+.results-more-row .related-viewport.is-static::-webkit-scrollbar { display: none; }
+/* moods in one line: each tag is a slim pill with its stars and its prefer / must / exclude switch */
+.results-page .criteria-panel { display: flex; flex-wrap: wrap; align-items: center; gap: .5em .8em; padding: .5em .8em; }
+.results-page .criteria-title { margin: 0; }
+.results-page .criteria-empty { font-size: .9em; }
+.results-page .criteria-list { gap: .5em; }
+.results-page .crit { width: auto; display: flex; align-items: center; gap: .6em; padding: .25em .4em .25em .8em; }
+.results-page .crit__head { display: contents; }
+.results-page .crit__x { order: 9; }
+.results-page .crit__row { margin-top: 0; }
+.results-page .crit__label { display: none; }
+.results-page .crit__stars button { font-size: 1.15em; }
+.results-page .crit__modes { margin-top: 0; width: 13em; }
+.results-page .crit-add { margin-top: 0; padding: .35em 1.2em; }
+.results-page .chip-add { position: relative; }
+.results-page .tag-picker { position: absolute; z-index: 30; left: 0; bottom: 100%; width: 18em; margin: 0 0 .4em; }
 .search-bar__end { margin-left: auto; }
 .sb-chip__note { font-size: .78em; color: #ffb3b3; }
 .sb-chip__note.is-idle { color: var(--muted); font-style: italic; }
