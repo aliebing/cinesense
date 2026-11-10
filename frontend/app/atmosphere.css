@@ -695,7 +695,7 @@
 @media (max-width: 759px) { .row-arrow--left { right: auto; left: 0; } .row-arrow--right { left: auto; right: 0; } .row-arrow { background: #000b; border-radius: 50%; } }
 /* no jumping: a trailer in the running row plays inside its poster instead of widening the card and pushing the
    others aside, and the gap already leaves room for the hover zoom */
-.related.has-arrows { --card-gap: calc(var(--card-w) * .14); }
+.related.has-arrows { --card-gap: calc(var(--card-w) * .3); }
 .has-arrows .related-wrap:has(.hover-trailer__player.is-playing) { transform: none; }
 .has-arrows .related-wrap:has(.hover-trailer__player.is-playing) .related-card { width: var(--card-w); }
 /* the trailer plays wide (16:9 at the card's height) over its neighbours instead of pushing them aside */
