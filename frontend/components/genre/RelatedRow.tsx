@@ -14,7 +14,7 @@ const SLOW_SPEED = 14; // px per second in the middle: still moving, but a card 
 const MAX_SPEED = 1100; // px per second with the pointer at the very edge
 const DEAD_ZONE = 0.3; // middle share of the row where it only creeps on
 const EASE_MS = 220;
-export const SWEEP_MS = 1200; // the fast run to the next (or previous) 50 results
+export const SWEEP_MS = 900; // the fast run to the next (or previous) page of results
 export const MIN_SLOTS = 14; // until the row is measured: fewer films than this stand still instead of looping
 const SLIDE_CARDS = 4; // how far one « » click slides the row
 const LOOP_MIN = 4; // a forced loop (results page) needs at least this many films, fewer stand still
@@ -70,6 +70,7 @@ export default function RelatedRow({
   bar = true,
   loop = false,
   arrows = false,
+  paging = null,
 }: {
   items: RankedMovie[];
   onSelect: (m: Movie) => void;
@@ -88,6 +89,8 @@ export default function RelatedRow({
   loop?: boolean;
   /** « » buttons on both sides that slide the row by most of its width */
   arrows?: boolean;
+  /** with « »: they page instead of sliding (a null handler: no page that way) */
+  paging?: { size: number; prev: (() => void) | null; next: (() => void) | null } | null;
   /** false: the row moves only when the mouse steers towards an edge (it starts with the best match) */
   drift?: boolean;
   /** placed after the cards, inside the row (the results page's "load more" arrow) */
@@ -279,10 +282,24 @@ export default function RelatedRow({
       </div>
       {arrows && (
         <>
-          <button type="button" className="row-arrow row-arrow--left" aria-label="Slide left" title="Slide left" onClick={() => slide(-1)}>
+          <button
+            type="button"
+            className="row-arrow row-arrow--left"
+            aria-label={paging ? `Previous ${paging.size}` : "Slide left"}
+            title={paging ? `Previous ${paging.size}` : "Slide left"}
+            disabled={paging ? !paging.prev || sweeping : false}
+            onClick={() => (paging ? paging.prev?.() : slide(-1))}
+          >
             «
           </button>
-          <button type="button" className="row-arrow row-arrow--right" aria-label="Slide right" title="Slide right" onClick={() => slide(1)}>
+          <button
+            type="button"
+            className="row-arrow row-arrow--right"
+            aria-label={paging ? `Next ${paging.size}` : "Slide right"}
+            title={paging ? `Next ${paging.size}` : "Slide right"}
+            disabled={paging ? !paging.next || sweeping : false}
+            onClick={() => (paging ? paging.next?.() : slide(1))}
+          >
             »
           </button>
         </>

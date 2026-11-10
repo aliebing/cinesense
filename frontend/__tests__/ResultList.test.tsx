@@ -189,8 +189,8 @@ it("shows up to 8 films from 70% in front, with why, and the films from 50% in t
   expect(screen.getByText("Strong on your moods: dark (95%)")).toHaveClass("best-why");
   expect(screen.getByText("5 more matches")).toBeInTheDocument();
   expect(screen.getByText(/6–10 of 10/)).toBeInTheDocument(); // their ranks, and every film above the bar
-  expect(screen.getByRole("button", { name: "Slide left" })).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Slide right" })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Previous 30" })).toBeDisabled(); // « » page the row, nothing more here
+  expect(screen.getByRole("button", { name: "Next 30" })).toBeDisabled();
   const more = container.querySelectorAll(".results-more-row .related-card");
   expect(new Set([...more].map((c) => c.getAttribute("aria-label"))).size).toBe(5);
 });
@@ -220,7 +220,7 @@ it("a search with only a few hits just counts them", async () => {
   expect(screen.getByText(/All matches/)).toBeInTheDocument();
 });
 
-it("pages the running row by 20, loads the next 50 from the API when needed, and back", async () => {
+it("the « » arrows page the running row by 30, load the next 50 from the API when needed, and back", async () => {
   const page = (from: number, n: number, percent: (i: number) => number) =>
     sampleRanked(n).map((r, i) => ({ ...r, movie: { ...r.movie, id: `f-${from + i}`, title: `Film ${from + i}` }, match_percent: percent(from + i) }));
   search.mockResolvedValueOnce({ ok: true, data: { items: page(0, 50, () => 80), total: 500, hidden_by_exclusion: 0, extended_used: false } });
@@ -228,23 +228,21 @@ it("pages the running row by 20, loads the next 50 from the API when needed, and
   search.mockImplementationOnce(() => new Promise((r) => (resolve = r)));
   render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} />);
   expect(await screen.findByText(/The 8 best matches/)).toBeInTheDocument();
-  expect(screen.getByText("20 more matches")).toBeInTheDocument();
-  expect(screen.getByText(/9–28 of 50\+/)).toBeInTheDocument(); // more may follow from the API
-  expect(screen.queryByRole("button", { name: "Previous 20" })).toBeNull();
-  await userEvent.click(screen.getByRole("button", { name: "Next 20" }));
-  expect(await screen.findByText(/29–48 of 50\+/)).toBeInTheDocument(); // the loaded films, no request
-  expect(search).toHaveBeenCalledTimes(1);
-  await userEvent.click(screen.getByRole("button", { name: "Next 20" }));
+  expect(screen.getByText("30 more matches")).toBeInTheDocument();
+  expect(screen.getByText(/9–38 of 50\+/)).toBeInTheDocument(); // more may follow from the API
+  expect(screen.queryByRole("button", { name: /Next 20|Previous 20/ })).toBeNull(); // no separate page buttons
+  expect(screen.getByRole("button", { name: "Previous 30" })).toBeDisabled();
+  await userEvent.click(screen.getByRole("button", { name: "Next 30" })); // only 12 loaded behind: load first
   expect(screen.getByRole("progressbar", { name: "Loading results" })).toBeInTheDocument();
   resolve({ ok: true, data: { items: page(50, 50, (i) => (i < 70 ? 60 : 40)), total: 500, hidden_by_exclusion: 0, extended_used: false } });
-  expect(await screen.findByText(/49–68 of 70/)).toBeInTheDocument(); // 70 films from 50% up in all
+  expect(await screen.findByText(/39–68 of 70/)).toBeInTheDocument(); // 70 films from 50% up in all
   expect(search.mock.calls[1][1]).toBe(50); // offset
-  await userEvent.click(screen.getByRole("button", { name: "Next 20" }));
+  await userEvent.click(screen.getByRole("button", { name: "Next 30" }));
   expect(await screen.findByText(/69–70 of 70/)).toBeInTheDocument();
-  expect(screen.queryByRole("button", { name: "Next 20" })).toBeNull(); // below the bar: nothing further
+  expect(screen.getByRole("button", { name: "Next 30" })).toBeDisabled(); // below the bar: nothing further
   expect(search).toHaveBeenCalledTimes(2);
-  await userEvent.click(screen.getByRole("button", { name: "Previous 20" }));
-  expect(await screen.findByText(/49–68 of 70/)).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: "Previous 30" }));
+  expect(await screen.findByText(/39–68 of 70/)).toBeInTheDocument();
   expect(screen.getByText(/The 8 best matches/)).toBeInTheDocument(); // the best stay in front throughout
 });
 

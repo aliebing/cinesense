@@ -16,7 +16,7 @@ const MIN_SHOWN = 3;
 const BEST_MAX = 8;
 const BEST_PERCENT = 70;
 const MORE_PERCENT = 50;
-const MORE_MAX = 20; // films in the running row at a time; « Previous / Next » page through the rest
+const MORE_MAX = 30; // films in the running row at a time; its « » arrows run quickly to the previous / next ones
 const count = new Intl.NumberFormat("en-US");
 
 type Props = {
@@ -136,7 +136,7 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
   const canLoad = all.length < total && all.length % LIMIT === 0 && last.match_percent >= MORE_PERCENT;
   const canNext = !loading && ((n + 1) * MORE_MAX < rest.length || canLoad);
   const next = async () => {
-    // the next 20 from what is loaded, unless they would be fewer and the API holds more: then load first
+    // the next page from what is loaded, unless they would be fewer and the API holds more: then load first
     if ((n + 2) * MORE_MAX <= rest.length || (!canLoad && (n + 1) * MORE_MAX < rest.length)) return setSweepTo({ key, n: n + 1 });
     setLoadingMore(true);
     const r = await search(criteria, all.length, LIMIT, widened?.from);
@@ -182,16 +182,6 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
         {" "}
         · {start + 1}–{start + shown.length} of {available}
       </span>
-      {n > 0 && !loading && !sweep && (
-        <button type="button" className="results-page-btn" onClick={() => setSweepTo({ key, n: n - 1 })} aria-label={`Previous ${MORE_MAX}`} title={`Previous ${MORE_MAX}`}>
-          ‹ Previous {MORE_MAX}
-        </button>
-      )}
-      {canNext && !sweep && (
-        <button type="button" className="results-page-btn" onClick={next} disabled={loadingMore} aria-label={`Next ${MORE_MAX}`} title={`Next ${MORE_MAX}`}>
-          Next {MORE_MAX} ›
-        </button>
-      )}
     </>
   );
   return (
@@ -217,6 +207,11 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
             loop // an endless row the mouse slides left or right, even when its films would fit
             sweep={sweep}
             arrows
+            paging={{
+              size: MORE_MAX,
+              prev: n > 0 && !loading ? () => setSweepTo({ key, n: n - 1 }) : null,
+              next: canNext && !loadingMore ? next : null,
+            }}
           />
         </div>
       )}

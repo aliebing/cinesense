@@ -679,13 +679,9 @@
 .row-arrow--left { right: 100%; margin-right: .2em; }
 .row-arrow--right { left: 100%; margin-left: .2em; }
 .row-arrow:hover, .row-arrow:focus-visible { transform: translateY(50%) scale(1.25); }
+.row-arrow:disabled { opacity: .25; cursor: default; transform: translateY(50%); }
 .row-arrow:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; border-radius: 8px; }
 @media (max-width: 759px) { .row-arrow--left { right: auto; left: 0; } .row-arrow--right { left: auto; right: 0; } .row-arrow { background: #000b; border-radius: 50%; } }
-/* paging the further matches: small buttons in the row's heading */
-.results-page-btn { margin-left: .8em; font: inherit; font-size: .9em; letter-spacing: .05em; text-transform: none; cursor: pointer;
-  padding: .15em .8em; border-radius: 999px; background: #0d0d14c4; color: var(--gold); border: 1px solid #f3c76b80; }
-.results-page-btn:hover:not(:disabled), .results-page-btn:focus-visible { background: var(--gold); color: #16130c; }
-.results-page-btn:disabled { opacity: .5; cursor: wait; }
 /* no jumping: a trailer in the running row plays inside its poster instead of widening the card and pushing the
    others aside, and the gap already leaves room for the hover zoom */
 .results-more-row { --card-gap: calc(var(--card-w) * .14); }
