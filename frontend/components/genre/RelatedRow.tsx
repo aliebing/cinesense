@@ -32,6 +32,14 @@ export function edgeSpeed(ratio: number | null, dir = -1, drift = true): number 
   return -Math.sign(d) * Math.max(reach * reach * MAX_SPEED, SLOW_SPEED);
 }
 
+const MOVING_SPEED = 30; // px per second above which a row counts as moving: hover trailers wait until it rests
+/** Velocity for a row with a start and an end (offset 0 … `min`, negative): the steered `target` until the row
+ *  reaches the end it runs to, then nothing: it stops at once with its first or last film in full view. */
+export function braked(target: number, offset: number, min: number): number {
+  const room = target < 0 ? offset - min : -offset; // px left before that end
+  return room <= 0 ? 0 : target;
+}
+
 /** Keeps the card under the pointer in place when the layout shifts (a wide trailer card before it shrinks or
  *  grows): its layout position moved from `before` to `now`, so the row's offset moves the other way. */
 export function anchored(offset: number, before: number | null, now: number): number {
@@ -72,6 +80,7 @@ export default function RelatedRow({
   loop = false,
   arrows = false,
   paging = null,
+  bounded = false,
 }: {
   items: RankedMovie[];
   onSelect: (m: Movie) => void;
@@ -90,6 +99,9 @@ export default function RelatedRow({
   loop?: boolean;
   /** « » buttons on both sides that slide the row by most of its width */
   arrows?: boolean;
+  /** a row with a start and an end instead of an endless loop: the mouse browses it, and it comes to rest at its
+   *  first and last film */
+  bounded?: boolean;
   /** with « »: they page instead of sliding (a null handler: no page that way) */
   paging?: { size: number; prev: (() => void) | null; next: (() => void) | null } | null;
   /** true: the row keeps running on its own; false (default): it moves only while the mouse steers towards an edge */
@@ -113,7 +125,7 @@ export default function RelatedRow({
   // films that all fit in the visible width stand still, left-aligned; only a row wider than the screen loops
   // (looping a short one would need empty boxes). Measured with a ResizeObserver; until then: by count.
   const [fits, setFits] = useState<boolean | null>(null);
-  const looping = loop && items.length >= LOOP_MIN;
+  const looping = loop && !bounded && items.length >= LOOP_MIN;
   const still = reduced || (!looping && (fits ?? items.length < MIN_SLOTS));
   useEffect(() => {
     const view = viewport.current;
@@ -175,7 +187,7 @@ export default function RelatedRow({
           // the long way round: SWEEP_LAPS more laps of the endless row in the same direction
           const start = offset - left(sweepNow.from);
           const half = el.children.length / 2;
-          const lap = half >= 1 ? left(half) : 0;
+          const lap = !bounded && half >= 1 ? left(half) : 0; // a row with ends has no laps to run
           const end = -left(sweepNow.to);
           const target = end + (end < start ? -1 : 1) * SWEEP_LAPS * lap;
           run = { from: sweepNow.from, to: sweepNow.to, start, target: lap > 0 ? target : end, end, lap, began: now, done: false };
@@ -194,6 +206,34 @@ export default function RelatedRow({
         run = null; // a cancelled sweep (a new search): carry on from where it stopped
       } else if (isTyping()) {
         speed = 0; // hold still while the visitor types in the chat drawer; ease back up afterwards
+      } else if (el && bounded) {
+        const view = viewport.current;
+        const min = Math.min(0, (view?.clientWidth ?? 0) - el.offsetWidth);
+        if (anchor.current !== anchorEl) {
+          anchorEl = anchor.current;
+          anchorLeft = null;
+        }
+        if (anchorEl) {
+          offset = anchored(offset, anchorLeft, anchorEl.offsetLeft);
+          anchorLeft = anchorEl.offsetLeft;
+        }
+        if (nudge.current !== 0) {
+          const part = Math.abs(nudge.current) < 1 ? nudge.current : nudge.current * Math.min(1, dt / 160);
+          nudge.current -= part;
+          offset += part;
+        }
+        // steering towards an edge always browses (the trailer under the pointer stops when its card slides away);
+        // in the calm middle the row stands still anyway, so a trailer there plays in place
+        const target = braked(edgeSpeed(pointer.current, dir, false), offset, min);
+        speed = easeTowards(speed, target, dt, EASE_MS);
+        const next = offset + speed * (dt / 1000);
+        if (next <= min || next >= 0) speed = 0; // an end: stop dead there, no easing out
+        offset = Math.min(0, Math.max(min, next));
+        el.style.transform = `translate3d(${offset}px, 0, 0)`;
+        // no fade on the side where the row ends: its first and last film show in full
+        view?.classList.toggle("is-start", offset >= -0.5);
+        view?.classList.toggle("is-end", offset <= min + 0.5);
+        view?.classList.toggle("is-moving", Math.abs(speed) > MOVING_SPEED); // no trailer starts while it moves
       } else if (el) {
         const n = el.children.length / 2;
         const first = el.children[0] as HTMLElement | undefined;
@@ -222,7 +262,7 @@ export default function RelatedRow({
     };
     frame = requestAnimationFrame(step);
     return () => cancelAnimationFrame(frame);
-  }, [still, drift]);
+  }, [still, drift, bounded]);
 
   if (items.length === 0) return null;
   // a forced loop repeats short rows until they are wider than the screen, so the run has no gap at its seam
@@ -259,7 +299,7 @@ export default function RelatedRow({
         }}
       >
         <div ref={track} className="related-track">
-          {(still ? slots : [...slots, ...slots]).map((r, i) => (
+          {(still || bounded ? slots : [...slots, ...slots]).map((r, i) => (
             <HoverTrailer key={`${r.movie.id}-${i}`} movie={r.movie} className="related-wrap">
               <button
                 type="button"

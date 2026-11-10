@@ -258,6 +258,7 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
             found={found}
             streamCheck={fromSearch && rowFromSearch && criteria.availability === "stream"}
             arrows
+            bounded
             sweep={sweep}
             paging={{ size: PAGE, prev: n > 0 ? () => turn(n - 1) : null, next: canNext ? () => turn(n + 1) : null }}
           />

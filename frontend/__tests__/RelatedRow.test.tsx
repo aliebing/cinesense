@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, it, vi } from "vitest";
-import RelatedRow, { edgeSpeed, SWEEP_MS, sweepOffset } from "@/components/genre/RelatedRow";
+import RelatedRow, { braked, edgeSpeed, SWEEP_MS, sweepOffset } from "@/components/genre/RelatedRow";
 import { mockMatchMedia, sampleRanked } from "./fixtures";
 
 beforeEach(() => mockMatchMedia(() => false));
@@ -167,4 +167,12 @@ it("sweeps from start to target, slow at both ends and fast in between", () => {
   const middle = -sweepOffset(0, -10000, SWEEP_MS * 0.55) + sweepOffset(0, -10000, SWEEP_MS * 0.45);
   expect(early).toBeLessThan(middle / 5); // the first tenth covers far less than a tenth around the middle
   expect(sweepOffset(-8000, 0, SWEEP_MS)).toBe(0); // backwards too
+});
+
+it("braked: a row with ends runs at full speed up to an end and stops dead there", () => {
+  expect(braked(-600, -1000, -3000)).toBe(-600); // far from both ends
+  expect(braked(-600, -2990, -3000)).toBe(-600); // just before the last film: no slowing down
+  expect(braked(-600, -3000, -3000)).toBe(0); // at the end: no further
+  expect(braked(600, 0, -3000)).toBe(0); // at the start: no further back
+  expect(braked(600, -3000, -3000)).toBe(600); // from the end it may go back freely
 });

@@ -22,6 +22,7 @@ export default function HoverTrailer({ movie, children, className = "" }: { movi
   const [muted, setMuted] = useState(true);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const frame = useRef<HTMLIFrameElement | null>(null);
+  const box = useRef<HTMLDivElement | null>(null);
   const active = activeId === id;
   const candidate = movie.youtube_key && !isBadTrailer(movie.youtube_key) ? movie.youtube_key : null;
   const { playing, failed } = useYouTubeState(active, candidate, frame, id);
@@ -38,12 +39,16 @@ export default function HoverTrailer({ movie, children, className = "" }: { movi
     if (reduced) return;
     if (timer.current) clearTimeout(timer.current); // one pending start at a time
     timer.current = setTimeout(() => {
+      timer.current = null;
+      // a row still sliding under the pointer: no trailer yet; the next pointer move once it rests starts it
+      if (box.current?.closest(".is-moving")) return;
       setMuted(true);
       activate(id);
     }, INTENT_MS);
   };
   const onLeave = () => {
     if (timer.current) clearTimeout(timer.current);
+    timer.current = null;
     deactivate(id);
   };
   const listen = () => listenTo(frame, id);
@@ -52,7 +57,9 @@ export default function HoverTrailer({ movie, children, className = "" }: { movi
     <div
       className={`hover-trailer ${active ? "is-active" : ""} ${className}`}
       data-testid="hover-trailer"
+      ref={box}
       onPointerEnter={onEnter}
+      onPointerMove={() => !active && !timer.current && onEnter()}
       onPointerLeave={onLeave}
     >
       {children}
