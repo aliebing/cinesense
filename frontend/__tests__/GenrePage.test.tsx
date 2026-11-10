@@ -91,6 +91,7 @@ it("re-ranks the related row with the chip criteria inside the world", async () 
   await screen.findByRole("heading", { name: "Demo-Film 01" });
   await waitFor(() => expect(api.discover).toHaveBeenCalled());
   expect(api.discover.mock.calls[0][0]).toMatchObject({ world_id: "action", tags: [{ idx: 0, weight: 6, mode: "prefer" }] });
+  expect(await screen.findByText("3 films found")).toBeInTheDocument();
   setSearchState(emptyCriteria());
 });
 
@@ -140,6 +141,7 @@ it("opened from the search, the row holds the other matches of the whole search 
   render(<GenreView worldId="action" filmId={items[0].movie.id} fromSearch />);
   expect(await screen.findByRole("region", { name: "Your other matches" })).toBeInTheDocument();
   expect(api.search.mock.calls[0][0]).toMatchObject({ person: "Gérard Depardieu" });
+  expect(screen.getByText("3 films found")).toBeInTheDocument();
   expect(api.discover).not.toHaveBeenCalled();
   expect(screen.getByText("with Gérard Depardieu", { selector: ".stage-why span" })).toBeInTheDocument();
   const crumbs = screen.getByRole("navigation", { name: "Breadcrumb" });

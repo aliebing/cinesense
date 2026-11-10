@@ -283,6 +283,7 @@
 .related { position: absolute; z-index: 15; left: calc(var(--safe-x) + var(--panel-w) + 1.4cqw); right: var(--safe-x); bottom: 1cqw; font-size: var(--ui); }
 .related-label { margin: 0 0 .5em; font-size: .85em; font-weight: 400; letter-spacing: .2em; text-transform: uppercase; opacity: .85; }
 .related-hint { letter-spacing: .05em; text-transform: none; color: var(--muted); }
+.related-count { margin: 0 0 .35em; font-size: 1.05em; font-weight: 600; letter-spacing: .04em; color: var(--gold, #f3c76b); text-shadow: 0 1px 6px rgba(0, 0, 0, .85); }
 /* one row of cards; the mouse steers it (RelatedRow.tsx). `clip`, not `hidden`: the hidden cards must not make
    the stage scrollable. Soft fade at both ends so the endless row has no hard edge */
 .related-viewport {

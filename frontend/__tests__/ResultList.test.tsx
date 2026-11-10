@@ -60,7 +60,7 @@ it("shows no relaxation buttons without onRelax", async () => {
     },
   });
   render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} />);
-  expect(await screen.findByText(/1 matches in the CineSense catalogue/)).toBeInTheDocument();
+  expect(await screen.findByText("1 film found")).toBeInTheDocument();
   expect(screen.queryByRole("button", { name: /Allow up to 90 min/ })).toBeNull();
 });
 
@@ -157,7 +157,7 @@ it("shows a loading bar while results load, and dims the old row", async () => {
   search.mockResolvedValueOnce({ ok: true, data: { items: sampleRanked(3), total: 3, hidden_by_exclusion: 0, extended_used: false } });
   const { rerender } = render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} />);
   expect(screen.getByRole("progressbar", { name: "Loading results" })).toBeInTheDocument(); // first load
-  await screen.findByText(/3 matches/);
+  await screen.findByText("3 films found");
   expect(screen.queryByRole("progressbar")).toBeNull();
   search.mockImplementationOnce(() => new Promise((r) => (resolve = r)));
   rerender(<ResultList criteria={{ ...emptyCriteria(), title: "x" }} onOpen={() => {}} />);
@@ -165,16 +165,16 @@ it("shows a loading bar while results load, and dims the old row", async () => {
   expect(screen.getByRole("region", { name: "Results" })).toHaveClass("is-busy");
   await waitFor(() => expect(search).toHaveBeenCalledTimes(2)); // the request starts after a short pause
   resolve({ ok: true, data: { items: sampleRanked(1), total: 1, hidden_by_exclusion: 0, extended_used: false } });
-  await screen.findByText(/1 matches/);
+  await screen.findByText("1 film found");
   expect(screen.queryByRole("progressbar")).toBeNull();
 });
 
-it("shows at least the 3 best matches, and says out of how many", async () => {
+it("shows at least the 3 best matches, and says how many were found", async () => {
   const items = sampleRanked(12).map((r, i) => ({ ...r, match_percent: 49 - i }));
   search.mockResolvedValue({ ok: true, data: { items, total: 39, hidden_by_exclusion: 0, extended_used: false } });
   const { container } = render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} />);
   expect(await screen.findByText(/The 3 best matches/)).toBeInTheDocument(); // none reaches 50%: the 3 best
-  expect(screen.getByText(/out of 39 films that fit your filters/)).toBeInTheDocument();
+  expect(screen.getByText("39 films found")).toHaveClass("related-count");
   expect(container.querySelectorAll(".related-card")).toHaveLength(3);
   expect(search.mock.calls[0][2]).toBe(50); // at most 50
 });
@@ -185,7 +185,7 @@ it("shows every film from 50% up (Sandra Bullock + action + funny: 7 of 39)", as
   search.mockResolvedValue({ ok: true, data: { items, total: 39, hidden_by_exclusion: 0, extended_used: false } });
   const { container } = render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} />);
   expect(await screen.findByText(/The 7 best matches/)).toBeInTheDocument();
-  expect(screen.getByText(/out of 39 films/)).toBeInTheDocument();
+  expect(screen.getByText("39 films found")).toBeInTheDocument();
   const titles = new Set([...container.querySelectorAll(".related-card")].map((c) => c.getAttribute("aria-label") ?? c.textContent));
   expect(titles.size).toBe(7); // a row too long to fit loops, so its cards appear twice
 });
@@ -201,8 +201,8 @@ it("another tag lowers every score, so it shows fewer films, not more (+ horror:
 it("a search with only a few hits just counts them", async () => {
   search.mockResolvedValue({ ok: true, data: { items: sampleRanked(3), total: 3, hidden_by_exclusion: 0, extended_used: false } });
   render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} />);
-  expect(await screen.findByText(/^3 matches/)).toBeInTheDocument();
-  expect(screen.queryByText(/out of/)).toBeNull();
+  expect(await screen.findByText("3 films found")).toBeInTheDocument();
+  expect(screen.getByText(/All matches/)).toBeInTheDocument();
 });
 
 it("pages through the next 50 while every shown film still matches, and back", async () => {
@@ -242,5 +242,5 @@ it("says at least 500 when the mood search kept only its best films", async () =
   const items = sampleRanked(10).map((r) => ({ ...r, match_percent: 40 }));
   search.mockResolvedValue({ ok: true, data: { items, total: 500, total_capped: true, hidden_by_exclusion: 0, extended_used: false } });
   render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} />);
-  expect(await screen.findByText(/out of at least 500 films that fit your filters/)).toBeInTheDocument();
+  expect(await screen.findByText("At least 500 films found")).toBeInTheDocument();
 });

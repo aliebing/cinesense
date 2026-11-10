@@ -156,14 +156,7 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
         ? `Matches ${first + 1}–${first + shown.length}`
         : total > shown.length
           ? `The ${shown.length} best matches`
-          : `${count.format(total)} matches in the CineSense catalogue`}
-      {(n > 0 || total > shown.length) && (
-        <span className="related-hint">
-          {" "}
-          · out of {capped ? "at least " : ""}
-          {count.format(total)} films that fit your filters
-        </span>
-      )}
+          : "All matches"}
       {extended && <span className="results-extended"> · includes titles just added from Wikidata</span>}
     </>
   );
@@ -176,6 +169,7 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
         items={rowItems}
         onSelect={onOpen}
         label={label}
+        found={{ total, capped }}
         name="Results"
         showReasons
         busy={loading || loadingMore}

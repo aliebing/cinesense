@@ -43,6 +43,8 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
   const reduced = useReducedMotion();
   const [state, setState] = useState<State>({ kind: "loading" });
   const [related, setRelated] = useState<RankedMovie[]>([]);
+  // how many films the search behind the row found; null while the row holds the stage film's neighbours
+  const [found, setFound] = useState<{ total: number; capped?: boolean } | null>(null);
   // the shared search state, shown read-only here (edited on the start and results pages): it ranks the row,
   // and ⚡ / 😂 add to it
   const [criteria, setCriteria] = useSearchState();
@@ -96,6 +98,7 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
       getRelated(stageId, worldId).then((r) => {
         if (cancelled) return;
         setRelated(r.ok ? r.data : []);
+        setFound(null);
         setRowFromSearch(false);
         setHidden(0);
       });
@@ -109,6 +112,7 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
           if (onStage) setStageReasons((s) => s ?? { id: onStage.movie.id, reasons: onStage.reasons });
           if (!others(items)) return loadRelated();
           setRelated(items);
+          setFound(r.ok ? { total: r.data.total, capped: r.data.total_capped } : null);
           setRowFromSearch(true);
           setHidden(r.ok ? r.data.hidden_by_exclusion : 0);
         });
@@ -119,6 +123,7 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
           const items = r.ok ? r.data.items : [];
           if (!others(items)) return loadRelated();
           setRelated(items);
+          setFound(r.ok ? { total: r.data.total, capped: r.data.total_capped } : null);
           setRowFromSearch(false);
           setHidden(r.ok ? r.data.hidden_by_exclusion : 0);
         });
@@ -204,9 +209,10 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
               label="Your other matches"
               name="Your other matches"
               showReasons
+              found={found}
             />
           ) : (
-            <RelatedRow items={related.filter((r) => r.movie.id !== movie.id)} onSelect={select} />
+            <RelatedRow items={related.filter((r) => r.movie.id !== movie.id)} onSelect={select} found={found} />
           )}
         </>
       )}

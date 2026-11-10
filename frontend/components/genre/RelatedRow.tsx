@@ -63,11 +63,14 @@ export default function RelatedRow({
   drift = true,
   after,
   sweep = null,
+  found = null,
 }: {
   items: RankedMovie[];
   onSelect: (m: Movie) => void;
   label?: ReactNode;
   name?: string;
+  /** how many films the search found, as a readable line above the label ("65 films found"); null: no line */
+  found?: { total: number; capped?: boolean } | null;
   showReasons?: boolean;
   /** new results are loading: a running bar above the cards, the old cards dimmed */
   busy?: boolean;
@@ -197,6 +200,7 @@ export default function RelatedRow({
   };
   return (
     <section className={`related ${busy ? "is-busy" : ""} ${sweeping ? "is-sweeping" : ""}`} aria-label={name} aria-busy={busy}>
+      {found && <p className="related-count">{foundText(found.total, found.capped)}</p>}
       <h3 className="related-label">
         {label} {!still && <span className="related-hint">· move the mouse left or right to browse</span>}
       </h3>
@@ -241,4 +245,12 @@ export default function RelatedRow({
       {after}
     </section>
   );
+}
+
+const fmt = new Intl.NumberFormat("en-US");
+
+/** "65 films found", "1 film found", "At least 500 films found" (a capped mood search) */
+export function foundText(total: number, capped = false): string {
+  const films = `${fmt.format(total)} ${total === 1 ? "film" : "films"} found`;
+  return capped ? `At least ${films}` : films;
 }
