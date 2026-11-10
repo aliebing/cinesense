@@ -643,7 +643,7 @@
 .best-item { text-align: left; flex: 1 1 0; min-width: 0; max-width: var(--card-w); display: flex; flex-direction: column; gap: .2em; }
 .best-item .related-card { width: 100%; height: auto; aspect-ratio: 2 / 3; }
 /* a large poster grows only a little on hover, and its trailer plays inside it instead of widening it */
-.best .related-wrap:hover, .best .related-wrap:focus-within, .best .related-wrap.is-active { transform: scale(1.05); }
+.best .related-wrap:hover, .best .related-wrap:focus-within, .best .related-wrap.is-active { transform: none; } /* only the gold frame */
 .best .related-wrap:has(.hover-trailer__player.is-playing) .related-card { width: 100%; }
 .best .related-wrap:has(.hover-trailer__player.is-playing) .hover-trailer__player iframe { left: 50%; width: calc(100% * 1.5 * 16 / 9); transform: translateX(-50%); }
 .best-title { margin: .3em 0 0; font-size: .92em; font-weight: 600; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 4px #000; }
@@ -653,7 +653,7 @@
 .best-item .result-unchecked, .best-item .result-miss { display: block; font-size: .75em; }
 .results-more-row { margin-top: 1.8cqw; }
 /* the running row looks the same on the search and the detail page: card size, gap, zoom and the wide trailer */
-.related.has-arrows { --card-w: clamp(52px, 4.8cqw, 120px); --card-hover-scale: 1.1; }
+.related.has-arrows { --card-w: clamp(52px, 4.8cqw, 120px); --card-hover-scale: 1; } /* hover: only the gold frame */
 .results-more-row .related-label, .results-count { text-align: center; }
 /* the running row's count and heading, centred like the search page's, on a dark pill: readable over any backdrop */
 .related.has-arrows > .related-count, .related.has-arrows > .related-label { width: fit-content; max-width: 100%; margin-inline: auto;
@@ -695,7 +695,7 @@
 @media (max-width: 759px) { .row-arrow--left { right: auto; left: 0; } .row-arrow--right { left: auto; right: 0; } .row-arrow { background: #000b; border-radius: 50%; } }
 /* room between the cards for the hover zoom; a playing trailer opens its card to 16:9 and pushes the others aside
    (the base rule for every row) */
-.related.has-arrows { --card-gap: calc(var(--card-w) * .22); }
+.related.has-arrows { --card-gap: calc(var(--card-w) * .16); }
 /* the advanced search as the third bar: one line, the fields named by their placeholders (labels for screen readers);
    the further options and hints open as a panel below it, over the films, so nothing moves */
 .results-adv { position: relative; z-index: 20; }
