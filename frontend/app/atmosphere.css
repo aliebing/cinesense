@@ -693,15 +693,9 @@
 .row-arrow:disabled { opacity: .25; cursor: default; transform: translateY(50%); }
 .row-arrow:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; border-radius: 8px; }
 @media (max-width: 759px) { .row-arrow--left { right: auto; left: 0; } .row-arrow--right { left: auto; right: 0; } .row-arrow { background: #000b; border-radius: 50%; } }
-/* no jumping: a trailer in the running row plays inside its poster instead of widening the card and pushing the
-   others aside, and the gap already leaves room for the hover zoom */
-.related.has-arrows { --card-gap: calc(var(--card-w) * .3); }
-.has-arrows .related-wrap:has(.hover-trailer__player.is-playing) { transform: none; }
-.has-arrows .related-wrap:has(.hover-trailer__player.is-playing) .related-card { width: var(--card-w); }
-/* the trailer plays wide (16:9 at the card's height) over its neighbours instead of pushing them aside */
-.has-arrows .related-wrap .hover-trailer__player { left: 50%; right: auto; width: calc(var(--card-w) * 1.5 * 16 / 9); transform: translateX(-50%);
-  border-radius: 8px; box-shadow: 0 0 0 var(--glow-width, 3px) var(--gold), 0 20px 60px #000d; }
-.has-arrows .related-wrap .hover-trailer__player iframe { left: 0; width: 100%; transform: none; }
+/* room between the cards for the hover zoom; a playing trailer opens its card to 16:9 and pushes the others aside
+   (the base rule for every row) */
+.related.has-arrows { --card-gap: calc(var(--card-w) * .22); }
 /* the advanced search as the third bar: one line, the fields named by their placeholders (labels for screen readers);
    the further options and hints open as a panel below it, over the films, so nothing moves */
 .results-adv { position: relative; z-index: 20; }
