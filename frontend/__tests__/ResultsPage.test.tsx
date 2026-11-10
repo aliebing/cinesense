@@ -46,7 +46,7 @@ it("says in the exclusions row what each exclusion does in this search", async (
   setSearchState(emptyCriteria());
 });
 
-it("shows the filters on top, then the moods; the advanced search opens on demand as a two-row box", async () => {
+it("shows the filters on top, then the moods; the advanced search opens on demand as one row", async () => {
   setSearchState({ ...emptyCriteria(), tags: [{ idx: 1, weight: 6, mode: "must" }], year_from: 1990, year_to: 1999, exclude_people: ["Sylvester Stallone"] });
   render(<ResultsPage />);
   const moods = await screen.findByRole("region", { name: "Search criteria" });
@@ -62,7 +62,7 @@ it("shows the filters on top, then the moods; the advanced search opens on deman
   const adv = screen.getByRole("form", { name: "Advanced search" });
   expect(within(adv).getByRole("heading", { name: "Advanced search" })).toBeInTheDocument();
   expect(within(adv).getByLabelText("Title")).toBeInTheDocument(); // named for screen readers, shown as placeholder
-  expect(within(adv).getByRole("group", { name: "Kind" })).toBeInTheDocument(); // the second row, no extra step
+  expect(within(adv).getByRole("group", { name: "Kind" })).toBeInTheDocument(); // all in the same row, no extra step
   setSearchState(emptyCriteria());
 });
 

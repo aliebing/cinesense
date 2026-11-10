@@ -16,6 +16,13 @@ const KINDS: { value: Criteria["kind"]; label: string }[] = [
   { value: "documentary", label: "Documentaries" },
 ];
 
+// the one-line bar: shorter names, the same choices
+const KINDS_SHORT: { value: Criteria["kind"]; label: string }[] = [
+  { value: "any", label: "All" },
+  { value: "film", label: "Films" },
+  { value: "documentary", label: "Docs" },
+];
+
 const FIRST_FILM_YEAR = 1888;
 
 /** The year range as numbers (empty = open), or what is wrong with it and in which field. */
@@ -64,8 +71,8 @@ export default function AdvancedSearch({
 }: {
   criteria: Criteria;
   onSubmit: (c: Criteria) => void;
-  /** a two-row box like the other bars (results page): a gold title, the fields named by their placeholders and
-   *  Search in the first row, role, kind and the extended search in the second */
+  /** one row like the other bars (results page): a gold title, narrow fields named by their placeholders, role,
+   *  kind, the extended search and Search */
   bar?: boolean;
 }) {
   const [title, setTitle] = useState(criteria.title ?? "");
@@ -117,7 +124,7 @@ export default function AdvancedSearch({
       <SuggestInput
         id="adv-title"
         label="Title"
-        placeholder={bar ? "Title (4 letters for suggestions)" : "type 4 letters for suggestions"}
+        placeholder={bar ? "Title (4+ letters)" : "type 4 letters for suggestions"}
         value={title}
         picked={titlePicked}
         onType={(t) => {
@@ -167,10 +174,16 @@ export default function AdvancedSearch({
       {(bar || more) && (
         <div id="adv-more" className="advanced-search__more-row">
           <Choice label="Role" options={ROLES} value={role} onChange={setRole} />
-          <Choice label="Kind" options={KINDS} value={kind} onChange={setKind} />
-          <label className="advanced-search__check">
+          <Choice label="Kind" options={bar ? KINDS_SHORT : KINDS} value={kind} onChange={setKind} />
+          <label className="advanced-search__check" title="Extended search: more and newer films, slower">
             <input id="adv-extended" type="checkbox" checked={extended} onChange={(e) => setExtended(e.target.checked)} />
-            Extended search (more and newer films, slower)
+            {bar ? (
+              <>
+                Extended<span className="adv-sr"> search (more and newer films, slower)</span>
+              </>
+            ) : (
+              "Extended search (more and newer films, slower)"
+            )}
           </label>
         </div>
       )}

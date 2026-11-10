@@ -715,26 +715,27 @@
 .related.has-arrows { --card-gap: calc(var(--card-w) * .16); }
 /* the advanced search as the third bar: one line, the fields named by their placeholders (labels for screen readers);
    the further options and hints open as a panel below it, over the films, so nothing moves */
-/* the advanced search on demand: a button on the right under the bars; it opens a two-row box over the films
-   (fields and Search above, role, kind and the extended search below), so nothing moves */
+/* the advanced search on demand: a button on the right under the bars; it opens one row over the films (narrow
+   title and person fields, years, role, kind, extended, Search), so nothing moves */
 .results-adv { position: relative; z-index: 20; text-align: right; }
 .results-adv .advanced-search--bar { position: absolute; top: calc(100% + .5em); right: 0; width: 100%; text-align: left;
   background: #0d0d14; box-shadow: 0 20px 60px #000d; }
-.advanced-search--bar { display: flex; flex-wrap: wrap; align-items: center; gap: .6em; }
-.advanced-search--bar .adv-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.advanced-search--bar { display: flex; flex-wrap: nowrap; align-items: center; gap: .55em; }
+.advanced-search--bar .adv-label, .advanced-search--bar .adv-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .advanced-search--bar label { flex-direction: row; font-size: 1em; color: #fff; }
-.advanced-search--bar .suggest { flex: 1 1 12em; min-width: 0; }
-.advanced-search--bar .adv-year { flex: 0 0 7em; }
+.advanced-search--bar .suggest { flex: 0 1 14em; min-width: 6em; }
+.advanced-search--bar .adv-year { flex: 0 1 6.2em; min-width: 4.5em; }
 .advanced-search--bar input { width: 100%; padding: .3em .8em; border-radius: 999px; font-size: .92em; }
 .advanced-search--bar .search-bar__title { white-space: nowrap; }
-.advanced-search--bar .advanced-search__buttons { align-items: center; }
+.advanced-search--bar .advanced-search__buttons { align-items: center; order: 9; margin-left: auto; }
 .advanced-search--bar .advanced-search__buttons button { padding: .3em 1em; font-size: .92em; }
-/* the second row: role, kind, extended */
-.advanced-search--bar .advanced-search__more-row { flex: 1 0 100%; padding-top: .5em; margin-top: .1em; }
-.advanced-search--bar .advanced-search__more-row label, .advanced-search--bar .advanced-search__more-row .adv-field { font-size: .9em; color: var(--muted); }
-.advanced-search--bar .advanced-search__more-row .adv-field { flex-direction: row; align-items: center; gap: .6em; }
+/* role, kind and extended in the same row */
+.advanced-search--bar .advanced-search__more-row { display: contents; }
+.advanced-search--bar .advanced-search__more-row label, .advanced-search--bar .advanced-search__more-row .adv-field { font-size: .9em; color: var(--muted); white-space: nowrap; }
+.advanced-search--bar .advanced-search__more-row .adv-field { flex-direction: row; align-items: center; gap: .45em; }
 .advanced-search--bar .advanced-search__more-row .adv-label { position: static; width: auto; height: auto; clip-path: none; }
-.advanced-search--bar .advanced-search__hint { flex: 1 0 100%; }
+.advanced-search--bar .crit__mode { padding-inline: .7em; }
+.advanced-search--bar .advanced-search__hint { position: absolute; top: calc(100% + .4em); left: 0; padding: .5em .9em; border-radius: 10px; background: #0d0d14; border: 1px solid #ffffff26; }
 .advanced-search--bar input[type="checkbox"] { width: auto; }
 .advanced-search--bar .advanced-search__check { white-space: nowrap; }
 .results-films { display: flex; flex-direction: column; gap: .7cqw; margin-top: 2cqw; }
