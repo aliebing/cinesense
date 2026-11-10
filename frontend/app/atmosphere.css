@@ -519,7 +519,10 @@
 /* the matches run in one row at the bottom, like "Also fits your mood" on the genre page */
 .results-page .related { position: relative; inset: auto; } /* relative: room for the arrow */
 /* detail page: the row ends a card's width earlier, so its » stays on the stage */
-@media (min-width: 760px) { .related.has-arrows:not(.results-page .related) { right: calc(var(--safe-x) + var(--card-w)); } }
+/* detail page: the row sits in the middle of the stage, the same room left and right for its « » */
+@media (min-width: 760px) {
+  .related.has-arrows:not(.results-page .related) { left: calc(var(--safe-x) + var(--card-w) * 1.5); right: calc(var(--safe-x) + var(--card-w) * 1.5); }
+}
 /* centred, with two cards' room on either side (not across the whole screen) */
 /* on a phone there is no room beside the row: the arrow sits over its right end */
 @media (max-width: 759px) {
