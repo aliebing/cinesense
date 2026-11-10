@@ -22,6 +22,9 @@ export default function ResultsPage() {
   // a widening chosen on this page: the original criteria and what was widened (any other change ends it)
   // closed → open; closing: the box slides out first, then it is gone
   const [advanced, setAdvanced] = useState<"closed" | "open" | "closing">("closed");
+  // Next keeps a left page alive and shows it again on return: leaving it closes the box, so the page always comes
+  // back with the advanced search folded away
+  useEffect(() => () => setAdvanced("closed"), []);
   const [widened, setWidened] = useState<{ from: Criteria; labels: string[] } | null>(null);
   const change = useCallback(
     (c: Criteria) => {
