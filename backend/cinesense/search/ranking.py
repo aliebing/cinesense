@@ -185,3 +185,13 @@ def _reasons(m: Movie, c: SearchCriteria, s: Signals, taste: dict[str, float]) -
     if m.availability.in_cinema_de:
         out.append("in cinemas")
     return out
+
+
+def mood_fit(vector, c: SearchCriteria, tag_names: list[str]) -> list[tuple[str, str, int | None]]:
+    """How strongly one film carries each wished mood: (tag, mode, percent); None when the film has no Tag Genome
+    data. Explains a film the search did not rank (the stage film opened from a world)."""
+    out: list[tuple[str, str, int | None]] = []
+    for t in c.tags:
+        value = float(vector[t.idx]) if vector is not None else math.nan
+        out.append((tag_names[t.idx], t.mode, None if math.isnan(value) else round(100 * value)))
+    return out

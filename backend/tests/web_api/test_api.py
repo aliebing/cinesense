@@ -72,6 +72,18 @@ def test_related_excludes_self():
     assert c.get("/api/movies/nope/related").status_code == 404
 
 
+def test_fit_says_how_a_film_carries_each_wished_mood():
+    c = client()
+    tags = c.get("/api/tags").json()
+    criteria = {"tags": [{"idx": 0, "weight": 6, "mode": "prefer"}, {"idx": 1, "weight": 4, "mode": "not"}]}
+    fit = c.post("/api/movies/ml-2571/fit", json=criteria).json()
+    assert [f["mode"] for f in fit] == ["prefer", "not"]
+    assert fit[0]["tag"] == tags[0]["tag"]
+    assert all(f["percent"] is None or 0 <= f["percent"] <= 100 for f in fit)
+    assert c.post("/api/movies/ml-2571/fit", json={}).json() == []
+    assert c.post("/api/movies/nope/fit", json=criteria).status_code == 404
+
+
 def test_home_rows_per_world():
     data = client().get("/api/home").json()
     assert len(data["worlds"]) == 6

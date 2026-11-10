@@ -16,6 +16,7 @@ from cinesense.core.criteria import SearchCriteria
 from cinesense.core.models import MoodWorld, Movie, RankedMovie
 from cinesense.core.worlds import WORLDS, get_world
 from cinesense.search import widening
+from cinesense.search.ranking import mood_fit
 from cinesense.search.service import SearchService
 from cinesense.web_api.admin import router as admin_router
 from cinesense.web_api.admin_session import router as admin_session_router
@@ -244,6 +245,21 @@ def create_app(load_env: bool = True) -> FastAPI:
         items = SearchService(provider).run(SearchCriteria(world_id=world_id), 0, limit, profile).items
         row_trailers([r.movie for r in items], checker, trailers)
         return items
+
+    class MoodFit(BaseModel):
+        tag: str
+        mode: Literal["prefer", "must", "not"]
+        percent: int | None  # None: no Tag Genome data for this film
+
+    @app.post("/api/movies/{movie_id}/fit")
+    def fit(movie_id: str, criteria: SearchCriteria, provider: Provider) -> list[MoodFit]:
+        """How the film carries each wished mood: the "why it fits" for a film the search did not rank."""
+        if provider.get_movie(movie_id) is None:
+            raise HTTPException(status_code=404, detail="movie_not_found")
+        if not criteria.tags:
+            return []
+        vector = provider.tag_vectors([movie_id])[0]
+        return [MoodFit(tag=t, mode=m, percent=p) for t, m, p in mood_fit(vector, criteria, provider.list_tags())]
 
     @app.get("/api/movies/{movie_id}")
     def movie(movie_id: str, provider: Provider, streaming: Streaming, trailers: Trailers, checker: Checker) -> Movie:

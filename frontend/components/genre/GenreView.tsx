@@ -1,6 +1,6 @@
 "use client";
 
-import { whyText } from "@/lib/why";
+import { stageWhyText } from "@/lib/why";
 import { notFound, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import FogLight from "@/components/atmosphere/FogLight";
@@ -11,12 +11,14 @@ import Breadcrumb, { type Crumb } from "@/components/nav/Breadcrumb";
 import MoodSummary from "@/components/search/MoodSummary";
 import {
   discover,
+  fitMovie,
   getMovie,
   getProfile,
   getRelated,
   getTags,
   getWorldMovies,
   getWorlds,
+  type MoodFit,
   type ProfileSummary,
   search,
   sendFeedback,
@@ -58,6 +60,8 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
   const [feedbackVersion, setFeedbackVersion] = useState(0);
   const feedbackPending = useRef(false);
   const [stageReasons, setStageReasons] = useState<{ id: string; reasons: string[] } | null>(null);
+  // how the stage film carries the wished moods, for a film the search did not rank (opened from a world)
+  const [stageFit, setStageFit] = useState<{ id: string; key: string; fit: MoodFit[] } | null>(null);
 
   useEffect(() => {
     getTags().then((r) => r.ok && setTags(r.data));
@@ -89,6 +93,17 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
   }, [worldId, filmId]);
 
   const stageId = state.kind === "ready" ? state.movie.id : null;
+  useEffect(() => {
+    const active = JSON.parse(criteriaKey);
+    if (!stageId || !active.tags?.length) return;
+    let cancelled = false;
+    fitMovie(stageId, active).then((r) => {
+      if (!cancelled && r.ok) setStageFit({ id: stageId, key: criteriaKey, fit: r.data });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [stageId, criteriaKey]);
   useEffect(() => {
     if (!stageId) return;
     let cancelled = false;
@@ -171,7 +186,8 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
 
   const stageWhy = (m: Movie, w: MoodWorld) => {
     const reasons = stageReasons?.id === m.id ? stageReasons.reasons : [];
-    return reasons.length ? whyText(reasons) : `Highly rated in the “${w.title}” world`;
+    const fit = stageFit?.id === m.id && stageFit.key === criteriaKey ? stageFit.fit : null;
+    return stageWhyText(m, w.title, reasons, fit);
   };
 
   const world = state.kind === "ready" ? state.world : null;

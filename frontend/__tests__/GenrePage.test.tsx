@@ -16,6 +16,7 @@ const api = {
   search: vi.fn(),
   getProfile: vi.fn(),
   sendFeedback: vi.fn(),
+  fitMovie: vi.fn(),
 };
 vi.mock("@/lib/api", () => ({
   getWorlds: () => api.getWorlds(),
@@ -27,6 +28,7 @@ vi.mock("@/lib/api", () => ({
   getTags: () => Promise.resolve({ ok: true, data: [{ idx: 0, tag: "dark" }, { idx: 3, tag: "action" }] }),
   getProfile: () => api.getProfile(),
   sendFeedback: (...a: unknown[]) => api.sendFeedback(...a),
+  fitMovie: (...a: unknown[]) => api.fitMovie(...a),
 }));
 
 import GenreView from "@/components/genre/GenreView";
@@ -38,6 +40,7 @@ beforeEach(() => {
   api.getWorlds.mockResolvedValue({ ok: true, data: sampleWorlds });
   api.getWorldMovies.mockResolvedValue({ ok: true, data: sampleRanked(4) });
   api.getRelated.mockResolvedValue({ ok: true, data: sampleRanked(4).slice(1) });
+  api.fitMovie.mockResolvedValue({ ok: true, data: [] });
   api.getProfile.mockResolvedValue({ ok: true, data: { liked: [], disliked: [], taste: [] } });
   api.sendFeedback.mockResolvedValue({ ok: true, data: { liked: [{ id: "demo-03", title: "x", year: null }], disliked: [], taste: [] } });
 });

@@ -70,6 +70,9 @@ export const getHome = () => apiGet<HomeData>("/api/home");
 export const getWorlds = () => apiGet<MoodWorld[]>("/api/worlds");
 export const getWorldMovies = (worldId: string, limit = 12) =>
   apiGet<RankedMovie[]>(`/api/worlds/${encodeURIComponent(worldId)}/movies?limit=${limit}`);
+/** how one film carries each wished mood (percent null: no mood data for it) */
+export type MoodFit = { tag: string; mode: "prefer" | "must" | "not"; percent: number | null };
+export const fitMovie = (id: string, criteria: Criteria) => apiPost<MoodFit[]>(`/api/movies/${encodeURIComponent(id)}/fit`, criteria);
 export const getMovie = (id: string) => apiGet<Movie>(`/api/movies/${encodeURIComponent(id)}`);
 export const getRelated = (id: string, worldId?: string) =>
   apiGet<RankedMovie[]>(

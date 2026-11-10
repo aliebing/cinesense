@@ -11,9 +11,9 @@ import type { Movie, RankedMovie } from "@/lib/types";
 
 const IDLE_SPEED = 40; // px per second while the pointer is elsewhere: the row keeps running through
 const SLOW_SPEED = 14; // px per second in the middle: still moving, but a card is easy to catch
-const MAX_SPEED = 1100; // px per second with the pointer at the very edge
+const MAX_SPEED = 650; // px per second with the pointer at the very edge
 const DEAD_ZONE = 0.3; // middle share of the row where it only creeps on
-const EASE_MS = 220;
+const EASE_MS = 650; // smooth: the row picks up speed gently and slows down gently
 export const SWEEP_MS = 900; // the fast run to the next (or previous) page of results
 export const MIN_SLOTS = 14; // until the row is measured: fewer films than this stand still instead of looping
 const SLIDE_CARDS = 4; // how far one « » click slides the row
@@ -62,7 +62,7 @@ export default function RelatedRow({
   name = "Also fits your mood",
   showReasons = false,
   busy = false,
-  drift = true,
+  drift = false,
   after,
   sweep = null,
   found = null,
@@ -91,7 +91,7 @@ export default function RelatedRow({
   arrows?: boolean;
   /** with « »: they page instead of sliding (a null handler: no page that way) */
   paging?: { size: number; prev: (() => void) | null; next: (() => void) | null } | null;
-  /** false: the row moves only when the mouse steers towards an edge (it starts with the best match) */
+  /** true: the row keeps running on its own; false (default): it moves only while the mouse steers towards an edge */
   drift?: boolean;
   /** placed after the cards, inside the row (the results page's "load more" arrow) */
   after?: ReactNode;
