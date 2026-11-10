@@ -41,6 +41,7 @@ beforeEach(() => {
   api.getWorldMovies.mockResolvedValue({ ok: true, data: sampleRanked(4) });
   api.getRelated.mockResolvedValue({ ok: true, data: sampleRanked(4).slice(1) });
   api.fitMovie.mockResolvedValue({ ok: true, data: [] });
+  api.discover.mockResolvedValue({ ok: true, data: { items: sampleRanked(4), total: 4, hidden_by_exclusion: 0, extended_used: false } });
   api.getProfile.mockResolvedValue({ ok: true, data: { liked: [], disliked: [], taste: [] } });
   api.sendFeedback.mockResolvedValue({ ok: true, data: { liked: [{ id: "demo-03", title: "x", year: null }], disliked: [], taste: [] } });
 });
@@ -80,10 +81,30 @@ it("shows an error state when the backend is unreachable", async () => {
   expect(await screen.findByText("Couldn't load films")).toBeInTheDocument();
 });
 
-it("asks for related films within the world shown on the page", async () => {
+it("fills the row with the world's films, a page of 30 (one more: the stage film may be among them)", async () => {
   render(<GenreView worldId="action" filmId={null} />);
   await screen.findByRole("heading", { name: "Demo-Film 01" });
-  await waitFor(() => expect(api.getRelated).toHaveBeenCalledWith("demo-01", "action"));
+  await waitFor(() => expect(api.discover).toHaveBeenCalled());
+  expect(api.discover.mock.calls[0][0]).toMatchObject({ world_id: "action" });
+  expect(api.discover.mock.calls[0].slice(1, 3)).toEqual([0, 31]);
+  expect(await screen.findByText(/3 more top-rated .* films/)).toBeInTheDocument();
+  expect(screen.getByText(/1–3 of 3/)).toBeInTheDocument();
+});
+
+it("« » page the row by 30: the next page is loaded from offset 30", async () => {
+  const userEvent = (await import("@testing-library/user-event")).default;
+  const many = (from: number) => sampleRanked(31).map((r, i) => ({ ...r, movie: { ...r.movie, id: `f-${from + i}`, title: `Film ${from + i}` } }));
+  api.discover.mockImplementation((_c: unknown, offset: number) =>
+    Promise.resolve({ ok: true, data: { items: many(offset), total: 100, hidden_by_exclusion: 0, extended_used: false } }),
+  );
+  render(<GenreView worldId="action" filmId={null} />);
+  expect(await screen.findByText(/1–30 of 99/)).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Previous 30" })).toBeDisabled();
+  await userEvent.click(screen.getByRole("button", { name: "Next 30" }));
+  expect(await screen.findByText(/31–60 of 99/)).toBeInTheDocument();
+  expect(api.discover.mock.calls.at(-1)?.slice(1, 3)).toEqual([30, 31]);
+  await userEvent.click(screen.getByRole("button", { name: "Previous 30" }));
+  expect(await screen.findByText(/1–30 of 99/)).toBeInTheDocument();
 });
 
 it("re-ranks the related row with the chip criteria inside the world", async () => {
@@ -103,11 +124,11 @@ it("👍 stores feedback, marks the button and re-ranks the row", async () => {
   api.getMovie.mockResolvedValue({ ok: true, data: sampleMovies(3)[2] });
   render(<GenreView worldId="action" filmId="demo-03" />);
   const like = await screen.findByRole("button", { name: "👍 More like this" });
-  await waitFor(() => expect(api.getRelated).toHaveBeenCalledTimes(1));
+  await waitFor(() => expect(api.discover).toHaveBeenCalledTimes(1));
   await userEvent.click(like);
   expect(api.sendFeedback).toHaveBeenCalledWith("demo-03", 1);
   await waitFor(() => expect(screen.getByRole("button", { name: "👍 More like this" })).toHaveAttribute("aria-pressed", "true"));
-  await waitFor(() => expect(api.getRelated).toHaveBeenCalledTimes(2));
+  await waitFor(() => expect(api.discover).toHaveBeenCalledTimes(2));
 });
 
 it("⚡ adds the action tag to the session's chips", async () => {

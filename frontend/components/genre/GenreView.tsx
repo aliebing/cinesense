@@ -2,10 +2,10 @@
 
 import { stageWhyText } from "@/lib/why";
 import { notFound, useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import FogLight from "@/components/atmosphere/FogLight";
 import CinemaFrame from "@/components/cinema/CinemaFrame";
-import RelatedRow from "@/components/genre/RelatedRow";
+import RelatedRow, { type Sweep } from "@/components/genre/RelatedRow";
 import StagePanel from "@/components/genre/StagePanel";
 import Breadcrumb, { type Crumb } from "@/components/nav/Breadcrumb";
 import MoodSummary from "@/components/search/MoodSummary";
@@ -24,7 +24,7 @@ import {
   sendFeedback,
   type Tag,
 } from "@/lib/api";
-import { hasAnyCriteria, steer, useSearchState } from "@/lib/searchState";
+import { type Criteria, hasAnyCriteria, steer, useSearchState } from "@/lib/searchState";
 import type { MoodWorld, Movie, RankedMovie } from "@/lib/types";
 import { useReducedMotion } from "@/lib/useReducedMotion";
 
@@ -54,6 +54,11 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
   const [tags, setTags] = useState<Tag[]>([]);
   const [hidden, setHidden] = useState(0);
   const [rowFromSearch, setRowFromSearch] = useState(fromSearch);
+  // the row in pages of PAGE (« »), kept with the search it belongs to; a new search starts on page one
+  const [page, setPage] = useState<{ key: string; n: number }>({ key: "", n: 0 });
+  // « » run quickly through the row to the other page, which is loaded first (both are in the row meanwhile)
+  const [pending, setPending] = useState<{ n: number; raw: RankedMovie[] } | null>(null);
+  const loadedFor = useRef(""); // the row already holds this page (a finished « » run must not load it again)
   const criteriaKey = JSON.stringify(criteria);
 
   const [profile, setProfile] = useState<ProfileSummary | null>(null);
@@ -104,11 +109,26 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
       cancelled = true;
     };
   }, [stageId, criteriaKey]);
+  const n = page.key === criteriaKey ? page.n : 0;
+  // one page of the row: the search's matches (opened from the search) or the world's films ranked by the chips
+  // (or by rating without any); one film more than a page, as the stage film may be among them
+  const fetchPage = useCallback(
+    async (active: Criteria, pageNo: number) => {
+      const useSearch = fromSearch && hasAnyCriteria(active);
+      const r = useSearch
+        ? await search(active, pageNo * PAGE, PAGE + 1)
+        : await discover({ ...active, world_id: worldId }, pageNo * PAGE, PAGE + 1);
+      if (!r.ok) return null;
+      return { items: r.data.items, total: r.data.total, capped: Boolean(r.data.total_capped), hidden: r.data.hidden_by_exclusion, useSearch };
+    },
+    [fromSearch, worldId],
+  );
+  const loadKey = `${criteriaKey}|${n}|${stageId}|${feedbackVersion}`;
   useEffect(() => {
-    if (!stageId) return;
+    if (!stageId || loadedFor.current === loadKey) return;
     let cancelled = false;
-    const active = JSON.parse(criteriaKey);
-    // the stage film's own neighbours: also the fallback when a search leaves nothing else to show
+    const active = JSON.parse(criteriaKey) as Criteria;
+    // the stage film's own neighbours: the fallback when a search leaves nothing else to show
     // (a title search finds just the film on stage, and the row would stay empty)
     const loadRelated = () =>
       getRelated(stageId, worldId).then((r) => {
@@ -117,41 +137,30 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
         setFound(null);
         setRowFromSearch(false);
         setHidden(0);
+        loadedFor.current = loadKey;
       });
-    const others = (items: RankedMovie[]) => items.some((x) => x.movie.id !== stageId);
-    const t = setTimeout(() => {
-      if (fromSearch && hasAnyCriteria(active)) {
-        search(active, 0, 48).then((r) => {
-          if (cancelled) return;
-          const items = r.ok ? r.data.items : [];
-          const onStage = items.find((x) => x.movie.id === stageId);
-          if (onStage) setStageReasons((s) => s ?? { id: onStage.movie.id, reasons: onStage.reasons });
-          if (!others(items)) return loadRelated();
-          setRelated(items);
-          setFound(r.ok ? { total: r.data.total, capped: r.data.total_capped } : null);
-          setRowFromSearch(true);
-          setHidden(r.ok ? r.data.hidden_by_exclusion : 0);
-        });
-      } else if (hasAnyCriteria(active)) {
-        // the chip bar re-ranks the row within this world
-        discover({ ...active, world_id: worldId }, 0, 24).then((r) => {
-          if (cancelled) return;
-          const items = r.ok ? r.data.items : [];
-          if (!others(items)) return loadRelated();
-          setRelated(items);
-          setFound(r.ok ? { total: r.data.total, capped: r.data.total_capped } : null);
-          setRowFromSearch(false);
-          setHidden(r.ok ? r.data.hidden_by_exclusion : 0);
-        });
-      } else {
-        loadRelated();
-      }
+    const t = setTimeout(async () => {
+      const p = await fetchPage(active, n);
+      if (cancelled) return;
+      if (!p || (n === 0 && !p.items.some((x) => x.movie.id !== stageId))) return loadRelated();
+      const onStage = p.items.find((x) => x.movie.id === stageId);
+      if (onStage && p.useSearch) setStageReasons((s) => s ?? { id: onStage.movie.id, reasons: onStage.reasons });
+      setRelated(p.items);
+      setFound({ total: p.total, capped: p.capped });
+      setRowFromSearch(p.useSearch);
+      setHidden(p.hidden);
+      loadedFor.current = loadKey;
     }, 300);
     return () => {
       cancelled = true;
       clearTimeout(t);
     };
-  }, [stageId, worldId, criteriaKey, feedbackVersion, fromSearch]);
+  }, [stageId, worldId, criteriaKey, n, loadKey, fetchPage]);
+  const turn = async (to: number) => {
+    if (pending) return;
+    const p = await fetchPage(JSON.parse(criteriaKey) as Criteria, to);
+    if (p && p.items.some((x) => x.movie.id !== stageId)) setPending({ n: to, raw: p.items });
+  };
 
   if (state.kind === "not_found") {
     notFound();
@@ -192,10 +201,26 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
 
   const world = state.kind === "ready" ? state.world : null;
   const movie = state.kind === "ready" ? state.movie : null;
-  const rowItems = movie ? related.filter((r) => r.movie.id !== movie.id) : [];
-  // the film on stage is one of the found ones, but not in the row
-  // (a capped count stays a round "500+")
-  const others = found ? { total: found.capped ? found.total : found.total - (related.length - rowItems.length), capped: found.capped } : null;
+  const pageOf = (raw: RankedMovie[]) => (movie ? raw.filter((r) => r.movie.id !== movie.id).slice(0, PAGE) : []);
+  const rowItems = pageOf(related);
+  // the film on stage is one of the found ones, but not in the row (a capped count stays a round "500+")
+  const others = found ? { total: found.capped ? found.total : Math.max(0, found.total - 1), capped: found.capped } : null;
+  const target = pending ? pageOf(pending.raw) : [];
+  const forward = pending !== null && pending.n > n;
+  const shownRow = !pending ? rowItems : forward ? [...rowItems, ...target] : [...target, ...rowItems];
+  const sweep: Sweep | null = pending
+    ? {
+        from: forward ? 0 : target.length,
+        to: forward ? rowItems.length : 0,
+        onDone: () => {
+          loadedFor.current = `${criteriaKey}|${pending.n}|${stageId}|${feedbackVersion}`;
+          setRelated(pending.raw);
+          setPage({ key: criteriaKey, n: pending.n });
+          setPending(null);
+        },
+      }
+    : null;
+  const canNext = others !== null && ((n + 1) * PAGE < others.total || Boolean(others.capped));
 
   return (
     <CinemaFrame>
@@ -224,14 +249,17 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
             <MoodSummary tags={tags} criteria={criteria} hiddenCount={hidden} />
           </div>
           <RelatedRow
-            items={rowItems}
+            key={n} // a new page starts at its first film
+            items={shownRow}
             onSelect={select}
-            label={rowLabel(rowItems.length, others, fromSearch && rowFromSearch, world.title)}
+            label={rowLabel(rowItems.length, n * PAGE + 1, others, fromSearch && rowFromSearch, hasAnyCriteria(criteria), world.title)}
             name={fromSearch && rowFromSearch ? "Your other matches" : "Also fits your mood"}
             showReasons={fromSearch && rowFromSearch}
             found={found}
             streamCheck={fromSearch && rowFromSearch && criteria.availability === "stream"}
             arrows
+            sweep={sweep}
+            paging={{ size: PAGE, prev: n > 0 ? () => turn(n - 1) : null, next: canNext ? () => turn(n + 1) : null }}
           />
         </>
       )}
@@ -239,20 +267,29 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
   );
 }
 
+const PAGE = 30; // films per page of the row, as on the search page
 const count = new Intl.NumberFormat("en-US");
 
-/** The row's heading, like the search page's: how many it shows and of how many in all
- *  ("47 more matches · 1–47 of 366"); the stage film's world neighbours are just its mood's top films. */
-export function rowLabel(n: number, others: { total: number; capped?: boolean } | null, fromSearch: boolean, worldTitle: string) {
-  if (!others) return `${n} more top-rated ${worldTitle} films`;
+/** The row's heading, like the search page's: how many it shows, their ranks and of how many in all
+ *  ("30 more matches · 31–60 of 366"); without a total (the stage film's neighbours) just how many. */
+export function rowLabel(
+  n: number,
+  start: number,
+  others: { total: number; capped?: boolean } | null,
+  fromSearch: boolean,
+  hasCriteria: boolean,
+  worldTitle: string,
+) {
+  const what = fromSearch || hasCriteria ? "more matches" : `more top-rated ${worldTitle} films`;
+  if (!others) return `${n} ${what}`;
   return (
     <>
-      {`${n} more matches`}
+      {`${n} ${what}`}
       <span className="related-hint">
         {" "}
-        · 1–{n} of {count.format(others.total)}
+        · {start}–{start + n - 1} of {count.format(others.total)}
         {others.capped ? "+" : ""}
-        {fromSearch ? "" : ` in ${worldTitle}`}
+        {!fromSearch && hasCriteria ? ` in ${worldTitle}` : ""}
       </span>
     </>
   );
