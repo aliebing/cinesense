@@ -500,7 +500,7 @@
 .results-more:disabled { opacity: .5; cursor: wait; }
 .results-more--back { right: auto; left: calc(-1 * (var(--card-w) + var(--card-gap))); }
 /* the matches run in one row at the bottom, like "Also fits your mood" on the genre page */
-.results-page .related { position: relative; inset: auto; margin-block: auto; } /* relative: room for the arrow; centred in the free space */
+.results-page .related { position: relative; inset: auto; } /* relative: room for the arrow */
 /* centred, with two cards' room on either side (not across the whole screen) */
 /* on a phone there is no room beside the row: the arrow sits over its right end */
 @media (max-width: 759px) {
@@ -508,7 +508,10 @@
   .results-page .results-more--back { right: auto; left: 0; }
 }
 @media (min-width: 760px) {
-  .results-page .related { margin-inline: calc(2 * (var(--card-w) + var(--card-gap))); }
+  /* the count, the best matches and the running row share one left edge, with room for the arrows */
+  .results-page { --row-inset: calc(2 * (clamp(84px, 6.4cqw, 160px) + var(--card-gap))); }
+  .results-page .related, .results-page .best, .results-page .results-count,
+  .results-page .results-relax-bar, .results-page .results-widened { margin-inline: var(--row-inset); }
   /* the film row, header and advanced search always show in full; the mood panel takes what is left and
      scrolls inside itself when it holds many chips */
   .results-page > * { flex-shrink: 0; }
@@ -626,5 +629,19 @@
   padding-top: .6em; border-top: 1px solid #ffffff1a; }
 .advanced-search__more-row .adv-switch { grid-template-columns: repeat(3, auto); }
 .advanced-search__more-row .crit__mode { white-space: nowrap; padding-inline: 1em; }
-/* with the one-line search bar there is room: larger posters on the results page (desktop only) */
-@media (min-width: 760px) { .results-page { --card-w: 9cqw; } }
+/* results page, top to bottom: best matches (large, with why), more matches (running row), moods, exclusions */
+.results-page > .criteria-panel { flex-shrink: 0; overflow: visible; min-height: 0; }
+.results-count { margin: 0; }
+.best { --card-w: clamp(110px, 9.2cqw, 230px); }
+.best.is-busy .best-list { opacity: .35; transition: opacity .2s; pointer-events: none; }
+.best-list { display: flex; gap: 1.2cqw; margin: 0; padding: .6cqw 0 0; list-style: none; }
+.best-item { flex: 1 1 0; min-width: 0; max-width: var(--card-w); display: flex; flex-direction: column; gap: .3em; }
+.best-item .related-card { width: 100%; height: auto; aspect-ratio: 2 / 3; }
+.best-title { margin: .35em 0 0; font-weight: 600; line-height: 1.25; text-shadow: 0 1px 4px #000; }
+.best-title span { font-weight: 400; color: var(--muted); }
+.best-why { margin: 0; font-size: .85em; line-height: 1.35; color: #f3c76bd9; text-shadow: 0 1px 4px #000; }
+.best-item .result-unchecked, .best-item .result-miss { display: block; font-size: .8em; }
+.results-more-row { --card-w: clamp(84px, 6.4cqw, 160px); margin-top: .6cqw; }
+.search-bar__end { margin-left: auto; }
+.sb-chip__note { font-size: .78em; color: #ffb3b3; }
+.sb-chip__note.is-idle { color: var(--muted); font-style: italic; }

@@ -25,7 +25,7 @@ it("shows reasons and the streaming state on cards", async () => {
   const items = sampleRanked(1).map((r) => ({ ...r, reasons: ["dark 91%", "streaming on Netflix"] }));
   search.mockResolvedValue({ ok: true, data: { items, total: 1, hidden_by_exclusion: 0, extended_used: false } });
   render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} />);
-  expect((await screen.findAllByText("dark 91% · streaming on Netflix"))[0]).toBeInTheDocument();
+  expect((await screen.findAllByText("Strong on your moods: dark (91%) · streaming on Netflix"))[0]).toBeInTheDocument();
 });
 
 it("offers ways to widen a search that finds too little", async () => {
@@ -162,7 +162,7 @@ it("shows a loading bar while results load, and dims the old row", async () => {
   search.mockImplementationOnce(() => new Promise((r) => (resolve = r)));
   rerender(<ResultList criteria={{ ...emptyCriteria(), title: "x" }} onOpen={() => {}} />);
   expect(screen.getByRole("progressbar", { name: "Loading results" })).toBeInTheDocument();
-  expect(screen.getByRole("region", { name: "Results" })).toHaveClass("is-busy");
+  expect(screen.getByRole("region", { name: "Best matches" })).toHaveClass("is-busy");
   await waitFor(() => expect(search).toHaveBeenCalledTimes(2)); // the request starts after a short pause
   resolve({ ok: true, data: { items: sampleRanked(1), total: 1, hidden_by_exclusion: 0, extended_used: false } });
   await screen.findByText("1 film found");
@@ -179,23 +179,35 @@ it("shows at least the 3 best matches, and says how many were found", async () =
   expect(search.mock.calls[0][2]).toBe(50); // at most 50
 });
 
-it("shows every film from 50% up (Sandra Bullock + action + funny: 7 of 39)", async () => {
-  const percents = [71, 63, 59, 59, 57, 51, 51, 48, 48, 48];
-  const items = sampleRanked(10).map((r, i) => ({ ...r, match_percent: percents[i] }));
+it("shows up to 8 films from 70% in front, with why, and the films from 60% in the running row below", async () => {
+  const percents = [95, 88, 81, 77, 72, 69, 66, 61, 58, 50];
+  const items = sampleRanked(10).map((r, i) => ({ ...r, match_percent: percents[i], reasons: i === 0 ? ["dark 95%"] : [] }));
   search.mockResolvedValue({ ok: true, data: { items, total: 39, hidden_by_exclusion: 0, extended_used: false } });
   const { container } = render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} />);
-  expect(await screen.findByText(/The 7 best matches/)).toBeInTheDocument();
-  expect(screen.getByText("39 films found")).toBeInTheDocument();
-  const titles = new Set([...container.querySelectorAll(".related-card")].map((c) => c.getAttribute("aria-label") ?? c.textContent));
-  expect(titles.size).toBe(7); // a row too long to fit loops, so its cards appear twice
+  expect(await screen.findByText(/The 5 best matches/)).toBeInTheDocument();
+  expect(container.querySelectorAll(".best .related-card")).toHaveLength(5);
+  expect(screen.getByText("Strong on your moods: dark (95%)")).toHaveClass("best-why");
+  expect(screen.getByText("More matches from 60%")).toBeInTheDocument();
+  const more = container.querySelectorAll(".results-more-row .related-card");
+  expect(new Set([...more].map((c) => c.getAttribute("aria-label"))).size).toBe(3); // 69, 66, 61: not 58 and 50
 });
 
-it("another tag lowers every score, so it shows fewer films, not more (+ horror: 4)", async () => {
+it("never more than 8 in front, the other strong films run in the row below", async () => {
+  const items = sampleRanked(12).map((r) => ({ ...r, match_percent: 85 }));
+  search.mockResolvedValue({ ok: true, data: { items, total: 12, hidden_by_exclusion: 0, extended_used: false } });
+  const { container } = render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} />);
+  expect(await screen.findByText(/The 8 best matches/)).toBeInTheDocument();
+  const more = container.querySelectorAll(".results-more-row .related-card");
+  expect(new Set([...more].map((c) => c.getAttribute("aria-label"))).size).toBe(4);
+});
+
+it("a weak search still shows its 3 best, and no row below 60% (+ horror lowers every score)", async () => {
   const percents = [55, 55, 54, 50, 49, 49, 44, 44, 30, 22];
   const items = sampleRanked(10).map((r, i) => ({ ...r, match_percent: percents[i] }));
   search.mockResolvedValue({ ok: true, data: { items, total: 39, hidden_by_exclusion: 0, extended_used: false } });
-  render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} />);
-  expect(await screen.findByText(/The 4 best matches/)).toBeInTheDocument();
+  const { container } = render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} />);
+  expect(await screen.findByText(/The 3 best matches/)).toBeInTheDocument();
+  expect(container.querySelector(".results-more-row")).toBeNull();
 });
 
 it("a search with only a few hits just counts them", async () => {
@@ -212,7 +224,7 @@ it("pages through the next 50 while every shown film still matches, and back", a
   let resolve: (v: unknown) => void = () => {};
   search.mockImplementationOnce(() => new Promise((r) => (resolve = r)));
   render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} />);
-  expect(await screen.findByText(/The 50 best matches/)).toBeInTheDocument();
+  expect(await screen.findByText(/The 8 best matches/)).toBeInTheDocument();
   expect(screen.queryByRole("button", { name: "Previous 50" })).toBeNull();
   await userEvent.click(screen.getByRole("button", { name: "Next 50" }));
   expect(screen.getByRole("progressbar", { name: "Loading results" })).toBeInTheDocument(); // the usual loading bar
@@ -226,7 +238,7 @@ it("pages through the next 50 while every shown film still matches, and back", a
   expect(screen.getAllByRole("button", { name: /Film 50,/ }).length).toBeGreaterThan(0);
   expect(screen.queryByRole("button", { name: "Next 50" })).toBeNull(); // below the bar: no further page
   await userEvent.click(screen.getByRole("button", { name: "Previous 50" }));
-  expect(await screen.findByText(/The 50 best matches/)).toBeInTheDocument();
+  expect(await screen.findByText(/The 8 best matches/)).toBeInTheDocument();
   expect(search).toHaveBeenCalledTimes(2); // page one comes back without a new request
 });
 

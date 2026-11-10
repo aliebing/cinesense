@@ -214,7 +214,7 @@ it("⚡ shows up in the read-only mood settings", async () => {
 });
 
 it("words the stage's reasons as a readable line", async () => {
-  const { whyText } = await import("@/components/genre/GenreView");
+  const { whyText } = await import("@/lib/why");
   expect(whyText(["action 97%", "dark 78%", "with Keanu Reeves"])).toBe("Strong on your moods: action (97%), dark (78%) · with Keanu Reeves");
   expect(whyText(["streaming on Netflix"])).toBe("streaming on Netflix");
 });

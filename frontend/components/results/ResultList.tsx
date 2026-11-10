@@ -1,16 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import RelatedRow, { LoadingBar, type Sweep } from "@/components/genre/RelatedRow";
+import RelatedRow, { foundText, LoadingBar, type Sweep } from "@/components/genre/RelatedRow";
+import BestMatches from "@/components/results/BestMatches";
 import { search, type DiscoverResult, type Relaxation } from "@/lib/api";
 import type { Criteria } from "@/lib/searchState";
 import type { Movie, RankedMovie } from "@/lib/types";
 
-// the row shows every film matching at least MIN_PERCENT, at least the MIN_SHOWN best, at most LIMIT. A fixed bar, not a
-// gap to the best match: another tag lowers every score, and a gap would then let in more films instead of fewer
+// two rows: in front up to BEST_MAX films from BEST_PERCENT (at least the MIN_SHOWN best, so a weak search still shows
+// something), large and with why they fit; below them every further film from MORE_PERCENT, as a running row paged by
+// 50. Fixed bars, not a gap to the best match: another tag lowers every score, and a gap would then let in more films
 const LIMIT = 50;
 const MIN_SHOWN = 3;
-const MIN_PERCENT = 50;
+const BEST_MAX = 8;
+const BEST_PERCENT = 70;
+const MORE_PERCENT = 60;
 const count = new Intl.NumberFormat("en-US");
 
 type Props = {
@@ -122,10 +126,12 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
   const n = page.key === key ? Math.min(page.n, pages.length - 1) : 0;
   const current = pages[n];
   const first = n * LIMIT; // films before this page
-  const shownOf = (p: number) => pages[p].filter((r, i) => (p === 0 && i < MIN_SHOWN) || r.match_percent >= MIN_PERCENT);
+  const best = pages[0].slice(0, BEST_MAX).filter((r, i) => i < MIN_SHOWN || r.match_percent >= BEST_PERCENT);
+  const shownOf = (p: number) => (p === 0 ? pages[0].slice(best.length) : pages[p]).filter((r) => r.match_percent >= MORE_PERCENT);
   const shown = shownOf(n);
-  // a next page only while every film on this one still clears the bar: then the next may hold more that do
-  const canNext = !loading && current.length === LIMIT && shown.length === current.length && first + LIMIT < total;
+  // a next page only while this one still ends above the bar: then the next may hold more that do
+  const last = current[current.length - 1];
+  const canNext = !loading && current.length === LIMIT && last.match_percent >= MORE_PERCENT && first + LIMIT < total;
   const next = async () => {
     if (n + 1 < pages.length) return setSweepTo({ key, n: n + 1 });
     setLoadingMore(true);
@@ -151,54 +157,58 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
           },
         };
   const streaming = criteria.availability === "stream";
-  const label = (
+  const bestLabel = (
     <>
-      {n > 0
-        ? `Matches ${first + 1}–${first + shown.length}`
-        : total > shown.length
-          ? `The ${shown.length} best matches`
-          : "All matches"}
+      {total > best.length ? `The ${best.length} best matches` : "All matches"}
       {streaming && (
         <span className="related-hint">
           {" "}
-          · {shown.filter((r) => r.movie.availability.streaming_de?.length).length} of these {shown.length} confirmed on
-          streaming
+          · {best.filter((r) => r.movie.availability.streaming_de?.length).length} of these {best.length} confirmed on streaming
         </span>
       )}
       {extended && <span className="results-extended"> · includes titles just added from Wikidata</span>}
+    </>
+  );
+  const moreLabel = n > 0 ? `Matches ${first + 1}–${first + shown.length}` : `More matches from ${MORE_PERCENT}%`;
+  const arrows = (
+    <>
+      {n > 0 && !loading && !sweep && (
+        <button type="button" className="results-more results-more--back" onClick={() => setSweepTo({ key, n: n - 1 })} aria-label={`Previous ${LIMIT}`} title={`Previous ${LIMIT}`}>
+          «
+        </button>
+      )}
+      {canNext && !sweep && (
+        <button type="button" className="results-more" onClick={next} disabled={loadingMore} aria-label={`Next ${LIMIT}`} title={`Next ${LIMIT}`}>
+          »
+        </button>
+      )}
     </>
   );
   return (
     <>
       {note}
       {widen}
-      <RelatedRow
-        key={n} // a new page starts at its first film
-        items={rowItems}
-        onSelect={onOpen}
-        label={label}
-        found={{ total, capped }}
-        streamCheck={streaming}
-        name="Results"
-        showReasons
-        busy={loading || loadingMore}
-        drift={false}
-        sweep={sweep}
-        after={
-          <>
-            {n > 0 && !loading && !sweep && (
-              <button type="button" className="results-more results-more--back" onClick={() => setSweepTo({ key, n: n - 1 })} aria-label={`Previous ${LIMIT}`} title={`Previous ${LIMIT}`}>
-                «
-              </button>
-            )}
-            {canNext && !sweep && (
-              <button type="button" className="results-more" onClick={next} disabled={loadingMore} aria-label={`Next ${LIMIT}`} title={`Next ${LIMIT}`}>
-                »
-              </button>
-            )}
-          </>
-        }
-      />
+      <p className="related-count results-count">{foundText(total, capped)}</p>
+      {(loading || loadingMore) && <LoadingBar />}
+      {n === 0 && <BestMatches items={best} onSelect={onOpen} label={bestLabel} streamCheck={streaming} busy={loading} />}
+      {(rowItems.length > 0 || n > 0) && (
+        <div className="results-more-row">
+          <RelatedRow
+            key={n} // a new page starts at its first film
+            items={rowItems}
+            onSelect={onOpen}
+            label={moreLabel}
+            streamCheck={streaming}
+            name="Results"
+            showReasons
+            busy={loading || loadingMore}
+            bar={false}
+            drift={false}
+            sweep={sweep}
+            after={arrows}
+          />
+        </div>
+      )}
     </>
   );
 }

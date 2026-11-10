@@ -65,6 +65,7 @@ export default function RelatedRow({
   sweep = null,
   found = null,
   streamCheck = false,
+  bar = true,
 }: {
   items: RankedMovie[];
   onSelect: (m: Movie) => void;
@@ -77,6 +78,8 @@ export default function RelatedRow({
   showReasons?: boolean;
   /** new results are loading: a running bar above the cards, the old cards dimmed */
   busy?: boolean;
+  /** false: no loading bar of its own while busy (the page already shows one) */
+  bar?: boolean;
   /** false: the row moves only when the mouse steers towards an edge (it starts with the best match) */
   drift?: boolean;
   /** placed after the cards, inside the row (the results page's "load more" arrow) */
@@ -207,7 +210,7 @@ export default function RelatedRow({
       <h3 className="related-label">
         {label} {!still && <span className="related-hint">· move the mouse left or right to browse</span>}
       </h3>
-      {busy && <LoadingBar />}
+      {busy && bar && <LoadingBar />}
       <div
         ref={viewport}
         className={`related-viewport ${still ? "is-static" : ""}`}

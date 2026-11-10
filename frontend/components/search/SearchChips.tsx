@@ -14,6 +14,8 @@ type Props = {
   hiddenBy?: Record<string, number>;
   /** extra content at the bottom of the panel, e.g. a "Show results" button */
   children?: React.ReactNode;
+  /** only the mood tags (results page: exclusions and filters have their own row there) */
+  moodOnly?: boolean;
 };
 
 const STARS = [1, 2, 3, 4, 5];
@@ -47,7 +49,7 @@ export function filterChips(criteria: Criteria): FilterChip[] {
 
 /** The visible search state as a labelled settings panel: one block per mood tag (stars for weight,
  *  prefer / must / exclude), then exclusions, people and filters. */
-export default function SearchChips({ tags, criteria, onChange, hiddenCount = 0, hiddenBy, children }: Props) {
+export default function SearchChips({ tags, criteria, onChange, hiddenCount = 0, hiddenBy, children, moodOnly = false }: Props) {
   const [picking, setPicking] = useState(false);
   const [query, setQuery] = useState("");
   const name = useMemo(() => new Map(tags.map((t) => [t.idx, t.tag])), [tags]);
@@ -112,7 +114,7 @@ export default function SearchChips({ tags, criteria, onChange, hiddenCount = 0,
   return (
     <section className="search-chips criteria-panel" aria-label="Search criteria">
       <h2 className="criteria-title">Your mood settings</h2>
-      {mood.length === 0 && excluded.length === 0 && (
+      {mood.length === 0 && (moodOnly || excluded.length === 0) && (
         <p className="criteria-empty">No mood tags yet. Chat with me or add one below.</p>
       )}
       {mood.length > 0 && (
@@ -169,7 +171,7 @@ export default function SearchChips({ tags, criteria, onChange, hiddenCount = 0,
           </span>
         )}
       </div>
-      {(excluded.length > 0 || criteria.exclude_genres.length > 0 || criteria.exclude_people.length > 0) && (
+      {!moodOnly && (excluded.length > 0 || criteria.exclude_genres.length > 0 || criteria.exclude_people.length > 0) && (
         <>
           <h3 className="chips-heading">Excluded</h3>
           <ul className="criteria-list">
@@ -220,8 +222,8 @@ export default function SearchChips({ tags, criteria, onChange, hiddenCount = 0,
           </ul>
         </>
       )}
-      {hiddenCount > 0 && <p className="chips-hidden">→ {hiddenCount} films hidden</p>}
-      {others.length > 0 && (
+      {!moodOnly && hiddenCount > 0 && <p className="chips-hidden">→ {hiddenCount} films hidden</p>}
+      {!moodOnly && others.length > 0 && (
         <>
           <h3 className="chips-heading">Filters</h3>
           <ul className="criteria-list">

@@ -38,31 +38,29 @@ it("autocorrects a misspelt person and title to the names the search found", asy
   setSearchState(emptyCriteria());
 });
 
-it("passes what each exclusion hides on to the mood panel", async () => {
+it("says in the exclusions row what each exclusion does in this search", async () => {
   setSearchState({ ...emptyCriteria(), person: "Sandra Bullock", exclude_genres: ["Horror"] });
   render(<ResultsPage />);
-  await userEvent.click(await screen.findByRole("button", { name: /Edit moods & filters/ }));
-  expect(await screen.findByText("none of these films are Horror: changes nothing")).toBeInTheDocument();
+  const row = await screen.findByRole("region", { name: "Exclusions and filters" });
+  expect(await within(row).findByText("changes nothing here")).toBeInTheDocument();
   setSearchState(emptyCriteria());
 });
 
-it("shows the search as one line of chips and opens the full mood panel on demand", async () => {
+it("shows the films first, then the moods, then exclusions and filters to remove, then the advanced search", async () => {
   setSearchState({ ...emptyCriteria(), tags: [{ idx: 1, weight: 6, mode: "must" }], year_from: 1990, year_to: 1999, exclude_people: ["Sylvester Stallone"] });
   render(<ResultsPage />);
-  const bar = await screen.findByRole("region", { name: "Your search" });
-  expect(within(bar).getByText("1990–1999")).toBeInTheDocument();
-  expect(within(bar).getByText(/without Sylvester Stallone/)).toBeInTheDocument();
-  expect(within(bar).getByText("must")).toBeInTheDocument();
-  expect(screen.queryByRole("region", { name: "Search criteria" })).toBeNull(); // the full panel stays closed
-  await userEvent.click(within(bar).getByRole("button", { name: /Edit moods & filters/ }));
-  expect(screen.getByRole("region", { name: "Search criteria" })).toBeInTheDocument();
-  await userEvent.click(within(bar).getByRole("button", { name: "Remove year range" }));
-  expect(within(bar).queryByText("1990–1999")).toBeNull();
+  const moods = await screen.findByRole("region", { name: "Search criteria" });
+  const row = screen.getByRole("region", { name: "Exclusions and filters" });
+  expect(moods.compareDocumentPosition(row) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(within(moods).getByRole("button", { name: /Weight 3 of 5/ })).toBeInTheDocument(); // stars stay editable
+  expect(within(moods).queryByText(/Sylvester Stallone/)).toBeNull(); // exclusions only in their own row
+  expect(within(row).getByText(/without Sylvester Stallone/)).toBeInTheDocument();
+  await userEvent.click(within(row).getByRole("button", { name: "Remove year range" }));
+  expect(within(row).queryByText("1990–1999")).toBeNull();
+  expect(screen.queryByRole("form", { name: "Advanced search" })).toBeNull();
+  await userEvent.click(within(row).getByRole("button", { name: /Advanced search/ }));
+  expect(screen.getByRole("form", { name: "Advanced search" })).toBeInTheDocument();
   setSearchState(emptyCriteria());
 });
 
-it("opens the full mood panel at once when there is no search yet", async () => {
-  setSearchState(emptyCriteria());
-  render(<ResultsPage />);
-  expect(await screen.findByRole("region", { name: "Search criteria" })).toBeInTheDocument();
-});
+
