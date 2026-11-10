@@ -649,7 +649,7 @@
 .best-why { margin: 0; font-size: .8em; line-height: 1.3; color: #f3c76bd9; text-shadow: 0 1px 4px #000;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .best-item .result-unchecked, .best-item .result-miss { display: block; font-size: .75em; }
-.results-more-row { --card-w: clamp(60px, 5.5cqw, 140px); }
+.results-more-row { --card-w: clamp(60px, 5.5cqw, 140px); margin-top: 1.2cqw; }
 .results-more-row .related-viewport { padding-top: 1.2cqw; margin-top: -1cqw; }
 .results-more-row .related-viewport.is-static { scrollbar-width: none; } /* a row that fits needs no scrollbar */
 .results-more-row .related-viewport.is-static::-webkit-scrollbar { display: none; }

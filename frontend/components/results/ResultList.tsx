@@ -204,6 +204,7 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened 
             busy={loading || loadingMore}
             bar={false}
             drift={false}
+            loop // an endless row the mouse slides left or right, even when its films would fit
             sweep={sweep}
             after={arrows}
           />

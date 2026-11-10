@@ -16,6 +16,7 @@ const DEAD_ZONE = 0.3; // middle share of the row where it only creeps on
 const EASE_MS = 220;
 export const SWEEP_MS = 1200; // the fast run to the next (or previous) 50 results
 export const MIN_SLOTS = 14; // until the row is measured: fewer films than this stand still instead of looping
+const LOOP_MIN = 4; // a forced loop (results page) needs at least this many films, fewer stand still
 
 /** Row velocity for a pointer at `ratio` (0 = left edge, 1 = right edge) of the row; null = no pointer.
  *  Right of the middle the films slide left (more come in from the right), left of it the other way,
@@ -66,6 +67,7 @@ export default function RelatedRow({
   found = null,
   streamCheck = false,
   bar = true,
+  loop = false,
 }: {
   items: RankedMovie[];
   onSelect: (m: Movie) => void;
@@ -80,6 +82,8 @@ export default function RelatedRow({
   busy?: boolean;
   /** false: no loading bar of its own while busy (the page already shows one) */
   bar?: boolean;
+  /** run as an endless row even when the films would fit (from LOOP_MIN films on; repeated to fill the width) */
+  loop?: boolean;
   /** false: the row moves only when the mouse steers towards an edge (it starts with the best match) */
   drift?: boolean;
   /** placed after the cards, inside the row (the results page's "load more" arrow) */
@@ -100,7 +104,8 @@ export default function RelatedRow({
   // films that all fit in the visible width stand still, left-aligned; only a row wider than the screen loops
   // (looping a short one would need empty boxes). Measured with a ResizeObserver; until then: by count.
   const [fits, setFits] = useState<boolean | null>(null);
-  const still = reduced || (fits ?? items.length < MIN_SLOTS);
+  const looping = loop && items.length >= LOOP_MIN;
+  const still = reduced || (!looping && (fits ?? items.length < MIN_SLOTS));
   useEffect(() => {
     const view = viewport.current;
     if (!view || typeof ResizeObserver === "undefined") return;
@@ -198,7 +203,8 @@ export default function RelatedRow({
   }, [still, drift]);
 
   if (items.length === 0) return null;
-  const slots = items;
+  // a forced loop repeats short rows until they are wider than the screen, so the run has no gap at its seam
+  const slots = looping && !still && items.length < MIN_SLOTS ? Array.from({ length: Math.ceil(MIN_SLOTS / items.length) }, () => items).flat() : items;
   const onMove = (e: React.PointerEvent) => {
     const box = viewport.current?.getBoundingClientRect();
     if (box && box.width > 0) pointer.current = (e.clientX - box.left) / box.width;
@@ -227,8 +233,8 @@ export default function RelatedRow({
                 type="button"
                 className="related-card"
                 aria-label={`${r.movie.title}, ${r.match_percent}% match`}
-                tabIndex={i < slots.length ? 0 : -1}
-                aria-hidden={i < slots.length ? undefined : true}
+                tabIndex={i < items.length ? 0 : -1}
+                aria-hidden={i < items.length ? undefined : true}
                 onClick={() => onSelect(r.movie)}
               >
                 <ImageOrPlaceholder src={r.movie.poster_url} alt="" />

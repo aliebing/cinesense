@@ -46,7 +46,7 @@ it("says in the exclusions row what each exclusion does in this search", async (
   setSearchState(emptyCriteria());
 });
 
-it("shows the films first, then the moods, then exclusions and filters to remove, then the advanced search", async () => {
+it("shows the moods on top, then exclusions and filters to remove; the advanced search opens from the top", async () => {
   setSearchState({ ...emptyCriteria(), tags: [{ idx: 1, weight: 6, mode: "must" }], year_from: 1990, year_to: 1999, exclude_people: ["Sylvester Stallone"] });
   render(<ResultsPage />);
   const moods = await screen.findByRole("region", { name: "Search criteria" });
@@ -58,7 +58,7 @@ it("shows the films first, then the moods, then exclusions and filters to remove
   await userEvent.click(within(row).getByRole("button", { name: "Remove year range" }));
   expect(within(row).queryByText("1990–1999")).toBeNull();
   expect(screen.queryByRole("form", { name: "Advanced search" })).toBeNull();
-  await userEvent.click(within(row).getByRole("button", { name: /Advanced search/ }));
+  await userEvent.click(screen.getByRole("button", { name: /Advanced search/ }));
   expect(screen.getByRole("form", { name: "Advanced search" })).toBeInTheDocument();
   setSearchState(emptyCriteria());
 });

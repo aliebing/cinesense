@@ -54,15 +54,12 @@ export default function ResultsPage() {
       <div className="results-page">
         <header className="genre-top results-top">
           <Breadcrumb items={[{ label: "Search" }]} />
+          <div className="results-actions">
+            <button type="button" className="results-toggle" aria-expanded={showAdvanced} onClick={() => setShowAdvanced((v) => !v)}>
+              {showAdvanced ? "Hide advanced search" : "Advanced search"}
+            </button>
+          </div>
         </header>
-        {/* the films first, then what steers them: moods, then exclusions and filters, then the advanced search */}
-        <ResultList criteria={criteria} onOpen={open} onMeta={onMeta} onRelax={relax} widened={widened} />
-        <SearchChips tags={tags} criteria={criteria} onChange={change} moodOnly />
-        <ExclusionsBar tags={tags} criteria={criteria} onChange={change} hiddenCount={hidden} hiddenBy={hiddenBy}>
-          <button type="button" className="results-toggle" aria-expanded={showAdvanced} onClick={() => setShowAdvanced((v) => !v)}>
-            {showAdvanced ? "Hide advanced search ▴" : "Advanced search ▾"}
-          </button>
-        </ExclusionsBar>
         {showAdvanced && (
           <AdvancedSearch
             criteria={criteria}
@@ -72,6 +69,10 @@ export default function ResultsPage() {
             }}
           />
         )}
+        {/* what steers the search on top (moods, then exclusions and filters), the films below */}
+        <SearchChips tags={tags} criteria={criteria} onChange={change} moodOnly />
+        <ExclusionsBar tags={tags} criteria={criteria} onChange={change} hiddenCount={hidden} hiddenBy={hiddenBy} />
+        <ResultList criteria={criteria} onOpen={open} onMeta={onMeta} onRelax={relax} widened={widened} />
       </div>
     </CinemaFrame>
   );
