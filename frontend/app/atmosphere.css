@@ -498,7 +498,8 @@
 .results-toggle { background: #0d0d14c4; color: #fff; border: 1px solid #ffffff30; }
 .results-head { margin: 0; font-size: 1.05em; font-weight: 600; }
 .results-extended { color: var(--gold); font-weight: 400; }
-.results-relax-bar { display: flex; flex-wrap: wrap; align-items: center; gap: .5em .7em; text-shadow: 0 1px 3px #000; }
+/* "Only 2 films match every wish. More with:" and each way to widen below it, one per line, left-aligned */
+.results-relax-bar { display: flex; flex-direction: column; align-items: flex-start; gap: .4em; text-align: left; text-shadow: 0 1px 3px #000; }
 .results-relax {
   font: inherit; cursor: pointer; border-radius: 999px; padding: .4em 1em;
   background: #0d0d14d9; color: #fff; border: 1px solid var(--gold);
@@ -529,7 +530,7 @@
   /* the count, the best matches and the running row share one left edge, with room for the arrows */
   .results-page { --row-inset: calc(2 * (clamp(52px, 4.8cqw, 120px) + var(--card-gap))); }
   .results-page .related, .results-page .best, .results-page .results-count,
-  .results-page .results-relax-bar, .results-page .results-widened { margin-inline: var(--row-inset); }
+  .results-page .results-widened { margin-inline: var(--row-inset); }
   /* the film row, header and advanced search always show in full; the mood panel takes what is left and
      scrolls inside itself when it holds many chips */
   .results-page > * { flex-shrink: 0; }
