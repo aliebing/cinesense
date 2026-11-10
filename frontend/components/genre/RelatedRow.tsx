@@ -14,7 +14,8 @@ const SLOW_SPEED = 14; // px per second in the middle: still moving, but a card 
 const MAX_SPEED = 650; // px per second with the pointer at the very edge
 const DEAD_ZONE = 0.3; // middle share of the row where it only creeps on
 const EASE_MS = 650; // smooth: the row picks up speed gently and slows down gently
-export const SWEEP_MS = 900; // the fast run to the next (or previous) page of results
+export const SWEEP_MS = 1500; // the run to the next (or previous) page of results
+const SWEEP_LAPS = 1; // extra laps round the endless row on the way: a long, very fast run
 export const MIN_SLOTS = 14; // until the row is measured: fewer films than this stand still instead of looping
 const SLIDE_CARDS = 4; // how far one « » click slides the row
 const LOOP_MIN = 4; // a forced loop (results page) needs at least this many films, fewer stand still
@@ -40,7 +41,7 @@ export function anchored(offset: number, before: number | null, now: number): nu
 /** Row offset during a sweep: from `start` to `target` in `ms`, slow at both ends and very fast in between. */
 export function sweepOffset(start: number, target: number, elapsed: number, ms = SWEEP_MS): number {
   const t = Math.min(Math.max(elapsed / ms, 0), 1);
-  const eased = t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2; // ease-in-out (cubic)
+  const eased = t < 0.5 ? 16 * t ** 5 : 1 - (-2 * t + 2) ** 5 / 2; // ease-in-out (quintic): gentle ends, a rush between
   return start + (target - start) * eased;
 }
 
@@ -156,7 +157,8 @@ export default function RelatedRow({
     let anchorEl: HTMLElement | null = null;
     let anchorLeft: number | null = null; // its layout position (offsetLeft ignores our transform)
     // the caller builds a new Sweep object on every render: one run per from/to, until the row is swapped
-    let run: { from: number; to: number; start: number; target: number; began: number; done: boolean } | null = null;
+    let run: { from: number; to: number; start: number; target: number; end: number; lap: number; began: number; done: boolean } | null =
+      null;
     const step = (now: number) => {
       const dt = Math.min(now - last, 64); // a background tab must not teleport the row
       last = now;
@@ -169,12 +171,19 @@ export default function RelatedRow({
             const first = el.children[0] as HTMLElement | undefined;
             return card && first ? card.offsetLeft - first.offsetLeft : 0;
           };
-          // the old row's cards now start at `from`: shift so they stay where they were, then run to `to`
+          // the old row's cards now start at `from`: shift so they stay where they were, then run to `to`,
+          // the long way round: SWEEP_LAPS more laps of the endless row in the same direction
           const start = offset - left(sweepNow.from);
-          run = { from: sweepNow.from, to: sweepNow.to, start, target: -left(sweepNow.to), began: now, done: false };
+          const half = el.children.length / 2;
+          const lap = half >= 1 ? left(half) : 0;
+          const end = -left(sweepNow.to);
+          const target = end + (end < start ? -1 : 1) * SWEEP_LAPS * lap;
+          run = { from: sweepNow.from, to: sweepNow.to, start, target: lap > 0 ? target : end, end, lap, began: now, done: false };
         }
         const elapsed = run.start === run.target ? SWEEP_MS : now - run.began;
-        offset = sweepOffset(run.start, run.target, elapsed);
+        const raw = sweepOffset(run.start, run.target, elapsed);
+        // the cards repeat every lap: show the run within one lap, and end exactly where the new page starts
+        offset = elapsed >= SWEEP_MS ? run.end : run.lap > 0 ? ((raw % run.lap) - run.lap) % run.lap : raw;
         speed = 0;
         el.style.transform = `translate3d(${offset}px, 0, 0)`;
         if (elapsed >= SWEEP_MS && !run.done) {
