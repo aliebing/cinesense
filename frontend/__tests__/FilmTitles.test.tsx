@@ -35,3 +35,16 @@ it("renders one static title under reduced motion", () => {
   expect(screen.getAllByTestId("film-title")).toHaveLength(1);
   expect(screen.getByText("Demo-Film 01")).toBeInTheDocument();
 });
+
+it("takes the next title from a new list when the mood changes, without cutting the one on show", () => {
+  mockMatchMedia(() => false);
+  const { rerender } = render(<FilmTitles titles={["Suspense 1", "Suspense 2"]} />);
+  expect(screen.getByText("Suspense 1")).toBeInTheDocument();
+  rerender(<FilmTitles titles={["Sci-fi 1", "Sci-fi 2"]} />);
+  expect(screen.getByText("Suspense 1")).toBeInTheDocument(); // fades out in its own time
+  act(() => {
+    vi.advanceTimersByTime(3700);
+  });
+  expect(screen.getByText("Sci-fi 1")).toBeInTheDocument();
+  expect(screen.queryByText("Suspense 2")).toBeNull();
+});

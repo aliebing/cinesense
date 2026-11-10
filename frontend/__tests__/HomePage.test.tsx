@@ -158,3 +158,10 @@ it("loads only the hero pictures on show, fading out and next", () => {
   expect(loaded).toHaveLength(6);
   expect(loaded.filter(Boolean)).toEqual(['url("b0.jpg")', 'url("b1.jpg")', 'url("b5.jpg")']); // on show, next, previous
 });
+
+it("the titles drifting over the stage belong to the mood on screen", async () => {
+  getHome.mockResolvedValue({ ok: true, data: sampleHome });
+  render(<HomePage />);
+  const title = await screen.findByTestId("film-title");
+  expect(sampleHome.rows.suspense.map((m) => m.title)).toContain(title.textContent); // the hero world is suspense
+});

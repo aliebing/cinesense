@@ -22,6 +22,8 @@ import type { HomeData, HomeTile, MoodWorld, TileRow } from "@/lib/types";
 import { useActiveTrailer } from "@/lib/useActiveTrailer";
 import { useIsNarrow, useReducedMotion } from "@/lib/useReducedMotion";
 
+const TITLES_PER_MOOD = 6;
+
 /** Without a search: the top-rated films of the mood on screen (the hero world) in `count` rows running against each
  *  other, its films dealt out in turn. The rows keep their ids when the mood changes, so they run on and only their
  *  films change (no new rows, no jump). */
@@ -74,6 +76,8 @@ export default function HomePage({ initial = null }: { initial?: HomeData | null
   const worldIds = useMemo(() => worlds.map((w) => w.id), [worlds]);
   const advance = useCallback(() => setActive((i) => (worlds.length ? (i + 1) % worlds.length : 0)), [worlds.length]);
   const world = worlds[active];
+  // the titles that drift over the stage belong to the mood on screen, like its picture and its rows
+  const moodTitles = useMemo(() => (world && data ? (data.rows[world.id] ?? []).slice(0, TITLES_PER_MOOD).map((t) => t.title) : []), [world, data]);
 
   const [showProfile, setShowProfile] = useState(false);
   const browse = (availability: "cinema" | "stream") => {
@@ -134,7 +138,7 @@ export default function HomePage({ initial = null }: { initial?: HomeData | null
         </SearchChips>
       </div>
 
-      {data && !narrow && <FilmTitles titles={data.titles} />}
+      {data && !narrow && <FilmTitles titles={moodTitles} />}
       {(rows.length > 0 || searching) && (
         <div className={`home-rows${searching ? " is-busy" : ""}`} aria-busy={searching}>
           {searching && <LoadingBar />}
