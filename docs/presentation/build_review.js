@@ -157,12 +157,12 @@ async function icon(name, color) {
     altText: "Film stage for Moon: why it fits, where it streams, other matches below" });
   {
     const offers = [
-      ["FaTheaterMasks", "Search by feeling", "mood worlds and 1,128 weighted mood tags, or just describe the evening"],
+      ["FaTheaterMasks", "Search by feeling", "7 mood worlds and 1,128 weighted mood tags, or just describe the evening"],
       ["FaCommentDots", "Chat and chips, one state", "every criterion is a visible chip you can change by hand"],
       ["FaQuestionCircle", "A reason for every film", "\"funny 92% · streaming on Prime Video\""],
       ["FaTv", "Where it streams in Germany", "flat rate or free, by the service you name"],
       ["FaThumbsUp", "Taste that learns", "likes and dislikes shape the ranking, no account needed"],
-      ["FaExpandArrowsAlt", "Never an empty page", "too few films: counted ways to widen the search"],
+      ["FaExpandArrowsAlt", "Never an empty page", "too few films: the closest widening shows below, the search stays"],
     ];
     for (const [i, [ic, head, body]] of offers.entries()) {
       const y = 1.5 + i * 0.88;
@@ -171,7 +171,7 @@ async function icon(name, color) {
         { x: 8.3, y, w: 4.4, h: 0.8, valign: "middle", paraSpaceAfter: 2, objectName: "Offer " + head });
     }
   }
-  s.addNotes("This is what the app offers. You start from a mood world or simply describe the evening in the chat. The wish becomes visible chips: mood tags with weights, exclusions, filters. Chat, chips and the advanced search all edit the same state, so I can change anything by hand and the chat continues from there. Every film says why it fits and where it streams in Germany. Likes and dislikes shape the ranking without an account. And when too few films match, the app offers counted ways to widen the search instead of showing an empty page. The posters in the screenshots are blurred for copyright.");
+  s.addNotes("This is what the app offers. You start from a mood world or simply describe the evening in the chat. The wish becomes visible chips: mood tags with weights, exclusions, filters. Chat, chips and the advanced search all edit the same state, so I can change anything by hand and the chat continues from there. Every film says why it fits and where it streams in Germany. Likes and dislikes shape the ranking without an account. And when too few films match, the row below shows the films of the smallest widening, marked with what they miss, while the search itself stays as the user set it. The posters in the screenshots are blurred for copyright.");
 
   // a two-column comparison card: what this app does on the left, what HikeSense does on the right
   const compare = (slide, x, y, w, h, left, right) => {
@@ -293,7 +293,7 @@ async function icon(name, color) {
     };
     s.addImage({ data: await diagramPng(spec), x: 1.15, y: 1.35, w: 11.0, h: 11.0 * spec.h / spec.w, altText: "CineSense LangGraph graph: agent (LLM) loops through tick and tools (ReAct), then present, verify, explain (LLM); verify can send widening options back to the agent; auto_relax" });
     describe(s, 5.45, [
-      ["✦ The model steers", "agent has 13 tools bound. While it returns tool_calls, the turn loops tick → tools → agent (ReAct), at most 6 rounds; each tool edits the shared criteria."],
+      ["✦ The model steers", "agent has 10 tools bound. While it returns tool_calls, the turn loops tick → tools → agent (ReAct), at most 6 rounds; each tool edits the shared criteria."],
       ["Code checks", "present runs the deterministic search. verify sends relax_options to the agent when fewer than 3 films match, else auto_relax widens."],
       ["Reply and state", "explain ✦ words the reply, then grounding checks the titles. The criteria and results live in one typed state, a MemorySaver per browser tab."],
     ]);
@@ -401,23 +401,23 @@ async function icon(name, color) {
       "built from the data: title, year and two reasons per pick; also used when the reply is empty or cut off", "stop", { valign: "top" });
     arrow(s, vx + vw + 0.03, 2.27, ox - 0.03, 2.27, { color: C.accent3 });
     arrow(s, vx + vw + 0.03, 4.47, ox - 0.03, 4.47, { color: C.accent2 });
-    const st = [["90%", "of replies grounded before the check (57 / 63)"], ["100%", "grounded after it: what users see (63 / 63)"],
-      ["6", "template fallbacks in the last full run"]];
+    const st = [["90%", "of replies grounded before the check"], ["95%", "grounded after it: what users see (60 / 63)"],
+      ["3", "template fallbacks in the last full run"]];
     st.forEach(([big, small], i) => {
       const x = 0.6 + i * 4.1;
       text(s, big, { x, y: 5.85, w: 1.35, h: 0.75, fontSize: 34, bold: true, color: C.accent1, fontFace: THEME.headFontFace, valign: "middle", objectName: "Ground stat " + big });
       text(s, small, { x: x + 1.4, y: 5.85, w: 2.55, h: 0.75, fontSize: 13, color: C.text2, valign: "middle", objectName: "Ground label " + big });
     });
   }
-  s.addNotes("The facts come from the deterministic search; the model only words them. The grounding check then reads the explanation. Allowed are the result titles, in three spellings, and titles the user wrote. Any emphasised span that looks like a title, and any multi-word catalogue title in the text, must be on that list. Mood tags and names from the plots the model was shown do not count, which fixed the Silver City case. If anything is left, or the reply is empty or cut off, the whole reply becomes a template built from the data. In the last run the model's own reply was clean in 90 percent of scenarios; with the check, users saw 100 percent. HikeSense checks numbers instead of titles, because there the risk is an invented distance, not an invented film.");
+  s.addNotes("The facts come from the deterministic search; the model only words them. The grounding check then reads the explanation. Allowed are the result titles, in three spellings, and titles the user wrote. Any emphasised span that looks like a title, and any multi-word catalogue title in the text, must be on that list. Mood tags and names from the plots the model was shown do not count, which fixed the Silver City case. If anything is left, or the reply is empty or cut off, the whole reply becomes a template built from the data. In the last run the model's own reply was clean in 90 percent of scenarios; with the check, users saw 95 percent: three replies named a film series or a title from a plot, such as John Wick for John Wick: Chapter Two, which the check let through. HikeSense checks numbers instead of titles, because there the risk is an invented distance, not an invented film.");
 
   // ---------- 8. Evaluation ----------
   s = pres.addSlide({ masterName: "Content", sectionTitle: "Safety and quality" });
   s.addText("Evaluation: 63 scenarios against the real agent", { placeholder: "title" });
   const evals = [
-    ["62 / 63", "scenarios pass every automatic check"],
+    ["59 / 63", "scenarios pass every automatic check"],
     ["100%", "hard filters kept (32 / 32)"],
-    ["100%", "replies name only real results (90% before the check)"],
+    ["95%", "replies name only real results (90% before the check)"],
     ["$0.0016", "per chat turn · median 9 s"],
   ];
   for (const [i, [big, small]] of evals.entries()) {
@@ -429,7 +429,7 @@ async function icon(name, color) {
   text(s, [{ text: "How: ", options: { bold: true, color: C.accent1 } },
     { text: "make eval sends 63 scenarios in 18 categories through the real agent and catalogue (streaming from the cache only). Code checks filters, tools, facts and grounding; Claude Sonnet 5.5 judges the top 5." }],
   { x: 0.6, y: 5.75, w: 6.2, h: 1.05, fontSize: 13, objectName: "Eval method" });
-  s.addChart(pres.charts.BAR, [{ name: "LLM judge (1–5)", labels: ["Filters + rating", "movieFinder cosine", "CineSense"], values: [1.42, 3.27, 3.85] }], {
+  s.addChart(pres.charts.BAR, [{ name: "LLM judge (1–5)", labels: ["Filters + rating", "movieFinder cosine", "CineSense"], values: [1.54, 3.15, 3.85] }], {
     x: 7.2, y: 1.45, w: 5.5, h: 4.3, barDir: "bar",
     showTitle: true, title: "Ranking quality: LLM judge, 1–5", titleFontSize: 14, titleColor: HEX.dk1, titleFontFace: "+mn-lt",
     chartColors: [HEX.accent5, HEX.accent5, HEX.accent1], showValue: true, dataLabelPosition: "outEnd", dataLabelColor: HEX.dk1,
@@ -438,9 +438,9 @@ async function icon(name, color) {
     valAxisHidden: true, valAxisMinVal: 0, valAxisMaxVal: 5, valGridLine: { style: "none" }, catGridLine: { style: "none" },
     showLegend: false, barGapWidthPct: 60,
   });
-  text(s, "26 mood scenarios, same criteria and filters for all three rankers. Tag relevance@10: 0.33 · 0.76 · 0.79. The judge sees titles only.",
+  text(s, "26 mood scenarios, same criteria and filters for all three rankers. Tag relevance@10: 0.35 · 0.78 · 0.79. The judge sees titles only.",
     { x: 7.2, y: 5.85, w: 5.5, h: 0.7, fontSize: 13, color: C.text2, objectName: "Chart caption" });
-  s.addNotes("The evaluation runs 63 scenarios through the real agent and catalogue: moods, like-X, runtime, exclusions, people, plots, follow-ups, injection attempts and injected failures. Streaming comes from the cache only, so a run never spends API budget. Code checks the final turn; 62 of 63 pass every check. Hard filters are always kept, and no reply names a film the search did not return. A turn costs about a fifth of a cent. For ranking, the same criteria go to two baselines, and an LLM judge prefers CineSense, with the caveat that it only sees titles. HikeSense, by contrast, checks everything by code and uses no judge.");
+  s.addNotes("The evaluation runs 63 scenarios through the real agent and catalogue: moods, like-X, runtime, exclusions, people, plots, follow-ups, injection attempts and injected failures. Streaming comes from the cache only, so a run never spends API budget. Code checks the final turn; 59 of 63 pass every check. Hard filters are always kept; three replies named a film series or a plot title the search did not return, and one old scenario expects a different tool. A turn costs about a fifth of a cent. For ranking, the same criteria go to two baselines, and an LLM judge prefers CineSense, with the caveat that it only sees titles. HikeSense, by contrast, checks everything by code and uses no judge.");
 
   // ---------- Challenges ----------
   pres.addSection({ title: "Challenges" });
@@ -449,7 +449,7 @@ async function icon(name, color) {
   {
     const items = [
       ["FaSortAmountDown", "Ranking flattered obscure films", "Cosine similarity over all 1,128 tags rewarded films that are a little of everything.",
-        "Score only the requested tags, as a weighted mean. LLM judge: 3.85 against 3.27 for the cosine baseline."],
+        "Score only the requested tags, as a weighted mean. LLM judge: 3.85 against 3.15 for the cosine baseline."],
       ["FaRandom", "Parallel tool calls overwrote each other", "The model called several tools at once; each changed the shared criteria from the same old state.",
         "Tools run one after another, each on the state the previous one left."],
       ["FaCheckDouble", "Grounding rejected correct replies", "A town in a plot (\"Silver City\") is also a film title, so a correct reply became a template.",
@@ -484,7 +484,8 @@ async function icon(name, color) {
     { text: "Predict mood tags for new films from their plot embeddings", options: { bullet: true, breakLine: true } },
     { text: "Feedback inside the chat (\"not this one\")", options: { bullet: true, breakLine: true } },
     { text: "German interface and German plots", options: { bullet: true, breakLine: true } },
-    { text: "Accounts with consent: a lasting taste profile and a Postgres checkpointer", options: { bullet: true } },
+    { text: "Log-in and user management, with consent: a lasting taste profile", options: { bullet: true, breakLine: true } },
+    { text: "Several search sessions per user, like the chats in ChatGPT (Postgres checkpointer)", options: { bullet: true } },
   ];
   card(s, 0.75, 1.55, 6.0, 4.15, "Better card");
   card(s, 6.95, 1.55, 5.65, 4.15, "Next card");
@@ -493,11 +494,11 @@ async function icon(name, color) {
   text(s, "Could be better", { x: 1.85, y: 1.9, w: 4.5, h: 0.45, fontSize: 20, bold: true, objectName: "Better head" });
   text(s, "Next steps", { x: 8.05, y: 1.9, w: 4.2, h: 0.45, fontSize: 20, bold: true, objectName: "Next head" });
   text(s, better, { x: 1.05, y: 2.65, w: 5.45, h: 2.9, fontSize: 15, paraSpaceAfter: 9, objectName: "Better" });
-  text(s, next, { x: 7.25, y: 2.65, w: 5.1, h: 2.9, fontSize: 15, paraSpaceAfter: 9, objectName: "Next steps" });
+  text(s, next, { x: 7.25, y: 2.55, w: 5.1, h: 3.05, fontSize: 14, paraSpaceAfter: 7, objectName: "Next steps" });
   text(s, [{ text: "Try it: ", options: { color: C.text2 } }, { text: "cinesense.de", options: { bold: true, color: C.accent1 } },
     { text: "   ·   code: github.com/aliebing/cinesense   ·   Thank you!", options: { color: C.text2 } }],
   { x: 0.75, y: 6.05, w: 11.8, h: 0.45, fontSize: 18, objectName: "Links" });
-  s.addNotes("What could be better: the evaluation's judge only sees titles and favours famous films, and the automatic checks are narrow. Films beyond the Tag Genome, new releases and live imports, have no mood tags, so the mood search barely finds them. The guard is a heuristic; the real protection is that the model can only act through typed tools. And the conversation lives in process memory, so a restart forgets it. Where it could go: predict mood tags for new films from their plot embeddings, feedback right in the chat, a German interface, and real accounts with consent, which would also allow a lasting taste profile and a persistent checkpointer. Thank you; questions are welcome.");
+  s.addNotes("What could be better: the evaluation's judge only sees titles and favours famous films, and the automatic checks are narrow. Films beyond the Tag Genome, new releases and live imports, have no mood tags, so the mood search barely finds them. The guard is a heuristic; the real protection is that the model can only act through typed tools. And the conversation lives in process memory, so a restart forgets it. Where it could go: predict mood tags for new films from their plot embeddings, feedback right in the chat, a German interface, and a log-in with user management: with consent, a lasting taste profile, and several search sessions per user, like the list of chats in ChatGPT, kept in a Postgres checkpointer. Thank you; questions are welcome.");
 
   await pres.writeFile({ fileName: OUT });
   await applyTheme(OUT, THEME);

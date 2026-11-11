@@ -10,8 +10,9 @@ Framing: **SCR** (Situation → Complication → Resolution). Each section is ab
 
 ## 2. The solution (Resolution) — demo
 
-- **Cinematic UI:** a 2.29:1 screen, curtains, fog and light. Mood worlds change in the background, and the tile rows follow the active world. Trailers play on hover.
-- **Chat agent (LangGraph ReAct, Claude Haiku 5.5 via OpenRouter):** it turns the wish into **visible chips**: mood tags with weight and prefer/must/not, filters, person, plot.
+- **Cinematic UI:** a 2.29:1 screen, curtains, fog and light. Seven mood worlds change in the background; for each, the homepage shows its newest top-rated films (last 8 years) and its top classics, and the drifting titles are those films. Trailers play on hover.
+- **Chat agent (LangGraph ReAct, Claude Haiku 5.5 via OpenRouter, 10 tools):** it turns the wish into **visible chips**: mood tags with weight and prefer/must/not, filters, person, plot.
+- **Search page:** the best matches in front (up to 6, at least 3), the further ones below from 70, 60 or 50% by how many strong films there are; too few films for every wish show the smallest widening below, while the search itself stays.
 - **The search is deterministic and explainable:** "dark 80% · space travel 99% · streaming on Netflix", and "→ 214 films hidden" for exclusions.
 - **Grounding:** the reply may only name films the search returned. Otherwise a template answer is used.
 - **Personalisation:** 👍/👎 build an anonymous taste profile ("virtual reality · cyberpunk · dark hero"). ⚡/😂 steer only the current session.
@@ -35,30 +36,22 @@ Framing: **SCR** (Situation → Complication → Resolution). Each section is ab
 
 ## 4. Evaluation
 
-- **36 scenarios**, run through the real agent and catalogue:
-  - mood, "like X", runtime, exclusions, documentaries, people, plot, conflicts, follow-ups, facts, ambiguous wishes
-  - 4 injected failures: streaming down, budget exhausted, embeddings down, unknown person
-- **Automatic results** (`evaluation/REPORT.md`, k/n over scenarios that define each check):
-  - 36/36 pass
-  - constraints 19/19
-  - tool selection 35/35
-  - no unbacked streaming claims 36/36
-  - grounding: the model's own explanation was clean in 31/36; the guard replaced the other 5 with the template, so users saw 36/36 grounded replies
-  - median latency 7.5 s
-  - **$0.001 per chat turn**
-- **Ranking comparison** on 21 mood scenarios, with identical criteria and filters:
+- **63 scenarios**, run through the real agent and catalogue: moods, "like X, but less Y", people wanted and excluded, conflicts, follow-ups, prompt-injection attacks and injected API failures.
+- **Automatic results** (`evaluation/REPORT.md`, run of 2026-11-10 with the 10 tools):
+  - 59/63 pass every check
+  - constraints 32/32, tool selection 51/52, prompt injection 6/6
+  - grounding: users saw 60/63 grounded replies; three named a film series or a plot title ("John Wick" for "John Wick: Chapter Two")
+  - median latency 8.7 s, **$0.0016 per chat turn**
+- **Ranking comparison** on 26 mood scenarios, with identical criteria and filters:
 
-  | | Tag relevance | Tag cosine | LLM judge (Sonnet 5.5) |
+  | | Tag relevance@10 | Tag cosine@10 | LLM judge (Sonnet 5.5) |
   |---|---|---|---|
-  | Filters + Bayesian rating | 0.34 | 0.05 | 1.52 |
-  | movieFinder cosine | 0.79 | 0.20 | 3.67 |
-  | **CineSense** | **0.84** | 0.16 | **4.05** |
+  | Filters + Bayesian rating | 0.35 | 0.05 | 1.54 |
+  | movieFinder cosine | 0.78 | 0.20 | 3.15 |
+  | **CineSense** | **0.79** | 0.15 | **3.85** |
 
-  Each ranker wins on its own metric. The judge prefers CineSense, which also picks better-known films (median 10,354 vs 1,118 ratings). Caveat: the judge sees titles only.
-- **Honesty:**
-  - The first runs exposed bugs in the checks.
-  - An independent review found that a "fix" had weakened the title guard. It was repaired, and everything was re-run.
-  - Total evaluation cost: about $0.22.
+  Each ranker wins on its own metric. The judge prefers CineSense, which also picks better-known films. Caveat: the judge sees titles only.
+- **Honesty:** the first runs exposed bugs in the checks, and an independent review found that a "fix" had weakened the title guard; both were repaired and re-run. A full run costs about $0.42.
 
 ## 5. Challenges
 
@@ -72,5 +65,7 @@ Framing: **SCR** (Situation → Complication → Resolution). Each section is ab
 
 - Mood tags for new films, e.g. predicting Tag Genome relevance from plot embeddings.
 - Personalising the home rows. History trimming and per-thread token budgets.
-- Feedback inside the chat ("not this one"). A multi-user deployment with real accounts and consent.
+- Feedback inside the chat ("not this one").
+- **Log-in and user management** (with consent): a lasting taste profile per user instead of a browser id.
+- **Several search sessions per user, like the chats in ChatGPT:** a list of past searches to go back to, kept in a Postgres checkpointer instead of process memory.
 - More languages: German Wikipedia plots, a German UI.
