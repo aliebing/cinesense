@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { isTyping } from "@/lib/typingPause";
 import FogLight from "@/components/atmosphere/FogLight";
 import HeroSlides from "@/components/atmosphere/HeroSlides";
 import CinemaFrame from "@/components/cinema/CinemaFrame";
@@ -52,6 +53,10 @@ export default function HomePage({ initial = null }: { initial?: HomeData | null
   const hasInitial = initial !== null;
   const [active, setActive] = useState(0);
   const { activeId } = useActiveTrailer();
+  const activeIdRef = useRef(activeId);
+  useEffect(() => {
+    activeIdRef.current = activeId;
+  }, [activeId]);
   const [criteria, setCriteria] = useSearchState();
   const [tags, setTags] = useState<Tag[]>([]);
 
@@ -83,6 +88,10 @@ export default function HomePage({ initial = null }: { initial?: HomeData | null
   const worldIds = useMemo(() => worlds.map((w) => w.id), [worlds]);
   const advance = useCallback(() => setActive((i) => (worlds.length ? (i + 1) % worlds.length : 0)), [worlds.length]);
   const world = worlds[active];
+  // after a lap of the rows: the next mood, unless the visitor is typing or a trailer plays
+  const nextMood = useCallback(() => {
+    if (!isTyping() && activeIdRef.current === null) advance();
+  }, [advance]);
   // the titles that drift over the stage belong to the mood on screen, like its picture and its rows
   const moodTitles = useMemo(() => (world && data ? (data.rows[world.id] ?? []).slice(0, TITLES_PER_MOOD).map((t) => t.title) : []), [world, data]);
 
@@ -98,7 +107,16 @@ export default function HomePage({ initial = null }: { initial?: HomeData | null
 
   return (
     <CinemaFrame>
-      <HeroSlides worlds={worlds} images={images} activeIndex={active} onAdvance={advance} paused={activeId !== null} />
+      {/* with rows on show the mood changes only after they ran through all their films (time to pick one); the
+          rows stand still with reduced motion, so the slides keep their own timer there */}
+      <HeroSlides
+        worlds={worlds}
+        images={images}
+        activeIndex={active}
+        onAdvance={advance}
+        paused={activeId !== null}
+        auto={rows.length === 0 || reduced}
+      />
       <FogLight tint={world?.tint ?? "#1b4a6b"} reduced={reduced || narrow} />
       <div className="home-shade" aria-hidden="true" />
 
@@ -142,7 +160,7 @@ export default function HomePage({ initial = null }: { initial?: HomeData | null
       {data && !narrow && <FilmTitles titles={moodTitles} />}
       {rows.length > 0 && (
         <div className="home-rows">
-          <TileRows rows={rows} onSelect={openMovie} worldOrder={worldIds} />
+          <TileRows rows={rows} onSelect={openMovie} worldOrder={worldIds} onLap={nextMood} />
         </div>
       )}
       {world && <WorldLabel world={world} href={`/world/${world.id}`} />}

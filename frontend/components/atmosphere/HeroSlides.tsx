@@ -11,21 +11,23 @@ type Props = {
   activeIndex: number;
   onAdvance: () => void;
   paused?: boolean;
+  /** false: no timer of its own, the page advances (the homepage after its rows ran through all their films) */
+  auto?: boolean;
 };
 
 const ADVANCE_MS = 12000; // calm: the tile rows follow each change
 
 /** Full-stage mood world backgrounds with slow Ken Burns motion and cross-fades. */
-export default function HeroSlides({ worlds, images, activeIndex, onAdvance, paused = false }: Props) {
+export default function HeroSlides({ worlds, images, activeIndex, onAdvance, paused = false, auto = true }: Props) {
   const reduced = useReducedMotion();
 
   useEffect(() => {
-    if (reduced || paused || worlds.length < 2) return;
+    if (!auto || reduced || paused || worlds.length < 2) return;
     const id = setInterval(() => {
       if (!isTyping()) onAdvance(); // no cross-fade while the visitor types in the chat
     }, ADVANCE_MS);
     return () => clearInterval(id);
-  }, [reduced, paused, worlds.length, onAdvance]);
+  }, [auto, reduced, paused, worlds.length, onAdvance]);
 
   const n = worlds.length;
   // only the slide on show, the one fading out and the next one load their picture (~80 KB each); the next one

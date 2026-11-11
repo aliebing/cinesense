@@ -81,22 +81,35 @@ it("shows English quick filters without a language chip", async () => {
   expect(screen.queryByText(/Englisch|English/)).toBeNull();
 });
 
-it("shows the films of the mood on screen in two rows running against each other, and follows the hero after 12 s", async () => {
+it("shows the films of the mood on screen in two rows, and changes the mood only after the rows ran through all films", async () => {
   vi.useFakeTimers({ shouldAdvanceTime: true });
+  const frames: FrameRequestCallback[] = [];
+  vi.spyOn(window, "requestAnimationFrame").mockImplementation((cb) => {
+    frames.push(cb);
+    return frames.length;
+  });
+  vi.spyOn(window, "cancelAnimationFrame").mockImplementation(() => {});
+  vi.spyOn(HTMLElement.prototype, "offsetLeft", "get").mockImplementation(function (this: HTMLElement) {
+    return Array.from(this.parentElement?.children ?? []).indexOf(this) * 100; // tiles 100 px apart
+  });
   getHome.mockResolvedValue({ ok: true, data: sampleHome });
   render(<HomePage />);
   await screen.findAllByTestId("tile-row");
   const rowIds = () => [...document.querySelectorAll(".tile-row-wrap")].map((r) => r.getAttribute("data-world"));
   expect(rowIds()).toEqual(["mood-0", "mood-1"]);
   expect(screen.getAllByRole("button", { name: "Demo-Film 02" }).length).toBeGreaterThan(0); // suspense
-  expect(screen.queryAllByRole("button", { name: "Demo-Film 01" })).toHaveLength(0); // action: not on show yet
   await act(async () => {
     await vi.advanceTimersByTimeAsync(12100);
   });
+  expect(screen.queryAllByRole("button", { name: "Demo-Film 01" })).toHaveLength(0); // no timer: still suspense
+  let t = 0;
+  await act(async () => {
+    for (let k = 0; k < 600 && frames.length; k++) frames.shift()?.((t += 64)); // the rows run a full lap
+  });
   expect(rowIds()).toEqual(["mood-0", "mood-1"]); // the same rows run on, only their films change
-  expect(screen.getAllByRole("button", { name: "Demo-Film 01" }).length).toBeGreaterThan(0);
-  expect(screen.queryAllByRole("button", { name: "Demo-Film 02" })).toHaveLength(0);
+  expect(screen.getAllByRole("button", { name: "Demo-Film 01" }).length).toBeGreaterThan(0); // now action
   vi.useRealTimers();
+  vi.restoreAllMocks();
 });
 
 it("nav shortcuts open the results pre-filtered and 👤 opens the profile", async () => {

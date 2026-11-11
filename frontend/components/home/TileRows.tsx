@@ -6,7 +6,13 @@ import { isTyping } from "@/lib/typingPause";
 import { useReducedMotion } from "@/lib/useReducedMotion";
 import type { HomeTile, MoodWorld, TileRow } from "@/lib/types";
 
-type Props = { rows: TileRow[]; onSelect: (m: HomeTile) => void; worldOrder?: string[] };
+type Props = {
+  rows: TileRow[];
+  onSelect: (m: HomeTile) => void;
+  worldOrder?: string[];
+  /** called each time the first row has run through all its films (one full loop) */
+  onLap?: () => void;
+};
 
 const SPEED = 40; // px per second, the pace of the genre page's related row
 const POINTING_FACTOR = 0.45; // pointer over the rows: slower, so a tile is easy to catch
@@ -78,7 +84,12 @@ function TileImage({ movie }: { movie: HomeTile }) {
 
 /** One row per mood world; neighbouring rows run in opposite directions in seamless loops (spec §4).
  *  No hover trailers here: the home tiles only open the film; trailers play on the genre page and under chat picks. */
-export default function TileRows({ rows, onSelect, worldOrder = [] }: Props) {
+export default function TileRows({ rows, onSelect, worldOrder = [], onLap }: Props) {
+  const onLapRef = useRef(onLap);
+  useEffect(() => {
+    onLapRef.current = onLap;
+  }, [onLap]);
+  const travelled = useRef(0); // px the first row has run since its films last changed
   // state per world (not per row slot): rows reorder when the hero world changes and must not jump
   const rowEls = useRef(new Map<string, HTMLDivElement>());
   const offsets = useRef(new Map<string, number>());
@@ -96,6 +107,10 @@ export default function TileRows({ rows, onSelect, worldOrder = [] }: Props) {
   useEffect(() => {
     slowRef.current = activeId !== null; // a playing trailer must not slide away from under the pointer
   }, [activeId]);
+  const filmsKey = rows[0]?.movies.map((m) => m.id).join(",") ?? "";
+  useEffect(() => {
+    travelled.current = 0; // new films in the first row: a new lap starts
+  }, [filmsKey]);
   useEffect(() => {
     orderRef.current = rows.map((r) => r.world.id);
     const searching = rows.some((r) => r.picked);
@@ -151,7 +166,15 @@ export default function TileRows({ rows, onSelect, worldOrder = [] }: Props) {
           offsets.current.set(id, featuredStart(el.parentElement?.clientWidth ?? 0, period, FEATURED_AT));
           toAlign.current.delete(id);
         }
-        const next = advance(offsets.current.get(id) ?? 0, (directions.current.get(id) ?? -1) * SPEED * factor * (dt / 1000), period);
+        const delta = (directions.current.get(id) ?? -1) * SPEED * factor * (dt / 1000);
+        const next = advance(offsets.current.get(id) ?? 0, delta, period);
+        if (id === orderRef.current[0] && period > 0) {
+          travelled.current += Math.abs(delta);
+          if (travelled.current >= period) {
+            travelled.current = 0;
+            onLapRef.current?.(); // every film of the row has passed once
+          }
+        }
         offsets.current.set(id, next);
         el.style.transform = `translate3d(${next}px, 0, 0)`;
       });
