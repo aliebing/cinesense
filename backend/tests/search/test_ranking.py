@@ -328,3 +328,25 @@ def test_named_service_puts_confirmed_films_before_unknown_ones(make_movie):
         SearchCriteria(availability="stream", streaming_services=["Netflix"]), 0, 2
     )
     assert [r.movie.id for r in res.items] == ["on", "unknown"]
+
+
+def test_plot_fit_counts_above_the_searchs_own_noise_floor_so_fame_cannot_carry_a_loose_plot(make_movie):
+    """Measured from 0, every plot in the top 150 looks half alike (the weakest is still at 0.31): a famous film with a
+    loose plot (Fight Club for a time loop) cleared 60% on rating and popularity alone. The plot now counts from the
+    weakest of the candidates up to the best, so it decides; the well-known loose plot falls below a real loop."""
+    movies = [make_movie(id=f"n{i}", ml_rating=3.0, ml_rating_count=100) for i in range(30)]
+    movies += [
+        make_movie(id="loop", ml_rating=3.3, ml_rating_count=500, year=2019),
+        make_movie(id="loop2", ml_rating=3.6, ml_rating_count=8000, year=2020),
+        make_movie(id="famous", ml_rating=4.2, ml_rating_count=86000, year=1999),
+    ]
+    plot = {f"n{i}": (0.31 + i * 0.001, "") for i in range(30)} | {
+        "loop": (0.59, ""),
+        "loop2": (0.41, ""),
+        "famous": (0.35, ""),
+    }
+    res = combined_rank(movies, SearchCriteria(plot_query="time loop"), Signals(plot=plot), limit=40)
+    pct = {r.movie.id: r.match_percent for r in res.items}
+    assert pct["loop"] > 80
+    assert pct["loop2"] > pct["famous"]
+    assert pct["famous"] < 50

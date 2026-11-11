@@ -9,6 +9,7 @@ from cinesense.search.rating import DEFAULT_PRIOR_MEAN, bayesian_rating, catalog
 
 WEIGHTS = {"tags": 0.4, "plot": 0.3, "people": 0.2, "profile": 0.15, "rating": 0.1, "popularity": 0.08, "recency": 0.04}
 RECENCY_FROM, RECENCY_TO = 1970, 2025  # a small bonus growing from 1970 to the newest films
+PLOT_FLOOR_MIN = 30  # plot candidates needed to read the noise floor off the weakest of them
 POPULARITY_FULL = 100_000  # MovieLens ratings at which a film counts as fully known (log scale)
 TASTE_REASON = 0.75  # normalised profile match from which "fits your taste" is shown
 REASON_MIN = 0.3  # tag relevance from which a mood counts as present (shown as a reason)
@@ -48,6 +49,17 @@ MATCH_FLOORS = (50, 60, 70, 80, 90)  # the search page shows every film from one
 def _normalised(values: dict[str, float]) -> dict[str, float]:
     best = max(values.values(), default=0.0)
     return {k: (v / best if best > 0 else 0.0) for k, v in values.items()}
+
+
+def _plot_fit(values: dict[str, float]) -> dict[str, float]:
+    """How well each plot fits, from the search's own noise floor (the weakest of its candidates) up to the best.
+    Measured from 0, every plot among the top 150 looks half alike, and a famous film with a loose plot cleared 60%
+    on its rating and fame alone. Too few candidates to know the floor: relative to the best, as before."""
+    if len(values) < PLOT_FLOOR_MIN:
+        return _normalised(values)
+    best, floor = max(values.values()), min(values.values())
+    span = best - floor
+    return {k: (max(v - floor, 0.0) / span if span > 0 else 1.0) for k, v in values.items()}
 
 
 def _passes(m: Movie, c: SearchCriteria) -> bool:
@@ -112,7 +124,7 @@ def combined_rank(
         # must not show as a full mood match just because nothing in the results is funnier
         active["tags"] = {k: min(max(v, 0.0), 1.0) for k, v in signals.tags.items()}
     if signals.plot is not None:
-        active["plot"] = _normalised({k: v[0] for k, v in signals.plot.items()})
+        active["plot"] = _plot_fit({k: v[0] for k, v in signals.plot.items()})
     if signals.title is not None:
         active["people"] = dict(signals.title)
     # a wanted person is a filter, not points: every film here has them, so points would only lift films that miss

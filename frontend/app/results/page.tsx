@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import FogLight from "@/components/atmosphere/FogLight";
 import CinemaFrame from "@/components/cinema/CinemaFrame";
 import Breadcrumb from "@/components/nav/Breadcrumb";
@@ -11,12 +11,15 @@ import ExclusionsBar from "@/components/search/ExclusionsBar";
 import SearchChips from "@/components/search/SearchChips";
 import { type DiscoverResult, getTags, type Tag } from "@/lib/api";
 import { type Criteria, patchSearchState, useSearchState } from "@/lib/searchState";
+import { useForwardScroll } from "@/lib/useForwardScroll";
 import type { Movie } from "@/lib/types";
 
 export default function ResultsPage() {
   const router = useRouter();
   const [criteria, setCriteria] = useSearchState();
   const [tags, setTags] = useState<Tag[]>([]);
+  const pageRef = useRef<HTMLDivElement>(null);
+  useForwardScroll(pageRef); // the wheel over the curtains and bars scrolls the films too
   const [hidden, setHidden] = useState(0);
   const [hiddenBy, setHiddenBy] = useState<Record<string, number> | undefined>(undefined);
   // a widening chosen on this page: the original criteria and what was widened (any other change ends it)
@@ -56,7 +59,7 @@ export default function ResultsPage() {
   return (
     <CinemaFrame>
       <FogLight tint="#1b4a6b" reduced />
-      <div className="results-page">
+      <div className="results-page" ref={pageRef}>
         <header className="genre-top results-top">
           <Breadcrumb items={[{ label: "Search" }]} />
         </header>
