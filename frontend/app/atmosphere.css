@@ -795,7 +795,3 @@
 .genre-panel__kicker { margin: 0; font-size: .75em; letter-spacing: .25em; text-transform: uppercase; color: var(--gold); }
 .genre-panel__title { margin: .2em 0 .3em; font-size: 1.35em; font-weight: 600; }
 .genre-panel__subtitle { margin: 0; font-size: .9em; line-height: 1.4; color: #d6d6de; }
-/* chat picks of an earlier search (the settings changed since): shown dimmed, no longer open */
-.chat-picks--stale .chat-pick { opacity: .45; }
-.chat-picks--stale .chat-pick-media button { cursor: default; }
-.chat-picks__stale { margin: 0 0 .4em; font-size: .85em; color: var(--muted); font-style: italic; }
