@@ -5,13 +5,23 @@ import type { Movie, RankedMovie } from "@/lib/types";
 
 /** The agent's picks (3-5) under its reply: click opens the stage (no hover trailer here:
  *  trailers play only in the search results and on the film stage). */
-export default function ChatResults({ results, onOpen }: { results: RankedMovie[]; onOpen: (m: Movie) => void }) {
+export default function ChatResults({
+  results,
+  onOpen,
+  stale = false,
+}: {
+  results: RankedMovie[];
+  onOpen: (m: Movie) => void;
+  /** the settings changed since this reply: its picks belong to the earlier search and no longer open */
+  stale?: boolean;
+}) {
   return (
-    <div className="chat-picks">
+    <div className={`chat-picks${stale ? " chat-picks--stale" : ""}`}>
+      {stale && <p className="chat-picks__stale">Your settings changed since: these picks were for the earlier search.</p>}
       {results.map((r) => (
         <article key={r.movie.id} className="chat-pick" data-testid="chat-pick">
           <div className="chat-pick-media">
-            <button type="button" aria-label={`Open ${r.movie.title}`} onClick={() => onOpen(r.movie)}>
+            <button type="button" aria-label={`Open ${r.movie.title}`} disabled={stale} onClick={() => onOpen(r.movie)}>
               <ImageOrPlaceholder src={r.movie.horizontal_poster_url ?? r.movie.backdrop_url ?? r.movie.poster_url} alt="" />
             </button>
           </div>

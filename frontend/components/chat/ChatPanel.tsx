@@ -73,12 +73,12 @@ export default function ChatPanel({ mode, horrorIdx = null }: { mode: "static" |
   };
   const canReset = live && (entries.length > 0 || hasAnyCriteria(criteria));
 
-  // the chat's picks are hits of the search it set: while that search is still the one set, they open like films
-  // from the search page; after the settings were changed they open on their own (the search around them would be
-  // another one: Tom Cruise added, and The Usual Suspects from before stood among his films)
+  // the chat's picks are hits of the search it set: they open like films from the search page while that search is
+  // still the one set; once the settings changed (here or anywhere else) they belong to another search and no
+  // longer open (Tom Cruise added, and The Usual Suspects from before stood among his films)
   const lastReply = [...entries].reverse().find((e) => e.role === "bot");
   const current = lastReply?.role === "bot" && lastReply.criteria ? sameSearch(lastReply.criteria, criteria) : false;
-  const filmUrl = (world: string, id: string) => `/world/${world}?film=${id}${current ? "&from=search" : ""}`;
+  const filmUrl = (world: string, id: string) => `/world/${world}?film=${id}&from=search`;
   const openMovie = (m: Movie) => router.push(filmUrl(m.world_ids[0] ?? "suspense", m.id));
   const lastBot = entries.map((e) => e.role).lastIndexOf("bot");
   const noHorror = criteria.exclude_genres.includes("Horror");
@@ -128,7 +128,7 @@ export default function ChatPanel({ mode, horrorIdx = null }: { mode: "static" |
             ) : (
               <div key={i} className={`chat-msg chat-msg--bot${e.error ? " chat-msg--error" : ""}`}>
                 <Reply text={e.text} />
-                {i === lastBot && e.results && e.results.length > 0 && <ChatResults results={replyPicks(e)} onOpen={openMovie} />}
+                {i === lastBot && e.results && e.results.length > 0 && <ChatResults results={replyPicks(e)} onOpen={openMovie} stale={!current} />}
                 {i === lastBot && (e.proposals ?? []).length > 0 && (
                   <div className="chat-proposals">
                     Also exclude:{" "}
@@ -139,7 +139,7 @@ export default function ChatPanel({ mode, horrorIdx = null }: { mode: "static" |
                     ))}
                   </div>
                 )}
-                {i === lastBot && e.handoff && (
+                {i === lastBot && e.handoff && current && (
                   <button
                     type="button"
                     className="chat-handoff"

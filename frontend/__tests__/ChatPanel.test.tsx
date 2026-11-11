@@ -95,14 +95,15 @@ it("navigates to the stage on hand-off", async () => {
   expect(push).toHaveBeenCalledWith("/world/scifi?film=ml-1&from=search"); // a hit of the chat's search
 });
 
-it("after the settings were changed, a pick of the earlier reply opens on its own, not inside the new search", async () => {
+it("after the settings were changed, the picks of the earlier reply no longer open and say why", async () => {
   streamChat.mockResolvedValue(final({ handoff: { world_id: "scifi", film_id: "ml-1" } }));
   render(<ChatPanel mode="live" />);
   await send("show me Moon");
-  const show = await screen.findByRole("button", { name: "Show on stage →" });
+  await screen.findByRole("button", { name: "Show on stage →" });
   await act(async () => setSearchState({ ...emptyCriteria(), person: "Tom Cruise" })); // another search now
-  await userEvent.click(show);
-  expect(push).toHaveBeenCalledWith("/world/scifi?film=ml-1");
+  expect(screen.getByText(/these picks were for the earlier search/)).toBeInTheDocument();
+  for (const b of screen.getAllByRole("button", { name: /^Open / })) expect(b).toBeDisabled();
+  expect(screen.queryByRole("button", { name: "Show on stage →" })).toBeNull();
 });
 
 it("shows the error text and keeps the chips usable", async () => {
