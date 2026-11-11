@@ -741,6 +741,9 @@
 .row-arrow--right { left: 100%; margin-left: .2em; }
 .row-arrow:hover, .row-arrow:focus-visible { transform: translateY(50%) scale(1.25); }
 .row-arrow:disabled { cursor: default; transform: translateY(50%); } /* only while a run to the next page is under way */
+/* a row with a start and an end: no arrow towards an end it has reached (the row marks both ends every frame) */
+.related.has-ends:has(> .related-viewport.is-start) > .row-arrow--left,
+.related.has-ends:has(> .related-viewport.is-end) > .row-arrow--right { visibility: hidden; }
 .row-arrow:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; border-radius: 8px; }
 @media (max-width: 759px) { .row-arrow--left { right: auto; left: 0; } .row-arrow--right { left: auto; right: 0; } .row-arrow { background: #000b; border-radius: 50%; } }
 /* room between the cards for the hover zoom; a playing trailer opens its card to 16:9 and pushes the others aside
