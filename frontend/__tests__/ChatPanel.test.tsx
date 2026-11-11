@@ -92,7 +92,7 @@ it("navigates to the stage on hand-off", async () => {
   render(<ChatPanel mode="live" />);
   await send("show me Moon");
   await userEvent.click(await screen.findByRole("button", { name: "Show on stage →" }));
-  expect(push).toHaveBeenCalledWith("/world/scifi?film=ml-1");
+  expect(push).toHaveBeenCalledWith("/world/scifi?film=ml-1&from=search"); // a hit of the chat's search
 });
 
 it("shows the error text and keeps the chips usable", async () => {

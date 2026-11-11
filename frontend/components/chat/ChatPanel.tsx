@@ -72,7 +72,8 @@ export default function ChatPanel({ mode, horrorIdx = null }: { mode: "static" |
   };
   const canReset = live && (entries.length > 0 || hasAnyCriteria(criteria));
 
-  const openMovie = (m: Movie) => router.push(`/world/${m.world_ids[0] ?? "suspense"}?film=${m.id}`);
+  // the chat's picks are hits of the search it set: they open like films from the search page
+  const openMovie = (m: Movie) => router.push(`/world/${m.world_ids[0] ?? "suspense"}?film=${m.id}&from=search`);
   const lastBot = entries.map((e) => e.role).lastIndexOf("bot");
   const noHorror = criteria.exclude_genres.includes("Horror");
   const quick = [
@@ -136,7 +137,7 @@ export default function ChatPanel({ mode, horrorIdx = null }: { mode: "static" |
                   <button
                     type="button"
                     className="chat-handoff"
-                    onClick={() => router.push(`/world/${e.handoff!.world_id}?film=${e.handoff!.film_id}`)}
+                    onClick={() => router.push(`/world/${e.handoff!.world_id}?film=${e.handoff!.film_id}&from=search`)}
                   >
                     Show on stage →
                   </button>
