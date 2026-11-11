@@ -272,7 +272,7 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
       />
       <FogLight tint={world?.tint ?? "#1b4a6b"} reduced={reduced} />
       <header className="genre-top">
-        <Breadcrumb items={crumbs(movie, fromSearch)} />
+        <Breadcrumb items={crumbs(movie, fromSearch, world)} />
       </header>
       {state.kind === "error" && <p className="genre-error">Couldn&apos;t load films</p>}
       {state.kind === "loading" && <p className="genre-loading">Loading …</p>}
@@ -362,9 +362,13 @@ export function rowLabel(
   );
 }
 
-/** From the search: CineSense › Search › film. From the homepage it is another area: just CineSense › film. */
-function crumbs(movie: Movie | null, fromSearch: boolean): Crumb[] {
-  const out: Crumb[] = fromSearch ? [{ label: "Search", href: "/results" }] : [];
+/** From the search: CineSense › Search › film. From the homepage it is another area: CineSense › genre › film. */
+function crumbs(movie: Movie | null, fromSearch: boolean, world: MoodWorld | null): Crumb[] {
+  const out: Crumb[] = fromSearch
+    ? [{ label: "Search", href: "/results" }]
+    : world
+      ? [{ label: world.title, href: `/world/${world.id}` }]
+      : [];
   if (movie) out.push({ label: movie.title });
   return out;
 }

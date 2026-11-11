@@ -51,8 +51,8 @@ it("puts the requested film on stage", async () => {
   render(<GenreView worldId="action" filmId="demo-03" />);
   expect(await screen.findByRole("heading", { name: "Demo-Film 03" })).toBeInTheDocument();
   const crumbs = screen.getByRole("navigation", { name: "Breadcrumb" });
-  // opened from the homepage it is another area: just CineSense › film, no Search
-  expect(within(crumbs).getAllByRole("link").map((l) => l.textContent)).toEqual(["CineSense"]);
+  // opened from the homepage it is another area: CineSense › genre › film, no Search
+  expect(within(crumbs).getAllByRole("link").map((l) => l.textContent)).toEqual(["CineSense", "Action & Adrenaline"]);
   expect(within(crumbs).getByText("Demo-Film 03")).toHaveAttribute("aria-current", "page");
 });
 

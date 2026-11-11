@@ -21,7 +21,7 @@ import { useActiveTrailer } from "@/lib/useActiveTrailer";
 import { useIsNarrow, useReducedMotion } from "@/lib/useReducedMotion";
 
 const TITLES_PER_MOOD = 14; // the drifting titles: the films of both rows, in turn
-const LAP_FILMS = 4; // the mood changes once this many films of each row have passed
+const LAP_FILMS = 2; // the mood changes once this many films of each row have passed
 
 /** The mood on screen (the hero world) in two rows running against each other: its newest top-rated films above,
  *  its top classics below, each with a heading. One row on a narrow screen. The rows keep their ids when the mood
