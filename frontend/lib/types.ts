@@ -62,7 +62,7 @@ export type RankedMovie = {
 export type HomeTile = Pick<
   Movie,
   "id" | "title" | "year" | "world_ids" | "youtube_key" | "horizontal_poster_url" | "backdrop_url"
->;
+> & { poster_url?: string | null }; // only when there is no wide picture
 
 export type HomeData = {
   worlds: MoodWorld[];

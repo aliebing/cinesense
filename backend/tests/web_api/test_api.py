@@ -116,7 +116,10 @@ def test_home_rows_are_the_newest_top_rated_then_the_top_classics_of_each_world(
 def test_home_tiles_carry_only_what_a_tile_needs():
     film = next(iter(client().get("/api/home").json()["rows"].values()))[0]
     assert {"id", "title", "world_ids", "horizontal_poster_url", "backdrop_url"} <= set(film)
-    assert "overview" not in film and "cast_top" not in film and "poster_url" not in film
+    assert "overview" not in film and "cast_top" not in film
+    for films in client().get("/api/home").json()["rows"].values():
+        for f in films:  # the upright poster only for a tile without a wide picture
+            assert not f.get("poster_url") or not (f.get("horizontal_poster_url") or f.get("backdrop_url"))
 
 
 def test_home_sends_a_backdrop_only_for_the_hero_or_a_tile_without_wide_poster():

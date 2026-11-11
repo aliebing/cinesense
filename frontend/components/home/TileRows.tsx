@@ -72,6 +72,16 @@ export function visibleWorlds(active: number, worlds: MoodWorld[], count = 4): M
 function TileImage({ movie }: { movie: HomeTile }) {
   const [failed, setFailed] = useState(false);
   const src = movie.horizontal_poster_url ?? movie.backdrop_url;
+  if (!src && movie.poster_url && !failed) {
+    // no wide picture yet (new films: the streaming API's budget): the upright poster whole in the middle, the same
+    // picture blurred behind it, so the tile has no black bars
+    return (
+      <span className="tile-poster" style={{ backgroundImage: `url(${movie.poster_url})` }}>
+        {/* eslint-disable-next-line @next/next/no-img-element -- external poster, sized by CSS */}
+        <img src={movie.poster_url} alt="" loading="lazy" decoding="async" draggable={false} onError={() => setFailed(true)} />
+      </span>
+    );
+  }
   if (!src || failed) {
     return (
       <span className="title-card" data-testid="title-card">

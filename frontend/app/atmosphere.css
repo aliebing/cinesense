@@ -795,3 +795,7 @@
 .genre-panel__kicker { margin: 0; font-size: .75em; letter-spacing: .25em; text-transform: uppercase; color: var(--gold); }
 .genre-panel__title { margin: .2em 0 .3em; font-size: 1.35em; font-weight: 600; }
 .genre-panel__subtitle { margin: 0; font-size: .9em; line-height: 1.4; color: #d6d6de; }
+/* a homepage tile with only an upright poster: the poster whole in the middle, blurred behind it */
+.tile-poster { position: absolute; inset: 0; display: flex; justify-content: center; background-size: cover; background-position: center; }
+.tile-poster::before { content: ""; position: absolute; inset: 0; background: inherit; filter: blur(12px) brightness(.55); transform: scale(1.15); }
+.tile-poster img { position: relative; height: 100%; width: auto; object-fit: contain; }

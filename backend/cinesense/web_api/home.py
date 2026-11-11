@@ -20,7 +20,7 @@ ROW_SIZE = 10  # films per row; a world shows two rows (newest top-rated, top cl
 NEWEST_YEARS = 8  # "newest": from the last eight years of the catalogue; "classics": every film older than that
 POOL = 40  # the best-known films each row is chosen from (Bayesian rating over them)
 HOME_TTL = 300  # seconds
-TILE_FIELDS = {"id", "title", "year", "world_ids", "youtube_key", "horizontal_poster_url", "backdrop_url"}
+TILE_FIELDS = {"id", "title", "year", "world_ids", "youtube_key", "horizontal_poster_url", "backdrop_url", "poster_url"}
 
 
 def row_trailers(movies: list[Movie], checker, trailers) -> list[Movie]:
@@ -98,6 +98,8 @@ def _tiles(films: list[Movie]) -> list[dict]:
     out, hero = [], False
     for m in films:
         tile = m.model_dump(include=TILE_FIELDS)
+        if tile.get("horizontal_poster_url") or tile.get("backdrop_url"):
+            tile["poster_url"] = None  # only a tile without a wide picture shows its poster
         if m.backdrop_url and not hero:
             hero = True
         elif m.horizontal_poster_url:
