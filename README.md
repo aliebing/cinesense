@@ -34,7 +34,9 @@ CineSense answers each of these:
 
 **It learns your taste.** 👍 / 👎 build an anonymous taste profile (e.g. *space · astronauts · cloning*). Films that fit are lifted in every ranking, and rejected ones are hidden. The 👤 panel shows what was learned and resets it with one click.
 
-**Honest when too little fits.** When fewer than three films match every wish, the search page keeps the search as it is and shows, in the row below, the films of the widening that changes the wish least; each says which part of the wish it misses (≠). With only weak matches it shows the three best in front and the weaker ones below. "How these results came about" explains the page on demand.
+**Every good match, not a page of them.** The search page shows the best matches in front (up to 6 from 70%, at least 3) and below them a grid with every further film from 60%, loaded as you scroll. When more than 500 films reach 60%, the grid starts at 70% (or higher) so it stays under 500; when fewer than 28 do, it starts at 50%. The count above is taken over the whole search.
+
+**Honest when too little fits.** When fewer than three films match every wish, the search page keeps the search as it is and shows, in the grid below, the films of the widening that changes the wish least; each says which part of the wish it misses (≠). With only weak matches it shows the three best in front and the weaker ones below. "How these results came about" explains the page on demand.
 
 **An admin area** (`/admin`, login on the server) shows every chat turn with message, tools, tokens, cost and time, what the agent understood, and the films it showed. It also starts evaluation runs from the browser.
 

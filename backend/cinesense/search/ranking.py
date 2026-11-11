@@ -39,6 +39,10 @@ class CombinedResult:
     corrected_title: str | None = None
     hidden_by: dict[str, int] = field(default_factory=dict)  # "genre:Horror" / "tag:284" -> films it hid here
     total_capped: bool = False  # the mood search kept only its best films: total is a lower bound ("500+")
+    match_counts: dict[int, int] = field(default_factory=dict)  # floor % -> films from it, over every ranked film
+
+
+MATCH_FLOORS = (50, 60, 70, 80, 90)  # the search page shows every film from one of these (its grid's floor)
 
 
 def _normalised(values: dict[str, float]) -> dict[str, float]:
@@ -144,7 +148,11 @@ def combined_rank(
         )
     ranked.sort(key=lambda r: (r.score, r.movie.ml_rating_count), reverse=True)
     return CombinedResult(
-        items=ranked[offset : offset + limit], total=len(ranked), hidden_by_exclusion=hidden, hidden_by=hidden_by
+        items=ranked[offset : offset + limit],
+        total=len(ranked),
+        hidden_by_exclusion=hidden,
+        hidden_by=hidden_by,
+        match_counts={f: sum(r.match_percent >= f for r in ranked) for f in MATCH_FLOORS},
     )
 
 

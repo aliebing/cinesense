@@ -22,6 +22,18 @@ def test_combined_rank_excludes_genres_and_counts_hidden(make_movie):
     assert res.total == 1
 
 
+def test_combined_rank_counts_matches_per_floor_over_every_film_not_just_the_page(make_movie):
+    """The search page picks the floor of its grid from these counts (60%, higher above 500 films, 50% if few)."""
+    movies = [make_movie(id=f"m{i}", ml_rating=4.0, ml_rating_count=1000) for i in range(6)]
+    tags = {"m0": 0.95, "m1": 0.85, "m2": 0.75, "m3": 0.65, "m4": 0.55, "m5": 0.1}
+    crit = SearchCriteria(tags=[TagCriterion(idx=0, weight=8)])
+    res = combined_rank(movies, crit, Signals(tags=tags), limit=2)
+    assert len(res.items) == 2
+    percents = [r.match_percent for r in combined_rank(movies, crit, Signals(tags=tags), limit=10).items]
+    assert res.match_counts == {f: sum(p >= f for p in percents) for f in (50, 60, 70, 80, 90)}
+    assert res.match_counts[50] > res.match_counts[90]
+
+
 def test_reasons_list_matching_signals(make_movie):
     m = make_movie(id="a", cast_top=["Sandra Hüller"])
     crit = SearchCriteria(tags=[TagCriterion(idx=0, weight=8)], person="Sandra Hueller", plot_query="lonely")

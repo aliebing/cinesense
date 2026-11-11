@@ -106,7 +106,7 @@ it("too few films for every wish: the row below shows the least intrusive wideni
   expect(await screen.findByText(/Only 2 films match every wish · 5 more with: Search the mood in plots/)).toBeInTheDocument();
   expect(search.mock.calls[1][0]).toEqual(plot);
   expect(search.mock.calls[1][3]).toEqual(original); // marks what each widened film misses
-  expect(container.querySelectorAll(".best .related-card")).toHaveLength(2);
+  expect(container.querySelectorAll("[aria-label='Best matches'] .related-card")).toHaveLength(2);
   expect(screen.queryByRole("button", { name: /Search the mood in plots/ })).toBeNull(); // information, not a button
   expect(onRelax).not.toHaveBeenCalled(); // the user's search is left alone
 });
@@ -157,28 +157,26 @@ it("shows at least the 3 best matches, and says how many were found", async () =
   const { container } = render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} />);
   expect(await screen.findByText(/The 3 best matches/)).toBeInTheDocument(); // none reaches 50%: the 3 best
   expect(screen.getByText("No film matches well · the 3 closest of 39 films searched")).toHaveClass("related-count");
-  expect(container.querySelectorAll(".best .related-card")).toHaveLength(3);
+  expect(container.querySelectorAll("[aria-label='Best matches'] .related-card")).toHaveLength(3);
   expect(screen.getByText("9 weaker matches (below 50%)")).toBeInTheDocument(); // the rest, said honestly
   expect(search.mock.calls[0][2]).toBe(50); // at most 50
 });
 
-it("shows up to 6 films from 70% in front, with why, and the films from 50% in the running row below", async () => {
+it("shows up to 6 films from 70% in front, with why, and the films from 50% in the grid below", async () => {
   const percents = [95, 88, 81, 77, 72, 69, 66, 61, 58, 50];
   const items = sampleRanked(10).map((r, i) => ({ ...r, match_percent: percents[i], reasons: i === 0 ? ["dark 95%"] : [] }));
   search.mockResolvedValue({ ok: true, data: { items, total: 39, hidden_by_exclusion: 0, extended_used: false } });
   const { container } = render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} />);
   expect(await screen.findByText(/The 5 best matches/)).toBeInTheDocument();
-  expect(container.querySelectorAll(".best .related-card")).toHaveLength(5);
+  expect(container.querySelectorAll("[aria-label='Best matches'] .related-card")).toHaveLength(5);
   expect(screen.getByText("Strong on your moods: dark (95%)")).toHaveClass("best-why");
   expect(screen.getByText("5 more matches from 50%")).toBeInTheDocument(); // few strong films: the row starts at 50%
-  expect(screen.getByText(/6–10 of 10/)).toBeInTheDocument(); // their ranks, and every film above the bar
-  expect(screen.queryByRole("button", { name: "Previous 30" })).toBeNull(); // nothing more here: no arrows at all
-  expect(screen.queryByRole("button", { name: "Next 30" })).toBeNull();
+  expect(screen.queryByRole("button", { name: /Show \d+ more/ })).toBeNull(); // nothing more to load
   const more = container.querySelectorAll(".results-more-row .related-card");
   expect(new Set([...more].map((c) => c.getAttribute("aria-label"))).size).toBe(5);
 });
 
-it("never more than 6 in front, the other strong films run in the row below", async () => {
+it("never more than 6 in front, the other strong films are in the grid below", async () => {
   const items = sampleRanked(12).map((r) => ({ ...r, match_percent: 85 }));
   search.mockResolvedValue({ ok: true, data: { items, total: 12, hidden_by_exclusion: 0, extended_used: false } });
   const { container } = render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} />);
@@ -204,30 +202,39 @@ it("a search with only a few hits just counts them", async () => {
   expect(screen.getByText(/All matches/)).toBeInTheDocument();
 });
 
-it("the « » arrows page the running row by 30, load the next 50 from the API when needed, and back", async () => {
+it("the grid shows every film from the floor, and loads the next page without image lookups", async () => {
   const page = (from: number, n: number, percent: (i: number) => number) =>
     sampleRanked(n).map((r, i) => ({ ...r, movie: { ...r.movie, id: `f-${from + i}`, title: `Film ${from + i}` }, match_percent: percent(from + i) }));
-  search.mockResolvedValueOnce({ ok: true, data: { items: page(0, 50, () => 80), total: 500, hidden_by_exclusion: 0, extended_used: false } });
+  const counts = { "50": 120, "60": 70, "70": 20, "80": 5, "90": 0 };
+  search.mockResolvedValueOnce({ ok: true, data: { items: page(0, 50, (i) => (i < 20 ? 75 : 65)), total: 500, match_counts: counts, hidden_by_exclusion: 0, extended_used: false } });
   let resolve: (v: unknown) => void = () => {};
   search.mockImplementationOnce(() => new Promise((r) => (resolve = r)));
-  render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} />);
+  const { container } = render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} />);
   expect(await screen.findByText(/The 6 best matches/)).toBeInTheDocument();
-  expect(screen.getByText("30 more matches from 70%")).toBeInTheDocument(); // many strong films: from 70%
-  expect(screen.getByText(/7–36 of 50\+/)).toBeInTheDocument(); // more may follow from the API
-  expect(screen.queryByRole("button", { name: /Next 20|Previous 20/ })).toBeNull(); // no separate page buttons
-  expect(screen.queryByRole("button", { name: "Previous 30" })).toBeNull();
-  await userEvent.click(screen.getByRole("button", { name: "Next 30" })); // only 12 loaded behind: load first
-  expect(screen.getByRole("progressbar", { name: "Loading results" })).toBeInTheDocument();
-  resolve({ ok: true, data: { items: page(50, 50, (i) => (i < 70 ? 72 : 65)), total: 500, hidden_by_exclusion: 0, extended_used: false } });
-  expect(await screen.findByText(/37–66 of 70/)).toBeInTheDocument(); // 70 films from the 70% floor up in all
+  expect(screen.getByText("70 good matches from 60% · 500 films searched")).toBeInTheDocument(); // counted over the whole search
+  expect(screen.getByText("64 more matches from 60%")).toBeInTheDocument();
+  const grid = () => container.querySelectorAll("[aria-label='More matches'] .related-card");
+  expect(grid()).toHaveLength(44); // the first page, all in the grid
+  await userEvent.click(screen.getByRole("button", { name: "Show 20 more" }));
   expect(search.mock.calls[1][1]).toBe(50); // offset
-  await userEvent.click(screen.getByRole("button", { name: "Next 30" }));
-  expect(await screen.findByText(/67–70 of 70/)).toBeInTheDocument();
-  expect(screen.queryByRole("button", { name: "Next 30" })).toBeNull(); // below the bar: nothing further
+  expect(search.mock.calls[1][4]).toBe(false); // no Streaming API image lookups for further pages
+  resolve({ ok: true, data: { items: page(50, 50, (i) => (i < 70 ? 65 : 55)), total: 500, match_counts: counts, hidden_by_exclusion: 0, extended_used: false } });
+  await waitFor(() => expect(grid()).toHaveLength(64));
+  expect(screen.queryByRole("button", { name: /Show \d+ more/ })).toBeNull(); // every film from 60% is shown
   expect(search).toHaveBeenCalledTimes(2);
-  await userEvent.click(screen.getByRole("button", { name: "Previous 30" }));
-  expect(await screen.findByText(/37–66 of 70/)).toBeInTheDocument();
-  expect(screen.getByText(/The 6 best matches/)).toBeInTheDocument(); // the best stay in front throughout
+  expect(screen.getByText(/The 6 best matches/)).toBeInTheDocument(); // the best stay in front
+});
+
+it("picks the floor from the counts over the whole search", async () => {
+  const { chooseFloor } = await import("@/components/results/ResultList");
+  const c = (c50: number, c60: number, c70: number, c80: number, c90: number) => ({ "50": c50, "60": c60, "70": c70, "80": c80, "90": c90 });
+  expect(chooseFloor(c(400, 200, 40, 5, 0), false, [])).toBe(60); // up to 500 from 60%: all of them
+  expect(chooseFloor(c(2000, 900, 304, 77, 0), false, [])).toBe(70); // more than 500: the lowest floor that fits
+  expect(chooseFloor(c(2000, 1200, 700, 90, 0), false, [])).toBe(80);
+  expect(chooseFloor(c(900, 800, 700, 600, 550), false, [])).toBe(90); // never above 90%
+  expect(chooseFloor(c(500, 500, 500, 197, 0), true, [])).toBe(80); // a capped mood search: 500 means more
+  expect(chooseFloor(c(40, 2, 1, 0, 0), false, [])).toBe(50); // only a few from 60%: from 50%
+  expect(chooseFloor(undefined, false, Array(40).fill(75))).toBe(70); // an older server: judged on the first page
 });
 
 it("offers no more button when the row already stops at the bar", async () => {
@@ -293,19 +300,19 @@ it("few strong films: the 3 best in front, then weaker ones below, and the expla
   const criteria = { ...emptyCriteria(), person: "Tom Cruise", tags: [{ idx: 1, weight: 8, mode: "prefer" as const }] };
   const { container } = render(<ResultList criteria={criteria} onOpen={() => {}} tagNames={{ 1: "space travel" }} />);
   expect(await screen.findByText(/The 3 best matches/)).toBeInTheDocument();
-  expect(container.querySelectorAll(".best .related-card")).toHaveLength(3);
+  expect(container.querySelectorAll("[aria-label='Best matches'] .related-card")).toHaveLength(3);
   expect(screen.getByText("8 weaker matches (below 50%)")).toBeInTheDocument(); // down to 20%, the 15% one stays out
   expect(screen.queryByRole("complementary")).toBeNull(); // folded until asked
   await userEvent.click(screen.getByRole("button", { name: /How these results came about/ }));
   const note = screen.getByRole("complementary", { name: "How these results came about" });
   expect(note).toHaveTextContent("Searched for your moods space travel (★★★★), with Tom Cruise.");
-  expect(note).toHaveTextContent("the row below goes on with weaker ones");
+  expect(note).toHaveTextContent("the films below go on with weaker ones");
 });
 
-it("a thin search shows one page of weaker films, at most 29, so no « » are needed", async () => {
+it("a thin search shows one page of weaker films, at most 29, and loads no more", async () => {
   const items = sampleRanked(50).map((r, i) => ({ ...r, movie: { ...r.movie, id: `t-${i}` }, match_percent: i === 0 ? 60 : 45 - Math.floor(i / 3) }));
   search.mockResolvedValue({ ok: true, data: { items, total: 200, hidden_by_exclusion: 0, extended_used: false } });
   render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} />);
   expect(await screen.findByText("29 weaker matches (below 50%)")).toBeInTheDocument();
-  expect(screen.queryByRole("button", { name: "Next 30" })).toBeNull();
+  expect(screen.queryByRole("button", { name: /Show \d+ more/ })).toBeNull();
 });

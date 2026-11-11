@@ -1,25 +1,29 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import RelatedRow, { foundText, LoadingBar, type Sweep } from "@/components/genre/RelatedRow";
+import { useEffect, useRef, useState } from "react";
+import { foundText, LoadingBar } from "@/components/genre/RelatedRow";
 import BestMatches from "@/components/results/BestMatches";
 import { search, type DiscoverResult, type Relaxation } from "@/lib/api";
 import type { Criteria } from "@/lib/searchState";
 import type { Movie, RankedMovie } from "@/lib/types";
 
-// two rows: in front up to BEST_MAX films from BEST_PERCENT (at least the MIN_SHOWN best, so a weak search still shows
-// something), large and with why they fit; below them the further films from MORE_PERCENT, MORE_MAX at a time in a
-// running row (loaded from the API in pages of LIMIT). Fixed bars, not a gap to the best match: another tag lowers
-// every score, and a gap would then let in more films
+// in front up to BEST_MAX films from BEST_PERCENT (at least the MIN_SHOWN best, so a weak search still shows
+// something), large and with why they fit; below them a grid with every further film from the floor (chooseFloor),
+// loaded from the API in pages of LIMIT as the grid is scrolled. Fixed bars, not a gap to the best match: another
+// tag lowers every score, and a gap would then let in more films
 const LIMIT = 50;
 const MIN_SHOWN = 3;
 const BEST_MAX = 6;
 const BEST_PERCENT = 70;
-const MORE_FLOORS = [70, 60, 50]; // the row below starts at the highest of these that still holds about MORE_MAX films
-const MORE_PERCENT = 50; // the lowest floor for "good" matches
+const FLOOR = 60; // the grid shows every film from 60% ...
+const HIGH_FLOORS = [70, 80, 90]; // ... unless more than SHOW_MAX reach it: then from the lowest of these that fit
+const LOW_FLOOR = 50; // ... and from 50% when fewer than FEW films reach 60%
+const SHOW_MAX = 500;
+const FEW = 28;
+const MORE_FLOORS = [70, 60, 50]; // without counts from the API (older server): judged on the first page
 const MORE_MAX = 30;
-const WEAK_FLOOR = 20; // fewer than MORE_MAX strong films: the row below goes on with weaker ones down to this
-const WEAK_MAX = 29; // ... but only one page of them, so a thin search needs no « » // films in the running row at a time; its « » arrows run quickly to the previous / next ones
+const WEAK_FLOOR = 20; // fewer than FEW good films: the grid goes on with weaker ones down to this
+const WEAK_MAX = 29; // ... but only one page of them
 
 type Props = {
   criteria: Criteria;
@@ -53,11 +57,11 @@ export function explainLines(
   const out = [
     `Searched for ${wish}.`,
     "Match %: fit to this search, moods first (MovieLens Tag Genome), then plot, people, 👍/👎, rating and fame. Not a review score.",
-    `Top: the 6 best from 70% (at least 3). Below: more from ${floor}% (70% with many strong films, else 60 or 50%).`,
+    `Top: the 6 best from 70% (at least 3). Below: every further film from ${floor}% (from 60%; higher when more than 500 films reach 60%, from 50% when fewer than 28 do).`,
   ];
-  if (weak) out.push(`Few films fit well, so the row below goes on with weaker ones of this search (below ${floor}%, down to ${WEAK_FLOOR}%).`);
+  if (weak) out.push(`Few films fit well, so the films below go on with weaker ones of this search (below ${floor}%, down to ${WEAK_FLOOR}%).`);
   if (widenedBy)
-    out.push(`Too few films match every wish, so the row below shows the search with “${widenedBy}”, the change that alters your wish least; your search itself stays as it is.`);
+    out.push(`Too few films match every wish, so the films below come from the search with “${widenedBy}”, the change that alters your wish least; your search itself stays as it is.`);
   return out;
 }
 
@@ -69,22 +73,32 @@ export function pickWidening(options: Relaxation[]): Relaxation | null {
   return options.find((o) => o.count >= MIN_SHOWN) ?? [...options].sort((a, b) => b.count - a.count)[0] ?? null;
 }
 
-/** The films the search page shows for a first page of results, in order: the best in front, then the row below
- *  (from its floor, or with few strong films the weaker ones down to WEAK_FLOOR, at most WEAK_MAX). The detail page
- *  opened from the search shows exactly these. */
-export function selectRow(items: RankedMovie[]): RankedMovie[] {
+/** The films a first page of results shows, in order: the best in front, then the films below (from the floor, or
+ *  with few strong films the weaker ones down to WEAK_FLOOR, at most WEAK_MAX). The genre page's search uses it. */
+export function selectRow(items: RankedMovie[], counts?: Record<string, number>, capped = false): RankedMovie[] {
   const best = items.slice(0, BEST_MAX).filter((r, i) => i < MIN_SHOWN || r.match_percent >= BEST_PERCENT);
-  const floor = moreFloor(items.map((r) => r.match_percent));
+  const floor = chooseFloor(counts, capped, items.map((r) => r.match_percent));
   const strong = items.slice(best.length).filter((r) => r.match_percent >= floor);
   const filled = strong.length < MORE_MAX ? items.slice(best.length).filter((r) => r.match_percent >= WEAK_FLOOR) : strong;
   const weak = filled.length > strong.length;
   return [...best, ...(weak ? filled.slice(0, Math.max(strong.length, WEAK_MAX)) : filled)];
 }
 
-/** The floor of the row below: with many strong films from 70%, with a middling number from 60%, else from 50%,
- *  counted on the first page (the API ranks by match, so it holds the strongest). */
+/** The floor of the row below without counts from the API: with many strong films from 70%, with a middling number
+ *  from 60%, else from 50%, counted on the first page (the API ranks by match, so it holds the strongest). */
 export function moreFloor(percents: number[]): number {
-  return MORE_FLOORS.find((f) => percents.filter((p) => p >= f).length >= MORE_MAX) ?? MORE_PERCENT;
+  return MORE_FLOORS.find((f) => percents.filter((p) => p >= f).length >= MORE_MAX) ?? LOW_FLOOR;
+}
+
+/** The floor of the grid, from the API's counts over the whole search: every film from 60%; when more than 500 reach
+ *  60%, the lowest of 70/80/90% that keeps it to 500; when fewer than 28 reach 60%, from 50%. A capped mood search
+ *  (it kept only its best 500) counts 500 as more. */
+export function chooseFloor(counts: Record<string, number> | undefined, capped: boolean, percents: number[]): number {
+  const at = (f: number) => counts?.[String(f)];
+  if (at(FLOOR) === undefined) return moreFloor(percents);
+  const over = (f: number) => (at(f) ?? 0) > SHOW_MAX || (capped && (at(f) ?? 0) >= SHOW_MAX);
+  if (over(FLOOR)) return HIGH_FLOORS.find((f) => !over(f)) ?? HIGH_FLOORS[HIGH_FLOORS.length - 1];
+  return (at(FLOOR) ?? 0) < FEW ? LOW_FLOOR : FLOOR;
 }
 
 const fmt = new Intl.NumberFormat("en-US");
@@ -98,25 +112,41 @@ export function countText(good: number, more: boolean, floor: number, total: num
   return `${fmt.format(good)}${more ? "+" : ""} good ${good === 1 ? "match" : "matches"} from ${floor}% · ${all}`;
 }
 
+/** Loads the next page when the end of the grid scrolls into view (where the browser can tell; the button below
+ *  always works). */
+function AutoLoad({ onVisible }: { onVisible: () => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const cb = useRef(onVisible);
+  useEffect(() => {
+    cb.current = onVisible;
+  });
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver((entries) => entries.some((e) => e.isIntersecting) && cb.current(), { rootMargin: "400px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  return <div ref={ref} className="results-grid__sentinel" aria-hidden />;
+}
+
 export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened, tagNames = {} }: Props) {
   const [explain, setExplain] = useState(false);
   const [items, setItems] = useState<RankedMovie[]>([]);
   const [total, setTotal] = useState<number | null>(null);
   const [capped, setCapped] = useState(false);
+  const [counts, setCounts] = useState<Record<string, number> | undefined>(undefined);
   const [extended, setExtended] = useState(false);
   // the options belong to the search they were computed for; while the next one loads they are stale
   const [relaxFor, setRelaxFor] = useState<{ key: string; options: Relaxation[] }>({ key: "", options: [] });
-  // too few films match every wish: the films of the widening that changes the wish least, shown in the row below
-  // as information (the search itself stays as the user set it, so there is nothing to undo)
+  // too few films match every wish: the films of the widening that changes the wish least, shown below as
+  // information (the search itself stays as the user set it, so there is nothing to undo)
   const [alt, setAlt] = useState<{ key: string; label: string; items: RankedMovie[] } | null>(null);
   const [error, setError] = useState(false);
   const [shownKey, setShownKey] = useState<string | null>(null); // the search the shown results belong to
-  // further pages of 50 (» / «), kept with the search they belong to so a new search starts on page one again
+  // further pages of 50, kept with the search they belong to so a new search starts on page one again
   const [more, setMore] = useState<{ key: string; pages: RankedMovie[][] }>({ key: "", pages: [] });
-  const [page, setPage] = useState<{ key: string; n: number }>({ key: "", n: 0 });
   const [loadingMore, setLoadingMore] = useState(false);
-  // » / « run quickly through the row to the other page before it is swapped in (the page it goes to)
-  const [sweepTo, setSweepTo] = useState<{ key: string; n: number } | null>(null);
   const key = JSON.stringify(criteria);
   const fromKey = widened ? JSON.stringify(widened.from) : "";
 
@@ -135,6 +165,7 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened,
       setItems(r.data.items);
       setTotal(r.data.total);
       setCapped(Boolean(r.data.total_capped));
+      setCounts(r.data.match_counts);
       setExtended(r.data.extended_used);
       setRelaxFor({ key, options: r.data.relaxations ?? [] });
       const option = pickWidening(r.data.relaxations ?? []);
@@ -194,49 +225,32 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened,
     );
   const all = [items, ...(more.key === key ? more.pages : [])].flat();
   const best = all.slice(0, BEST_MAX).filter((r, i) => i < MIN_SHOWN || r.match_percent >= BEST_PERCENT);
-  const floor = moreFloor(items.map((r) => r.match_percent));
-  // too few films for every wish: the row below shows the widened search's films instead, all of them
+  const floor = chooseFloor(counts, capped, items.map((r) => r.match_percent));
+  // every film from the floor the whole search holds (the API counts them), at most SHOW_MAX
+  const good = counts?.[String(floor)];
   const strong = all.slice(best.length).filter((r) => r.match_percent >= floor);
-  // fewer strong films than a page: the row below goes on with the weaker ones (down to WEAK_FLOOR), saying so
+  // few good films: the grid goes on with the weaker ones (down to WEAK_FLOOR), saying so
   // ("Tom Cruise + space travel" has one strong film and many more with Tom Cruise)
-  const filled = strong.length < MORE_MAX ? all.slice(best.length).filter((r) => r.match_percent >= WEAK_FLOOR) : strong;
+  const fewGood = good !== undefined ? good < FEW : strong.length < MORE_MAX;
+  const filled = fewGood ? all.slice(best.length).filter((r) => r.match_percent >= WEAK_FLOOR) : strong;
   const weak = !widenedRow && filled.length > strong.length;
-  const rest = widenedRow ? widenedRow.items : weak ? filled.slice(0, Math.max(strong.length, WEAK_MAX)) : filled;
-  const chunks = Math.max(1, Math.ceil(rest.length / MORE_MAX));
-  const n = page.key === key ? Math.min(page.n, chunks - 1) : 0;
-  const shownOf = (p: number) => rest.slice(p * MORE_MAX, (p + 1) * MORE_MAX);
-  const shown = shownOf(n);
-  // the API may hold more above the bar: the loaded films fill whole pages and the last still clears it
+  const rest = widenedRow ? widenedRow.items : weak ? filled.slice(0, Math.max(strong.length, WEAK_MAX)) : strong.slice(0, SHOW_MAX - best.length);
+  // the API may hold more above the floor: the loaded films fill whole pages and the last still clears it
   const last = all[all.length - 1];
-  const canLoad = !widenedRow && all.length < total && all.length % LIMIT === 0 && !weak && last.match_percent >= floor;
-  const canNext = !loading && ((n + 1) * MORE_MAX < rest.length || canLoad);
-  const next = async () => {
-    // the next page from what is loaded, unless they would be fewer and the API holds more: then load first
-    if ((n + 2) * MORE_MAX <= rest.length || (!canLoad && (n + 1) * MORE_MAX < rest.length)) return setSweepTo({ key, n: n + 1 });
+  const bestGood = best.filter((r) => r.match_percent >= floor).length;
+  const target = good !== undefined ? Math.min(good, SHOW_MAX) - bestGood : null; // films the grid will hold
+  const canLoad =
+    !widenedRow && !weak && all.length < total && all.length % LIMIT === 0 && last.match_percent >= floor &&
+    best.length + rest.length < SHOW_MAX && (target === null || rest.length < target);
+  const loadMore = async () => {
+    if (loadingMore || !canLoad) return;
     setLoadingMore(true);
-    const r = await search(criteria, all.length, LIMIT, widened?.from);
+    const r = await search(criteria, all.length, LIMIT, widened?.from, false); // no image or trailer lookups
     setLoadingMore(false);
     if (!r.ok || r.data.items.length === 0) return;
     setMore({ key, pages: [...(more.key === key ? more.pages : []), r.data.items] });
-    if (r.data.items.some((x) => x.match_percent >= (weak ? WEAK_FLOOR : floor))) setSweepTo({ key, n: n + 1 });
   };
-  // during a sweep the row holds both pages; it ends where the other page alone starts, then that page is swapped in
-  const to = sweepTo && sweepTo.key === key && sweepTo.n < chunks ? sweepTo.n : null;
-  const target = to === null ? [] : shownOf(to);
-  const rowItems = to === null ? shown : to > n ? [...shown, ...target] : [...target, ...shown];
-  const sweep: Sweep | null =
-    to === null
-      ? null
-      : {
-          from: to > n ? 0 : target.length,
-          to: to > n ? shown.length : 0,
-          onDone: () => {
-            setPage({ key, n: to });
-            setSweepTo(null);
-          },
-        };
-  const start = best.length + n * MORE_MAX; // films ranked before this row
-  const available = `${best.length + rest.length}${canLoad ? "+" : ""}`; // every film above the bar loaded so far
+  const left = target !== null ? target - rest.length : null;
   const streaming = criteria.availability === "stream";
   const bestLabel = (
     <>
@@ -250,33 +264,14 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened,
       {extended && <span className="results-extended"> · includes titles just added from Wikidata</span>}
     </>
   );
-  const moreLabel = widenedRow ? (
-    <>
-      {`${items.length ? `Only ${total} ${total === 1 ? "film matches" : "films match"}` : "No film matches"} every wish · ${rest.length} more with: ${widenedRow.label}`}
-      <span className="related-hint">
-        {" "}
-        · {n * MORE_MAX + 1}–{n * MORE_MAX + shown.length}
-      </span>
-    </>
-  ) : weak ? (
-    <>
-      {strong.length
-        ? `${shown.length} more matches · ${strong.length} from ${floor}%, then weaker ones`
-        : `${shown.length} weaker matches (below ${floor}%)`}
-      <span className="related-hint">
-        {" "}
-        · {start + 1}–{start + shown.length} of {available}
-      </span>
-    </>
-  ) : (
-    <>
-      {`${shown.length} more matches from ${floor}%`}
-      <span className="related-hint">
-        {" "}
-        · {start + 1}–{start + shown.length} of {available}
-      </span>
-    </>
-  );
+  const fmtN = (n: number) => fmt.format(n);
+  const moreLabel = widenedRow
+    ? `${items.length ? `Only ${total} ${total === 1 ? "film matches" : "films match"}` : "No film matches"} every wish · ${rest.length} more with: ${widenedRow.label}`
+    : weak
+      ? strong.length
+        ? `${rest.length} more matches · ${strong.length} from ${floor}%, then weaker ones`
+        : `${rest.length} weaker matches (below ${floor}%)`
+      : `${fmtN(target ?? rest.length)}${target === null && canLoad ? "+" : ""} more matches from ${floor}%`;
   return (
     <>
       {/* the notes about this search on the left, how its results came about on the right, side by side */}
@@ -301,33 +296,31 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened,
         <p className="related-count results-count">
           {items.length === 0
             ? "No film matches every wish"
-            : countText(best.filter((r) => r.match_percent >= floor).length + (widenedRow ? rest.length : strong.length), canLoad, floor, total, capped, best.length)}
+            : countText(
+                good !== undefined && !widenedRow ? Math.min(good, SHOW_MAX) : bestGood + (widenedRow ? rest.length : strong.length),
+                good === undefined && canLoad,
+                floor,
+                total,
+                capped,
+                best.length,
+              )}
         </p>
       </div>
-      {(loading || loadingMore) && <LoadingBar />}
+      {loading && <LoadingBar />}
       {best.length > 0 && <BestMatches items={best} onSelect={onOpen} label={bestLabel} streamCheck={streaming} busy={loading} />}
-      {rowItems.length > 0 && (
+      {rest.length > 0 && (
         <div className="results-more-row">
-          <RelatedRow
-            key={n} // a new page starts at its first film
-            items={rowItems}
-            onSelect={onOpen}
-            label={moreLabel}
-            streamCheck={streaming}
-            name="Results"
-            showReasons
-            busy={loading || loadingMore}
-            bar={false}
-            drift={false}
-            bounded // a row with a start and an end the mouse slides through
-            sweep={sweep}
-            arrows
-            paging={{
-              size: MORE_MAX,
-              prev: n > 0 && !loading ? () => setSweepTo({ key, n: n - 1 }) : null,
-              next: canNext && !loadingMore ? next : null,
-            }}
-          />
+          <BestMatches items={rest} onSelect={onOpen} label={moreLabel} streamCheck={streaming} busy={loading} name="More matches" className="results-grid" />
+          {canLoad && (
+            <>
+              <AutoLoad onVisible={loadMore} />
+              <button type="button" className="results-grid__more" disabled={loadingMore} onClick={loadMore}>
+                {loadingMore ? "Loading…" : `Show ${left !== null ? fmtN(Math.min(LIMIT, left)) : LIMIT} more`}
+                {left !== null && left > LIMIT ? <span className="related-hint"> · {fmtN(left)} left</span> : null}
+              </button>
+            </>
+          )}
+          {loadingMore && <LoadingBar />}
         </div>
       )}
     </>

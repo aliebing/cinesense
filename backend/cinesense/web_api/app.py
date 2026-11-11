@@ -72,6 +72,7 @@ class DiscoverResponse(BaseModel):
     corrected_title: str | None = None
     hidden_by: dict[str, int] = Field(default_factory=dict)  # per exclusion ("genre:Horror", "tag:284"): films hidden
     total_capped: bool = False  # total is a lower bound: the mood search kept only its best films ("500+")
+    match_counts: dict[int, int] = Field(default_factory=dict)  # floor % -> films from it (the grid's floor)
     relaxations: list[RelaxationOut] = Field(default_factory=list)  # ways to widen a thin search (/api/search)
 
 
@@ -182,6 +183,7 @@ def create_app(load_env: bool = True) -> FastAPI:
             corrected_title=res.corrected_title,
             hidden_by=res.hidden_by,
             total_capped=res.total_capped,
+            match_counts=res.match_counts,
         )
 
     @app.post("/api/discover")

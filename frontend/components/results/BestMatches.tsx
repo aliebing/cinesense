@@ -13,12 +13,15 @@ type Props = {
   /** the streaming filter is on: films whose streaming was not looked up yet say so */
   streamCheck?: boolean;
   busy?: boolean;
+  /** the grid of every further match uses the same cards: its own name and class */
+  name?: string;
+  className?: string;
 };
 
 /** The few best matches in front: large posters standing still, each with why it fits written out below. */
-export default function BestMatches({ items, onSelect, label, streamCheck = false, busy = false }: Props) {
+export default function BestMatches({ items, onSelect, label, streamCheck = false, busy = false, name = "Best matches", className = "" }: Props) {
   return (
-    <section className={`best${busy ? " is-busy" : ""}`} aria-label="Best matches" aria-busy={busy}>
+    <section className={`best${className ? ` ${className}` : ""}${busy ? " is-busy" : ""}`} aria-label={name} aria-busy={busy}>
       <h3 className="related-label">{label}</h3>
       <ol className="best-list">
         {items.map((r) => (

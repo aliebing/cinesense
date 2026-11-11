@@ -52,6 +52,7 @@ export type DiscoverResult = {
   corrected_title?: string | null;
   total_capped?: boolean; // the mood search kept only its best films: total is a lower bound ("500+")
   hidden_by?: Record<string, number>; // per exclusion ("genre:Horror", "tag:284"): films it hid in this search
+  match_counts?: Record<string, number>; // floor % ("50" … "90") -> films from it, over the whole search
   relaxations?: Relaxation[];
 };
 
@@ -63,8 +64,15 @@ export const suggest = (field: "title" | "person", q: string, role: string = "an
 /** `fillImages: false` skips the Streaming API image lookups (homepage background rows spend no budget). */
 export const discover = (criteria: Criteria, offset = 0, limit = 20, fillImages = true) =>
   apiPost<DiscoverResult>("/api/discover", fillImages ? { criteria, offset, limit } : { criteria, offset, limit, fill_images: false });
-export const search = (criteria: Criteria, offset = 0, limit = 20, relaxedFrom?: Criteria) =>
-  apiPost<DiscoverResult>("/api/search", { criteria, offset, limit, ...(relaxedFrom ? { relaxed_from: relaxedFrom } : {}) });
+/** `fillImages: false` for further pages of the results grid: no Streaming API image lookups, no YouTube searches. */
+export const search = (criteria: Criteria, offset = 0, limit = 20, relaxedFrom?: Criteria, fillImages = true) =>
+  apiPost<DiscoverResult>("/api/search", {
+    criteria,
+    offset,
+    limit,
+    ...(relaxedFrom ? { relaxed_from: relaxedFrom } : {}),
+    ...(fillImages ? {} : { fill_images: false }),
+  });
 
 export const getHome = () => apiGet<HomeData>("/api/home");
 export const getWorlds = () => apiGet<MoodWorld[]>("/api/worlds");

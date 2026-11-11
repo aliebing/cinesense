@@ -480,3 +480,11 @@ def test_related_are_films_like_the_one_on_stage_in_its_world():
     assert all("scifi" in i["movie"]["world_ids"] for i in items)
     # ranked by the stage film's own mood tags: the first film shares at least one of them
     assert set(items[0]["movie"]["top_tags"]) & set(matrix["top_tags"]) or items[0]["reasons"]
+
+
+def test_search_counts_the_matches_per_floor():
+    r = client().post("/api/search", json={"criteria": {}, "limit": 5}).json()
+    counts = {int(k): v for k, v in r["match_counts"].items()}
+    assert sorted(counts) == [50, 60, 70, 80, 90]
+    assert all(counts[a] >= counts[b] for a, b in zip([50, 60, 70, 80], [60, 70, 80, 90], strict=True))
+    assert counts[50] <= r["total"]
