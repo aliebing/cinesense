@@ -1,15 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { foundText, LoadingBar } from "@/components/genre/RelatedRow";
+import RelatedRow, { foundText, LoadingBar } from "@/components/genre/RelatedRow";
 import BestMatches from "@/components/results/BestMatches";
 import { search, type DiscoverResult, type Relaxation } from "@/lib/api";
 import type { Criteria } from "@/lib/searchState";
 import type { Movie, RankedMovie } from "@/lib/types";
 
 // in front up to BEST_MAX films from BEST_PERCENT (at least the MIN_SHOWN best, so a weak search still shows
-// something), large and with why they fit; below them a grid with every further film from the floor (chooseFloor),
-// loaded from the API in pages of LIMIT as the grid is scrolled. Fixed bars, not a gap to the best match: another
+// something), large and with why they fit; below them one row the mouse slides through with every further film from
+// the floor (chooseFloor), loaded from the API in pages of LIMIT in the background. Fixed bars, not a gap to the best match: another
 // tag lowers every score, and a gap would then let in more films
 const LIMIT = 50;
 const MIN_SHOWN = 3;
@@ -112,22 +112,17 @@ export function countText(good: number, more: boolean, floor: number, total: num
   return `${fmt.format(good)}${more ? "+" : ""} good ${good === 1 ? "match" : "matches"} from ${floor}% · ${all}`;
 }
 
-/** Loads the next page when the end of the grid scrolls into view (where the browser can tell; the button below
- *  always works). */
-function AutoLoad({ onVisible }: { onVisible: () => void }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const cb = useRef(onVisible);
+/** Loads the next page as soon as it is mounted: the row holds every film from the floor (at most SHOW_MAX), and
+ *  further pages cost no Streaming API lookups. Mounted again after each page while more are due. */
+function LoadNext({ onLoad }: { onLoad: () => void }) {
+  const cb = useRef(onLoad);
   useEffect(() => {
-    cb.current = onVisible;
+    cb.current = onLoad;
   });
   useEffect(() => {
-    const el = ref.current;
-    if (!el || typeof IntersectionObserver === "undefined") return;
-    const io = new IntersectionObserver((entries) => entries.some((e) => e.isIntersecting) && cb.current(), { rootMargin: "400px" });
-    io.observe(el);
-    return () => io.disconnect();
+    cb.current();
   }, []);
-  return <div ref={ref} className="results-grid__sentinel" aria-hidden />;
+  return null;
 }
 
 export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened, tagNames = {} }: Props) {
@@ -250,7 +245,6 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened,
     if (!r.ok || r.data.items.length === 0) return;
     setMore({ key, pages: [...(more.key === key ? more.pages : []), r.data.items] });
   };
-  const left = target !== null ? target - rest.length : null;
   const streaming = criteria.availability === "stream";
   const bestLabel = (
     <>
@@ -310,17 +304,20 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened,
       {best.length > 0 && <BestMatches items={best} onSelect={onOpen} label={bestLabel} streamCheck={streaming} busy={loading} />}
       {rest.length > 0 && (
         <div className="results-more-row">
-          <BestMatches items={rest} onSelect={onOpen} label={moreLabel} streamCheck={streaming} busy={loading} name="More matches" className="results-grid" />
-          {canLoad && (
-            <>
-              <AutoLoad onVisible={loadMore} />
-              <button type="button" className="results-grid__more" disabled={loadingMore} onClick={loadMore}>
-                {loadingMore ? "Loading…" : `Show ${left !== null ? fmtN(Math.min(LIMIT, left)) : LIMIT} more`}
-                {left !== null && left > LIMIT ? <span className="related-hint"> · {fmtN(left)} left</span> : null}
-              </button>
-            </>
-          )}
-          {loadingMore && <LoadingBar />}
+          <RelatedRow
+            items={rest}
+            onSelect={onOpen}
+            label={moreLabel}
+            streamCheck={streaming}
+            name="More matches"
+            showReasons
+            busy={loading}
+            bar={false}
+            drift={false}
+            bounded // a row with a start and an end the mouse slides through
+            arrows
+          />
+          {canLoad && !loadingMore && <LoadNext onLoad={loadMore} />}
         </div>
       )}
     </>

@@ -202,7 +202,7 @@ it("a search with only a few hits just counts them", async () => {
   expect(screen.getByText(/All matches/)).toBeInTheDocument();
 });
 
-it("the grid shows every film from the floor, and loads the next page without image lookups", async () => {
+it("the running row holds every film from the floor, and loads the further pages by itself without image lookups", async () => {
   const page = (from: number, n: number, percent: (i: number) => number) =>
     sampleRanked(n).map((r, i) => ({ ...r, movie: { ...r.movie, id: `f-${from + i}`, title: `Film ${from + i}` }, match_percent: percent(from + i) }));
   const counts = { "50": 120, "60": 70, "70": 20, "80": 5, "90": 0 };
@@ -214,14 +214,13 @@ it("the grid shows every film from the floor, and loads the next page without im
   expect(screen.getByText("70 good matches from 60% · 500 films searched")).toBeInTheDocument(); // counted over the whole search
   expect(screen.getByText("64 more matches from 60%")).toBeInTheDocument();
   const grid = () => container.querySelectorAll("[aria-label='More matches'] .related-card");
-  expect(grid()).toHaveLength(44); // the first page, all in the grid
-  await userEvent.click(screen.getByRole("button", { name: "Show 20 more" }));
+  expect(grid()).toHaveLength(44); // the first page, all in the row
+  await waitFor(() => expect(search).toHaveBeenCalledTimes(2)); // the next page follows on its own
   expect(search.mock.calls[1][1]).toBe(50); // offset
   expect(search.mock.calls[1][4]).toBe(false); // no Streaming API image lookups for further pages
   resolve({ ok: true, data: { items: page(50, 50, (i) => (i < 70 ? 65 : 55)), total: 500, match_counts: counts, hidden_by_exclusion: 0, extended_used: false } });
   await waitFor(() => expect(grid()).toHaveLength(64));
-  expect(screen.queryByRole("button", { name: /Show \d+ more/ })).toBeNull(); // every film from 60% is shown
-  expect(search).toHaveBeenCalledTimes(2);
+  expect(search).toHaveBeenCalledTimes(2); // every film from 60% is in the row: no further page
   expect(screen.getByText(/The 6 best matches/)).toBeInTheDocument(); // the best stay in front
 });
 

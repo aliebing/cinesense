@@ -683,18 +683,6 @@
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .best-item .result-unchecked, .best-item .result-miss { display: block; font-size: .75em; }
 .results-more-row { margin-top: 1.8cqw; }
-/* every further match in a grid below the best ones: the same cards and why they fit, a little smaller, row after
-   row; the page scrolls, and the end of the grid loads the next films */
-.results-grid { --card-w: clamp(64px, 5.6cqw, 140px); }
-.results-grid .best-list { display: grid; grid-template-columns: repeat(auto-fill, var(--card-w)); justify-content: center;
-  gap: 1.5cqw 1.1cqw; }
-.results-grid .best-item { max-width: none; }
-.results-grid .best-title { font-size: .85em; }
-.results-grid .best-why { font-size: .75em; }
-.results-grid__sentinel { height: 1px; }
-.results-grid__more { display: block; margin: 1.4cqw auto 0; font: inherit; cursor: pointer; border-radius: 999px;
-  padding: .45em 1.2em; background: #0d0d14d9; color: #fff; border: 1px solid var(--gold); }
-.results-grid__more:disabled { opacity: .6; cursor: default; }
 /* the running row looks the same on the search and the detail page: card size, gap, zoom and the wide trailer */
 .related.has-arrows { --card-w: clamp(52px, 4.8cqw, 120px); --card-hover-scale: 1; } /* hover: only the gold frame */
 .results-more-row .related-label, .results-count { text-align: center; }
