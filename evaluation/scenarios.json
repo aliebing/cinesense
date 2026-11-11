@@ -29,7 +29,7 @@
   {"id": "followup-02", "category": "follow_up", "turns": ["Funny films from the 90s", "no animation please"], "expect": {"tools_any": ["set_filters", "set_mood_tags"], "exclude_genres": ["Animation"], "year_from": 1990, "tools_none": ["new_search"]}},
   {"id": "followup-03", "category": "follow_up", "turns": ["Films with Tom Hanks", "only the ones from after 2000"], "expect": {"tools_any": ["set_filters"], "person": "Tom Hanks", "year_from": 2000, "tools_none": ["new_search"]}},
   {"id": "facts-01", "category": "facts", "turns": ["Tell me more about the movie Alien"], "expect": {"tools_any": ["film_info"], "results_required": false, "reply_contains_any": ["1979", "Ridley Scott"]}},
-  {"id": "ambiguous-01", "category": "ambiguous", "turns": ["Solaris"], "expect": {"tools_any": ["similar_to", "film_info", "set_mood_tags"], "results_required": false}},
+  {"id": "ambiguous-01", "category": "ambiguous", "turns": ["Solaris"], "expect": {"tools_any": ["find", "similar_to", "film_info", "set_mood_tags"], "results_required": false}},
   {"id": "ambiguous-02", "category": "ambiguous", "turns": ["something good"], "expect": {"results_required": false}},
   {"id": "metadata-01", "category": "missing_metadata", "turns": ["German films released in cinemas since 2023"], "expect": {"tools_any": ["set_filters"], "year_from": 2023, "results_required": false}},
   {"id": "fail-01", "category": "failure", "failure": "streaming_down", "turns": ["Where can I stream Inception in Germany?"], "expect": {"tools_any": ["film_info"], "results_required": false, "reply_contains_any": ["unknown", "couldn't", "can't", "unable", "not confirmed", "not available"]}},

@@ -62,7 +62,23 @@ def check_grounding(
     """tag_spans: the tags of the final search and the proposals — the same rule as the production guard."""
     allowed = result_titles(results) + user_named_titles(user_text, catalogue_titles)
     ok, bad = validate_titles(reply, allowed, catalogue_titles, tag_spans)
-    return ok, [f"unlisted title: {t}" for t in bad]
+    return ok, [f"unlisted title: {t} ({miss_kind(t, results)})" for t in bad]
+
+
+MISS_KINDS = ("film series of a result", "name in a result's plot", "other film")
+
+
+def miss_kind(title: str, results: list[dict]) -> str:
+    """What an unlisted title most likely is. Deliberately stricter than production, which lets names from the
+    given plots through: the miss still fails, but the report can tell a series ("John Wick" for "John Wick:
+    Chapter Two") or a place or role from a plot ("South Central") apart from a film the search never returned."""
+    low = title.lower()
+    titles = [r["movie"]["title"].lower() for r in results]
+    if any(t != low and (t.startswith(low + ":") or t.startswith(low + " ")) for t in titles):
+        return MISS_KINDS[0]
+    if any(low in (r["movie"].get("overview") or "").lower() for r in results):
+        return MISS_KINDS[1]
+    return MISS_KINDS[2]
 
 
 def check_reply(reply: str, e: Expect) -> Check:

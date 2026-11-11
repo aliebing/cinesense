@@ -147,3 +147,18 @@ def test_min_rating_constraint_uses_the_filter_rating():
     ok, fails = check_constraints([good, poor], Expect(min_rating=3.7))
     assert not ok and fails == ["Poor: rated 3.20 < 3.7"]
     assert check_constraints([good], Expect(min_rating=3.7))[0]
+
+
+def test_grounding_misses_stay_failures_but_say_what_kind_they_are():
+    """The eval check stays stricter than production (no plot-name exemption), but labels each miss so the
+    report can tell a film series or a name from a plot apart from a film the search never returned."""
+    wick2 = r("John Wick: Chapter Two")
+    friday = r("Friday")
+    friday["movie"]["overview"] = "A fired slacker spends a day in South Central Los Angeles."
+    catalogue = {"John Wick", "John Wick: Chapter Two", "Friday", "South Central", "Titanic"}
+    ok, why = check_grounding("The John Wick films fit.", [wick2], catalogue, "")
+    assert not ok and why == ["unlisted title: John Wick (film series of a result)"]
+    ok, why = check_grounding("**Friday** — a day in South Central LA.", [friday], catalogue, "")
+    assert not ok and why == ["unlisted title: South Central (name in a result's plot)"]
+    ok, why = check_grounding("Try **Titanic**.", [friday], catalogue, "")
+    assert not ok and why == ["unlisted title: Titanic (other film)"]

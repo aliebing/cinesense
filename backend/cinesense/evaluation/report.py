@@ -2,6 +2,8 @@
 
 import statistics
 
+from cinesense.evaluation.checks import MISS_KINDS
+
 ROWS = [
     (
         "constraint_satisfaction",
@@ -25,6 +27,13 @@ def _mean(xs: list) -> str:
     return f"{statistics.mean(xs):.2f}" if xs else "—"
 
 
+def _miss_kinds(results: list[dict]) -> str:
+    """Each unlisted title in the replies, by what it most likely is (checks.miss_kind)."""
+    why = [w for r in results for w in r.get("checks", {}).get("grounding", {}).get("why", [])]
+    n = {k: sum(w.endswith(f"({k})") for w in why) for k in MISS_KINDS}
+    return " · ".join(f"{v} {k}" for k, v in n.items())
+
+
 def render_report(summary: dict, results: list[dict], comparison: dict, date: str, model: str = "") -> str:
     counts = summary.get("counts", {})
     out = [f"# CineSense evaluation — {date}", ""]
@@ -45,6 +54,7 @@ def render_report(summary: dict, results: list[dict], comparison: dict, date: st
     out += [
         f"| Grounding before the guard — no template fallback needed | {_pct(summary.get('grounding_raw'))} "
         f"({fallbacks} fallbacks) |",
+        f"| Grounding misses by kind (still failures) | {_miss_kinds(results)} |",
         f"| Tool calls that raised no error | {_pct(summary['tool_success'])} |",
         f"| Latency per scenario, median / p90 | {summary['latency_median_s']} s / {summary['latency_p90_s']} s |",
         f"| Cost per chat turn | ${summary['cost_per_turn_usd']:.4f} |",

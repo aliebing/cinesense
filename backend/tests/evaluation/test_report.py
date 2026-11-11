@@ -65,3 +65,19 @@ def test_report_has_all_sections_and_labels_the_judge():
     for heading in ("## Automatic metrics", "## Relevance — LLM judge", "## Ranking comparison", "## Failures"):
         assert heading in md
     assert "LLM judge (Claude Sonnet 5.5)" in md and "X: 150 min > 120" in md and "0.80" in md
+
+
+def test_report_counts_grounding_misses_by_kind():
+    summary = {
+        "scenarios": 1, "passed": 0, "errors": 0, "tool_success": 1.0, "grounding_fallbacks": 0,
+        "latency_median_s": 1, "latency_p90_s": 1, "cost_total_usd": 0, "cost_per_turn_usd": 0, "counts": {},
+    }  # fmt: skip
+    results = [
+        {
+            "id": "person-01", "category": "person", "passed": False, "error": None, "results": [], "latency_s": 1,
+            "checks": {"grounding": {"ok": False, "why": ["unlisted title: John Wick (film series of a result)"]}},
+        }
+    ]  # fmt: skip
+    md = render_report(summary, results, {}, "2026-11-11")
+    row = "1 film series of a result · 0 name in a result's plot · 0 other film"
+    assert f"| Grounding misses by kind (still failures) | {row} |" in md
