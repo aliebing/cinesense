@@ -17,6 +17,7 @@ export const WORLD_SEO: WorldSeo[] = [
   { id: "adventure", title: "Adventure", about: "adventure films with epic journeys and discovery" },
   { id: "comedy", title: "Comedy & Feel-Good", about: "funny, relaxed comedies and feel-good films" },
   { id: "action", title: "Action & Adrenaline", about: "action films with pace, explosions and heroes" },
+  { id: "drama", title: "Drama & Life", about: "moving, serious dramas and war films about real lives" },
 ];
 
 export const worldSeo = (id: string) => WORLD_SEO.find((w) => w.id === id);

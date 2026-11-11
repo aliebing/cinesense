@@ -42,7 +42,7 @@ Each folder is one role. Read them top to bottom: each builds only on the ones a
 
 | Role | Responsibility | Key files | May import |
 |---|---|---|---|
-| `core/` | Shared vocabulary, no I/O: films, search criteria, the six mood worlds, tag relevance, settings | `criteria.py`, `models.py`, `worlds.py`, `tag_relevance.py` | — |
+| `core/` | Shared vocabulary, no I/O: films, search criteria, the seven mood worlds, tag relevance, settings | `criteria.py`, `models.py`, `worlds.py`, `tag_relevance.py` | — |
 | `data_sources/` | Adapters to everything outside: the Postgres catalogue (and an offline JSON fixture), streaming availability, live title search, Wikidata, Wikipedia, embeddings, YouTube | `postgres.py`, `streaming.py`, `live_search.py` | core |
 | `search/` | Turns `SearchCriteria` into ranked, explained results; widens a search that finds too little | `service.py`, `ranking.py`, `widening.py` | core |
 | `taste/` | Anonymous 👍/👎 and the taste profile derived from them | `profile.py`, `feedback.py` | core |

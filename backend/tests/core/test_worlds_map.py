@@ -14,9 +14,9 @@ from cinesense.core.worlds_map import assign_worlds, normalise_wikidata_genres, 
         (["Adventure", "Fantasy"], ["adventure"]),
         (["Children", "Animation"], ["comedy"]),
         (["Documentary"], []),
-        (["Drama"], ["romance"]),  # every feature film has a world now
+        (["Drama"], ["drama"]),  # every feature film has a world now
         (["Horror"], ["suspense"]),
-        (["War", "Drama"], ["action"]),  # a war drama is a war film first
+        (["War", "Drama"], ["drama"]),  # Drama & Life: Schindler's List, 1917
         (["Drama", "Horror", "Thriller"], ["suspense"]),  # the fallbacks only when nothing else places it
         (["Western"], ["adventure"]),
         (["Musical"], ["romance"]),

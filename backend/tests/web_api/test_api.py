@@ -34,10 +34,10 @@ def client(**kw) -> TestClient:
     return TestClient(make_app(**kw))
 
 
-def test_worlds_returns_six():
+def test_worlds_returns_seven():
     r = client().get("/api/worlds")
     assert r.status_code == 200
-    assert [w["id"] for w in r.json()] == ["suspense", "scifi", "romance", "adventure", "comedy", "action"]
+    assert [w["id"] for w in r.json()] == ["suspense", "scifi", "romance", "adventure", "comedy", "action", "drama"]
 
 
 def test_world_movies_ranked_and_limited():
@@ -86,10 +86,11 @@ def test_fit_says_how_a_film_carries_each_wished_mood():
 
 def test_home_rows_per_world():
     data = client().get("/api/home").json()
-    assert len(data["worlds"]) == 6
-    assert set(data["rows"]) == {"suspense", "scifi", "romance", "adventure", "comedy", "action"}
+    assert len(data["worlds"]) == 7
+    assert set(data["rows"]) == {"suspense", "scifi", "romance", "adventure", "comedy", "action", "drama"}
     for wid, films in data["rows"].items():
-        assert 0 < len(films) <= 20 and all(wid in f["world_ids"] for f in films)
+        assert len(films) <= 20 and all(wid in f["world_ids"] for f in films)
+        assert films or wid == "drama"  # the fixture holds no pure drama (Drama & Life)
     assert "tiles" not in data  # the frontend never used it
     assert data["titles"] and all(isinstance(t, str) for t in data["titles"])
 
@@ -166,9 +167,9 @@ def test_stale_home_is_served_while_the_next_one_builds():
 def test_related_uses_requested_world_for_multi_world_film():
     c = client()
     film = c.get("/api/movies/ml-2571").json()
-    assert film["world_ids"][0] == "suspense" and "scifi" in film["world_ids"]
-    items = c.get("/api/movies/ml-2571/related?world_id=scifi").json()
-    assert items and all("scifi" in i["movie"]["world_ids"] for i in items)
+    assert film["world_ids"][0] == "scifi" and "suspense" in film["world_ids"]  # its main world first
+    items = c.get("/api/movies/ml-2571/related?world_id=suspense").json()
+    assert items and all("suspense" in i["movie"]["world_ids"] for i in items)
 
 
 def test_cors_allows_local_dev_origins_on_any_port():

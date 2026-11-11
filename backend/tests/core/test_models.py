@@ -1,8 +1,8 @@
 from cinesense.core.worlds import WORLDS, get_world
 
 
-def test_six_worlds_in_spec_order():
-    assert [w.id for w in WORLDS] == ["suspense", "scifi", "romance", "adventure", "comedy", "action"]
+def test_seven_worlds_in_order():
+    assert [w.id for w in WORLDS] == ["suspense", "scifi", "romance", "adventure", "comedy", "action", "drama"]
     assert [w.title for w in WORLDS] == [
         "Suspense & Mystery",
         "Science Fiction",
@@ -10,6 +10,7 @@ def test_six_worlds_in_spec_order():
         "Adventure",
         "Comedy & Feel-Good",
         "Action & Adrenaline",
+        "Drama & Life",
     ]
 
 
@@ -21,6 +22,7 @@ def test_world_tints_match_mockup():
         "adventure": "#5c7a4a",
         "comedy": "#e0b040",
         "action": "#a8382a",
+        "drama": "#7a5c4a",
     }
 
 

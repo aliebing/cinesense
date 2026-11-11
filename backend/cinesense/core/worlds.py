@@ -1,8 +1,8 @@
-"""The six mood worlds the start page is built around."""
+"""The seven mood worlds the start page is built around."""
 
 from cinesense.core.models import MoodWorld
 
-# Single source of truth for the six mood worlds (spec §4); tints match the approved mockup.
+# Single source of truth for the mood worlds (spec §4, plus Drama & Life); tints match the approved mockup.
 WORLDS: tuple[MoodWorld, ...] = (
     MoodWorld(
         id="suspense",
@@ -26,7 +26,7 @@ WORLDS: tuple[MoodWorld, ...] = (
         kicker="Feel Everything",
         subtitle="Romantic · Emotional",
         tint="#d98a3a",
-        genres=["Romance", "Drama"],
+        genres=["Romance"],
     ),
     MoodWorld(
         id="adventure",
@@ -51,6 +51,14 @@ WORLDS: tuple[MoodWorld, ...] = (
         subtitle="Pace · Explosions · Heroes",
         tint="#a8382a",
         genres=["Action"],
+    ),
+    MoodWorld(
+        id="drama",
+        title="Drama & Life",
+        kicker="Real Stories",
+        subtitle="Moving · Serious · Human",
+        tint="#7a5c4a",
+        genres=["Drama", "War"],
     ),
 )
 

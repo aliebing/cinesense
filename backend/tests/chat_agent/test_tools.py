@@ -70,7 +70,7 @@ def test_check_streaming_respects_per_turn_limit(kit):
 
 def test_show_on_stage_handoff(kit):
     upd, _ = kit.show_on_stage(state(), "The Matrix")
-    assert upd["handoff"] == {"world_id": "suspense", "film_id": "ml-2571"}
+    assert upd["handoff"] == {"world_id": "scifi", "film_id": "ml-2571"}  # The Matrix's main world
 
 
 def test_find_person_sets_criteria(kit):
