@@ -167,8 +167,8 @@ it("the mood on screen in two rows with headings: its newest top-rated above, it
   getHome.mockResolvedValue({ ok: true, data: sampleHome });
   render(<HomePage />);
   await screen.findAllByTestId("tile-row");
-  expect(screen.getByText("Newest top-rated · since 2014")).toBeInTheDocument();
-  expect(screen.getByText("Top classics · before 2000")).toBeInTheDocument();
+  expect(screen.getByText("Newest top-rated · last 8 years")).toBeInTheDocument();
+  expect(screen.getByText("Top classics · older than 8 years")).toBeInTheDocument();
   const rowIds = [...document.querySelectorAll(".tile-row-wrap")].map((r) => r.getAttribute("data-world"));
   expect(rowIds).toEqual(["mood-0", "mood-1"]);
 });

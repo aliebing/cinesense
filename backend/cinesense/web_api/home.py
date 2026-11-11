@@ -17,8 +17,7 @@ from cinesense.web_api.images import with_images
 log = logging.getLogger(__name__)
 
 ROW_SIZE = 10  # films per row; a world shows two rows (newest top-rated, top classics)
-NEWEST_YEARS = 10  # "newest": from the last ten years of the catalogue
-CLASSIC_BEFORE = 2000  # "classics": made before this year
+NEWEST_YEARS = 8  # "newest": from the last eight years of the catalogue; "classics": every film older than that
 POOL = 40  # the best-known films each row is chosen from (Bayesian rating over them)
 HOME_TTL = 300  # seconds
 TILE_FIELDS = {"id", "title", "year", "world_ids", "youtube_key", "horizontal_poster_url", "backdrop_url"}
@@ -44,7 +43,7 @@ def row_trailers(movies: list[Movie], checker, trailers) -> list[Movie]:
 
 def build_home(provider, streaming, checker, trailers) -> dict:
     movies = provider.list_movies()
-    newest_year = max((m.year for m in movies if m.year), default=CLASSIC_BEFORE + NEWEST_YEARS)
+    newest_year = max((m.year for m in movies if m.year), default=2000 + NEWEST_YEARS)
     recent_from = newest_year - NEWEST_YEARS + 1
 
     def pool(world_id: str, keep) -> list[Movie]:
@@ -61,7 +60,7 @@ def build_home(provider, streaming, checker, trailers) -> dict:
 
     pools = {
         kind: {w.id: pool(w.id, keep) for w in WORLDS}
-        for kind, keep in (("newest", lambda y: y >= recent_from), ("classics", lambda y: y < CLASSIC_BEFORE))
+        for kind, keep in (("newest", lambda y: y >= recent_from), ("classics", lambda y: y < recent_from))
     }
     chosen: dict[str, dict[str, list[Movie]]] = {kind: {w.id: [] for w in WORLDS} for kind in pools}
     used: set[str] = set()  # each film once; the worlds take turns so none is starved
@@ -86,7 +85,8 @@ def build_home(provider, streaming, checker, trailers) -> dict:
         "rows": {wid: _tiles(films) for wid, films in rows.items()},
         "newest": {w.id: [t["id"] for t in _tiles(chosen["newest"][w.id])] for w in WORLDS},
         "newest_from": recent_from,
-        "classics_before": CLASSIC_BEFORE,
+        "newest_years": NEWEST_YEARS,
+        "classics_before": recent_from,
         "titles": titles,
     }
 

@@ -52,8 +52,9 @@ export const sampleHome: HomeData = {
   rows: homeRows,
   // the first half of each world's films are its newest top-rated, the rest its classics
   newest: Object.fromEntries(Object.entries(homeRows).map(([w, ms]) => [w, ms.slice(0, Math.ceil(ms.length / 2)).map((m) => m.id)])),
-  newest_from: 2014,
-  classics_before: 2000,
+  newest_from: 2019,
+  newest_years: 8,
+  classics_before: 2019,
   titles: ["Demo-Film 01", "Demo-Film 02", "Demo-Film 03"],
 };
 

@@ -71,6 +71,7 @@ export type HomeData = {
   /** per world: the ids of its newest top-rated films (the rest of its row are the classics) */
   newest?: Record<string, string[]>;
   newest_from?: number; // the newest are from this year on
+  newest_years?: number; // ... the last this many years; the classics are all older films
   classics_before?: number; // the classics are older than this year
   titles: string[];
 };

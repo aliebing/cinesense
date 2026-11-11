@@ -10,8 +10,9 @@ type Props = {
   rows: TileRow[];
   onSelect: (m: HomeTile) => void;
   worldOrder?: string[];
-  /** called each time the first row has run through all its films (one full loop) */
+  /** called each time the first row has run past `lapFilms` of its films (all of them when not set) */
   onLap?: () => void;
+  lapFilms?: number;
 };
 
 const SPEED = 40; // px per second, the pace of the genre page's related row
@@ -84,12 +85,17 @@ function TileImage({ movie }: { movie: HomeTile }) {
 
 /** One row per mood world; neighbouring rows run in opposite directions in seamless loops (spec §4).
  *  No hover trailers here: the home tiles only open the film; trailers play on the genre page and under chat picks. */
-export default function TileRows({ rows, onSelect, worldOrder = [], onLap }: Props) {
+export default function TileRows({ rows, onSelect, worldOrder = [], onLap, lapFilms }: Props) {
   const onLapRef = useRef(onLap);
   useEffect(() => {
     onLapRef.current = onLap;
   }, [onLap]);
   const travelled = useRef(0); // px the first row has run since its films last changed
+  const lapShare = useRef(1); // the part of the loop that counts as a lap
+  const firstCount = rows[0]?.movies.length ?? 0;
+  useEffect(() => {
+    lapShare.current = lapFilms && firstCount ? Math.min(1, lapFilms / firstCount) : 1;
+  }, [lapFilms, firstCount]);
   // state per world (not per row slot): rows reorder when the hero world changes and must not jump
   const rowEls = useRef(new Map<string, HTMLDivElement>());
   const offsets = useRef(new Map<string, number>());
@@ -170,9 +176,9 @@ export default function TileRows({ rows, onSelect, worldOrder = [], onLap }: Pro
         const next = advance(offsets.current.get(id) ?? 0, delta, period);
         if (id === orderRef.current[0] && period > 0) {
           travelled.current += Math.abs(delta);
-          if (travelled.current >= period) {
+          if (travelled.current >= period * lapShare.current) {
             travelled.current = 0;
-            onLapRef.current?.(); // every film of the row has passed once
+            onLapRef.current?.(); // the row's films (or `lapFilms` of them) have passed once
           }
         }
         offsets.current.set(id, next);

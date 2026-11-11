@@ -20,7 +20,8 @@ import type { HomeData, HomeTile, MoodWorld, TileRow } from "@/lib/types";
 import { useActiveTrailer } from "@/lib/useActiveTrailer";
 import { useIsNarrow, useReducedMotion } from "@/lib/useReducedMotion";
 
-const TITLES_PER_MOOD = 6;
+const TITLES_PER_MOOD = 14; // the drifting titles: the films of both rows, in turn
+const LAP_FILMS = 7; // the mood changes once this many films of each row have passed
 
 /** The mood on screen (the hero world) in two rows running against each other: its newest top-rated films above,
  *  its top classics below, each with a heading. One row on a narrow screen. The rows keep their ids when the mood
@@ -33,12 +34,12 @@ export function moodRows(world: MoodWorld | undefined, data: HomeData | null, co
     {
       world: { ...world, id: "mood-0" },
       movies: films.filter((m) => newest.has(m.id)),
-      label: `Newest top-rated${data.newest_from ? ` · since ${data.newest_from}` : ""}`,
+      label: `Newest top-rated${data.newest_years ? ` · last ${data.newest_years} years` : data.newest_from ? ` · since ${data.newest_from}` : ""}`,
     },
     {
       world: { ...world, id: "mood-1" },
       movies: films.filter((m) => !newest.has(m.id)),
-      label: `Top classics${data.classics_before ? ` · before ${data.classics_before}` : ""}`,
+      label: `Top classics${data.newest_years ? ` · older than ${data.newest_years} years` : data.classics_before ? ` · before ${data.classics_before}` : ""}`,
     },
   ];
   return rows.slice(0, count).filter((row) => row.movies.length > 0);
@@ -92,8 +93,16 @@ export default function HomePage({ initial = null }: { initial?: HomeData | null
   const nextMood = useCallback(() => {
     if (!isTyping() && activeIdRef.current === null) advance();
   }, [advance]);
-  // the titles that drift over the stage belong to the mood on screen, like its picture and its rows
-  const moodTitles = useMemo(() => (world && data ? (data.rows[world.id] ?? []).slice(0, TITLES_PER_MOOD).map((t) => t.title) : []), [world, data]);
+  // the titles that drift over the stage are the films running in the rows below, one from each row in turn
+  const moodTitles = useMemo(() => {
+    const [upper = [], lower = []] = moodRows(world, data, 2).map((r) => r.movies);
+    const out: string[] = [];
+    for (let i = 0; i < Math.max(upper.length, lower.length); i++) {
+      if (upper[i]) out.push(upper[i].title);
+      if (lower[i]) out.push(lower[i].title);
+    }
+    return out.slice(0, TITLES_PER_MOOD);
+  }, [world, data]);
 
   const [showProfile, setShowProfile] = useState(false);
   const browse = (availability: "cinema" | "stream") => {
@@ -160,7 +169,7 @@ export default function HomePage({ initial = null }: { initial?: HomeData | null
       {data && !narrow && <FilmTitles titles={moodTitles} />}
       {rows.length > 0 && (
         <div className="home-rows">
-          <TileRows rows={rows} onSelect={openMovie} worldOrder={worldIds} onLap={nextMood} />
+          <TileRows rows={rows} onSelect={openMovie} worldOrder={worldIds} onLap={nextMood} lapFilms={LAP_FILMS} />
         </div>
       )}
       {world && <WorldLabel world={world} href={`/world/${world.id}`} />}
