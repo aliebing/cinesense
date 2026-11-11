@@ -7,6 +7,7 @@ import {
   ChatError,
   getChatLog,
   replyPicks,
+  sameSearch,
   resetConversation,
   type Proposal,
   setChatStatus,
@@ -72,8 +73,13 @@ export default function ChatPanel({ mode, horrorIdx = null }: { mode: "static" |
   };
   const canReset = live && (entries.length > 0 || hasAnyCriteria(criteria));
 
-  // the chat's picks are hits of the search it set: they open like films from the search page
-  const openMovie = (m: Movie) => router.push(`/world/${m.world_ids[0] ?? "suspense"}?film=${m.id}&from=search`);
+  // the chat's picks are hits of the search it set: while that search is still the one set, they open like films
+  // from the search page; after the settings were changed they open on their own (the search around them would be
+  // another one: Tom Cruise added, and The Usual Suspects from before stood among his films)
+  const lastReply = [...entries].reverse().find((e) => e.role === "bot");
+  const current = lastReply?.role === "bot" && lastReply.criteria ? sameSearch(lastReply.criteria, criteria) : false;
+  const filmUrl = (world: string, id: string) => `/world/${world}?film=${id}${current ? "&from=search" : ""}`;
+  const openMovie = (m: Movie) => router.push(filmUrl(m.world_ids[0] ?? "suspense", m.id));
   const lastBot = entries.map((e) => e.role).lastIndexOf("bot");
   const noHorror = criteria.exclude_genres.includes("Horror");
   const quick = [
@@ -137,7 +143,7 @@ export default function ChatPanel({ mode, horrorIdx = null }: { mode: "static" |
                   <button
                     type="button"
                     className="chat-handoff"
-                    onClick={() => router.push(`/world/${e.handoff!.world_id}?film=${e.handoff!.film_id}&from=search`)}
+                    onClick={() => router.push(filmUrl(e.handoff!.world_id, e.handoff!.film_id))}
                   >
                     Show on stage →
                   </button>

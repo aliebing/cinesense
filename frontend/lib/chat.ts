@@ -1,7 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import type { Criteria } from "@/lib/searchState";
+import { type Criteria, emptyCriteria } from "@/lib/searchState";
 import type { RankedMovie } from "@/lib/types";
 import { randomId, userHeaders } from "@/lib/user";
 
@@ -31,6 +31,11 @@ export type ChatEntry =
       handoff?: Handoff | null;
       error?: boolean;
     };
+
+/** Whether a reply's search is still the one set now (the world never matters; edited settings make it another). */
+export function sameSearch(a: Criteria, b: Criteria): boolean {
+  return JSON.stringify({ ...emptyCriteria(), ...a, world_id: null }) === JSON.stringify({ ...emptyCriteria(), ...b, world_id: null });
+}
 
 /** The films a reply presents: its first `picks` results (3 when an older reply doesn't say). */
 export function replyPicks(e: ChatEntry): RankedMovie[] {

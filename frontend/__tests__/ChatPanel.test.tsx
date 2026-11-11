@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, it, vi } from "vitest";
 import { emptyCriteria, setSearchState } from "@/lib/searchState";
@@ -93,6 +93,16 @@ it("navigates to the stage on hand-off", async () => {
   await send("show me Moon");
   await userEvent.click(await screen.findByRole("button", { name: "Show on stage →" }));
   expect(push).toHaveBeenCalledWith("/world/scifi?film=ml-1&from=search"); // a hit of the chat's search
+});
+
+it("after the settings were changed, a pick of the earlier reply opens on its own, not inside the new search", async () => {
+  streamChat.mockResolvedValue(final({ handoff: { world_id: "scifi", film_id: "ml-1" } }));
+  render(<ChatPanel mode="live" />);
+  await send("show me Moon");
+  const show = await screen.findByRole("button", { name: "Show on stage →" });
+  await act(async () => setSearchState({ ...emptyCriteria(), person: "Tom Cruise" })); // another search now
+  await userEvent.click(show);
+  expect(push).toHaveBeenCalledWith("/world/scifi?film=ml-1");
 });
 
 it("shows the error text and keeps the chips usable", async () => {
