@@ -202,26 +202,32 @@ it("a search with only a few hits just counts them", async () => {
   expect(screen.getByText(/All matches/)).toBeInTheDocument();
 });
 
-it("the running row holds every film from the floor, and loads the further pages by itself without image lookups", async () => {
+it("the « » arrows page the running row by 30 through every film from the floor, loaded in the background without image lookups", async () => {
   const page = (from: number, n: number, percent: (i: number) => number) =>
     sampleRanked(n).map((r, i) => ({ ...r, movie: { ...r.movie, id: `f-${from + i}`, title: `Film ${from + i}` }, match_percent: percent(from + i) }));
   const counts = { "50": 120, "60": 70, "70": 20, "80": 5, "90": 0 };
   search.mockResolvedValueOnce({ ok: true, data: { items: page(0, 50, (i) => (i < 20 ? 75 : 65)), total: 500, match_counts: counts, hidden_by_exclusion: 0, extended_used: false } });
-  let resolve: (v: unknown) => void = () => {};
-  search.mockImplementationOnce(() => new Promise((r) => (resolve = r)));
+  search.mockResolvedValueOnce({ ok: true, data: { items: page(50, 50, (i) => (i < 70 ? 65 : 55)), total: 500, match_counts: counts, hidden_by_exclusion: 0, extended_used: false } });
   const { container } = render(<ResultList criteria={emptyCriteria()} onOpen={() => {}} />);
   expect(await screen.findByText(/The 6 best matches/)).toBeInTheDocument();
   expect(screen.getByText("70 good matches from 60% · 500 films searched")).toBeInTheDocument(); // counted over the whole search
-  expect(screen.getByText("64 more matches from 60%")).toBeInTheDocument();
-  const grid = () => container.querySelectorAll("[aria-label='More matches'] .related-card");
-  expect(grid()).toHaveLength(44); // the first page, all in the row
+  expect(screen.getByText(/64 more matches from 60%/)).toBeInTheDocument();
   await waitFor(() => expect(search).toHaveBeenCalledTimes(2)); // the next page follows on its own
   expect(search.mock.calls[1][1]).toBe(50); // offset
   expect(search.mock.calls[1][4]).toBe(false); // no Streaming API image lookups for further pages
-  resolve({ ok: true, data: { items: page(50, 50, (i) => (i < 70 ? 65 : 55)), total: 500, match_counts: counts, hidden_by_exclusion: 0, extended_used: false } });
-  await waitFor(() => expect(grid()).toHaveLength(64));
-  expect(search).toHaveBeenCalledTimes(2); // every film from 60% is in the row: no further page
-  expect(screen.getByText(/The 6 best matches/)).toBeInTheDocument(); // the best stay in front
+  const row = () => container.querySelectorAll("[aria-label='More matches'] .related-card");
+  expect(row()).toHaveLength(30); // 30 at a time
+  expect(screen.getByText(/· 1–30/)).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Previous 30" })).toBeNull(); // the first page: nothing back
+  await userEvent.click(screen.getByRole("button", { name: "Next 30" }));
+  expect(await screen.findByText(/· 31–60/)).toBeInTheDocument();
+  await userEvent.click(screen.getByRole("button", { name: "Next 30" }));
+  expect(await screen.findByText(/· 61–64/)).toBeInTheDocument(); // the rest
+  expect(screen.queryByRole("button", { name: "Next 30" })).toBeNull(); // every film from 60% shown: nothing further
+  expect(search).toHaveBeenCalledTimes(2);
+  await userEvent.click(screen.getByRole("button", { name: "Previous 30" }));
+  expect(await screen.findByText(/· 31–60/)).toBeInTheDocument();
+  expect(screen.getByText(/The 6 best matches/)).toBeInTheDocument(); // the best stay in front throughout
 });
 
 it("picks the floor from the counts over the whole search", async () => {

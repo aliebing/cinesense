@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import RelatedRow, { foundText, LoadingBar } from "@/components/genre/RelatedRow";
+import RelatedRow, { foundText, LoadingBar, type Sweep } from "@/components/genre/RelatedRow";
 import BestMatches from "@/components/results/BestMatches";
 import { search, type DiscoverResult, type Relaxation } from "@/lib/api";
 import type { Criteria } from "@/lib/searchState";
@@ -9,7 +9,8 @@ import type { Movie, RankedMovie } from "@/lib/types";
 
 // in front up to BEST_MAX films from BEST_PERCENT (at least the MIN_SHOWN best, so a weak search still shows
 // something), large and with why they fit; below them one row the mouse slides through with every further film from
-// the floor (chooseFloor), loaded from the API in pages of LIMIT in the background. Fixed bars, not a gap to the best match: another
+// the floor (chooseFloor), MORE_MAX at a time; its « » run quickly to the previous / next MORE_MAX. Every film from the
+// floor is loaded from the API in pages of LIMIT in the background. Fixed bars, not a gap to the best match: another
 // tag lowers every score, and a gap would then let in more films
 const LIMIT = 50;
 const MIN_SHOWN = 3;
@@ -142,6 +143,8 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened,
   // further pages of 50, kept with the search they belong to so a new search starts on page one again
   const [more, setMore] = useState<{ key: string; pages: RankedMovie[][] }>({ key: "", pages: [] });
   const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState<{ key: string; n: number }>({ key: "", n: 0 }); // the MORE_MAX shown in the row
+  const [sweepTo, setSweepTo] = useState<{ key: string; n: number } | null>(null); // the row runs to that page
   const key = JSON.stringify(criteria);
   const fromKey = widened ? JSON.stringify(widened.from) : "";
 
@@ -245,6 +248,26 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened,
     if (!r.ok || r.data.items.length === 0) return;
     setMore({ key, pages: [...(more.key === key ? more.pages : []), r.data.items] });
   };
+  // the row shows MORE_MAX films at a time; « » run to the previous / next ones (loaded in the background)
+  const chunks = Math.max(1, Math.ceil(rest.length / MORE_MAX));
+  const n = page.key === key ? Math.min(page.n, chunks - 1) : 0;
+  const shownOf = (p: number) => rest.slice(p * MORE_MAX, (p + 1) * MORE_MAX);
+  const shown = shownOf(n);
+  // during a sweep the row holds both pages; it ends where the other page alone starts, then that page is swapped in
+  const to = sweepTo && sweepTo.key === key && sweepTo.n < chunks ? sweepTo.n : null;
+  const toItems = to === null ? [] : shownOf(to);
+  const rowItems = to === null ? shown : to > n ? [...shown, ...toItems] : [...toItems, ...shown];
+  const sweep: Sweep | null =
+    to === null
+      ? null
+      : {
+          from: to > n ? 0 : toItems.length,
+          to: to > n ? shown.length : 0,
+          onDone: () => {
+            setPage({ key, n: to });
+            setSweepTo(null);
+          },
+        };
   const streaming = criteria.availability === "stream";
   const bestLabel = (
     <>
@@ -259,13 +282,24 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened,
     </>
   );
   const fmtN = (n: number) => fmt.format(n);
-  const moreLabel = widenedRow
+  const moreText = widenedRow
     ? `${items.length ? `Only ${total} ${total === 1 ? "film matches" : "films match"}` : "No film matches"} every wish · ${rest.length} more with: ${widenedRow.label}`
     : weak
       ? strong.length
         ? `${rest.length} more matches · ${strong.length} from ${floor}%, then weaker ones`
         : `${rest.length} weaker matches (below ${floor}%)`
       : `${fmtN(target ?? rest.length)}${target === null && canLoad ? "+" : ""} more matches from ${floor}%`;
+  const moreLabel = (
+    <>
+      {moreText}
+      {chunks > 1 && (
+        <span className="related-hint">
+          {" "}
+          · {fmtN(n * MORE_MAX + 1)}–{fmtN(n * MORE_MAX + shown.length)}
+        </span>
+      )}
+    </>
+  );
   return (
     <>
       {/* the notes about this search on the left, how its results came about on the right, side by side */}
@@ -305,7 +339,8 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened,
       {rest.length > 0 && (
         <div className="results-more-row">
           <RelatedRow
-            items={rest}
+            key={n} // a new page starts at its first film
+            items={rowItems}
             onSelect={onOpen}
             label={moreLabel}
             streamCheck={streaming}
@@ -315,7 +350,13 @@ export default function ResultList({ criteria, onOpen, onMeta, onRelax, widened,
             bar={false}
             drift={false}
             bounded // a row with a start and an end the mouse slides through
+            sweep={sweep}
             arrows
+            paging={{
+              size: MORE_MAX,
+              prev: n > 0 && !loading ? () => setSweepTo({ key, n: n - 1 }) : null,
+              next: (n + 1) * MORE_MAX < rest.length && !loading ? () => setSweepTo({ key, n: n + 1 }) : null,
+            }}
           />
           {canLoad && !loadingMore && <LoadNext onLoad={loadMore} />}
         </div>

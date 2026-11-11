@@ -16,7 +16,7 @@ The same outline runs through the review deck ([`presentation/CineSense-review.p
 - **Streaming in Germany and the cinema:** subscription, rent or buy, with a link; recent cinema releases; trailers on hover.
 - **Taste that learns:** 👍/👎 build an anonymous taste profile. ⚡/😂 steer only the current session.
 - **A cinema, not a database:** a wide screen, curtains, fog and light; seven mood worlds in the background, each with its newest top-rated films (last 8 years) and its top classics.
-- **Never an empty page:** the best matches in front (up to 6, at least 3), below them every further film from 60% in one row the mouse steers (from 70% or higher above 500 films, from 50% when few reach 60%); when too few films fit every wish, the smallest widening shows below while the search stays.
+- **Never an empty page:** the best matches in front (up to 6, at least 3), below them every further film from 60% in a running row, 30 at a time with « » (from 70% or higher above 500 films, from 50% when few reach 60%); when too few films fit every wish, the smallest widening shows below while the search stays.
 
 ## 3. Using it (live demo, or the recording in the video)
 
