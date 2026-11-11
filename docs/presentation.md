@@ -1,6 +1,6 @@
 # CineSense — presentation outline (10 min + 5 min Q&A)
 
-The same outline runs through the review deck (`presentation/CineSense-review.pptx`, 12 slides) and the English review video (`docs/video/review_demo.py`, local): **why → what it offers → using it → how it works (four technical slides) → guard and grounding → evaluation → what's next.**
+The same outline runs through the review deck ([`presentation/CineSense-review.pdf`](presentation/CineSense-review.pdf), 12 slides) and the English review video (local): **why → what it offers → using it → how it works (four technical slides) → guard and grounding → evaluation → what's next.**
 
 ## 1. Why (Situation → Complication)
 

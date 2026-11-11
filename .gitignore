@@ -22,3 +22,7 @@ docs/*.txt
 backend/scripts/langgraph_demo.py
 .vscode/
 
+# the review deck: only the PDF is published (pptx, its build script and the speaker script stay local)
+docs/presentation/*
+!docs/presentation/CineSense-review.pdf
+docs/review-agent.md
