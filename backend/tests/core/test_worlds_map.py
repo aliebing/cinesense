@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from cinesense.core.worlds_map import assign_worlds, normalise_wikidata_genres, top_tags
+from cinesense.core.worlds_map import assign_worlds, normalise_wikidata_genres, top_tags, world_scores
 
 
 @pytest.mark.parametrize(
@@ -14,7 +14,12 @@ from cinesense.core.worlds_map import assign_worlds, normalise_wikidata_genres, 
         (["Adventure", "Fantasy"], ["adventure"]),
         (["Children", "Animation"], ["comedy"]),
         (["Documentary"], []),
-        (["Drama"], []),
+        (["Drama"], ["romance"]),  # every feature film has a world now
+        (["Horror"], ["suspense"]),
+        (["War", "Drama"], ["action"]),  # a war drama is a war film first
+        (["Drama", "Horror", "Thriller"], ["suspense"]),  # the fallbacks only when nothing else places it
+        (["Western"], ["adventure"]),
+        (["Musical"], ["romance"]),
     ],
 )
 def test_assign_worlds_mapping(genres, expected):
@@ -42,3 +47,11 @@ def test_normalise_wikidata_genres():
         "Comedy",
         "Documentary",
     ]
+
+
+def test_the_main_world_comes_first_by_the_films_mood_tags():
+    tags = ["sci-fi", "crime", "action", "suspense"]
+    v = np.array([1.0, 0.4, 0.6, 0.5], dtype=np.float32)  # Inception: strongly sci-fi
+    genres = ["Action", "Crime", "Mystery", "Sci-Fi", "Thriller"]
+    assert assign_worlds(genres, [], world_scores(v, tags)) == ["scifi", "action", "suspense"]
+    assert assign_worlds(genres, []) == ["suspense", "scifi", "action"]  # without mood data: the fixed order

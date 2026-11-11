@@ -25,7 +25,7 @@ from cinesense.catalog_import.movielens import (
     read_genome_tags,
 )
 from cinesense.core.config import get_settings, load_env_file
-from cinesense.core.worlds_map import assign_worlds, top_tags
+from cinesense.core.worlds_map import assign_worlds, top_tags, world_scores
 from cinesense.data_sources.db import connect, init_schema
 from cinesense.data_sources.embeddings import EmbeddingClient
 from cinesense.data_sources.wikidata import (
@@ -81,7 +81,7 @@ def film_row(ml: MovieLensFilm, wd: WikidataFilm, tags: list[str]) -> dict:
         "genres": ml.genres,
         "directors": wd.directors,
         "cast_top": wd.cast[:5],
-        "world_ids": assign_worlds(ml.genres, top),
+        "world_ids": assign_worlds(ml.genres, top, world_scores(ml.tag_vector, tags)),
         "top_tags": top,
         "youtube_key": wd.youtube_key,
         "release_date_de": wd.release_date_de,
