@@ -255,7 +255,7 @@ class ToolKit:
         film = self._find_film(title)
         if film is None:
             return {}, f"No film found for '{title}'."
-        world = (state.get("criteria") or {}).get("world_id") or (film.world_ids[0] if film.world_ids else "suspense")
+        world = film.world_ids[0] if film.world_ids else "suspense"  # the film's own genre, not the search's
         return {"handoff": {"world_id": world, "film_id": film.id}}, f"{film.title} will be shown on stage."
 
 
