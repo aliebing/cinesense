@@ -74,10 +74,14 @@ export const getWorldMovies = (worldId: string, limit = 12) =>
 export type MoodFit = { tag: string; mode: "prefer" | "must" | "not"; percent: number | null };
 export const fitMovie = (id: string, criteria: Criteria) => apiPost<MoodFit[]>(`/api/movies/${encodeURIComponent(id)}/fit`, criteria);
 export const getMovie = (id: string) => apiGet<Movie>(`/api/movies/${encodeURIComponent(id)}`);
-export const getRelated = (id: string, worldId?: string) =>
-  apiGet<RankedMovie[]>(
-    `/api/movies/${encodeURIComponent(id)}/related${worldId ? `?world_id=${encodeURIComponent(worldId)}` : ""}`,
-  );
+/** films like this one, within a world (by the film's own mood tags) */
+export const getRelated = (id: string, worldId?: string, limit?: number) => {
+  const q = new URLSearchParams();
+  if (worldId) q.set("world_id", worldId);
+  if (limit) q.set("limit", String(limit));
+  const qs = q.toString();
+  return apiGet<RankedMovie[]>(`/api/movies/${encodeURIComponent(id)}/related${qs ? `?${qs}` : ""}`);
+};
 
 export type FilmRef = { id: string; title: string; year: number | null };
 export type ProfileSummary = { liked: FilmRef[]; disliked: FilmRef[]; taste: string[] };

@@ -262,8 +262,9 @@
   position: absolute; z-index: 16; top: 3.4cqw; left: calc(var(--safe-x) + var(--panel-w) + 1.4cqw); right: var(--safe-x);
   display: grid; grid-template-columns: 10.5cqw 32cqw minmax(0, 1fr); gap: 1.4cqw; align-items: start; font-size: var(--ui);
 }
+/* the gold frame lies inside the poster, so its top edge is level with the panels beside it */
 .stage-poster { position: relative; aspect-ratio: 2 / 3; border-radius: 8px; overflow: hidden;
-  outline: 3px solid var(--gold); box-shadow: 0 0 0 6px #f3c76b33, 0 0 60px #f3c76b55, 0 20px 50px #000; }
+  outline: 3px solid var(--gold); outline-offset: -3px; box-shadow: 0 0 60px #f3c76b55, 0 20px 50px #000; }
 .stage-trailer { position: relative; aspect-ratio: 16 / 9; border-radius: 10px; overflow: hidden; background: #000;
   outline: 1px solid #ffffff25; box-shadow: 0 20px 50px #000a; }
 .stage-trailer__frame { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
@@ -790,3 +791,7 @@
 .tile-row-wrap[data-world^="mood-"] .tile-wrap { animation: tileIn .9s ease both; }
 @keyframes tileIn { from { opacity: 0; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .tile-row-wrap[data-world^="mood-"] .tile-wrap { animation: none; } }
+/* detail page opened from the homepage: the genre in place of the mood settings */
+.genre-panel__kicker { margin: 0; font-size: .75em; letter-spacing: .25em; text-transform: uppercase; color: var(--gold); }
+.genre-panel__title { margin: .2em 0 .3em; font-size: 1.35em; font-weight: 600; }
+.genre-panel__subtitle { margin: 0; font-size: .9em; line-height: 1.4; color: #d6d6de; }

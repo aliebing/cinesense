@@ -109,7 +109,8 @@ export default function HomePage({ initial = null }: { initial?: HomeData | null
     setCriteria({ ...criteria, availability });
     router.push("/results");
   };
-  const openMovie = (m: HomeTile) => router.push(`/world/${m.world_ids[0]}?film=${m.id}`);
+  // the film opens in the mood on screen (its genre page), not in whichever world it was filed under first
+  const openMovie = (m: HomeTile) => router.push(`/world/${world?.id ?? m.world_ids[0]}?film=${m.id}`);
   // always the mood on screen: its top-rated films in two equal rows (one on a narrow screen); a search is shown on
   // the search page, not here
   const rows = moodRows(world, data, narrow ? 1 : 2);

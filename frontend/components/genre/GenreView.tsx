@@ -68,6 +68,8 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
   const [feedbackVersion, setFeedbackVersion] = useState(0);
   const feedbackPending = useRef(false);
   const [stageReasons, setStageReasons] = useState<{ id: string; reasons: string[] } | null>(null);
+  // opened from the homepage and a film picked in the row: the film it was picked as being like
+  const [likeOf, setLikeOf] = useState<{ id: string; of: Movie } | null>(null);
   // how the stage film carries the wished moods, for a film the search did not rank (opened from a world)
   const [stageFit, setStageFit] = useState<{ id: string; key: string; fit: MoodFit[] } | null>(null);
 
@@ -103,7 +105,7 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
   const stageId = state.kind === "ready" ? state.movie.id : null;
   useEffect(() => {
     const active = JSON.parse(criteriaKey);
-    if (!stageId || !active.tags?.length) return;
+    if (!stageId || !fromSearch || !active.tags?.length) return;
     let cancelled = false;
     fitMovie(stageId, active).then((r) => {
       if (!cancelled && r.ok) setStageFit({ id: stageId, key: criteriaKey, fit: r.data });
@@ -111,7 +113,7 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
     return () => {
       cancelled = true;
     };
-  }, [stageId, criteriaKey]);
+  }, [stageId, criteriaKey, fromSearch]);
   const n = page.key === criteriaKey ? page.n : 0;
   // one page of the row: the search's matches (opened from the search) or the world's films ranked by the chips
   // (or by rating without any); one film more than a page, as the stage film may be among them
@@ -151,7 +153,7 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
     // the stage film's own neighbours: the fallback when a search leaves nothing else to show
     // (a title search finds just the film on stage, and the row would stay empty)
     const loadRelated = () =>
-      getRelated(stageId, worldId).then((r) => {
+      getRelated(stageId, worldId, LIKE_THIS).then((r) => {
         if (cancelled) return;
         setRelated(r.ok ? r.data : []);
         setFound(null);
@@ -161,6 +163,8 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
         loadedFor.current = loadKey;
       });
     const t = setTimeout(async () => {
+      // opened from the homepage: films like the one on stage, in its genre (the search plays no part here)
+      if (!fromSearch) return loadRelated();
       const p = await fetchPage(active, n);
       if (cancelled) return;
       if (!p || (n === 0 && !p.items.some((x) => x.movie.id !== stageId))) return loadRelated();
@@ -177,7 +181,7 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
       cancelled = true;
       clearTimeout(t);
     };
-  }, [stageId, worldId, criteriaKey, n, loadKey, fetchPage]);
+  }, [stageId, worldId, criteriaKey, n, loadKey, fetchPage, fromSearch]);
   const turn = async (to: number) => {
     if (pending) return;
     if (rowFromSearch && found) return setPending({ n: to, raw: related }); // all loaded: just another page of it
@@ -193,6 +197,7 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
   const select = (m: Movie) => {
     if (state.kind !== "ready") return;
     setStageReasons({ id: m.id, reasons: related.find((r) => r.movie.id === m.id)?.reasons ?? [] });
+    if (!fromSearch) setLikeOf({ id: m.id, of: state.movie });
     setState({ ...state, movie: m });
     router.replace(`/world/${worldId}?film=${m.id}${fromSearch ? "&from=search" : ""}`, { scroll: false });
   };
@@ -217,6 +222,7 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
   };
 
   const stageWhy = (m: Movie, w: MoodWorld) => {
+    if (!fromSearch) return likeWhy(m, w.title, likeOf?.id === m.id ? likeOf.of : null);
     const reasons = stageReasons?.id === m.id ? stageReasons.reasons : [];
     const fit = stageFit?.id === m.id && stageFit.key === criteriaKey ? stageFit.fit : null;
     return stageWhyText(m, w.title, reasons, fit);
@@ -266,7 +272,7 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
       />
       <FogLight tint={world?.tint ?? "#1b4a6b"} reduced={reduced} />
       <header className="genre-top">
-        <Breadcrumb items={crumbs(movie)} />
+        <Breadcrumb items={crumbs(movie, fromSearch)} />
       </header>
       {state.kind === "error" && <p className="genre-error">Couldn&apos;t load films</p>}
       {state.kind === "loading" && <p className="genre-loading">Loading …</p>}
@@ -281,18 +287,28 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
             onSteer={steerSession}
           />
           <div className="side-settings side-settings--genre">
-            <MoodSummary tags={tags} criteria={criteria} hiddenCount={hidden} />
+            {fromSearch ? (
+              <MoodSummary tags={tags} criteria={criteria} hiddenCount={hidden} />
+            ) : (
+              <section className="criteria-panel genre-panel" aria-label="Genre">
+                <p className="genre-panel__kicker">{world.kicker}</p>
+                <h2 className="genre-panel__title">{world.title}</h2>
+                <p className="genre-panel__subtitle">{world.subtitle}</p>
+              </section>
+            )}
           </div>
           <RelatedRow
             key={n} // a new page starts at its first film
             items={shownRow}
             onSelect={select}
             label={
-              widenedRow
+              !fromSearch
+                ? likeLabel(rowItems.length, movie.title, world.title)
+                : widenedRow
                 ? widenedLabel(rowItems.filter((r) => widenedRow.exact.has(r.movie.id)).length, rowItems.length, widenedRow.label)
                 : rowLabel(rowItems.length, n * PAGE + 1, others, fromSearch && rowFromSearch, hasAnyCriteria(criteria), world.title)
             }
-            name={fromSearch && rowFromSearch ? "Your other matches" : "Also fits your mood"}
+            name={fromSearch && rowFromSearch ? "Your other matches" : fromSearch ? "Also fits your mood" : "Films like this"}
             showReasons={fromSearch && rowFromSearch}
             found={found}
             streamCheck={fromSearch && rowFromSearch && criteria.availability === "stream"}
@@ -308,6 +324,7 @@ export default function GenreView({ worldId, filmId, fromSearch = false }: Props
 }
 
 const PAGE = 30; // films per page of the row, as on the search page
+const LIKE_THIS = 29; // films like the one on stage, opened from the homepage
 const count = new Intl.NumberFormat("en-US");
 
 /** The heading of a widened row, as on the search page: "Only 1 film matches every wish · 48 more with: …". */
@@ -345,9 +362,30 @@ export function rowLabel(
   );
 }
 
-/** CineSense › Search › film: the search is always one step back (a world crumb would just repeat the brand). */
-function crumbs(movie: Movie | null): Crumb[] {
-  const out: Crumb[] = [{ label: "Search", href: "/results" }]; // always: the search is one step back from any film
+/** From the search: CineSense › Search › film. From the homepage it is another area: just CineSense › film. */
+function crumbs(movie: Movie | null, fromSearch: boolean): Crumb[] {
+  const out: Crumb[] = fromSearch ? [{ label: "Search", href: "/results" }] : [];
   if (movie) out.push({ label: movie.title });
   return out;
+}
+
+/** The heading of the row opened from the homepage: "29 films like Inception · in Science Fiction". */
+export function likeLabel(n: number, title: string, worldTitle: string) {
+  return (
+    <>
+      {`${n} ${n === 1 ? "film" : "films"} like ${title}`}
+      <span className="related-hint"> · in {worldTitle}</span>
+    </>
+  );
+}
+
+/** Why the film on stage, opened from the homepage: what it shares with the film it was picked as being like, else
+ *  what it is in its genre, with its rating. */
+export function likeWhy(m: Movie, worldTitle: string, of: Movie | null): string {
+  const rated = m.ml_rating !== null ? ` · MovieLens ${m.ml_rating.toFixed(1)}/5 from ${count.format(m.ml_rating_count)} ratings` : "";
+  if (of) {
+    const shared = m.top_tags.filter((t) => of.top_tags.includes(t)).slice(0, 3);
+    return `Like ${of.title}${shared.length ? `: also ${shared.join(", ")}` : ""}${rated}`;
+  }
+  return `A top-rated ${worldTitle} film${rated}`;
 }

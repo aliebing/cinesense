@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from cinesense.core.config import load_env_file
-from cinesense.core.criteria import SearchCriteria
+from cinesense.core.criteria import SearchCriteria, TagCriterion
 from cinesense.core.models import MoodWorld, Movie, RankedMovie
 from cinesense.core.worlds import WORLDS, get_world
 from cinesense.search import widening
@@ -44,7 +44,7 @@ Trailers = Annotated[object, Depends(get_trailers)]
 Checker = Annotated[object, Depends(get_trailer_checker)]
 
 IMAGE_FILL = 12  # images fetched per list response (each new film costs one Streaming API request once)
-RELATED_IMAGE_FILL = 24  # the related row shows up to 24 films; no blank tiles
+RELATED_IMAGE_FILL = 30  # the "films like this" row shows up to 29 films; no blank tiles
 TRAILER_FILL = 4  # top search hits without a Wikidata trailer ask YouTube (cached 30 days; 95 searches/day)
 
 
@@ -293,7 +293,12 @@ def create_app(load_env: bool = True) -> FastAPI:
         # Rank within the world the user is browsing; fall back to the film's first world.
         if world_id is None or get_world(world_id) is None:
             world_id = found.world_ids[0] if found.world_ids else None
-        items = SearchService(provider).run(SearchCriteria(world_id=world_id), 0, limit + 1, profile).items
+        # films like this one: its strongest mood tags as the wish, within that world
+        names = provider.list_tags()
+        idx = {t: i for i, t in enumerate(names)}
+        tags = [TagCriterion(idx=idx[t], weight=6) for t in found.top_tags[:5] if t in idx]
+        criteria = SearchCriteria(world_id=world_id, tags=tags)
+        items = SearchService(provider).run(criteria, 0, limit + 1, profile).items
         items = [r for r in items if r.movie.id != movie_id][:limit]
         row_trailers([r.movie for r in items], checker, trailers)
         for r in items[:RELATED_IMAGE_FILL]:

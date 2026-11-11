@@ -22,7 +22,7 @@ vi.mock("@/lib/api", () => ({
   getWorlds: () => api.getWorlds(),
   getWorldMovies: (id: string) => api.getWorldMovies(id),
   getMovie: (id: string) => api.getMovie(id),
-  getRelated: (id: string, worldId?: string) => api.getRelated(id, worldId),
+  getRelated: (id: string, worldId?: string, limit?: number) => api.getRelated(id, worldId, limit),
   discover: (...a: unknown[]) => api.discover(...a),
   search: (...a: unknown[]) => api.search(...a),
   getTags: () => Promise.resolve({ ok: true, data: [{ idx: 0, tag: "dark" }, { idx: 3, tag: "action" }] }),
@@ -51,8 +51,8 @@ it("puts the requested film on stage", async () => {
   render(<GenreView worldId="action" filmId="demo-03" />);
   expect(await screen.findByRole("heading", { name: "Demo-Film 03" })).toBeInTheDocument();
   const crumbs = screen.getByRole("navigation", { name: "Breadcrumb" });
-  // CineSense › Search › film: a world crumb would lead to the same start page as the brand
-  expect(within(crumbs).getAllByRole("link").map((l) => l.textContent)).toEqual(["CineSense", "Search"]);
+  // opened from the homepage it is another area: just CineSense › film, no Search
+  expect(within(crumbs).getAllByRole("link").map((l) => l.textContent)).toEqual(["CineSense"]);
   expect(within(crumbs).getByText("Demo-Film 03")).toHaveAttribute("aria-current", "page");
 });
 
@@ -81,41 +81,32 @@ it("shows an error state when the backend is unreachable", async () => {
   expect(await screen.findByText("Couldn't load films")).toBeInTheDocument();
 });
 
-it("fills the row with the world's films, a page of 30 (one more: the stage film may be among them)", async () => {
+it("opened from the homepage: films like the one on stage in its genre, the genre on the left, no mood settings", async () => {
+  const { setSearchState, emptyCriteria } = await import("@/lib/searchState");
+  setSearchState({ ...emptyCriteria(), tags: [{ idx: 0, weight: 6, mode: "prefer" }] }); // a search plays no part here
   render(<GenreView worldId="action" filmId={null} />);
   await screen.findByRole("heading", { name: "Demo-Film 01" });
-  await waitFor(() => expect(api.discover).toHaveBeenCalled());
-  expect(api.discover.mock.calls[0][0]).toMatchObject({ world_id: "action" });
-  expect(api.discover.mock.calls[0].slice(1, 3)).toEqual([0, 31]);
-  expect(await screen.findByText(/3 more top-rated .* films/)).toBeInTheDocument();
-  expect(screen.getByText(/1–3 of 3/)).toBeInTheDocument();
+  await waitFor(() => expect(api.getRelated).toHaveBeenCalledWith("demo-01", "action", 29));
+  expect(api.discover).not.toHaveBeenCalled();
+  expect(api.search).not.toHaveBeenCalled();
+  expect(await screen.findByText(/3 films like Demo-Film 01/)).toBeInTheDocument();
+  expect(screen.getByRole("region", { name: "Genre" })).toHaveTextContent("Action");
+  expect(screen.queryByRole("region", { name: "Your mood settings" })).toBeNull();
+  setSearchState(emptyCriteria());
 });
 
-it("« » page the row by 30: the next page is loaded from offset 30", async () => {
+it("from the search the row is paged by 30 through the films the search page shows", async () => {
   const userEvent = (await import("@testing-library/user-event")).default;
-  const many = (from: number) => sampleRanked(31).map((r, i) => ({ ...r, movie: { ...r.movie, id: `f-${from + i}`, title: `Film ${from + i}` } }));
-  api.discover.mockImplementation((_c: unknown, offset: number) =>
-    Promise.resolve({ ok: true, data: { items: many(offset), total: 100, hidden_by_exclusion: 0, extended_used: false } }),
-  );
-  render(<GenreView worldId="action" filmId={null} />);
-  expect(await screen.findByText(/1–30 of 100/)).toBeInTheDocument(); // the stage film is not one of them
-  expect(screen.queryByRole("button", { name: "Previous 30" })).toBeNull(); // no page before: no arrow
-  await userEvent.click(screen.getByRole("button", { name: "Next 30" }));
-  expect(await screen.findByText(/31–60 of 100/)).toBeInTheDocument();
-  expect(api.discover.mock.calls.at(-1)?.slice(1, 3)).toEqual([30, 31]);
-  await userEvent.click(screen.getByRole("button", { name: "Previous 30" }));
-  expect(await screen.findByText(/1–30 of 100/)).toBeInTheDocument();
-});
-
-it("re-ranks the related row with the chip criteria inside the world", async () => {
   const { setSearchState, emptyCriteria } = await import("@/lib/searchState");
   setSearchState({ ...emptyCriteria(), tags: [{ idx: 0, weight: 6, mode: "prefer" }] });
-  api.discover.mockResolvedValue({ ok: true, data: { items: sampleRanked(3), total: 3, hidden_by_exclusion: 0, extended_used: false } });
-  render(<GenreView worldId="action" filmId={null} />);
-  await screen.findByRole("heading", { name: "Demo-Film 01" });
-  await waitFor(() => expect(api.discover).toHaveBeenCalled());
-  expect(api.discover.mock.calls[0][0]).toMatchObject({ world_id: "action", tags: [{ idx: 0, weight: 6, mode: "prefer" }] });
-  expect(await screen.findByText("3 films found")).toBeInTheDocument();
+  const many = sampleRanked(50).map((r, i) => ({ ...r, movie: { ...r.movie, id: `f-${i}`, title: `Film ${i}` }, match_percent: 80 }));
+  api.search.mockResolvedValue({ ok: true, data: { items: many, total: 200, hidden_by_exclusion: 0, extended_used: false } });
+  render(<GenreView worldId="action" filmId={null} fromSearch />);
+  expect(await screen.findByText(/1–30 of 50/)).toBeInTheDocument(); // the stage film is not one of them
+  expect(screen.queryByRole("button", { name: "Previous 30" })).toBeNull();
+  await userEvent.click(screen.getByRole("button", { name: "Next 30" }));
+  expect(await screen.findByText(/31–50 of 50/)).toBeInTheDocument();
+  expect(api.search).toHaveBeenCalledTimes(1); // loaded once, paged here
   setSearchState(emptyCriteria());
 });
 
@@ -124,11 +115,11 @@ it("👍 stores feedback, marks the button and re-ranks the row", async () => {
   api.getMovie.mockResolvedValue({ ok: true, data: sampleMovies(3)[2] });
   render(<GenreView worldId="action" filmId="demo-03" />);
   const like = await screen.findByRole("button", { name: "👍 More like this" });
-  await waitFor(() => expect(api.discover).toHaveBeenCalledTimes(1));
+  await waitFor(() => expect(api.getRelated).toHaveBeenCalledTimes(1));
   await userEvent.click(like);
   expect(api.sendFeedback).toHaveBeenCalledWith("demo-03", 1);
   await waitFor(() => expect(screen.getByRole("button", { name: "👍 More like this" })).toHaveAttribute("aria-pressed", "true"));
-  await waitFor(() => expect(api.discover).toHaveBeenCalledTimes(2));
+  await waitFor(() => expect(api.getRelated).toHaveBeenCalledTimes(2));
 });
 
 it("⚡ adds the action tag to the session's chips", async () => {
@@ -137,10 +128,11 @@ it("⚡ adds the action tag to the session's chips", async () => {
   setSearchState(emptyCriteria());
   api.getMovie.mockResolvedValue({ ok: true, data: sampleMovies(3)[2] });
   api.discover.mockResolvedValue({ ok: true, data: { items: sampleRanked(2), total: 2, hidden_by_exclusion: 0, extended_used: false } });
-  render(<GenreView worldId="action" filmId="demo-03" />);
+  api.search.mockResolvedValue({ ok: true, data: { items: sampleRanked(2), total: 2, hidden_by_exclusion: 0, extended_used: false } });
+  render(<GenreView worldId="action" filmId="demo-03" fromSearch />);
   await userEvent.click(await screen.findByRole("button", { name: "⚡ More action" }));
-  await waitFor(() => expect(api.discover).toHaveBeenCalled());
-  expect(api.discover.mock.calls[0][0].tags).toEqual([{ idx: 3, weight: 6, mode: "prefer" }]);
+  await waitFor(() => expect(api.search).toHaveBeenCalled());
+  expect(api.search.mock.calls.at(-1)?.[0].tags).toEqual([{ idx: 3, weight: 6, mode: "prefer" }]);
 });
 
 it("a quick double click on 👍 sends one request", async () => {
@@ -180,7 +172,7 @@ it("a title search that finds only the film on stage falls back to its related f
   api.discover.mockResolvedValue({ ok: true, data: { items: only, total: 1, hidden_by_exclusion: 0, extended_used: false } });
   render(<GenreView worldId="action" filmId={null} />);
   await screen.findByRole("heading", { name: "Demo-Film 01" });
-  await waitFor(() => expect(api.getRelated).toHaveBeenCalledWith("demo-01", "action"));
+  await waitFor(() => expect(api.getRelated).toHaveBeenCalledWith("demo-01", "action", 29));
   expect(await screen.findAllByRole("button", { name: /Demo-Film 0[234]/ })).not.toHaveLength(0);
   setSearchState(emptyCriteria());
 });
@@ -213,7 +205,7 @@ it("shows the mood settings read-only: tags, stars, exclusions and filters, with
     tags: [{ idx: 0, weight: 8, mode: "must" }, { idx: 3, weight: 6, mode: "not" }],
     max_runtime_min: 100,
   });
-  render(<GenreView worldId="action" filmId={null} />);
+  render(<GenreView worldId="action" filmId={null} fromSearch />);
   const panel = await screen.findByRole("region", { name: "Your mood settings" });
   expect(within(panel).getByText("dark")).toBeInTheDocument();
   expect(within(panel).getByLabelText("Weight 4 of 5")).toBeInTheDocument();
@@ -229,7 +221,7 @@ it("⚡ shows up in the read-only mood settings", async () => {
   const userEvent = (await import("@testing-library/user-event")).default;
   const { emptyCriteria, setSearchState } = await import("@/lib/searchState");
   setSearchState(emptyCriteria());
-  render(<GenreView worldId="action" filmId={null} />);
+  render(<GenreView worldId="action" filmId={null} fromSearch />);
   const panel = await screen.findByRole("region", { name: "Your mood settings" });
   expect(within(panel).queryByText("action")).toBeNull();
   await userEvent.click(screen.getByRole("button", { name: "⚡ More action" }));

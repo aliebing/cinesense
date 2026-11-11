@@ -466,3 +466,13 @@ def test_tile_rows_use_the_fallback_trailer_the_detail_page_found():
         assert movies, name
         assert all(m["youtube_key"] == f"yt-{m['id']}" for m in movies), name
     assert searched == []
+
+
+def test_related_are_films_like_the_one_on_stage_in_its_world():
+    c = client()
+    matrix = c.get("/api/movies/ml-2571").json()
+    items = c.get("/api/movies/ml-2571/related?world_id=scifi&limit=29").json()
+    assert items and all(i["movie"]["id"] != "ml-2571" for i in items) and len(items) <= 29
+    assert all("scifi" in i["movie"]["world_ids"] for i in items)
+    # ranked by the stage film's own mood tags: the first film shares at least one of them
+    assert set(items[0]["movie"]["top_tags"]) & set(matrix["top_tags"]) or items[0]["reasons"]
