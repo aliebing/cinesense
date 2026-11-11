@@ -1,5 +1,5 @@
-// CineSense review deck (9 slides, English): why, what it offers, technical 1/2 (whole flow) and 2/2 (LangGraph),
-// guard, grounding, evaluation, what could be better. Same outline as HikeSense's deck; the technical slides
+// CineSense review deck (12 slides, English): why, what it offers, technical 1/4 (whole flow), 2/4 (technologies,
+// storage, data), 3/4 (LangGraph) and 4/4 (the tools), guard, grounding, evaluation, challenges, what could be better. Same outline as HikeSense's deck; the technical slides
 // compare the two apps.
 // Modelled on GridLens's info/presentation/build_review.js.
 // Run: NODE_PATH=<dir with pptxgenjs, react, react-dom, react-icons, sharp> SKILL_DIR=<pptx skill> node build_review.js [out.pptx]
@@ -123,9 +123,9 @@ async function icon(name, color) {
   text(s, "Mood-based film discovery with a grounded chat agent\nTuring College · AI Engineering capstone\nAlexander Liebing",
     { x: 0.8, y: 4.75, w: 5.8, h: 1.0, fontSize: 15, color: C.text2, objectName: "Subtitle" });
   text(s, "Live: cinesense.de", { x: 0.8, y: 6.0, w: 5.8, h: 0.4, fontSize: 16, bold: true, color: C.accent1, objectName: "Live link" });
-  s.addImage({ path: path.join(SHOTS, "02-chat.jpg"), x: 6.9, y: 2.45, w: 5.75, h: 2.25, altText: "CineSense home page with the chat and mood chips" });
+  s.addImage({ path: path.join(SHOTS, "01-home.jpg"), x: 6.9, y: 2.45, w: 5.75, h: 2.25, altText: "CineSense home page with the chat and mood chips" });
   text(s, "Posters blurred (copyright)", { x: 6.9, y: 4.8, w: 5.75, h: 0.3, fontSize: 11, color: C.text2, objectName: "Caption" });
-  s.addNotes("CineSense helps you pick a film by mood instead of scrolling. First why it is needed and what it offers. Then the technical side on two slides: the whole flow, and the LangGraph flow of one chat turn, each compared with HikeSense. Then the guard, the grounding check and the evaluation, briefly, and at the end what could be better and where it could go.");
+  s.addNotes("CineSense helps you pick a film by mood instead of scrolling. First why it is needed and what it offers. Then the technical side on four slides: the whole flow, the technologies with storage and data, the LangGraph flow of one chat turn, and the ten tools. Then the guard, the grounding check and the evaluation, briefly, and at the end what could be better and where it could go.");
 
   // ---------- 2. Problem ----------
   pres.addSection({ title: "Problem" });
@@ -151,9 +151,9 @@ async function icon(name, color) {
   pres.addSection({ title: "Solution" });
   s = pres.addSlide({ masterName: "Content", sectionTitle: "Solution" });
   s.addText("What CineSense offers", { placeholder: "title" });
-  s.addImage({ path: path.join(SHOTS, "03-results.jpg"), x: 0.6, y: 1.45, w: 6.6, h: 2.58,
-    altText: "Result page: mood chips with weights, excluded genre and person, 78 films hidden, best matches" });
-  s.addImage({ path: path.join(SHOTS, "04-stage.jpg"), x: 0.6, y: 4.2, w: 6.6, h: 2.58,
+  s.addImage({ path: path.join(SHOTS, "01-home.jpg"), x: 0.6, y: 1.45, w: 6.6, h: 2.58,
+    altText: "Home page: the chat's picks, the mood settings on the left, the mood world's rows on the right" });
+  s.addImage({ path: path.join(SHOTS, "02-stage.jpg"), x: 0.6, y: 4.2, w: 6.6, h: 2.58,
     altText: "Film stage for Moon: why it fits, where it streams, other matches below" });
   {
     const offers = [
@@ -276,9 +276,48 @@ async function icon(name, color) {
   }
   s.addNotes("The whole system on one diagram; the sparkle marks where a language model works. The Next.js client posts the message to FastAPI, and the answer streams back as Server-Sent Events. The guard checks the limits and the injection patterns before any model call; a match gets a fixed reply. Then the LangGraph agent lets Claude Haiku, via OpenRouter, call tools that set the search criteria. The search is plain code: it ranks the catalogue in Postgres with pgvector, which was built offline, and checks streaming through a cached API. Explain words the reply, and grounding lets only films through that the search returned. Reply, chips and films stream back to the client.");
 
-  // ---------- 5. Technical 2: the LangGraph graph ----------
+
+  // ---------- 5. Technical 2: technologies, storage, data ----------
   s = pres.addSlide({ masterName: "Content", sectionTitle: "Technical" });
-  s.addText("Agent-first: the model drives", { placeholder: "title" });
+  s.addText("Stack, storage and where the data comes from", { placeholder: "title" });
+  {
+    const cols = [
+      ["FaLayerGroup", "Technologies", [
+        "Frontend: Next.js 16 · TypeScript · Tailwind",
+        "Backend: Python 3.12 · FastAPI · LangGraph",
+        "OpenRouter: Claude Haiku 5.5 (agent, reply), text-embedding-3-small (plots)",
+        "LangSmith tracing (EU endpoint)",
+        "Docker Compose + nginx on a VPS: cinesense.de"]],
+      ["FaDatabase", "Storage: Supabase Postgres", [
+        "One schema, cinesense",
+        "films: ratings, genres, Wikidata facts, German titles",
+        "genome_tags: 1,128 mood values per film",
+        "film_people: cast and crew with billing",
+        "plot_chunks: 1,536-dim vectors, HNSW index (pgvector)",
+        "feedback, chat log; caches for streaming, trailers and API budgets"]],
+      ["FaCloudDownloadAlt", "Fetching the data", [
+        "Offline, resumable (catalog_import): MovieLens ≈19,800 films + Tag Genome; Wikidata people, runtime, language, German titles; Wikipedia plots and posters; ≈800 German releases since 2021",
+        "At run time: Streaming Availability API (1,000 calls/month, 7-day cache, budget stops at 900); YouTube trailer checks; live search for newer films",
+        "No TMDB: its terms forbid AI apps"]],
+    ];
+    for (const [i, [ic, head, items]] of cols.entries()) {
+      const x = 0.6 + i * 4.1;
+      card(s, x, 1.45, 3.9, 4.35, "Stack card " + head);
+      await iconDot(s, x + 0.25, 1.65, ic, 0.55);
+      text(s, head, { x: x + 0.95, y: 1.7, w: 2.8, h: 0.45, fontSize: 17, bold: true, color: C.accent1, objectName: "Stack head " + head });
+      text(s, items.map((t, j) => ({ text: t, options: { bullet: true, breakLine: j < items.length - 1 } })),
+        { x: x + 0.25, y: 2.4, w: 3.45, h: 3.3, fontSize: 12.5, paraSpaceAfter: 5, objectName: "Stack items " + head });
+    }
+    card(s, 0.6, 6.0, 12.1, 0.8, "Layers card");
+    text(s, [{ text: "Architecture: ", options: { bold: true, color: C.accent1 } },
+      { text: "web_api → chat_agent → search · taste → data_sources → core. Layers import only downwards (a test enforces it); every outside service sits behind an adapter, so all tests run offline on fixtures." }],
+    { x: 0.85, y: 6.1, w: 11.6, h: 0.6, fontSize: 13, valign: "middle", objectName: "Layers" });
+  }
+  s.addNotes("The technologies, where the data lives and how it gets there. Next.js with TypeScript in front, Python with FastAPI and LangGraph behind it. The models come through OpenRouter: Claude Haiku 5.5 for the agent and the reply, an embedding model for the plots; LangSmith traces every run. Everything is stored in one Supabase Postgres schema: the films, their 1,128 Tag Genome mood values, people, the plot chunks as vectors in pgvector, feedback and caches. The catalogue is built offline by resumable import jobs from MovieLens, Wikidata and Wikipedia; TMDB is not used because its terms forbid AI apps. At run time only three services are called: the Streaming Availability API behind a cache and a budget, YouTube for trailers, and a live search for newer films. Every service sits behind an adapter, and a test checks that the layers only import downwards.");
+
+  // ---------- 6. Technical 3: the LangGraph graph ----------
+  s = pres.addSlide({ masterName: "Content", sectionTitle: "Technical" });
+  s.addText("LangGraph: agent-first, the model drives", { placeholder: "title" });
   {
     const spec = {
       w: 1660, h: 600,
@@ -298,38 +337,37 @@ async function icon(name, color) {
       ["Reply and state", "explain ✦ words the reply, then grounding checks the titles. The criteria and results live in one typed state, a MemorySaver per browser tab."],
     ]);
   }
-  s.addNotes("This is the graph in graph.py; the guard runs before it. CineSense is agent-first: the graph starts at the model. As long as the agent returns tool calls, the turn goes through tick, which counts rounds, and tools, which run one after another and edit the shared criteria, and back to the agent. That is the ReAct loop. When the criteria changed, present runs the deterministic search; when nothing changed, the model's text is the reply. verify counts the films: fewer than three, and the agent gets relax_options to widen the search; if it picks none, auto_relax decides. explain words the reply. In HikeSense, as the next comparison shows, the code drives instead.");
+  s.addNotes("This is the graph in graph.py; the guard runs before it. CineSense is agent-first: the graph starts at the model. As long as the agent returns tool calls, the turn goes through tick, which counts rounds, and tools, which run one after another and edit the shared criteria, and back to the agent. That is the ReAct loop. When the criteria changed, present runs the deterministic search; when nothing changed, the model's text is the reply. verify counts the films: fewer than three, and the agent gets relax_options to widen the search; if it picks none, auto_relax decides. explain words the reply. The next slide lists the ten tools.");
 
-  // ---------- Data ----------
-  pres.addSection({ title: "Data" });
-  s = pres.addSlide({ masterName: "Content", sectionTitle: "Data" });
-  s.addText("Data: real catalogue data, no invented facts", { placeholder: "title" });
+  // ---------- 7. Technical 4: the tools ----------
+  s = pres.addSlide({ masterName: "Content", sectionTitle: "Technical" });
+  s.addText("Ten tools, one kind of wish each", { placeholder: "title" });
   {
-    const sources = [
-      ["FaTags", "MovieLens Tag Genome", "1,128 mood tags per film from real user tagging; ratings and genres"],
-      ["FaGlobeEurope", "Wikidata", "people, runtime, original language, German titles and release dates, trailer ids"],
-      ["FaBookOpen", "Wikipedia plots", "chunked and embedded (1,536 dims) into pgvector with an HNSW index, for plot search (RAG)"],
-      ["FaTv", "Streaming Availability API", "where a film streams in Germany; 1,000 calls a month behind a 7-day cache and a budget guard that stops at 900"],
+    const tools = [
+      ["new_search", "clears every criterion before a new wish", "\u201cnow a dark sci-fi film\u201d"],
+      ["set_mood_tags", "Tag Genome moods with weight and prefer / must / not", "\u201cdark and atmospheric, no horror\u201d"],
+      ["set_filters", "streaming or cinema, services, runtime, years, language, excluded genres and people", "\u201con Netflix, under 2 hours, without Stallone\u201d"],
+      ["search_plot", "semantic search (RAG) over the Wikipedia plots", "\u201can astronaut stranded on Mars\u201d"],
+      ["find", "a title or a person, typo-tolerant, live outside the catalogue", "\u201cfilms with keanu reevs\u201d"],
+      ["similar_to", "takes over the mood tags of a known film", "\u201csomething like Interstellar\u201d"],
+      ["film_info", "facts about one film; where it streams if asked (max 3 per turn)", "\u201cwhere can I stream Heat?\u201d"],
+      ["propose_exclusions", "suggests exclusions for vague dislikes; the user decides", "\u201cnothing too scary\u201d"],
+      ["show_on_stage", "puts the chosen film on the stage", "\u201cI'll take that one\u201d"],
+      ["relax_search", "widens a thin search with an option the code offered", "fewer than 3 films match (auto_relax)"],
     ];
-    for (const [i, [ic, h1, body]] of sources.entries()) {
-      const y = 1.5 + i * 1.12;
-      await iconDot(s, 0.6, y + 0.05, ic, 0.66);
-      text(s, h1, { x: 1.5, y, w: 6.3, h: 0.4, fontSize: 18, bold: true, objectName: "Source " + (i + 1) });
-      text(s, body, { x: 1.5, y: y + 0.42, w: 6.3, h: 0.62, fontSize: 14, color: C.text2, objectName: "Source detail " + (i + 1) });
+    for (const [i, [name, what, ex]] of tools.entries()) {
+      const x = 0.6 + (i % 2) * 6.15, y = 1.4 + Math.floor(i / 2) * 1.02;
+      card(s, x, y, 5.95, 0.9, "Tool card " + name);
+      text(s, name, { x: x + 0.15, y: y + 0.1, w: 2.4, h: 0.7, fontSize: 13, bold: true, color: C.accent1, fontFace: "Consolas", valign: "middle", objectName: "Tool " + name });
+      text(s, [{ text: what, options: { fontSize: 12.5, breakLine: true } }, { text: ex, options: { fontSize: 11.5, italic: true, color: C.text2 } }],
+        { x: x + 2.6, y: y + 0.08, w: 3.2, h: 0.76, valign: "middle", paraSpaceAfter: 2, objectName: "Tool text " + name });
     }
-    card(s, 8.3, 1.5, 4.4, 4.35, "Numbers card");
-    const stats = [["~20,600", "films in the catalogue"], ["No TMDB", "its terms forbid AI apps"], ["~$0.30", "to embed every plot"]];
-    for (const [i, [big, small]] of stats.entries()) {
-      text(s, big, { x: 8.7, y: 1.75 + i * 1.35, w: 3.7, h: 0.7, fontSize: 38, bold: true, color: C.accent1, fontFace: THEME.headFontFace, objectName: "Stat " + (i + 1) });
-      text(s, small, { x: 8.7, y: 2.47 + i * 1.35, w: 3.7, h: 0.4, fontSize: 15, color: C.text2, objectName: "Stat label " + (i + 1) });
-    }
-    text(s, [{ text: "How it is prepared: ", options: { bold: true, color: C.accent1 } },
-      { text: "catalog_import builds the catalogue offline and can resume; posters, cast billing and German titles come from Wikipedia and Wikidata. The MovieLens file is never committed, and the import never calls the Streaming API." }],
-    { x: 0.6, y: 6.05, w: 12.1, h: 0.75, fontSize: 14, objectName: "Preparation" });
+    text(s, "All 10 are bound to the model on every turn; a turn typically uses 1–4. Each tool has a narrow, typed schema and returns a Command that edits the shared state.",
+      { x: 0.6, y: 6.55, w: 12.1, h: 0.4, fontSize: 12.5, color: C.text2, objectName: "Tools note" });
   }
-  s.addNotes("The data is open data only. TMDB would have been easier, but its terms forbid AI applications. The Tag Genome is what makes mood measurable: 1,128 tags per film, scored from real user tagging. Wikidata adds the facts, Wikipedia the plots, which are chunked and embedded into pgvector for the plot search. Streaming data comes from the Streaming Availability API; its free plan allows 1,000 calls a month, so every call goes through a cache and a budget guard. The catalogue is built offline by resumable import jobs; the MovieLens file itself is never committed.");
+  s.addNotes("The ten tools, each for one kind of wish. new_search clears the criteria when a wish does not build on the last one. set_mood_tags sets Tag Genome moods with weight and mode. set_filters covers the hard filters, including excluded people. search_plot is the RAG part over the Wikipedia plots. find looks up a title or a person, typo-tolerant and live outside the catalogue. similar_to takes over the moods of a known film. film_info answers questions about one film, and where it streams, at most three lookups per turn because of the API budget. propose_exclusions only suggests; the user decides. show_on_stage puts a film on the stage, and relax_search widens a thin search with an option the code computed. All are bound every turn; the model picks the few that fit.");
 
-  // ---------- 6. Guard ----------
+  // ---------- 8. Guard ----------
   pres.addSection({ title: "Safety and quality" });
   s = pres.addSlide({ masterName: "Content", sectionTitle: "Safety and quality" });
   s.addText("Guard: injection never reaches the model", { placeholder: "title" });
@@ -377,7 +415,7 @@ async function icon(name, color) {
   }
   s.addNotes("The guard is deliberately simple and deterministic. The message is cleaned of control and zero-width characters, which could hide an attack, then checked against ten patterns in English and German. A match never reaches the model: the user gets a fixed reply, the chips stay as they were, and the message is not stored. After the turn, a reply that contains sixty consecutive characters of a prompt is replaced. The patterns target instructions to the assistant, so a wish about an AI film passes. It is a heuristic; the real protection is that the model can only act through typed tools. Every turn costs money, so the API caps turns per visitor and for the whole site.");
 
-  // ---------- 7. Grounding ----------
+  // ---------- 9. Grounding ----------
   s = pres.addSlide({ masterName: "Content", sectionTitle: "Safety and quality" });
   s.addText("Grounding: the reply may only name real results", { placeholder: "title" });
   {
@@ -401,24 +439,24 @@ async function icon(name, color) {
       "built from the data: title, year and two reasons per pick; also used when the reply is empty or cut off", "stop", { valign: "top" });
     arrow(s, vx + vw + 0.03, 2.27, ox - 0.03, 2.27, { color: C.accent3 });
     arrow(s, vx + vw + 0.03, 4.47, ox - 0.03, 4.47, { color: C.accent2 });
-    const st = [["90%", "of replies grounded before the check"], ["95%", "grounded after it: what users see (60 / 63)"],
-      ["3", "template fallbacks in the last full run"]];
+    const st = [["90%", "of replies grounded before the check"], ["94%", "grounded after it: what users see (59 / 63)"],
+      ["0", "invented films: the 4 misses were a series or a name from a plot"]];
     st.forEach(([big, small], i) => {
       const x = 0.6 + i * 4.1;
       text(s, big, { x, y: 5.85, w: 1.35, h: 0.75, fontSize: 34, bold: true, color: C.accent1, fontFace: THEME.headFontFace, valign: "middle", objectName: "Ground stat " + big });
       text(s, small, { x: x + 1.4, y: 5.85, w: 2.55, h: 0.75, fontSize: 13, color: C.text2, valign: "middle", objectName: "Ground label " + big });
     });
   }
-  s.addNotes("The facts come from the deterministic search; the model only words them. The grounding check then reads the explanation. Allowed are the result titles, in three spellings, and titles the user wrote. Any emphasised span that looks like a title, and any multi-word catalogue title in the text, must be on that list. Mood tags and names from the plots the model was shown do not count, which fixed the Silver City case. If anything is left, or the reply is empty or cut off, the whole reply becomes a template built from the data. In the last run the model's own reply was clean in 90 percent of scenarios; with the check, users saw 95 percent: three replies named a film series or a title from a plot, such as John Wick for John Wick: Chapter Two, which the check let through. HikeSense checks numbers instead of titles, because there the risk is an invented distance, not an invented film.");
+  s.addNotes("The facts come from the deterministic search; the model only words them. The grounding check then reads the explanation. Allowed are the result titles, in three spellings, and titles the user wrote. Any emphasised span that looks like a title, and any multi-word catalogue title in the text, must be on that list. Mood tags and names from the plots the model was shown do not count, which fixed the Silver City case. If anything is left, or the reply is empty or cut off, the whole reply becomes a template built from the data. In the last run the model's own reply was clean in 90 percent of scenarios; with the check, users saw 94 percent. The four misses are no invented films: twice a film series of a result, John Wick for John Wick: Chapter Two, and twice a name from a result's plot, such as South Central, which the app lets through on purpose and the stricter evaluation check counts. HikeSense checks numbers instead of titles, because there the risk is an invented distance, not an invented film.");
 
-  // ---------- 8. Evaluation ----------
+  // ---------- 10. Evaluation ----------
   s = pres.addSlide({ masterName: "Content", sectionTitle: "Safety and quality" });
   s.addText("Evaluation: 63 scenarios against the real agent", { placeholder: "title" });
   const evals = [
     ["59 / 63", "scenarios pass every automatic check"],
     ["100%", "hard filters kept (32 / 32)"],
-    ["95%", "replies name only real results (90% before the check)"],
-    ["$0.0016", "per chat turn · median 9 s"],
+    ["94%", "replies name only real results (90% before the check)"],
+    ["$0.0016", "per chat turn · median 9.3 s"],
   ];
   for (const [i, [big, small]] of evals.entries()) {
     const x = 0.6 + (i % 2) * 3.2, y = 1.5 + Math.floor(i / 2) * 2.05;
@@ -429,7 +467,7 @@ async function icon(name, color) {
   text(s, [{ text: "How: ", options: { bold: true, color: C.accent1 } },
     { text: "make eval sends 63 scenarios in 18 categories through the real agent and catalogue (streaming from the cache only). Code checks filters, tools, facts and grounding; Claude Sonnet 5.5 judges the top 5." }],
   { x: 0.6, y: 5.75, w: 6.2, h: 1.05, fontSize: 13, objectName: "Eval method" });
-  s.addChart(pres.charts.BAR, [{ name: "LLM judge (1–5)", labels: ["Filters + rating", "movieFinder cosine", "CineSense"], values: [1.54, 3.15, 3.85] }], {
+  s.addChart(pres.charts.BAR, [{ name: "LLM judge (1–5)", labels: ["Filters + rating", "movieFinder cosine", "CineSense"], values: [1.46, 3.08, 3.85] }], {
     x: 7.2, y: 1.45, w: 5.5, h: 4.3, barDir: "bar",
     showTitle: true, title: "Ranking quality: LLM judge, 1–5", titleFontSize: 14, titleColor: HEX.dk1, titleFontFace: "+mn-lt",
     chartColors: [HEX.accent5, HEX.accent5, HEX.accent1], showValue: true, dataLabelPosition: "outEnd", dataLabelColor: HEX.dk1,
@@ -438,18 +476,18 @@ async function icon(name, color) {
     valAxisHidden: true, valAxisMinVal: 0, valAxisMaxVal: 5, valGridLine: { style: "none" }, catGridLine: { style: "none" },
     showLegend: false, barGapWidthPct: 60,
   });
-  text(s, "26 mood scenarios, same criteria and filters for all three rankers. Tag relevance@10: 0.35 · 0.78 · 0.79. The judge sees titles only.",
+  text(s, "26 mood scenarios, same criteria and filters for all three rankers. Tag relevance@10: 0.34 · 0.79 · 0.80. The judge sees titles only.",
     { x: 7.2, y: 5.85, w: 5.5, h: 0.7, fontSize: 13, color: C.text2, objectName: "Chart caption" });
-  s.addNotes("The evaluation runs 63 scenarios through the real agent and catalogue: moods, like-X, runtime, exclusions, people, plots, follow-ups, injection attempts and injected failures. Streaming comes from the cache only, so a run never spends API budget. Code checks the final turn; 59 of 63 pass every check. Hard filters are always kept; three replies named a film series or a plot title the search did not return, and one old scenario expects a different tool. A turn costs about a fifth of a cent. For ranking, the same criteria go to two baselines, and an LLM judge prefers CineSense, with the caveat that it only sees titles. HikeSense, by contrast, checks everything by code and uses no judge.");
+  s.addNotes("The evaluation runs 63 scenarios through the real agent and catalogue: moods, like-X, runtime, exclusions, people, plots, follow-ups, injection attempts and injected failures. Streaming comes from the cache only, so a run never spends API budget. Code checks the final turn; 59 of 63 pass every check. Hard filters are always kept, and the expected tool was chosen every time. All four misses are grounding: a film series or a name from a plot, never an invented film. A turn costs about a fifth of a cent. For ranking, the same criteria go to two baselines, and an LLM judge prefers CineSense, with the caveat that it only sees titles. HikeSense, by contrast, checks everything by code and uses no judge.");
 
-  // ---------- Challenges ----------
+  // ---------- 11. Challenges ----------
   pres.addSection({ title: "Challenges" });
   s = pres.addSlide({ masterName: "Content", sectionTitle: "Challenges" });
   s.addText("Challenges: what was hard, and how I solved it", { placeholder: "title" });
   {
     const items = [
       ["FaSortAmountDown", "Ranking flattered obscure films", "Cosine similarity over all 1,128 tags rewarded films that are a little of everything.",
-        "Score only the requested tags, as a weighted mean. LLM judge: 3.85 against 3.15 for the cosine baseline."],
+        "Score only the requested tags, as a weighted mean. LLM judge: 3.85 against 3.08 for the cosine baseline."],
       ["FaRandom", "Parallel tool calls overwrote each other", "The model called several tools at once; each changed the shared criteria from the same old state.",
         "Tools run one after another, each on the state the previous one left."],
       ["FaCheckDouble", "Grounding rejected correct replies", "A town in a plot (\"Silver City\") is also a film title, so a correct reply became a template.",
@@ -469,7 +507,7 @@ async function icon(name, color) {
   }
   s.addNotes("Four problems that cost the most time. First, the ranking: cosine similarity over all 1,128 tags looked elegant, but it surfaced obscure films that are a little of everything. Scoring only the requested tags fixed it, and the LLM judge now prefers CineSense over the cosine baseline. Second, the model sometimes called several tools at once, and they overwrote each other's criteria; tools now run one after another. Third, the grounding check rejected a correct reply because a plot mentioned Silver City, which is also a film title; names from the plots no longer count. Fourth, a real user asked for something funny and free on Prime, and the app quietly ignored it; named services and 'free' are now filters.");
 
-  // ---------- 9. Improve and go further ----------
+  // ---------- 12. Improve and go further ----------
   pres.addSection({ title: "Outlook" });
   s = pres.addSlide({ masterName: "Closing", sectionTitle: "Outlook" });
   curtains(s);
