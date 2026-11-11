@@ -22,7 +22,7 @@ CineSense answers each of these:
 | Several wishes at once are left to the user | One sentence in the chat sets mood, filters, people, plot and exclusions together, shown as chips you can change |
 | AI chats invent films | The model only chooses **what** to search for. The films come from a deterministic search, and a grounding check drops any title the search did not return |
 | You don't see why a film is suggested | Every film says why it fits ("space travel 98% · plot: … · streaming on Netflix"), and excluded films are counted ("→ 78 films hidden") |
-| It feels like a database | A cinema screen with curtains, mood worlds in the background, trailers on hover |
+| It feels like a database | A cinema screen with curtains, seven mood worlds in the background (their newest top-rated films and top classics in two rows), trailers on hover |
 
 ## What it does
 
@@ -38,7 +38,7 @@ CineSense answers each of these:
 
 ![Taste panel: learned tags, liked film, reset](docs/showcase/05-profile.jpg)
 
-**Honest when too little fits.** When fewer than three films match, the search offers counted ways to widen it, and each widened film says which part of the wish it misses (≠).
+**Honest when too little fits.** When fewer than three films match every wish, the search page keeps the search as it is and shows, in the row below, the films of the widening that changes the wish least; each says which part of the wish it misses (≠). With only weak matches it shows the three best in front and the weaker ones below. "How these results came about" explains the page on demand.
 
 ![Widened search: mood searched in plot descriptions, films marked with what they miss](docs/showcase/06-widened.jpg)
 
