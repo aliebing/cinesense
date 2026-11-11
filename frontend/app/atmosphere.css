@@ -233,7 +233,7 @@
 
 .home-rows {
   position: absolute; z-index: 10; right: 0; bottom: .8cqw;
-  left: var(--rows-left, 38%); /* tile rows from under the chat to the right edge */
+  left: var(--rows-left, calc(var(--chat-x) + var(--chat-w) / 2 + 1cqw)); /* tile rows from just right of the chat to the right edge */
 }
 .world-label { position: absolute; z-index: 20; left: var(--safe-x); bottom: 1.4cqw; font-size: var(--ui); }
 
