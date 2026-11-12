@@ -110,9 +110,11 @@ class SearchService:
         # only exclusions ("no horror") next to a text search: filter its hits, do not replace them with the
         # catalogue's best-known films (a tag search without weights)
         exclusions_only = c.has_tags() and not c.prefer_weights() and c.has_text_signal()
-        # a person or title picks the films; mood tags then only rank them (prefer) or narrow them (must / not).
-        # The catalogue-wide tag search would keep just its top 500 and lose e.g. "Speed" for action + funny.
-        tags_on_identity = c.has_tags() and bool(c.person or c.title)
+        # a person, a title or a told story picks the films; mood tags then only rank them (prefer) or narrow them
+        # (must / not). The catalogue-wide tag search would keep just its top 500 and lose e.g. "Speed" for action +
+        # funny, or every Berlin film for "a heist in Berlin". Without embeddings the story finds nothing: tags search.
+        plot_vec = self._embed(c.plot_query) if c.plot_query else None
+        tags_on_identity = c.has_tags() and bool(c.person or c.title or plot_vec is not None)
         tags_filter_hits = exclusions_only or tags_on_identity
 
         if c.has_tags() and not tags_filter_hits:
@@ -131,7 +133,7 @@ class SearchService:
         if c.title:
             sig.title = p.search_title(c.title)
             restrict = set(sig.title) if restrict is None else restrict & set(sig.title)
-        if c.plot_query and (vec := self._embed(c.plot_query)) is not None:
+        if (vec := plot_vec) is not None:
             # few cinema films would rarely reach the catalogue-wide top 150: rank plots among them only
             only = (
                 [m.id for m in p.list_movies() if m.availability.in_cinema_de] if c.availability == "cinema" else None

@@ -116,3 +116,32 @@ def test_each_exclusion_says_how_many_films_it_hides_here(make_movie):
     )
     page = SearchService(catalogue(make_movie)).run(c)
     assert page.hidden_by == {"tag:2": 1, "genre:Horror": 0}  # Speed 2 is too dark; no horror among the hits
+
+
+class PlotProvider(Provider):
+    """A told story ("a heist in Berlin") finds the Berlin films; the catalogue-wide tag top list holds none of them."""
+
+    def semantic_search(self, vec, k=150, only_ids=None):
+        return [(m, s, "plot") for m, s in ((self._by_id("net"), 0.8), (self._by_id("speed"), 0.7))]
+
+    def _by_id(self, film_id):
+        return next(m for m in self.movies if m.id == film_id)
+
+
+class Embedder:
+    async def embed(self, texts):
+        return [[0.1, 0.2] for _ in texts]
+
+
+def test_a_told_story_picks_the_films_and_its_label_only_ranks_them(make_movie):
+    base = catalogue(make_movie)
+    provider = PlotProvider(base.movies, base.vectors)
+    c = SearchCriteria(plot_query="a heist in Berlin", tags=[TagCriterion(idx=ACTION, weight=7, mode="prefer")])
+    assert ids(SearchService(provider, embedder=Embedder()).run(c)) == ["speed", "net"]  # action lifts Speed
+
+
+def test_without_embeddings_the_label_still_searches_the_catalogue(make_movie):
+    base = catalogue(make_movie)
+    provider = PlotProvider(base.movies, base.vectors)
+    c = SearchCriteria(plot_query="a heist in Berlin", tags=[TagCriterion(idx=ACTION, weight=7, mode="prefer")])
+    assert ids(SearchService(provider).run(c)) == ["popcorn"]
