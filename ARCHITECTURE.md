@@ -12,9 +12,9 @@ returns the films. This page is the map: what lives where, how one request flows
 | `frontend/` | Next.js (App Router), TypeScript, Tailwind. The cinema UI, the chat and the admin area `/admin` (technical view, visitor log, evaluation). |
 | `database/` | `schema.sql` (all tables in the `cinesense` schema) and the project's own local Supabase (`supabase/`). |
 | `evaluation/` | The 63 evaluation scenarios, every run's raw results and the current `REPORT.md`. |
-| `docs/` | The grading briefs (`brief/`) and the presentation outline (`presentation.md`). |
+| `docs/` | Feature details (`details.md`), the presentation outline (`presentation.md`) and review deck (`presentation/`), the README screenshots (`showcase/`). |
 
-At the root: `Makefile` (every command: `make up`, `make test`, `make eval` …), `docker-compose.yaml` with
+At the root: `.github/workflows/ci.yml` (lint and offline tests on every push), `Makefile` (every command: `make up`, `make test`, `make eval` …), `docker-compose.yaml` with
 `nginx.conf` (one address for API and UI), and `.env.example`.
 
 ## One chat request, end to end

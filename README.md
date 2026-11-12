@@ -4,7 +4,9 @@
 
 CineSense helps you pick a film by mood and personal wishes instead of scrolling through catalogues. You type something like *"something like Interstellar, but shorter, and no horror please"*. A chat agent turns that into visible, editable search criteria, a deterministic search ranks a catalogue of about 20,600 real films, and the reply may only name films the search returned. It also shows where each film streams in Germany and what is new in cinemas.
 
-**Live:** [cinesense.de](https://cinesense.de) · **Showcase:** link follows (showcase.turingcollege.com) · Turing College AI Engineering capstone
+[![CI](https://github.com/aliebing/cinesense/actions/workflows/ci.yml/badge.svg)](https://github.com/aliebing/cinesense/actions/workflows/ci.yml)
+
+**Live:** [cinesense.de](https://cinesense.de) · Turing College AI Engineering capstone
 
 ![Home page: the wish from the chat becomes mood settings on the left, the picks with their match in the chat, the mood world's rows on the right](docs/showcase/01-home.jpg)
 
@@ -123,7 +125,7 @@ TMDB is **not** used: its API terms (1.C) forbid use "in connection with … an 
 | Wikidata | ids, people, runtime, language, German release, YouTube trailer ids | CC0 |
 | Wikipedia | plot texts (RAG) | CC BY-SA 4.0, linked per film |
 | Streaming Availability API (Movie of the Night) | streaming in Germany, posters | free plan, attribution; 1,000 requests/month with a budget guard |
-| YouTube Data API (optional) | missing trailer ids | 100 searches/day, ids re-validated after 30 days |
+| YouTube Data API (optional) | missing trailer ids | 90 searches/day (of the free 10,000 units), ids re-validated after 30 days |
 
 About 20,600 films: ≈19,800 from MovieLens (incl. documentaries) plus ≈800 German releases since 2021. All sources are credited on the in-app **Credits** page, and nothing is scraped. The curtain image is based on a photo by Ambitious Studio* | Rick Barrett on [Unsplash](https://unsplash.com/photos/a-red-curtain-with-a-black-background-AwsdyjRm-kw), cropped and colour-adjusted with `frontend/scripts/make_curtain.py`.
 
