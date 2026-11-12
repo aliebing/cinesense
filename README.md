@@ -76,7 +76,7 @@ One chat turn runs through a LangGraph graph (`backend/cinesense/chat_agent/grap
 5. **explain:** the model words the reply from the films found, without tools.
 6. **grounding:** the reply may only name returned films. Otherwise a template answer built from the data is used.
 
-**The model decides what to look for. Everything that must be reproducible is code.** The full tool table and the personalisation formula are in [docs/details.md](docs/details.md#the-agent-in-detail). The repository map and a 15-minute reading order are in [ARCHITECTURE.md](ARCHITECTURE.md).
+**The model decides what to look for. Everything that must be reproducible is code.** Filters keep or drop a film; only the ranking signals are weighted (mood tags 0.40, plot 0.30, title 0.20, taste 0.15, rating 0.10, popularity 0.08, recency 0.04). The full tool table and the personalisation formula are in [docs/details.md](docs/details.md#the-agent-in-detail), the weighting with an example and the widening rules in [How the search decides](docs/details.md#how-the-search-decides). The repository map and a 15-minute reading order are in [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ### The 10 tools
 
