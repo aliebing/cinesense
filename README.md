@@ -193,6 +193,6 @@ Full text, including trailers, LangSmith and every limit: [docs/details.md](docs
 - [ARCHITECTURE.md](ARCHITECTURE.md): repository map, one request end to end, backend roles, reading order, how to extend it
 - [docs/details.md](docs/details.md): all features, admin area and limits, agent tools, full evaluation, ethics
 - [evaluation/REPORT.md](evaluation/REPORT.md): evaluation report and raw results in `evaluation/results/`
-- [docs/presentation.md](docs/presentation.md): presentation outline, and the review deck [docs/presentation/CineSense-review.pdf](docs/presentation/CineSense-review.pdf) (12 slides, same outline)
+- [docs/presentation.md](docs/presentation.md): presentation outline, and the review deck [docs/presentation/CineSense-review.pdf](docs/presentation/CineSense-review.pdf) (13 slides, same outline)
 - [docs/showcase/shots.py](docs/showcase/shots.py): retakes the two screenshots above (posters blurred)
 - Live app: [cinesense.de](https://cinesense.de)
