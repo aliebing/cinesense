@@ -1,6 +1,6 @@
 # CineSense — presentation outline (10 min + 5 min Q&A)
 
-The same outline runs through the review deck ([`presentation/CineSense-review.pdf`](presentation/CineSense-review.pdf), 12 slides) and the English review video (local): **why → what it offers → using it → how it works (four technical slides) → guard and grounding → evaluation → what's next.**
+The same outline runs through the review deck ([`presentation/CineSense-review.pdf`](presentation/CineSense-review.pdf), 13 slides) and the English review video (local): **why → what it offers → using it → how it works (five technical slides in the deck, four in the video) → guard and grounding → evaluation → what's next.**
 
 ## 1. Why (Situation → Complication)
 
@@ -27,7 +27,7 @@ The same outline runs through the review deck ([`presentation/CineSense-review.p
 5. Click a film: the stage with poster, trailer, people, plot, why it fits and where it streams.
 6. 👍, then the 👤 profile panel and "Reset profile".
 
-## 4. How it works (four technical slides)
+## 4. How it works (five technical slides)
 
 **Technical 1 — the whole flow.** Browser (Next.js) → FastAPI (`/api/chat`, Server-Sent Events back) → guard → LangGraph agent ✦ with 10 tools → deterministic search in Postgres + pgvector → explain ✦ → grounding → reply. The model decides *what* to look for; code decides *which films* come back.
 
@@ -54,6 +54,8 @@ The same outline runs through the review deck ([`presentation/CineSense-review.p
 | `propose_exclusions` | suggests exclusions for vague dislikes; the user decides | "nothing too scary" |
 | `show_on_stage` | puts the chosen film on the stage | "I'll take that one" |
 | `relax_search` | widens a thin search with an option the code offered | fewer than 3 films match |
+
+**Technical 5 — how the search decides** (deck only; details in [`details.md`](details.md#how-the-search-decides)). Filters drop, signals weigh, in four steps: **candidates** (a told story: its 150 best plot matches; only moods: the 500 best by tags; a person or title: their films) → **hard filters** (years, runtime, language, streaming, rating, genres, people, *not*/*must* tags: in or out, no weight) → **ranking** (mood tags 0.40, plot 0.30, title 0.20, taste 0.15, rating 0.10, popularity 0.08, recency 0.04; only active signals count; a person is a factor, not points) → **widening**, only below 3 films, by the least intrusive counted option, never the user's exclusions. Example: a told story + "time loop" gives tags 43% and plot 33% of the match, and *Groundhog Day* leads with 95%; add "from 1995" and it is gone (1993), not ranked lower, and *Donnie Darko* leads with 72%.
 
 ## 5. Safety: guard and grounding
 
