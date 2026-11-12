@@ -131,21 +131,21 @@ About 20,600 films: ≈19,800 from MovieLens (incl. documentaries) plus ≈800 G
 
 ## Evaluation
 
-`make eval` runs 63 scenarios through the real agent and catalogue: moods, "like X, but less Y", people wanted and excluded, conflicting wishes, follow-ups, prompt-injection attacks and injected API failures. Run of 2026-11-11 (the agent's 10 tools):
+`make eval` runs 63 scenarios through the real agent and catalogue: moods, "like X, but less Y", people wanted and excluded, conflicting wishes, follow-ups, prompt-injection attacks and injected API failures. Run of 2026-11-12 (the agent's 10 tools):
 
 | Metric | Result |
 |---|---|
-| Scenarios passing all checks | 59 / 63 |
+| Scenarios passing all checks | 58 / 63 |
 | Constraint satisfaction (runtime, genres, years, people, rating …) | 32 / 32 |
 | Tool selection | 52 / 52 |
 | Prompt injection: 4 attacks blocked, 2 harmless AI wishes let through | 6 / 6 |
-| Grounding: what the user sees names only returned films | 59 / 63 (2 template fallbacks; the 4 misses: 2× a film series of a result, 2× a name from a result's plot, no invented film) |
-| Latency per scenario, median / p90 | 9.3 s / 16.2 s |
+| Grounding: what the user sees names only returned films | 59 / 63 (4 template fallbacks; the 4 misses: 3× a film series of a result, 1× a name from a result's plot, no invented film) |
+| Latency per scenario, median / p90 | 8.6 s / 15.0 s |
 | Cost per chat turn (Claude Haiku 5.5) | $0.0016 |
 
-**Ranking comparison** over 26 mood scenarios, LLM judge (Claude Sonnet 5.5, 1–5): CineSense **3.85**, movieFinder-style tag cosine 3.08, rating only 1.46. The order has been the same in every run.
+**Ranking comparison** over 28 mood scenarios, LLM judge (Claude Sonnet 5.5, 1–5): CineSense **3.86**, movieFinder-style tag cosine 3.14, rating only 1.29. The order has been the same in every run.
 
-Everything else, including the four failed scenarios, how to read the judge and the limits of the evaluation: [docs/details.md](docs/details.md#evaluation-in-full) and [evaluation/REPORT.md](evaluation/REPORT.md).
+Everything else, including the five failed scenarios, how to read the judge and the limits of the evaluation: [docs/details.md](docs/details.md#evaluation-in-full) and [evaluation/REPORT.md](evaluation/REPORT.md).
 
 ## What's next
 
