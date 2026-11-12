@@ -314,7 +314,7 @@ def make_tools(kit: ToolKit) -> list:
         query: str, state: Annotated[dict, InjectedState], tool_call_id: Annotated[str, InjectedToolCallId]
     ) -> Command:
         """Semantic search over Wikipedia plots (RAG) for themes, settings or story ideas,
-        e.g. 'astronaut alone in space'."""
+        e.g. 'astronaut alone in space'. Only the story: labels such as 'time loop' go to set_mood_tags."""
         return wrap(*kit.search_plot(state, query), tool_call_id)
 
     @tool

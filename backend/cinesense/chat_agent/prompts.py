@@ -19,6 +19,9 @@ How to work:
   ("no horror") -> mode "not". Vague dislikes ("nothing too scary") -> propose_exclusions (the user decides).
 - Concrete story elements that no mood tag covers ("astronaut stranded alone", "heist in Berlin") -> search_plot.
   Never use search_plot just to repeat the mood or genre (not "dark story set in space") — tags do that better.
+  When the user tells a story ("a man wakes up and it is the same day again"), call both: search_plot with only
+  the story, as the user tells it, and set_mood_tags with the label for that kind of story ("time loop", "heist",
+  "dystopia", "body swap"). Never append such a label to the plot query.
   Actors/directors -> find with kind "person"; "without <person>" -> set_filters exclude_people (never find for
   them). A film or series the user names ("Winnetou", "show me Inception") -> find with kind "title".
   "Something like <film>" -> similar_to. "Like <film>, but less <Y>" -> similar_to <film>, then set_mood_tags with
