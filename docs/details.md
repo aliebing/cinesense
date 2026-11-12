@@ -116,6 +116,23 @@ Only the active signals count: the match is their weighted sum divided by the su
 
 *Example: a told story + "time loop" + "from 1995".* Five signals are active (0.92 in all): tags 43%, plot 33%, rating 11%, popularity 9%, recency 4%. "From 1995" has no share; it drops films. Without it, *Groundhog Day* (1993) leads with 95%, followed by *12:01* and *Donnie Darko*; with it, 111 of the 150 candidates remain and *Donnie Darko* (2001) leads with 72%. *Groundhog Day* is not ranked lower; it is gone, as a filter should do. The other films keep their percentages.
 
+**Mood tags: values, weights and stars.**
+
+*Where the values come from.* `genome_tags (idx, tag)` lists the 1,128 Tag Genome tags in a fixed order. `films.tag_vector` (a pgvector column, `vector(1128)`) holds one number per tag in that order, so the value at position `idx` belongs to the tag `idx`; there is no join table (one row per film and tag would be over 20 million rows). Each number is the tag's *relevance* to the film, from 0 to 1, computed by GroupLens from real user tags, ratings and reviews, so every film has a value for every tag. *Groundhog Day*, for example: time loop 1.00, funny 0.81, romantic 0.76, action 0.17, horror 0.05; 110 of its 1,128 values are above 0.5, the median is 0.08. In SQL the array is 1-based (`tag_vector::real[]`, element `idx + 1`), in Python 0-based. `films.top_tags` keeps the names of the strongest tags (for `similar_to` and the display).
+
+*How the weights count.* The tag part of a film is the weighted mean of the requested tags' relevance: Σ (weight × relevance) / Σ weights (`tag_search` in `data_sources/postgres.py`, `_tags_on_hits` in `search/service.py`). The weight (1–10, the model's default 6) is a ratio between the requested tags, not an absolute strength:
+
+| Requested tags | *Groundhog Day* | *Edge of Tomorrow* | *Boss Level* | *Hot Fuzz* |
+|---|---|---|---|---|
+| relevance: time loop / funny | 1.00 / 0.81 | 1.00 / 0.47 | 0.63 / 0.46 | 0.04 / 0.84 |
+| time loop (weight 3) alone | 1.00 | 1.00 | 0.63 | 0.04 |
+| time loop 3 + funny 6 (⅓ : ⅔) | 0.87 | 0.65 | 0.52 | 0.57 |
+| time loop 9 + funny 3 (¾ : ¼) | 0.95 | 0.87 | 0.59 | 0.24 |
+
+A single tag's weight cancels out: (3 × 1.00) / 3 = 1.00, and weight 1 or 10 gives the same. With several tags, the weights decide how much each counts. On the real catalogue, "action 1★ + funny 5★" puts *Rush Hour* and *Spy* first, "action 5★ + funny 1★" *Deadpool* and *Guardians of the Galaxy*, while "action" alone gives the same list at 2★ and at 5★. The tag part then enters the ranking with 0.40, next to plot, rating and the rest.
+
+*The stars.* The chips show the weight as stars, weight ÷ 2 rounded (6 → 3★, 3 → 2★, 10 → 5★); clicking a star sets an even weight (1★ = 2 … 5★ = 10), so an odd weight can only come from the model. They are not a film rating: the chip "★ Rated 3.7+" is the minimum MovieLens rating, a hard filter. The *must* and *not* modes use fixed thresholds instead (a *must* tag keeps films from 0.6 and still adds its weight to the ranking, a *not* tag drops films from 0.5), and a film's card shows a tag as a reason from 0.3 ("time loop 100%" is the relevance × 100).
+
 **4. Widening: only when fewer than 3 films remain.** The code lists what may be loosened, least intrusive first, and counts each option before offering it: a *must* tag becomes *prefer*; the mood is searched in the plots instead of the tags; runtime +30 min; years ±10; minimum rating −0.3 (or dropped); then language, mood world, streaming services, cinema or streaming. The model picks one (`relax_search`); if it picks none, the code takes the least intrusive option that finds enough films. The page says what was widened, and each widened film shows with ≠ which part of the wish it misses. Never loosened: the user's hard limits (*not* tags, excluded genres and people) and what makes the wish (person, title, film or documentary).
 
 
