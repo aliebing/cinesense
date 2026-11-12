@@ -86,6 +86,39 @@ The model decides **what** to look for; everything that must be reproducible is 
 
 The chat streams its progress (`POST /api/chat`, Server-Sent Events). A typical turn costs about 6,000 input and 800 output tokens; every turn's tokens are logged by the API.
 
+## How the search decides
+
+Filters have no weight: they keep a film or drop it. Only the ranking signals are weighted. One search runs in four steps (`search/service.py`, `search/ranking.py`, `search/widening.py`).
+
+**1. Candidates: which films are considered at all.**
+
+| The wish has | Candidates |
+|---|---|
+| a told story (plot) | the 150 best plot matches; mood tags only rank them |
+| only mood tags | the 500 films with the highest weighted tag relevance in the whole catalogue |
+| a person or a title | their films; mood tags only rank them |
+
+**2. Hard filters: in or out, no weight.** Everything from `set_filters` and the advanced search (years, runtime, original language, cinema or streaming, services, minimum rating, film or documentary, mood world), excluded genres and people, 👎 films, and two tag modes: a *not* tag drops films from a relevance of 0.5, a *must* tag keeps only films from 0.6. A film that fails one of them is gone, however well it fits otherwise.
+
+**3. Ranking: the weighted part** (`WEIGHTS` in `search/ranking.py`).
+
+| Signal | Weight | Value per film |
+|---|---|---|
+| mood tags (*prefer* and *must*) | 0.40 | Tag Genome relevance 0–1, absolute (a film that is only 30% funny is never a full match) |
+| plot | 0.30 | plot fit 0–1, from the search's own noise floor up to the best match |
+| title | 0.20 | title similarity 0–1 |
+| taste profile | 0.15 | only with 👍/👎 |
+| MovieLens rating (Bayesian) | 0.10 | always |
+| popularity (rating count, log scale) | 0.08 | always |
+| recency | 0.04 | always, a small bonus from 1970 to today |
+
+Only the active signals count: the match is their weighted sum divided by the sum of their weights. A wanted person is not points but a factor (lead 1.0, smaller parts less), so a famous co-star cannot lift a film that misses the mood. The weight 1–10 of a single tag only shares the tag part among several tags; against the plot, the tags together always weigh 0.40.
+
+*Example: a told story + "time loop" + "from 1995".* Five signals are active (0.92 in all): tags 43%, plot 33%, rating 11%, popularity 9%, recency 4%. "From 1995" has no share; it drops films. Without it, *Groundhog Day* (1993) leads with 95%, followed by *12:01* and *Donnie Darko*; with it, 111 of the 150 candidates remain and *Donnie Darko* (2001) leads with 72%. *Groundhog Day* is not ranked lower; it is gone, as a filter should do. The other films keep their percentages.
+
+**4. Widening: only when fewer than 3 films remain.** The code lists what may be loosened, least intrusive first, and counts each option before offering it: a *must* tag becomes *prefer*; the mood is searched in the plots instead of the tags; runtime +30 min; years ±10; minimum rating −0.3 (or dropped); then language, mood world, streaming services, cinema or streaming. The model picks one (`relax_search`); if it picks none, the code takes the least intrusive option that finds enough films. The page says what was widened, and each widened film shows with ≠ which part of the wish it misses. Never loosened: the user's hard limits (*not* tags, excluded genres and people) and what makes the wish (person, title, film or documentary).
+
+
 ## Evaluation in full
 
 `make eval` runs 63 scenarios through the real agent and catalogue: mood, "like X", "like X, but less Y", runtime, exclusions, documentaries, people (wanted and excluded), plot, conflicting wishes (including "romantic, funny, a bit scary, well rated", where the reply must say which part the picks miss), ratings, follow-ups that must narrow the search and new wishes that must start over, decades, facts, ambiguous input, an unknown person, searches that must (or must not) widen, prompt-injection attacks and harmless wishes about AIs, and two injected failures (Streaming Availability API down, embedding service down). Streaming data comes from the cache only in every scenario, so the run never spends API budget and also tests the "budget exhausted" path. Full results: [`evaluation/REPORT.md`](../evaluation/REPORT.md) and, graphically, `/admin/evaluation`; raw data in `evaluation/results/` (earlier runs are kept, including the ones where the checks themselves had bugs).
