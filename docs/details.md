@@ -8,7 +8,7 @@ The [README](../README.md) gives the overview. This page keeps the full text: ev
 - **A chat agent:** a LangGraph ReAct agent with real tools turns free-text wishes into the same chips you can edit by hand, then explains the results. It can only name films the search engine actually returned (see *The agent in detail* below). A follow-up ("but without horror", "rather from the 90s") narrows the current search; a new wish on its own starts a new one, and "↺ Start over" clears chat and chips by hand.
 - **One shared search state, shown as chips:** mood tags from the MovieLens Tag Genome, each weighted and set to *prefer*, *must* or *not* (e.g. 🚫 horror); plus person, title, plot and filter chips. Each result says why it matches ("dark 91% · plot: … · streaming on Netflix"), and excluded films are counted ("→ 214 films hidden").
 - **People as wishes or exclusions:** "with Sandra Bullock" filters to her films (a cameo counts half), "action like Stallone films, but without Stallone" drops every film with him. Names are typo-tolerant.
-- **An honest result row:** every film matching at least 50%, at least the 3 best, 50 at a time ("Show 50 more" while the next ones still reach 50%). The header says out of how many films; a mood search keeps its best 500, so it says "500+".
+- **An honest result row:** the best matches in front (up to 6 from 70%, at least 3), below them a running row with every further film from 60%, 30 at a time with « » arrows (from 70% or higher when more than 500 films reach 60%, from 50% when fewer than 28 do). The header says out of how many films; a mood search keeps its best 500, so it says "500+".
 - **Search that finds films several ways:** semantic plot search (RAG over Wikipedia plots in pgvector), weighted mood tags (movieFinder's method, computed in Postgres), typo- and sound-alike-tolerant title and actor/director search, and an extended live search for newer films (Streaming Availability API, Wikidata filmographies).
 - **Where to watch:** streaming services in Germany (subscription vs. rent/buy) and recent German cinema releases.
 - **Trailers on hover:** hovering a tile plays its trailer muted after half a second; one click unmutes.
@@ -90,43 +90,45 @@ The chat streams its progress (`POST /api/chat`, Server-Sent Events). A typical 
 
 `make eval` runs 63 scenarios through the real agent and catalogue: mood, "like X", "like X, but less Y", runtime, exclusions, documentaries, people (wanted and excluded), plot, conflicting wishes (including "romantic, funny, a bit scary, well rated", where the reply must say which part the picks miss), ratings, follow-ups that must narrow the search and new wishes that must start over, decades, facts, ambiguous input, an unknown person, searches that must (or must not) widen, prompt-injection attacks and harmless wishes about AIs, and two injected failures (Streaming Availability API down, embedding service down). Streaming data comes from the cache only in every scenario, so the run never spends API budget and also tests the "budget exhausted" path. Full results: [`evaluation/REPORT.md`](../evaluation/REPORT.md) and, graphically, `/admin/evaluation`; raw data in `evaluation/results/` (earlier runs are kept, including the ones where the checks themselves had bugs).
 
-**Automatic metrics (run of 2026-11-11, 12:19, with the agent's 10 tools).** Each rate counts only the scenarios that define the check; every check judges the final turn of a scenario:
+**Automatic metrics (run of 2026-11-12, 14:00, with the agent's 10 tools).** Each rate counts only the scenarios that define the check; every check judges the final turn of a scenario:
 
 | Metric | Result |
 |---|---|
-| Scenarios passing all checks | 59 / 63 |
+| Scenarios passing all checks | 58 / 63 |
 | Constraint satisfaction (runtime, genres, kind, years, person, excluded people, minimum rating, criteria cleared on a new wish) | 32 / 32 |
 | Tool selection (an expected tool was called, none it must not call) | 52 / 52 |
 | Factual reply checks | 3 / 3 |
-| No streaming claim without known availability | 63 / 63 |
+| No streaming claim without known availability | 62 / 63 |
 | Search widening: widened exactly when the scenario expects it | 4 / 4 |
 | Prompt injection: 4 attacks blocked before the model, 2 wishes about AIs let through | 6 / 6 |
-| Grounding **before** the guard: the model's own explanation named only returned films | 57 / 63 (90%, 2 fallbacks) |
-| Grounding **after** the guard: what the user sees | 59 / 63 (2 template fallbacks) |
-| Grounding misses by kind (still counted as failures) | 2 film series of a result · 2 names from a result's plot · 0 other films |
-| Latency per scenario, median / p90 | 9.3 s / 16.2 s |
+| Grounding **before** the guard: the model's own explanation named only returned films | 55 / 63 (87%, 4 fallbacks) |
+| Grounding **after** the guard: what the user sees | 59 / 63 (4 template fallbacks) |
+| Grounding misses by kind (still counted as failures) | 3 film series of a result · 1 name from a result's plot · 0 other films |
+| Latency per scenario, median / p90 | 8.6 s / 15.0 s |
 | Cost per chat turn (Claude Haiku 5.5) | $0.0016 |
 
 Until this run the tool check counted the tools of all turns together. A follow-up such as "rather from the 90s" then failed when the agent had (harmlessly) called `new_search` in the first turn on empty criteria, although the follow-up itself refined correctly. It now judges the final turn like every other check, and the run saves the tools per turn so this stays visible.
 
-Four scenarios fail, all on grounding, and none because of an invented film. The eval check is deliberately stricter than the guard in the app: the app lets a catalogue title through when it is a name in the plots the model was given (a place or a role), the eval check does not. Since this run the report names the kind of each miss: two replies to "films with Keanu Reeves" spoke of "John Wick", the series (the results held "John Wick: Chapter Two" and "Chapter 3"); "Jason Bourne" (the role, also a 2016 film) and "South Central" (the Los Angeles district in the plot of *Friday*, also a 1992 film) came from the plots. The run before (2026-11-10) had the same 59 of 63; its fourth miss was `ambiguous-01`, the bare wish "Solaris", which expected `similar_to`, `film_info` or `set_mood_tags`. The scenario was written before the title search became part of `find`; the agent called `find` and showed all three Solaris films, so `find` is now an accepted tool for it. Two runs on 2026-11-11 just before this one broke off on network errors to OpenRouter (2 and 59 scenarios with "Connection error"); their raw files stay in `evaluation/results/`, but they are not measurements.
+Five scenarios fail, none because of an invented film. Four are grounding misses, and the eval check is deliberately stricter than the guard in the app: the app lets a catalogue title through when it is a name in the plots the model was given (a place or a role), the eval check does not. Two replies to "films with Keanu Reeves" spoke of "John Wick", the series (the results held "John Wick: Chapter Two" and "Chapter 3"), one of "Miss Congeniality" (the results held its sequel), and "South Central" (the Los Angeles district in the plot of *Friday*, also a 1992 film) came from a plot. The fifth, `like-03`, is a false alarm of the availability check: the reply said "the results don't say which films are available to stream", which is the right thing to say.
+
+This run is the first after a change to told stories (2026-11-12). Before it, the agent appended the label of a story to the plot query ("a man wakes up every morning and it is the day before, repeating time loop"), which lifted plots that name the label and left *Groundhog Day* at 70% behind *Boss Level*; and a mood tag next to a plot kept only the tag's 500 best films catalogue-wide, so "a heist in Berlin" lost its Berlin films. Now the story goes to `search_plot` as told and its label to `set_mood_tags`, the story's plot hits are the candidates and the tags only rank them, as for a person or a title. In 10 runs of the time-loop wish *Groundhog Day* came first every time (95%), against 0 of 20 before. A run with the prompt change alone (2026-11-12, 13:00) is kept in `evaluation/results/`. The previous runs (2026-11-10 and 2026-11-11) had 59 of 63, all four misses on grounding; two runs on 2026-11-11 broke off on network errors to OpenRouter (2 and 59 scenarios with "Connection error"), their raw files stay but they are not measurements.
 
 "Tool success 100%" only means that no tool raised an exception. A degraded source (embeddings down) still returns a result, with weaker relevance.
 
-**Ranking comparison.** 26 mood-tag scenarios, run with the criteria the agent set and identical hard filters for all three rankers:
+**Ranking comparison.** 28 mood-tag scenarios, run with the criteria the agent set and identical hard filters for all three rankers:
 
 | Ranker | Tag relevance@10 | Tag cosine@10 | Median MovieLens rating count | LLM judge 1–5 |
 |---|---|---|---|---|
-| Baseline A: filters + Bayesian rating | 0.34 | 0.05 | 35,000 | 1.46 |
-| Baseline B: movieFinder (tag cosine + rating) | 0.79 | **0.20** | 807 | 3.08 |
-| **CineSense** | **0.80** | 0.15 | 10,145 | **3.85** |
+| Baseline A: filters + Bayesian rating | 0.31 | 0.04 | 35,000 | 1.29 |
+| Baseline B: movieFinder (tag cosine + rating) | 0.77 | **0.20** | 529 | 3.14 |
+| **CineSense** | **0.78** | 0.15 | 8,827 | **3.86** |
 
 How to read the comparison:
 - Each ranker wins on its own objective. *Tag relevance* (weighted mean of the requested tags) is what CineSense ranks by. *Tag cosine* is what movieFinder ranks by.
-- The independent signal is the LLM judge (Claude Sonnet 5.5, subjective). It prefers CineSense (3.85 vs 3.08). The absolute scores vary from run to run (earlier runs gave 3.85 vs 3.15, 3.85 vs 3.27, 3.96 vs 3.24, 3.95 vs 3.43, 3.76 vs 3.48 and 4.05 vs 3.67), but the order has stayed the same in every run.
-- The judge sees only titles and years, which may favour well-known films. CineSense's picks are clearly better known than movieFinder's (median 10,145 vs 807 ratings).
+- The independent signal is the LLM judge (Claude Sonnet 5.5, subjective). It prefers CineSense (3.86 vs 3.14). The absolute scores vary from run to run (earlier runs gave 3.85 vs 3.08, 3.85 vs 3.15, 3.85 vs 3.27, 3.96 vs 3.24, 3.95 vs 3.43, 3.76 vs 3.48 and 4.05 vs 3.67), but the order has stayed the same in every run.
+- The judge sees only titles and years, which may favour well-known films. CineSense's picks are clearly better known than movieFinder's (median 8,827 vs 529 ratings).
 - The rating-only baseline ignores the wish.
-- The judge gives the agent's own top 5 a mean of 3.60/5 over 55 scenarios. Between runs it moves by about ±0.2 even where nothing changed (3.65, 3.67, 3.60, 3.65 and 3.43 in earlier runs).
+- The judge gives the agent's own top 5 a mean of 3.75/5 over 56 scenarios. Between runs it moves by about ±0.2 even where nothing changed (3.60, 3.65, 3.67, 3.60, 3.65 and 3.43 in earlier runs).
 
 The whole evaluation costs about $0.42: $0.12 for agent turns and $0.30 for the judge.
 

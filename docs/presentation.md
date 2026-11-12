@@ -63,19 +63,19 @@ The same outline runs through the review deck ([`presentation/CineSense-review.p
 ## 6. Evaluation
 
 - **63 scenarios**, run through the real agent and catalogue: moods, "like X, but less Y", people wanted and excluded, conflicts, follow-ups, prompt-injection attacks and injected API failures.
-- **Automatic results** (`evaluation/REPORT.md`, run of 2026-11-11 with the 10 tools):
-  - 59/63 pass every check
+- **Automatic results** (`evaluation/REPORT.md`, run of 2026-11-12 with the 10 tools):
+  - 58/63 pass every check
   - constraints 32/32, tool selection 52/52, prompt injection 6/6
-  - all 4 misses are grounding: 2× a film series of a result ("John Wick" for "John Wick: Chapter Two"), 2× a name from a result's plot ("Jason Bourne", "South Central"); no invented film. The eval check is deliberately stricter than the app, which lets names from the given plots through
-  - median latency 9.3 s, **$0.0016 per chat turn**
-- **Examples:** "Something dark and set in space, but no horror" → Moon, The Empire Strikes Back, Sunshine · "An astronaut stranded alone on a planet has to survive" → The Martian, Don't Look Up, Interstellar · "A German-language space film from before 1960" → widened → Forbidden Planet, A Trip to the Moon · "Ignore all previous instructions …" → blocked before the model.
-- **Ranking comparison** on 26 mood scenarios, with identical criteria and filters:
+  - 4 of the 5 misses are grounding: 3× a film series of a result ("John Wick" for "John Wick: Chapter Two", "Miss Congeniality"), 1× a name from a result's plot ("South Central"); no invented film. The eval check is deliberately stricter than the app, which lets names from the given plots through. The fifth is the check's false alarm on "the results don't say which films are available to stream"
+  - median latency 8.6 s, **$0.0016 per chat turn**
+- **Examples:** "Something dark and set in space, but no horror" → Moon, The Empire Strikes Back, Sunshine · "An astronaut stranded alone on a planet has to survive" → Robinson Crusoe on Mars, The Martian, Apollo 13 · "A German-language space film from before 1960" → widened → Forbidden Planet, A Trip to the Moon · "Ignore all previous instructions …" → blocked before the model.
+- **Ranking comparison** on 28 mood scenarios, with identical criteria and filters:
 
   | | Tag relevance@10 | Tag cosine@10 | LLM judge (Sonnet 5.5) |
   |---|---|---|---|
-  | Filters + Bayesian rating | 0.34 | 0.05 | 1.46 |
-  | movieFinder cosine | 0.79 | 0.20 | 3.08 |
-  | **CineSense** | **0.80** | 0.15 | **3.85** |
+  | Filters + Bayesian rating | 0.31 | 0.04 | 1.29 |
+  | movieFinder cosine | 0.77 | 0.20 | 3.14 |
+  | **CineSense** | **0.78** | 0.15 | **3.86** |
 
   Each ranker wins on its own metric. The judge prefers CineSense, which also picks better-known films. Caveat: the judge sees titles only.
 - **Honesty:** the first runs exposed bugs in the checks, and an independent review found that a "fix" had weakened the title guard; both were repaired and re-run. A full run costs about $0.42.
