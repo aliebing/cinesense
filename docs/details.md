@@ -90,6 +90,27 @@ The chat streams its progress (`POST /api/chat`, Server-Sent Events). A typical 
 
 Filters have no weight: they keep a film or drop it. Only the ranking signals are weighted. One search runs in four steps (`search/service.py`, `search/ranking.py`, `search/widening.py`).
 
+**At a glance: every input and how it counts.**
+
+| Input | Picks candidates | Hard filter (in or out) | Ranking weight |
+|---|---|---|---|
+| told story (`search_plot`) | its 150 best plot matches | – | plot 0.30 |
+| mood tag, *prefer* | without story, person or title: the 500 best by tags | – | tags 0.40, shared by the tags' weights 1–10 |
+| mood tag, *must* | as *prefer* | keeps films from relevance 0.6 | counts in the tags' 0.40 like *prefer* |
+| mood tag, *not* | – | drops films from relevance 0.5 | none |
+| title | the films whose title matches | – | title 0.20 |
+| person (cast, director) | their films | – | no points: a factor on the match (lead 1.0, smaller parts less) |
+| excluded genres and people | – | drops their films | none |
+| years, runtime, original language, film or documentary, mood world | – | yes | none |
+| cinema or streaming, streaming services | – | yes (unknown availability stays in) | none |
+| minimum rating ("Rated 3.7+") | – | yes, on the Bayesian rating against a fixed 3.5 | none |
+| 👍 / 👎 | – | 👎 films are hidden | taste 0.15, only with a profile |
+| MovieLens rating | – | – | 0.10, always |
+| popularity (number of ratings, log scale) | – | – | 0.08, always |
+| recency (1970 → 2025) | – | – | 0.04, always (0 when searching a title) |
+
+The match is the sum of weight × value over the active signals, divided by the sum of their weights; a person's factor multiplies it. On the results page, the top row shows up to 6 films from 70%, the row below every further film from 60%.
+
 **1. Candidates: which films are considered at all.**
 
 | The wish has | Candidates |
@@ -132,6 +153,33 @@ Only the active signals count: the match is their weighted sum divided by the su
 A single tag's weight cancels out: (3 × 1.00) / 3 = 1.00, and weight 1 or 10 gives the same. With several tags, the weights decide how much each counts. On the real catalogue, "action 1★ + funny 5★" puts *Rush Hour* and *Spy* first, "action 5★ + funny 1★" *Deadpool* and *Guardians of the Galaxy*, while "action" alone gives the same list at 2★ and at 5★. The tag part then enters the ranking with 0.40, next to plot, rating and the rest.
 
 *The stars.* The chips show the weight as stars, weight ÷ 2 rounded (6 → 3★, 3 → 2★, 10 → 5★); clicking a star sets an even weight (1★ = 2 … 5★ = 10), so an odd weight can only come from the model. They are not a film rating: the chip "★ Rated 3.7+" is the minimum MovieLens rating, a hard filter. The *must* and *not* modes use fixed thresholds instead (a *must* tag keeps films from 0.6 and still adds its weight to the ranking, a *not* tag drops films from 0.5), and a film's card shows a tag as a reason from 0.3 ("time loop 100%" is the relevance × 100).
+
+*A worked ranking: "horror 3★ + funny 4★" and the Scary Movie series.* Only mood tags are active, so four signals count (0.62 in all): tags 65%, rating 16%, popularity 13%, recency 6%. The tag part is (6 × horror + 8 × funny) / 14. Each signal column is that signal's share of the match in points (weight × value ÷ 0.62 × 100); the rating is the Bayesian MovieLens mean against this search's prior of 3.14 (catalogue of 2026-11-13; *Scary Movie 6*, 2026, is not in MovieLens):
+
+| Film | horror / funny | tags | rating | popularity | recency | match | rank |
+|---|---|---|---|---|---|---|---|
+| *Scary Movie* (2000) | 0.94 / 0.94 | 60.7 | 8.8 (2.74, 15,309 ratings) | 10.8 | 3.5 | **84%** | 3 |
+| *Scary Movie 2* (2001) | 0.80 / 0.92 | 56.0 | 7.9 (2.43, 6,217) | 9.8 | 3.6 | **77%** (0.773) | 7 |
+| *Scary Movie 3* (2003) | 0.81 / 0.92 | 56.3 | 8.0 (2.45, 4,548) | 9.4 | 3.9 | **78%** (0.776) | 6 |
+| *Scary Movie 4* (2006) | 0.66 / 0.88 | 50.6 | 7.7 (2.34, 2,521) | 8.8 | 4.2 | **71%** | 20 |
+| *Scary Movie 5* (2013) | 0.54 / 0.61 | 37.2 | 7.9 (2.13, 455) | 6.9 | 5.0 | **57%** | 232 |
+| for comparison: *Tucker & Dale vs Evil* (2010) | 0.98 / 0.85 | 58.5 | 12.3 (3.83, 5,104) | 9.6 | 4.7 | **85%** | 1 |
+
+The mood decides, rating and fame only nudge: *Scary Movie* has the best tag part of the whole search and ranks third despite a rating of 2.7; *Tucker & Dale* wins with a weaker tag part but a far better rating. *Scary Movie 3* comes before *Scary Movie 2* by 0.003, not because of the series order: it is a little more horror (0.81 against 0.80) and two years newer, which outweighs the 1,700 more ratings of part 2 (popularity counts 0.08, on a log scale). *Scary Movie 5* drops to 232 because the Tag Genome finds it much less funny and less horror (0.61 / 0.54); its recency bonus is the highest of the series and changes nothing.
+
+What filters and modes do to the same films (rank and match; "–" means dropped):
+
+| Search | Films | Scary Movie 1 / 2 / 3 / 4 / 5 |
+|---|---|---|
+| horror 3★ + funny 4★ | 500 (the tag search's cap) | 3 · 7 · 6 · 20 · 232 (84 / 77 / 78 / 71 / 57%) |
+| + from 2003 (filter) | 250 | – · – · 4 · 13 · 118 (78 / 71 / 57%) |
+| horror as *must* (keeps films from 0.6) | 500 | 3 · 7 · 6 · 19 · – |
+| + rated 2.5+ (filter) | 485 | 3 · – · – · – · 228 |
+| funny 4★ alone | 500 | 47 · 154 · 145 · 307 · – |
+
+A filter never changes a percentage; it only removes films, so the rest move up (*Scary Movie 3* from 6 to 4 once the older parts are gone). *Must* horror drops *Scary Movie 5* (horror 0.54 < 0.6) and keeps its weight in the ranking. "Rated 2.5+" compares a rating pulled towards a fixed 3.5 by 200 virtual votes, so the film with the fewest ratings gains most: *Scary Movie 5* (2.13 from 455 ratings) counts as 2.55 and stays, while parts 2–4 (2.46, 2.50 just below, 2.42) are dropped. With funny alone, 500 films are funnier than the series and it slips far down, although its own percentages rise (only funny counts).
+
+The results page then splits the list (`components/results/ResultList.tsx`): the top row holds up to 6 films from 70% (the first 3 always), the row below every further film from 60% (from 50% when fewer than 28 reach 60%, from 70/80/90% when more than 500 do). For "horror 3★ + funny 4★", 26 films reach 70% and 123 reach 60%: 6 on top, 117 below; "from 2003" gives 68 from 60%: 6 on top, 62 below. A 👍/👎 profile adds the taste signal (0.15) to the sum and lowers every film it does not match, so the same moods can give fewer films from 70% and 60%.
 
 **4. Widening: only when fewer than 3 films remain.** The code lists what may be loosened, least intrusive first, and counts each option before offering it: a *must* tag becomes *prefer*; the mood is searched in the plots instead of the tags; runtime +30 min; years ±10; minimum rating −0.3 (or dropped); then language, mood world, streaming services, cinema or streaming. The model picks one (`relax_search`); if it picks none, the code takes the least intrusive option that finds enough films. The page says what was widened, and each widened film shows with ≠ which part of the wish it misses. Never loosened: the user's hard limits (*not* tags, excluded genres and people) and what makes the wish (person, title, film or documentary).
 
