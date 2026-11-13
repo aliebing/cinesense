@@ -70,8 +70,12 @@ class FixtureProvider:
     def mean_tag_vector(self) -> np.ndarray:
         return np.stack(list(self._vectors.values())).mean(axis=0) if self._vectors else np.zeros(1128, np.float32)
 
-    def tag_search(self, weights, must, exclude, must_threshold=0.6, not_threshold=0.5, limit=500):
-        ids = [i for i in self._vectors if all(self._vectors[i][t] >= must_threshold for t in must)]
+    def tag_search(
+        self, weights, must, exclude, must_threshold=0.6, not_threshold=0.5, limit=500, only_ids=None, skip_ids=None
+    ):
+        only, skip = (None if only_ids is None else set(only_ids)), set(skip_ids or ())
+        scope = [i for i in self._vectors if (only is None or i in only) and i not in skip]
+        ids = [i for i in scope if all(self._vectors[i][t] >= must_threshold for t in must)]
         hidden = [i for i in ids if any(self._vectors[i][t] >= not_threshold for t in exclude)]
         ids = [i for i in ids if i not in hidden]
         if not ids:

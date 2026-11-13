@@ -12,7 +12,7 @@ import numpy as np
 from cinesense.core.criteria import MUST_THRESHOLD, NOT_THRESHOLD, SearchCriteria
 from cinesense.core.models import Movie
 from cinesense.core.tag_relevance import tag_match, tag_scores
-from cinesense.search.ranking import _passes
+from cinesense.search.ranking import passes
 from cinesense.search.rating import DEFAULT_PRIOR_MEAN, bayesian_rating
 from cinesense.search.service import SearchService
 
@@ -21,7 +21,7 @@ RANKERS = ("bayesian", "cosine", "cinesense")
 
 def _hard_filtered(provider, c: SearchCriteria) -> list[Movie]:
     excluded = {g.lower() for g in c.exclude_genres}
-    movies = [m for m in provider.list_movies() if _passes(m, c) and not any(g.lower() in excluded for g in m.genres)]
+    movies = [m for m in provider.list_movies() if passes(m, c) and not any(g.lower() in excluded for g in m.genres)]
     if c.must_tags() or c.not_tags():
         allowed = {
             i
@@ -72,7 +72,7 @@ def ranking_metrics(provider, c: SearchCriteria, ranked: dict[str, list[Movie]])
         else:
             rel = None
         excluded = {g.lower() for g in c.exclude_genres}
-        ok = [_passes(m, c) and not any(g.lower() in excluded for g in m.genres) for m in films]
+        ok = [passes(m, c) and not any(g.lower() in excluded for g in m.genres) for m in films]
         cos = float(np.mean(np.nan_to_num(tag_scores(weights, vecs)))) if weights and films else None
         out[name] = {
             "tag_relevance": round(rel, 3) if rel is not None else None,  # CineSense's own objective

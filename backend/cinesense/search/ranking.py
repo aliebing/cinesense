@@ -62,7 +62,8 @@ def _plot_fit(values: dict[str, float]) -> dict[str, float]:
     return {k: (max(v - floor, 0.0) / span if span > 0 else 1.0) for k, v in values.items()}
 
 
-def _passes(m: Movie, c: SearchCriteria) -> bool:
+def passes(m: Movie, c: SearchCriteria) -> bool:
+    """The hard filters of the criteria (no exclusions): years, runtime, language, kind, world, availability, rating."""
     if c.world_id and c.world_id not in m.world_ids:
         return False
     if c.kind != "any" and m.kind != c.kind:
@@ -86,6 +87,14 @@ def _passes(m: Movie, c: SearchCriteria) -> bool:
     if c.min_rating is not None and catalogue_rating(m.ml_rating, m.ml_rating_count) < c.min_rating:
         return False
     return m.ml_rating_count >= c.min_rating_count
+
+
+def excluded(m: Movie, c: SearchCriteria, signals: Signals) -> bool:
+    """Hidden by the user's exclusions (counted, unlike a failed filter): 👎, an excluded person or genre."""
+    if m.id in signals.disliked or m.id in signals.excluded_people:
+        return True
+    excluded_genres = {g.lower() for g in c.exclude_genres}
+    return bool(excluded_genres and excluded_genres & {g.lower() for g in m.genres})
 
 
 def combined_rank(
@@ -115,7 +124,7 @@ def combined_rank(
                 if g.lower() in genres:
                     hidden_by[f"genre:{g}"] += 1
             continue
-        if _passes(m, criteria):
+        if passes(m, criteria):
             kept.append(m)
 
     active: dict[str, dict[str, float]] = {}
