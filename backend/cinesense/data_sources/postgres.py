@@ -138,8 +138,11 @@ class PostgresProvider:
         must_threshold: float = 0.6,
         not_threshold: float = 0.5,
         limit: int = 500,
+        only_ids: list[str] | None = None,
+        skip_ids: list[str] | None = None,
     ) -> tuple[list[tuple[str, float]], int]:
         """Weighted mean relevance of the requested tags, computed in Postgres, with must/not tag constraints.
+        `only_ids` / `skip_ids` restrict the films before the limit (the search's hard filters, worked out in Python).
 
         Returns (ids with score, number of films hidden by the not-tags).
         """
@@ -150,21 +153,27 @@ class PostgresProvider:
         hidden_sql = " or ".join(["tv[%s] >= %s"] * len(exclude)) or "false"
         hidden_params = [p for idx in exclude for p in (idx + 1, not_threshold)]
         where = " and ".join(conds)
+        scope, scope_params = "", []
+        if only_ids is not None:
+            scope, scope_params = " and id = any(%s)", [list(only_ids)]
+        elif skip_ids:
+            scope, scope_params = " and not (id = any(%s))", [list(skip_ids)]
         base = (
-            "with f as (select id, ml_rating_count, tag_vector::real[] as tv from films where tag_vector is not null) "
+            "with f as (select id, ml_rating_count, tag_vector::real[] as tv from films "
+            f"where tag_vector is not null{scope}) "
         )
         total = sum(weights.values())
         order = " + ".join(["%s * tv[%s]"] * len(weights)) or "0"
         order_params = [p for idx, w in weights.items() for p in (w / total, idx + 1)]
         with self._conn() as c:
             hidden = c.execute(
-                base + f"select count(*) from f where {where} and ({hidden_sql})", params + hidden_params
+                base + f"select count(*) from f where {where} and ({hidden_sql})", scope_params + params + hidden_params
             ).fetchone()[0]
             sql = (
                 base + f"select id, {order} as sim from f where {where} and not ({hidden_sql}) "
                 "order by sim desc, ml_rating_count desc limit %s"
             )
-            rows = c.execute(sql, order_params + params + hidden_params + [limit]).fetchall()
+            rows = c.execute(sql, scope_params + order_params + params + hidden_params + [limit]).fetchall()
         return [(r[0], float(r[1])) for r in rows], int(hidden)
 
     # --- plots (RAG) ---------------------------------------------------

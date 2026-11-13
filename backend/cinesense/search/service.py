@@ -9,7 +9,7 @@ from collections import OrderedDict
 import numpy as np
 
 from cinesense.core.criteria import MUST_THRESHOLD, NOT_THRESHOLD, SearchCriteria
-from cinesense.search.ranking import CombinedResult, Signals, combined_rank, streaming_reason
+from cinesense.search.ranking import CombinedResult, Signals, combined_rank, excluded, passes, streaming_reason
 
 log = logging.getLogger(__name__)
 STREAM_CHECK_LIMIT = 30  # streaming API lookups per search (free plan budget); cache hits don't count
@@ -117,16 +117,14 @@ class SearchService:
         tags_on_identity = c.has_tags() and bool(c.person or c.title or plot_vec is not None)
         tags_filter_hits = exclusions_only or tags_on_identity
 
-        if c.has_tags() and not tags_filter_hits:
-            hits, hidden = p.tag_search(
-                c.prefer_weights(), c.must_tags(), c.not_tags(), MUST_THRESHOLD, NOT_THRESHOLD, limit=TAG_LIMIT
-            )
-            capped = len(hits) >= TAG_LIMIT
-            sig.tags = dict(hits)
-            restrict = set(sig.tags)
         for q in c.exclude_people:  # "without Stallone": in any role, a misspelt name found like a wanted one
             for film_id in p.search_person(q, "any")[0]:
                 sig.excluded_people.setdefault(film_id, q)
+        if profile is not None:
+            sig.disliked = set(profile.disliked)
+        if c.has_tags() and not tags_filter_hits:
+            sig.tags, hidden, capped = _best_by_tags(p, c, sig)
+            restrict = set(sig.tags)
         if c.person:
             sig.person, sig.person_names = p.search_person(c.person, c.person_role)
             restrict = set(sig.person) if restrict is None else restrict & set(sig.person)
@@ -149,10 +147,8 @@ class SearchService:
             restrict, sig.hidden_by_tag, sig.tags = _tags_on_hits(p, c, restrict)
             hidden += sum(sig.hidden_by_tag.values())
 
-        if profile is not None:
-            sig.disliked = set(profile.disliked)
-            if profile.taste:
-                sig.profile = _taste_scores(p, profile)
+        if profile is not None and profile.taste:
+            sig.profile = _taste_scores(p, profile)
         movies = p.list_movies()
         if restrict is not None:
             movies = [m for m in movies if m.id in restrict]
@@ -223,6 +219,39 @@ class SearchService:
         page.items = kept + rest
         page.total = max(page.total - dropped, len(page.items))
         return page
+
+
+def _best_by_tags(p, c: SearchCriteria, sig: Signals) -> tuple[dict[str, float], int, bool]:
+    """A mood search over the whole catalogue: its TAG_LIMIT best films among those the hard filters and exclusions
+    leave, so "horror + funny, from 2003" ranks the best films from 2003, not the films from 2003 among the best of
+    all years. Filtered films never reach Postgres' limit; excluded ones (👎, genre, person) are fetched on top and
+    kept where they rank above the last film kept, so the ranking can count what each exclusion hid here.
+    Returns (film id -> tag score, films hidden by not-tags, whether the limit was reached)."""
+    movies = p.list_movies()
+    blocked = {m.id for m in movies if not passes(m, c)}
+    out = {m.id for m in movies if m.id not in blocked and excluded(m, c, sig)}
+    scope: dict = {}
+    if blocked:  # whichever list is shorter (a year filter can block most of the catalogue)
+        if len(blocked) > len(movies) // 2:
+            scope["only_ids"] = [m.id for m in movies if m.id not in blocked]
+        else:
+            scope["skip_ids"] = sorted(blocked)
+    hits, hidden = p.tag_search(
+        c.prefer_weights(),
+        c.must_tags(),
+        c.not_tags(),
+        MUST_THRESHOLD,
+        NOT_THRESHOLD,
+        limit=TAG_LIMIT + len(out),
+        **scope,
+    )
+    kept, n = {}, 0
+    for film_id, score in hits:
+        if n >= TAG_LIMIT:
+            break
+        kept[film_id] = score
+        n += film_id not in out
+    return kept, hidden, n >= TAG_LIMIT
 
 
 def _tags_on_hits(p, c: SearchCriteria, hits: set[str]) -> tuple[set[str], dict[int, int], dict[str, float] | None]:

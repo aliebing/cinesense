@@ -95,7 +95,7 @@ Filters have no weight: they keep a film or drop it. Only the ranking signals ar
 | Input | Picks candidates | Hard filter (in or out) | Ranking weight |
 |---|---|---|---|
 | told story (`search_plot`) | its 150 best plot matches | – | plot 0.30 |
-| mood tag, *prefer* | without story, person or title: the 500 best by tags | – | tags 0.40, shared by the tags' weights 1–10 |
+| mood tag, *prefer* | without story, person or title: the 500 best by tags among the films the filters leave | – | tags 0.40, shared by the tags' weights 1–10 |
 | mood tag, *must* | as *prefer* | keeps films from relevance 0.6 | counts in the tags' 0.40 like *prefer* |
 | mood tag, *not* | – | drops films from relevance 0.5 | none |
 | title | the films whose title matches | – | title 0.20 |
@@ -109,17 +109,19 @@ Filters have no weight: they keep a film or drop it. Only the ranking signals ar
 | popularity (number of ratings, log scale) | – | – | 0.08, always |
 | recency (1970 → 2025) | – | – | 0.04, always (0 when searching a title) |
 
-The match is the sum of weight × value over the active signals, divided by the sum of their weights; a person's factor multiplies it. On the results page, the top row shows up to 6 films from 70%, the row below every further film from 60%.
+The match is the sum of weight × value over the active signals, divided by the sum of their weights; a person's factor multiplies it. How many of the ranked films the page shows, and where, is in [What the results page shows](#what-the-results-page-shows).
 
 **1. Candidates: which films are considered at all.**
 
 | The wish has | Candidates |
 |---|---|
 | a told story (plot) | the 150 best plot matches; mood tags only rank them |
-| only mood tags | the 500 films with the highest weighted tag relevance in the whole catalogue |
+| only mood tags | the 500 films with the highest weighted tag relevance among those the hard filters and exclusions leave |
 | a person or a title | their films; mood tags only rank them |
 
 **2. Hard filters: in or out, no weight.** Everything from `set_filters` and the advanced search (years, runtime, original language, cinema or streaming, services, minimum rating, film or documentary, mood world), excluded genres and people, 👎 films, and two tag modes: a *not* tag drops films from a relevance of 0.5, a *must* tag keeps only films from 0.6. A film that fails one of them is gone, however well it fits otherwise.
+
+For a mood search without story, person or title, the filters apply *before* the 500 are taken (`_best_by_tags` in `search/service.py`): Python works out which films fail a filter (the catalogue is in memory), Postgres leaves them out of the tag search, and only then keeps the best 500. "Horror + funny, from 2003" thus ranks the 500 best horror comedies from 2003 on, not the ones from 2003 among the 500 best of all years (before 2026-11-13 that left 250). Excluded films (👎, genres, people) are fetched on top and dropped in the ranking, which counts how many of them ranked above the last film kept ("hides 8 here").
 
 **3. Ranking: the weighted part** (`WEIGHTS` in `search/ranking.py`).
 
@@ -172,14 +174,39 @@ What filters and modes do to the same films (rank and match; "–" means dropped
 | Search | Films | Scary Movie 1 / 2 / 3 / 4 / 5 |
 |---|---|---|
 | horror 3★ + funny 4★ | 500 (the tag search's cap) | 3 · 7 · 6 · 20 · 232 (84 / 77 / 78 / 71 / 57%) |
-| + from 2003 (filter) | 250 | – · – · 4 · 13 · 118 (78 / 71 / 57%) |
+| + from 2003 (filter) | 500 | – · – · 4 · 13 · 143 (78 / 71 / 57%) |
 | horror as *must* (keeps films from 0.6) | 500 | 3 · 7 · 6 · 19 · – |
-| + rated 2.5+ (filter) | 485 | 3 · – · – · – · 228 |
+| + rated 2.5+ (filter) | 500 | 3 · – · – · – · 229 |
 | funny 4★ alone | 500 | 47 · 154 · 145 · 307 · – |
 
 A filter never changes a percentage; it only removes films, so the rest move up (*Scary Movie 3* from 6 to 4 once the older parts are gone). *Must* horror drops *Scary Movie 5* (horror 0.54 < 0.6) and keeps its weight in the ranking. "Rated 2.5+" compares a rating pulled towards a fixed 3.5 by 200 virtual votes, so the film with the fewest ratings gains most: *Scary Movie 5* (2.13 from 455 ratings) counts as 2.55 and stays, while parts 2–4 (2.46, 2.50 just below, 2.42) are dropped. With funny alone, 500 films are funnier than the series and it slips far down, although its own percentages rise (only funny counts).
 
-The results page then splits the list (`components/results/ResultList.tsx`): the top row holds up to 6 films from 70% (the first 3 always), the row below every further film from 60% (from 50% when fewer than 28 reach 60%, from 70/80/90% when more than 500 do). For "horror 3★ + funny 4★", 26 films reach 70% and 123 reach 60%: 6 on top, 117 below; "from 2003" gives 68 from 60%: 6 on top, 62 below. A 👍/👎 profile adds the taste signal (0.15) to the sum and lowers every film it does not match, so the same moods can give fewer films from 70% and 60%.
+For "horror 3★ + funny 4★", 26 films reach 70% and 123 reach 60%, so the page shows 6 on top and 117 below; "from 2003" gives 69 from 60%: 6 on top, 63 below. A 👍/👎 profile adds the taste signal (0.15) to the sum and lowers every film it does not match, so the same moods can give fewer films from 70% and 60%.
+
+### What the results page shows
+
+The search returns every ranked film with its match; the page (`components/results/ResultList.tsx`) decides how many it shows and where. The API counts the films from 50, 60, 70, 80 and 90% over the whole search (`match_counts`), so the page knows the numbers before it has loaded the films.
+
+| Part | Rule | Limit |
+|---|---|---|
+| top row ("The 6 best matches") | the first films from 70%, large and with why they fit; the first 3 always, even below 70% | 3 to 6 films |
+| row below ("… more matches") | every further film from the floor, a row the mouse slides through | at most 500 films in all |
+| floor of the row below | 60%; from 70, 80 or 90% (the lowest that keeps it to 500) when more than 500 films reach 60%; from 50% when fewer than 28 do. A capped mood search counts exactly 500 as more | – |
+| few good films | fewer than 28 films from the floor: the row goes on with weaker films down to 20% and says so ("29 more matches · 4 from 50%, then weaker ones") | 29 films (one page) |
+| paging | the row shows 30 films at a time; « » run to the previous and next 30 ("31–60") | 30 per page |
+| loading | the first 50 films come with the search, the rest in pages of 50 in the background, without Streaming API or YouTube lookups | 50 per request |
+| header | "123 good matches from 60% · 500+ films searched"; "+" when the mood search reached its cap of 500 | – |
+| widened search | under 3 films: the widened films replace the row below, each marked with ≠ what it misses | – |
+
+How the numbers come about, on searches from this page:
+
+| Search | Films ranked | from 70% / 60% / 80% | Shown |
+|---|---|---|---|
+| horror 3★ + funny 4★ | 500 (cap) | 26 / 123 / 4 | 6 on top, 117 below (from 60%) |
+| funny 4★, no horror | 500 (cap) | 500 / 500 / 190 | 6 on top, 184 below: all 500 reach 60%, so the floor rises to 80% |
+| funny 4★, German films | 206 | 5 / 11 / 0 | 5 on top (the 6th has 69%), then 12 from 50%, then weaker ones: 29 below |
+
+Before 2026-11-13 the filters and exclusions applied after the cap, so a few films more or less could tip the floor: "funny, genre Horror excluded" kept 492 of the 500, the floor stayed at 60%, and the row below held 486 films instead of 186.
 
 **4. Widening: only when fewer than 3 films remain.** The code lists what may be loosened, least intrusive first, and counts each option before offering it: a *must* tag becomes *prefer*; the mood is searched in the plots instead of the tags; runtime +30 min; years ±10; minimum rating −0.3 (or dropped); then language, mood world, streaming services, cinema or streaming. The model picks one (`relax_search`); if it picks none, the code takes the least intrusive option that finds enough films. The page says what was widened, and each widened film shows with ≠ which part of the wish it misses. Never loosened: the user's hard limits (*not* tags, excluded genres and people) and what makes the wish (person, title, film or documentary).
 
