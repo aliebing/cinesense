@@ -74,12 +74,22 @@ def test_no_api_key_returns_none():
 
 
 @respx.mock
-def test_cache_older_than_7_days_refetches():
+def test_cache_older_than_30_days_refetches():
     route = respx.get(SHOW).mock(return_value=httpx.Response(200, json=PAYLOAD))
     store = MemoryStreamingStore()
-    store.put("tt0816692", PAYLOAD, fetched_at=datetime.now(UTC) - timedelta(days=8))
+    store.put("tt0816692", PAYLOAD, fetched_at=datetime.now(UTC) - timedelta(days=31))
     client(store).get_de("tt0816692")
     assert route.call_count == 1
+
+
+@respx.mock
+def test_cache_of_29_days_is_still_used():
+    route = respx.get(SHOW).mock(return_value=httpx.Response(200, json=PAYLOAD))
+    store = MemoryStreamingStore()
+    store.put("tt0816692", PAYLOAD, fetched_at=datetime.now(UTC) - timedelta(days=29))
+    c = client(store)
+    assert c.get_de("tt0816692") and c.cached_de("tt0816692")
+    assert route.call_count == 0
 
 
 @respx.mock
