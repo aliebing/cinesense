@@ -14,7 +14,7 @@ import httpx
 from cinesense.core.models import StreamingOption
 
 BASE_URL = "https://api.movieofthenight.com/v4"
-STREAMING_TTL = timedelta(days=7)
+STREAMING_TTL = timedelta(days=30)  # was 7 until 2026-11-17: 1,000 calls/month cannot refresh ~7,000 films weekly
 IMAGES_TTL = timedelta(days=200)  # signed image URLs stay valid ~280 days
 BROWSE_TTL = timedelta(days=1)
 BREAKER_SECONDS = 15 * 60  # after a 429/5xx/timeout, stop calling for a while instead of draining the budget

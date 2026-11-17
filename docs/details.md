@@ -198,6 +198,18 @@ The search returns every ranked film with its match; the page (`components/resul
 | header | "123 good matches from 60% · 500+ films searched"; "+" when the mood search reached its cap of 500 | – |
 | widened search | under 3 films: the widened films replace the row below, each marked with ≠ what it misses | – |
 
+### Streaming checks and the cache
+
+The Streaming Availability API's free plan allows 1,000 requests a month; the app spends at most 900 (`monthly_limit`), at most 30 per search (`STREAM_CHECK_LIMIT`) and 3 per chat turn. Every answer is stored per film in `streaming_cache` and reused while it is fresh, without a request. A film whose entry is missing or too old shows "? streaming not checked" until it is looked up again; opening its detail page always looks it up.
+
+| Cache entry | Fresh for | Constant (`data_sources/streaming.py`) |
+|---|---|---|
+| streaming services of one film | **30 days** (7 days until 2026-11-17) | `STREAMING_TTL` |
+| posters and backdrops | 200 days | `IMAGES_TTL` |
+| a browse page (20 films of one genre) | 1 day | `BROWSE_TTL` |
+
+Why 30 days: on 2026-11-17 the cache held answers for 6,942 catalogue films, none younger than 7 days, so almost every film showed "not checked". Refreshing that many films weekly would take about 30,000 requests a month. With 30 days the stored answers count again without a single request. The price: a service shown may be up to a month old, e.g. a film that has since left Prime Video.
+
 How the numbers come about, on searches from this page:
 
 | Search | Films ranked | from 70% / 60% / 80% | Shown |
