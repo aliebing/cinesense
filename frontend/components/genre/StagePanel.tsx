@@ -151,6 +151,44 @@ function Overview({ text }: { text: string }) {
   );
 }
 
+/** The extras, closed until asked for: where to watch, rating, people, mood tags (keyed by film: a new film starts closed). */
+function MoreInfo({ movie }: { movie: Movie }) {
+  const [open, setOpen] = useState(false);
+  const people = [
+    movie.directors.length ? `Directed by ${movie.directors.slice(0, 2).join(", ")}` : null,
+    movie.cast_top.length ? `with ${movie.cast_top.slice(0, 3).join(", ")}` : null,
+  ].filter(Boolean);
+  return (
+    <>
+      <button type="button" className="stage-more__toggle" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+        {open ? "▾" : "▸"} More info
+      </button>
+      {open && (
+        <div className="stage-more">
+          <div className="stage-tags">
+            <Streaming movie={movie} />
+          </div>
+          {movie.ml_rating !== null && (
+            <div className="stage-tags">
+              <span>
+                ⭐ MovieLens {rating.format(movie.ml_rating)}/5 ({count.format(movie.ml_rating_count)} ratings)
+              </span>
+            </div>
+          )}
+          {people.length > 0 && <p className="stage-people">{people.join(" · ")}</p>}
+          {movie.top_tags.length > 0 && (
+            <div className="stage-tags stage-tags--mood">
+              {movie.top_tags.map((t) => (
+                <span key={t}>{t}</span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </>
+  );
+}
+
 /** A round icon button; the full name is its accessible name ("👍 More like this") and its tooltip. */
 function ActionButton({
   icon,
@@ -196,10 +234,6 @@ type Props = {
 };
 
 export default function StagePanel({ movie, world, why, feedback = 0, onFeedback, onSteer }: Props) {
-  const people = [
-    movie.directors.length ? `Directed by ${movie.directors.slice(0, 2).join(", ")}` : null,
-    movie.cast_top.length ? `with ${movie.cast_top.slice(0, 3).join(", ")}` : null,
-  ].filter(Boolean);
   return (
     <section className="stage" aria-label={`On stage: ${movie.title}`}>
       <div className="stage-poster">
@@ -213,7 +247,6 @@ export default function StagePanel({ movie, world, why, feedback = 0, onFeedback
         <h2>{movie.title}</h2>
         {movie.title_de && movie.title_de !== movie.title && <p className="stage-title-de">{movie.title_de}</p>}
         <p className="stage-meta">{metaLine(movie)}</p>
-        {people.length > 0 && <p className="stage-people">{people.join(" · ")}</p>}
         <section className="stage-why" aria-label="Why it fits you">
           <h3 className="stage-why__title">✦ Why it fits you</h3>
           <p>{why}</p>
@@ -253,25 +286,15 @@ export default function StagePanel({ movie, world, why, feedback = 0, onFeedback
             <ActionButton icon="😂" label="Funnier" hint=" (only for this session)" disabled={!onSteer} onClick={() => onSteer?.("funny")} />
           </div>
         </div>
-        <div className="stage-tags">
-          {movie.is_placeholder && <span className="stage-tag--placeholder">Placeholder</span>}
-          {movie.availability.in_cinema_de && (
-            <span>🎬 In cinemas{movie.release_date_de ? ` (German release ${movie.release_date_de})` : ""}</span>
-          )}
-          <Streaming movie={movie} />
-          {movie.ml_rating !== null && (
-            <span>
-              ⭐ MovieLens {rating.format(movie.ml_rating)}/5 ({count.format(movie.ml_rating_count)} ratings)
-            </span>
-          )}
-        </div>
-        {movie.top_tags.length > 0 && (
-          <div className="stage-tags stage-tags--mood">
-            {movie.top_tags.map((t) => (
-              <span key={t}>{t}</span>
-            ))}
+        {(movie.is_placeholder || movie.availability.in_cinema_de) && (
+          <div className="stage-tags">
+            {movie.is_placeholder && <span className="stage-tag--placeholder">Placeholder</span>}
+            {movie.availability.in_cinema_de && (
+              <span>🎬 In cinemas{movie.release_date_de ? ` (German release ${movie.release_date_de})` : ""}</span>
+            )}
           </div>
         )}
+        <MoreInfo key={`more-${movie.id}`} movie={movie} />
       </div>
     </section>
   );
