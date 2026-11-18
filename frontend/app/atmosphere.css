@@ -845,6 +845,8 @@
   .stage-info__card.is-open { max-height: none !important; }
   /* less on a small screen: no quick filters under the home search, no mood-tag box over the trailer */
   .home-center .chat-chips, .stage-moods { display: none; }
+  /* the top links stay on one line: the text shrinks a little with the screen instead of wrapping */
+  .home-nav { white-space: nowrap; font-size: min(14px, 3.5vw); }
   /* home on phones: the chat box stands free, with room above it and clear space before the mood settings */
   .home-center { margin: 28px 0 16px; }
   .home-sub { margin: .7em 0 1.6em; }
