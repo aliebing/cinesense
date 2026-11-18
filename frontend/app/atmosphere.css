@@ -845,6 +845,13 @@
   .stage-info__card.is-open { max-height: none !important; }
   /* less on a small screen: no quick filters under the home search, no mood-tag box over the trailer */
   .home-center .chat-chips, .stage-moods { display: none; }
+  /* home on phones: the chat box stands free, with room above it and clear space before the mood settings */
+  .home-center { margin: 28px 0 16px; }
+  .home-sub { margin: .7em 0 1.6em; }
+  /* the home chat box stands out from the film picture: a fine gold edge with a soft glow */
+  .home-center .chat-panel { border-color: #f3c76b80; box-shadow: 0 0 0 1px #f3c76b26, 0 0 28px #f3c76b40, 0 20px 60px #000a; padding: 1em; }
+  .home-center .chat-input input { padding: .8em 1em; font-size: 1em; }
+  .home-center .chat-input button { width: 2.9em; }
   /* two home rows on phones: room between them for the second row's heading */
   .tile-rows { gap: 18px; }
 
