@@ -141,8 +141,11 @@ function Streaming({ movie }: { movie: Movie }) {
 /** The info text, clipped at the trailer's height; "More" only when it overflows (keyed by film: a new film starts closed). */
 function InfoCard({ movie, world, why }: { movie: Movie; world: MoodWorld; why: string }) {
   const card = useRef<HTMLDivElement | null>(null);
+  const content = useRef<HTMLDivElement | null>(null);
   const [clipped, setClipped] = useState(false);
   const [open, setOpen] = useState(false);
+  const [maxHeight, setMaxHeight] = useState<number | null>(null);
+  // the card's box is fixed to the trailer's height, so also watch the text's own height (a later "why", fonts)
   useLayoutEffect(() => {
     const el = card.current;
     if (!el || open) return;
@@ -151,15 +154,30 @@ function InfoCard({ movie, world, why }: { movie: Movie; world: MoodWorld; why: 
     if (typeof ResizeObserver === "undefined") return;
     const observer = new ResizeObserver(measure);
     observer.observe(el);
+    if (content.current) observer.observe(content.current);
     return () => observer.disconnect();
+  }, [open, why, movie.overview]);
+  // opened, the card may grow only down to the picture's bottom edge; beyond that its text scrolls and Less stays
+  useLayoutEffect(() => {
+    const el = card.current;
+    if (!open || !el) return setMaxHeight(null);
+    const bottom = el.closest(".cinema-stage")?.getBoundingClientRect().bottom ?? window.innerHeight;
+    const room = Math.min(bottom, window.innerHeight) - el.getBoundingClientRect().top - 8;
+    const closed = el.parentElement?.clientHeight ?? 0; // the cell keeps the closed height
+    setMaxHeight(room > closed ? room : null);
   }, [open]);
   const people = [
     movie.directors.length ? `Directed by ${movie.directors.slice(0, 2).join(", ")}` : null,
     movie.cast_top.length ? `with ${movie.cast_top.slice(0, 3).join(", ")}` : null,
   ].filter(Boolean);
   return (
-    <div ref={card} className={"stage-info__card" + (clipped && !open ? " is-clipped" : "") + (open ? " is-open" : "")}>
+    <div
+      ref={card}
+      className={"stage-info__card" + (clipped && !open ? " is-clipped" : "") + (open ? " is-open" : "")}
+      style={open && maxHeight ? { maxHeight } : undefined}
+    >
       <div className="stage-info__body">
+        <div ref={content}>
         <div className="stage-kicker">{movie.genres.join(" · ") || world.title}</div>
         <h2>{movie.title}</h2>
         {movie.title_de && movie.title_de !== movie.title && <p className="stage-title-de">{movie.title_de}</p>}
@@ -178,6 +196,7 @@ function InfoCard({ movie, world, why }: { movie: Movie; world: MoodWorld; why: 
           <p>{why}</p>
         </section>
         {movie.overview && <p className="stage-overview">{movie.overview}</p>}
+        </div>
       </div>
       {(clipped || open) && (
         <button type="button" className="stage-info__more" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
