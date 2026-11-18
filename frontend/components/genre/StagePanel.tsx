@@ -1,7 +1,7 @@
 "use client";
 
 import ImageOrPlaceholder from "@/components/ui/ImageOrPlaceholder";
-import { type ReactNode, useLayoutEffect, useRef, useState } from "react";
+import { type ReactNode, useLayoutEffect, useRef } from "react";
 import { useActiveTrailer } from "@/lib/useActiveTrailer";
 import { embedUrl, listenTo, silence, useYouTubeState } from "@/lib/youtubePlayer";
 import type { MoodWorld, Movie, StreamingOption } from "@/lib/types";
@@ -138,57 +138,6 @@ function Streaming({ movie }: { movie: Movie }) {
   );
 }
 
-function Overview({ text }: { text: string }) {
-  const [open, setOpen] = useState(false);
-  if (!text) return null;
-  return (
-    <div className={`stage-overview ${open ? "is-open" : ""}`}>
-      <p>{text}</p>
-      <button type="button" className="stage-overview__more" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-        {open ? "Less" : "More"}
-      </button>
-    </div>
-  );
-}
-
-/** The extras, closed until asked for: where to watch, rating, people, mood tags (keyed by film: a new film starts closed). */
-function MoreInfo({ movie }: { movie: Movie }) {
-  const [open, setOpen] = useState(false);
-  const people = [
-    movie.directors.length ? `Directed by ${movie.directors.slice(0, 2).join(", ")}` : null,
-    movie.cast_top.length ? `with ${movie.cast_top.slice(0, 3).join(", ")}` : null,
-  ].filter(Boolean);
-  return (
-    <>
-      <button type="button" className="stage-more__toggle" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-        {open ? "▾" : "▸"} More info
-      </button>
-      {open && (
-        <div className="stage-more">
-          <div className="stage-tags">
-            <Streaming movie={movie} />
-          </div>
-          {movie.ml_rating !== null && (
-            <div className="stage-tags">
-              <span>
-                ⭐ MovieLens {rating.format(movie.ml_rating)}/5 ({count.format(movie.ml_rating_count)} ratings)
-              </span>
-            </div>
-          )}
-          {people.length > 0 && <p className="stage-people">{people.join(" · ")}</p>}
-          {movie.top_tags.length > 0 && (
-            <div className="stage-tags stage-tags--mood">
-              {movie.top_tags.map((t) => (
-                <span key={t}>{t}</span>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-    </>
-  );
-}
-
 /** A round icon button; the full name is its accessible name ("👍 More like this") and its tooltip. */
 function ActionButton({
   icon,
@@ -234,37 +183,30 @@ type Props = {
 };
 
 export default function StagePanel({ movie, world, why, feedback = 0, onFeedback, onSteer }: Props) {
+  const people = [
+    movie.directors.length ? `Directed by ${movie.directors.slice(0, 2).join(", ")}` : null,
+    movie.cast_top.length ? `with ${movie.cast_top.slice(0, 3).join(", ")}` : null,
+  ].filter(Boolean);
   return (
     <section className="stage" aria-label={`On stage: ${movie.title}`}>
       <div className="stage-poster">
         <ImageOrPlaceholder src={movie.poster_url} alt={`Poster: ${movie.title}`} />
       </div>
-      <div className="stage-trailer" key={movie.id}>
-        <Trailer movie={movie} />
-      </div>
-      <div className="stage-info">
-        <div className="stage-kicker">{movie.genres.join(" · ") || world.title}</div>
-        <h2>{movie.title}</h2>
-        {movie.title_de && movie.title_de !== movie.title && <p className="stage-title-de">{movie.title_de}</p>}
-        <p className="stage-meta">{metaLine(movie)}</p>
-        <section className="stage-why" aria-label="Why it fits you">
-          <h3 className="stage-why__title">✦ Why it fits you</h3>
-          <p>{why}</p>
-        </section>
-        <Overview key={movie.id} text={movie.overview} />
-        <div className="stage-actions">
-          <div className="stage-links">
-            {movie.imdb_id && (
-              <a href={`https://www.imdb.com/title/${movie.imdb_id}/`} target="_blank" rel="noreferrer">
-                IMDb ↗
-              </a>
-            )}
-            {movie.wikipedia_title && (
-              <a href={`https://en.wikipedia.org/wiki/${encodeURIComponent(movie.wikipedia_title.replaceAll(" ", "_")).replace(/%28/g, "(").replace(/%29/g, ")")}`} target="_blank" rel="noreferrer">
-                Wikipedia ↗
-              </a>
-            )}
-          </div>
+      <div className="stage-screen">
+        <div className="stage-trailer" key={movie.id}>
+          <Trailer movie={movie} />
+        </div>
+        <div className="stage-strip">
+          {movie.top_tags.length > 0 && (
+            <div className="stage-strip__tags">
+              <span className="stage-strip__label">Mood tags:</span>
+              {movie.top_tags.map((t) => (
+                <span key={t} className="stage-strip__tag">
+                  {t}
+                </span>
+              ))}
+            </div>
+          )}
           <div className="stage-feedback">
             <ActionButton
               icon="👍"
@@ -286,15 +228,52 @@ export default function StagePanel({ movie, world, why, feedback = 0, onFeedback
             <ActionButton icon="😂" label="Funnier" hint=" (only for this session)" disabled={!onSteer} onClick={() => onSteer?.("funny")} />
           </div>
         </div>
-        {(movie.is_placeholder || movie.availability.in_cinema_de) && (
-          <div className="stage-tags">
-            {movie.is_placeholder && <span className="stage-tag--placeholder">Placeholder</span>}
-            {movie.availability.in_cinema_de && (
-              <span>🎬 In cinemas{movie.release_date_de ? ` (German release ${movie.release_date_de})` : ""}</span>
-            )}
-          </div>
-        )}
-        <MoreInfo key={`more-${movie.id}`} movie={movie} />
+      </div>
+      <div className="stage-info">
+        <div className="stage-info__body">
+          <div className="stage-kicker">{movie.genres.join(" · ") || world.title}</div>
+          <h2>{movie.title}</h2>
+          {movie.title_de && movie.title_de !== movie.title && <p className="stage-title-de">{movie.title_de}</p>}
+          <p className="stage-meta">{metaLine(movie)}</p>
+          {people.length > 0 && <p className="stage-people">{people.join(" · ")}</p>}
+          {(movie.is_placeholder || movie.availability.in_cinema_de) && (
+            <div className="stage-tags stage-flags">
+              {movie.is_placeholder && <span className="stage-tag--placeholder">Placeholder</span>}
+              {movie.availability.in_cinema_de && (
+                <span>🎬 In cinemas{movie.release_date_de ? ` (German release ${movie.release_date_de})` : ""}</span>
+              )}
+            </div>
+          )}
+          <section className="stage-why" aria-label="Why it fits you">
+            <h3 className="stage-why__title">✦ Why it fits you</h3>
+            <p>{why}</p>
+          </section>
+          {movie.overview && <p className="stage-overview">{movie.overview}</p>}
+          {movie.ml_rating !== null && (
+            <p className="stage-rating">
+              ⭐ MovieLens {rating.format(movie.ml_rating)}/5 ({count.format(movie.ml_rating_count)} ratings)
+            </p>
+          )}
+        </div>
+        <div className="stage-info__foot stage-tags stage-foot">
+          <span className="stage-foot__label">Links:</span>
+          {movie.imdb_id && (
+            <a className="stage-foot__link" href={`https://www.imdb.com/title/${movie.imdb_id}/`} target="_blank" rel="noreferrer">
+              IMDb ↗
+            </a>
+          )}
+          {movie.wikipedia_title && (
+            <a
+              className="stage-foot__link"
+              href={`https://en.wikipedia.org/wiki/${encodeURIComponent(movie.wikipedia_title.replaceAll(" ", "_")).replace(/%28/g, "(").replace(/%29/g, ")")}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Wikipedia ↗
+            </a>
+          )}
+          <Streaming movie={movie} />
+        </div>
       </div>
     </section>
   );
