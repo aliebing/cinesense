@@ -2,6 +2,7 @@ import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, expect, it, vi } from "vitest";
 import { emptyCriteria, setSearchState } from "@/lib/searchState";
+import { clearChatLog, setChatLog } from "@/lib/chat";
 import { mockMatchMedia, sampleHome, sampleRanked } from "./fixtures";
 
 const push = vi.fn();
@@ -25,6 +26,7 @@ beforeEach(() => {
   discover.mockReset();
   search.mockReset();
   setSearchState(emptyCriteria());
+  clearChatLog();
   mockMatchMedia(() => false);
 });
 
@@ -71,6 +73,31 @@ it("shows both tile strips but no film titles on narrow screens", async () => {
   await screen.findAllByTestId("tile-row");
   expect(screen.getAllByTestId("tile-row")).toHaveLength(2);
   expect(screen.queryByTestId("film-titles")).toBeNull();
+});
+
+it("leaves the tile strips out on narrow screens once a search has started", async () => {
+  mockMatchMedia((q) => q.includes("max-width: 759px"));
+  getHome.mockResolvedValue({ ok: true, data: sampleHome });
+  setSearchState({ ...emptyCriteria(), tags: [{ idx: 7, weight: 8, mode: "prefer" }] });
+  const { unmount } = render(<HomePage />);
+  await waitFor(() => expect(getHome).toHaveBeenCalled());
+  await act(async () => {});
+  expect(screen.queryAllByTestId("tile-row")).toHaveLength(0);
+  unmount();
+
+  setSearchState(emptyCriteria());
+  setChatLog([{ role: "user", text: "something funny" }]);
+  render(<HomePage />);
+  await act(async () => {});
+  expect(screen.queryAllByTestId("tile-row")).toHaveLength(0);
+});
+
+it("keeps both tile strips on wide screens during a search", async () => {
+  getHome.mockResolvedValue({ ok: true, data: sampleHome });
+  setChatLog([{ role: "user", text: "something funny" }]);
+  render(<HomePage />);
+  await screen.findAllByTestId("tile-row");
+  expect(screen.getAllByTestId("tile-row")).toHaveLength(2);
 });
 
 it("shows English quick filters without a language chip", async () => {

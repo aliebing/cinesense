@@ -843,8 +843,9 @@
   /* the info card stays a readable block beside the poster: clipped, with More, instead of a tall narrow column */
   .stage-info__card { max-height: 22em; }
   .stage-info__card.is-open { max-height: none !important; }
-  /* less on a small screen: no quick filters under the home search, no mood-tag box over the trailer */
-  .home-center .chat-chips, .stage-moods { display: none; }
+  /* less on a small screen: no quick filters under the home search (only "Start over" stays, once there is
+     something to clear), no mood-tag box over the trailer */
+  .home-center .chat-chips > :not(.chat-reset), .home-center .chat-chips:not(:has(.chat-reset)), .stage-moods { display: none; }
   /* the top links stay on one line: the text shrinks a little with the screen instead of wrapping */
   .home-nav { white-space: nowrap; font-size: min(14px, 3.5vw); }
   /* home on phones: the chat box stands free, with room above it and clear space before the mood settings */
@@ -854,6 +855,8 @@
   .home-center .chat-panel { border-color: #f3c76b80; box-shadow: 0 0 0 1px #f3c76b26, 0 0 28px #f3c76b40, 0 20px 60px #000a; padding: 1em; }
   .home-center .chat-input input { padding: .8em 1em; font-size: 1em; }
   .home-center .chat-input button { width: 2.9em; }
+  /* with a chat going the box grows downwards (the film rows are left out then, see HomePage) */
+  .home-center .chat-log { max-height: min(55vh, 460px); }
   /* two home rows on phones: room between them for the second row's heading */
   .tile-rows { gap: 18px; }
 
