@@ -64,12 +64,12 @@ it("keeps claim and chat when the backend is unreachable", async () => {
   expect(screen.getByRole("textbox", { name: "Message CineSense" })).toBeInTheDocument();
 });
 
-it("shows one tile strip and no film titles on narrow screens", async () => {
+it("shows both tile strips but no film titles on narrow screens", async () => {
   mockMatchMedia((q) => q.includes("max-width: 759px"));
   getHome.mockResolvedValue({ ok: true, data: sampleHome });
   render(<HomePage />);
   await screen.findAllByTestId("tile-row");
-  expect(screen.getAllByTestId("tile-row")).toHaveLength(1);
+  expect(screen.getAllByTestId("tile-row")).toHaveLength(2);
   expect(screen.queryByTestId("film-titles")).toBeNull();
 });
 
