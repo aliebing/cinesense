@@ -1,6 +1,6 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { expect, it, vi } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
 const reportTrailer = vi.fn();
 vi.mock("@/lib/api", () => ({ reportTrailer: (id: string) => reportTrailer(id) }));
 
@@ -310,4 +310,16 @@ it("closes the card when another film comes on stage", async () => {
   rerender(<StagePanel movie={{ ...film, id: "other" }} world={world} why="x" />);
   expect(screen.getByRole("button", { name: "More" })).toHaveAttribute("aria-expanded", "false");
   restore();
+});
+
+afterEach(() => vi.restoreAllMocks());
+
+it("re-checks for More when the why text changes for the same film", () => {
+  vi.spyOn(Element.prototype, "scrollHeight", "get").mockReturnValue(200);
+  vi.spyOn(Element.prototype, "clientHeight", "get").mockReturnValue(200);
+  const { rerender } = render(<StagePanel movie={film} world={world} why="Short" />);
+  expect(screen.queryByRole("button", { name: "More" })).toBeNull();
+  vi.spyOn(Element.prototype, "scrollHeight", "get").mockReturnValue(520);
+  rerender(<StagePanel movie={film} world={world} why="Strong on your moods: space (98%) · partly lonely (40%) · hardly funny (5%)" />);
+  expect(screen.getByRole("button", { name: "More" })).toBeInTheDocument();
 });

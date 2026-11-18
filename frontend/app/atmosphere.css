@@ -285,6 +285,7 @@
   background: #0d0d14c4; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: 0 20px 50px #000a;
 }
 .stage-info__card.is-open { height: auto; z-index: 20; background: #0d0d14f0; }
+.stage-info__card.is-open .stage-info__body { overflow-y: auto; }
 .stage-info__body { flex: 1; min-height: 0; padding: .9em 1em .7em; }
 .stage-info__card.is-clipped .stage-info__body { -webkit-mask-image: linear-gradient(#000 calc(100% - 2.2em), transparent); mask-image: linear-gradient(#000 calc(100% - 2.2em), transparent); }
 .stage-info__more { flex: none; align-self: flex-start; font: inherit; font-size: .85em; color: var(--gold); background: none; border: 0;
