@@ -1,7 +1,7 @@
 "use client";
 
 import ImageOrPlaceholder from "@/components/ui/ImageOrPlaceholder";
-import { type ReactNode, useLayoutEffect, useRef } from "react";
+import { type ReactNode, useLayoutEffect, useRef, useState } from "react";
 import { useActiveTrailer } from "@/lib/useActiveTrailer";
 import { embedUrl, listenTo, silence, useYouTubeState } from "@/lib/youtubePlayer";
 import type { MoodWorld, Movie, StreamingOption } from "@/lib/types";
@@ -138,6 +138,56 @@ function Streaming({ movie }: { movie: Movie }) {
   );
 }
 
+/** The info text, clipped at the trailer's height; "More" only when it overflows (keyed by film: a new film starts closed). */
+function InfoCard({ movie, world, why }: { movie: Movie; world: MoodWorld; why: string }) {
+  const card = useRef<HTMLDivElement | null>(null);
+  const [clipped, setClipped] = useState(false);
+  const [open, setOpen] = useState(false);
+  useLayoutEffect(() => {
+    const el = card.current;
+    if (!el || open) return;
+    const measure = () => setClipped(el.scrollHeight > el.clientHeight + 1);
+    measure();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [open]);
+  const people = [
+    movie.directors.length ? `Directed by ${movie.directors.slice(0, 2).join(", ")}` : null,
+    movie.cast_top.length ? `with ${movie.cast_top.slice(0, 3).join(", ")}` : null,
+  ].filter(Boolean);
+  return (
+    <div ref={card} className={"stage-info__card" + (clipped && !open ? " is-clipped" : "") + (open ? " is-open" : "")}>
+      <div className="stage-info__body">
+        <div className="stage-kicker">{movie.genres.join(" · ") || world.title}</div>
+        <h2>{movie.title}</h2>
+        {movie.title_de && movie.title_de !== movie.title && <p className="stage-title-de">{movie.title_de}</p>}
+        <p className="stage-meta">{metaLine(movie)}</p>
+        {people.length > 0 && <p className="stage-people">{people.join(" · ")}</p>}
+        {(movie.is_placeholder || movie.availability.in_cinema_de) && (
+          <div className="stage-tags stage-flags">
+            {movie.is_placeholder && <span className="stage-tag--placeholder">Placeholder</span>}
+            {movie.availability.in_cinema_de && (
+              <span>🎬 In cinemas{movie.release_date_de ? ` (German release ${movie.release_date_de})` : ""}</span>
+            )}
+          </div>
+        )}
+        <section className="stage-why" aria-label="Why it fits you">
+          <h3 className="stage-why__title">✦ Why it fits you</h3>
+          <p>{why}</p>
+        </section>
+        {movie.overview && <p className="stage-overview">{movie.overview}</p>}
+      </div>
+      {(clipped || open) && (
+        <button type="button" className="stage-info__more" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+          {open ? "Less" : "More"}
+        </button>
+      )}
+    </div>
+  );
+}
+
 /** A round icon button; the full name is its accessible name ("👍 More like this") and its tooltip. */
 function ActionButton({
   icon,
@@ -183,89 +233,60 @@ type Props = {
 };
 
 export default function StagePanel({ movie, world, why, feedback = 0, onFeedback, onSteer }: Props) {
-  const people = [
-    movie.directors.length ? `Directed by ${movie.directors.slice(0, 2).join(", ")}` : null,
-    movie.cast_top.length ? `with ${movie.cast_top.slice(0, 3).join(", ")}` : null,
-  ].filter(Boolean);
   return (
     <section className="stage" aria-label={`On stage: ${movie.title}`}>
       <div className="stage-poster">
         <ImageOrPlaceholder src={movie.poster_url} alt={`Poster: ${movie.title}`} />
       </div>
-      <div className="stage-screen">
-        <div className="stage-trailer" key={movie.id}>
-          <Trailer movie={movie} />
-        </div>
-        <div className="stage-strip">
-          {movie.top_tags.length > 0 && (
-            <div className="stage-strip__tags">
-              <span className="stage-strip__label">Mood tags:</span>
-              {movie.top_tags.map((t) => (
-                <span key={t} className="stage-strip__tag">
-                  {t}
-                </span>
-              ))}
-            </div>
-          )}
-          <div className="stage-feedback">
-            <ActionButton
-              icon="👍"
-              label="More like this"
-              pressed={feedback === 1}
-              className={feedback === 1 ? "is-on" : ""}
-              disabled={!onFeedback}
-              onClick={() => onFeedback?.(feedback === 1 ? 0 : 1)}
-            />
-            <ActionButton
-              icon="👎"
-              label="Not for me"
-              pressed={feedback === -1}
-              className={feedback === -1 ? "is-on is-off" : ""}
-              disabled={!onFeedback}
-              onClick={() => onFeedback?.(feedback === -1 ? 0 : -1)}
-            />
-            <ActionButton icon="⚡" label="More action" hint=" (only for this session)" disabled={!onSteer} onClick={() => onSteer?.("action")} />
-            <ActionButton icon="😂" label="Funnier" hint=" (only for this session)" disabled={!onSteer} onClick={() => onSteer?.("funny")} />
-          </div>
-        </div>
+      <div className="stage-trailer" key={movie.id}>
+        <Trailer movie={movie} />
       </div>
       <div className="stage-info">
-        {/* keyed by film: a new film starts at the top; focusable so keyboards can scroll it in every browser */}
-        <div className="stage-info__body" key={movie.id} tabIndex={0} role="region" aria-label={`About ${movie.title}`}>
-          <div className="stage-kicker">{movie.genres.join(" · ") || world.title}</div>
-          <h2>{movie.title}</h2>
-          {movie.title_de && movie.title_de !== movie.title && <p className="stage-title-de">{movie.title_de}</p>}
-          <p className="stage-meta">{metaLine(movie)}</p>
-          {people.length > 0 && <p className="stage-people">{people.join(" · ")}</p>}
-          {(movie.is_placeholder || movie.availability.in_cinema_de) && (
-            <div className="stage-tags stage-flags">
-              {movie.is_placeholder && <span className="stage-tag--placeholder">Placeholder</span>}
-              {movie.availability.in_cinema_de && (
-                <span>🎬 In cinemas{movie.release_date_de ? ` (German release ${movie.release_date_de})` : ""}</span>
-              )}
-            </div>
-          )}
-          <section className="stage-why" aria-label="Why it fits you">
-            <h3 className="stage-why__title">✦ Why it fits you</h3>
-            <p>{why}</p>
-          </section>
-          {movie.overview && <p className="stage-overview">{movie.overview}</p>}
-          {movie.ml_rating !== null && (
-            <p className="stage-rating">
-              ⭐ MovieLens {rating.format(movie.ml_rating)}/5 ({count.format(movie.ml_rating_count)} ratings)
-            </p>
-          )}
+        <InfoCard key={movie.id} movie={movie} world={world} why={why} />
+      </div>
+      <div className="stage-strip">
+        {movie.top_tags.length > 0 && (
+          <div className="stage-strip__tags">
+            <span className="stage-strip__label">Mood tags:</span>
+            {movie.top_tags.map((t) => (
+              <span key={t} className="stage-strip__tag">
+                {t}
+              </span>
+            ))}
+          </div>
+        )}
+        <div className="stage-feedback">
+          <ActionButton
+            icon="👍"
+            label="More like this"
+            pressed={feedback === 1}
+            className={feedback === 1 ? "is-on" : ""}
+            disabled={!onFeedback}
+            onClick={() => onFeedback?.(feedback === 1 ? 0 : 1)}
+          />
+          <ActionButton
+            icon="👎"
+            label="Not for me"
+            pressed={feedback === -1}
+            className={feedback === -1 ? "is-on is-off" : ""}
+            disabled={!onFeedback}
+            onClick={() => onFeedback?.(feedback === -1 ? 0 : -1)}
+          />
+          <ActionButton icon="⚡" label="More action" hint=" (only for this session)" disabled={!onSteer} onClick={() => onSteer?.("action")} />
+          <ActionButton icon="😂" label="Funnier" hint=" (only for this session)" disabled={!onSteer} onClick={() => onSteer?.("funny")} />
         </div>
-        <div className="stage-info__foot stage-tags stage-foot">
-          <span className="stage-foot__label">Links:</span>
+      </div>
+      <div className="stage-links-box stage-tags">
+        <div className="stage-links-box__links">
+          <span className="stage-links-box__label">Links:</span>
           {movie.imdb_id && (
-            <a className="stage-foot__link" href={`https://www.imdb.com/title/${movie.imdb_id}/`} target="_blank" rel="noreferrer">
+            <a className="stage-links-box__link" href={`https://www.imdb.com/title/${movie.imdb_id}/`} target="_blank" rel="noreferrer">
               IMDb ↗
             </a>
           )}
           {movie.wikipedia_title && (
             <a
-              className="stage-foot__link"
+              className="stage-links-box__link"
               href={`https://en.wikipedia.org/wiki/${encodeURIComponent(movie.wikipedia_title.replaceAll(" ", "_")).replace(/%28/g, "(").replace(/%29/g, ")")}`}
               target="_blank"
               rel="noreferrer"
@@ -275,6 +296,11 @@ export default function StagePanel({ movie, world, why, feedback = 0, onFeedback
           )}
           <Streaming movie={movie} />
         </div>
+        {movie.ml_rating !== null && (
+          <span className="stage-links-box__rating" title={`${count.format(movie.ml_rating_count)} ratings`}>
+            ⭐ MovieLens {rating.format(movie.ml_rating)}/5
+          </span>
+        )}
       </div>
     </section>
   );
