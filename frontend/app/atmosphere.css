@@ -286,8 +286,9 @@
 .stage-why { margin: .2em 0 .7em; background: #f3c76b24; border: 1px solid #f3c76b66; border-left: 3px solid var(--gold); padding: .6em .85em; border-radius: 8px; }
 .stage-why__title { margin: 0 0 .25em; font-size: .78em; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--gold); }
 .stage-why p { margin: 0; font-size: 1em; line-height: 1.4; }
-.stage-feedback { display: flex; flex-wrap: wrap; gap: .45em; margin-top: .8em; }
-.stage-feedback button { font: inherit; font-size: .82em; padding: .35em .8em; border-radius: 999px; background: #ffffff14; color: #fff; border: 1px solid transparent; }
+.stage-actions { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: .6em; margin-top: .6em; }
+.stage-feedback { display: flex; flex-wrap: wrap; gap: .45em; margin-left: auto; }
+.stage-feedback button { font: inherit; font-size: .9em; width: 2.1em; height: 2.1em; padding: 0; display: grid; place-items: center; border-radius: 50%; background: #ffffff14; color: #fff; border: 1px solid transparent; }
 .stage-feedback button:disabled { opacity: .55; cursor: not-allowed; }
 
 .related { position: absolute; z-index: 15; left: calc(var(--safe-x) + var(--panel-w) + 1.4cqw); right: var(--safe-x); bottom: 1cqw; font-size: var(--ui); }
@@ -595,7 +596,7 @@
 .stage-overview__more { background: none; border: 0; padding: .15em 0; color: var(--gold); font: inherit; font-size: .9em; cursor: pointer; }
 .stage-tags--mood { margin-top: .4em; }
 .stage-tags--mood span { border-color: #f3c76b55; color: #f1dca8; }
-.stage-links { display: flex; gap: .8em; margin-top: .5em; font-size: .85em; }
+.stage-links { display: flex; gap: .8em; font-size: .85em; }
 .stage-links a { color: var(--gold); }
 .credits h1 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 2.2em; letter-spacing: .03em; }
 .credits p { max-width: 75ch; }
@@ -612,6 +613,7 @@
 .home-nav button:hover, .home-nav button:focus-visible { color: var(--gold); }
 .stage-feedback button:not(:disabled) { cursor: pointer; }
 .stage-feedback button:not(:disabled):hover { border-color: #ffffff40; }
+.stage-feedback button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 .stage-feedback button.is-on { border-color: var(--gold); background: #f3c76b26; color: var(--gold); }
 .stage-feedback button.is-off { border-color: #ff6b6b80; background: #ff6b6b1a; color: #ffb3b3; }
 .profile-panel {
