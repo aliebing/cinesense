@@ -15,6 +15,7 @@ import TileRows from "@/components/home/TileRows";
 import WorldLabel from "@/components/home/WorldLabel";
 import SearchChips from "@/components/search/SearchChips";
 import { getHome, getTags, type ApiResult, type Tag } from "@/lib/api";
+import { useChatLog } from "@/lib/chat";
 import { hasAnyCriteria, useSearchState } from "@/lib/searchState";
 import type { HomeData, HomeTile, MoodWorld, TileRow } from "@/lib/types";
 import { useActiveTrailer } from "@/lib/useActiveTrailer";
@@ -59,6 +60,7 @@ export default function HomePage({ initial = null }: { initial?: HomeData | null
     activeIdRef.current = activeId;
   }, [activeId]);
   const [criteria, setCriteria] = useSearchState();
+  const [chat] = useChatLog();
   const [tags, setTags] = useState<Tag[]>([]);
 
   useEffect(() => {
@@ -111,9 +113,10 @@ export default function HomePage({ initial = null }: { initial?: HomeData | null
   };
   // the film opens in its own main genre (listed first; it may differ from the mood on screen), shown on the left
   const openMovie = (m: HomeTile) => router.push(`/world/${m.world_ids[0] ?? world?.id ?? "suspense"}?film=${m.id}`);
-  // always the mood on screen: its top-rated films in two equal rows (also on phones); a search is shown on
-  // the search page, not here
-  const rows = moodRows(world, data, 2);
+  // always the mood on screen: its top-rated films in two equal rows; a search is shown on the search page, not
+  // here. On a phone a started search (chat or mood settings) takes the rows' place: the chat box gets the room
+  const searching = chat.length > 0 || hasAnyCriteria(criteria);
+  const rows = narrow && searching ? [] : moodRows(world, data, 2);
 
   return (
     <CinemaFrame>
