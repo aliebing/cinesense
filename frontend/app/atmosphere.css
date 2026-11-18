@@ -260,8 +260,11 @@
 .stage {
   /* above the row (z 15): on lower screens the row's box reaches up over the feedback buttons */
   position: absolute; z-index: 16; top: 3.4cqw; left: calc(var(--safe-x) + var(--panel-w) + 1.4cqw); right: var(--safe-x);
-  display: grid; grid-template-columns: 10.5cqw 32cqw minmax(0, 1fr); gap: 1.4cqw; align-items: start; font-size: var(--ui);
+  display: grid; grid-template-columns: 10.5cqw 32cqw minmax(0, 1fr); grid-template-rows: auto auto; gap: .7em 1.4cqw;
+  align-items: start; font-size: var(--ui);
 }
+.stage-poster { grid-row: 1; }
+.stage-trailer { grid-column: 2; grid-row: 1; }
 /* the gold frame lies inside the poster, so its top edge is level with the panels beside it */
 .stage-poster { position: relative; aspect-ratio: 2 / 3; border-radius: 8px; overflow: hidden;
   outline: 3px solid var(--gold); outline-offset: -3px; box-shadow: 0 0 60px #f3c76b55, 0 20px 50px #000; }
@@ -273,23 +276,32 @@
   background: #000a; border: 2px solid #fff; color: #fff; font-size: 1.2em; transition: transform .2s; }
 .stage-trailer__play:hover b, .stage-trailer__play:focus-visible b { transform: scale(1.08); border-color: var(--gold); }
 .stage-trailer__note { position: absolute; left: .8em; bottom: .6em; font-size: .85em; opacity: .85; text-shadow: 0 1px 4px #000; }
-.stage-info {
+/* the info cell is exactly as tall as the trailer (`contain: size`: its text never grows the row); the card inside
+   carries the look, is clipped to the cell and, opened with "More", grows over the links box and the row */
+.stage-info { grid-column: 3; grid-row: 1; align-self: stretch; contain: size; position: relative; }
+.stage-info__card {
+  position: absolute; inset: 0 0 auto 0; height: 100%; overflow: hidden; display: flex; flex-direction: column;
   border-radius: 14px; border: 1px solid #ffffff1f;
   background: #0d0d14c4; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: 0 20px 50px #000a;
-  /* exactly as tall as the screen column (trailer + strip): `contain: size` keeps its own content from growing the
-     row, the body scrolls inside, the footer stays */
-  align-self: stretch; contain: size; display: flex; flex-direction: column; overflow: hidden;
 }
-.stage-info__body { flex: 1; min-height: 0; overflow-y: auto; padding: .9em 1em .7em; }
-.stage-info__body:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; border-radius: 14px 14px 0 0; }
-.stage-info__foot { flex: none; align-items: center; padding: .55em 1em .65em; border-top: 1px solid #ffffff22; }
-.stage-foot .stage-foot__label { border: 0; padding: 0; font-size: .8em; color: var(--muted, #a29f99); }
-.stage-foot__link { font-size: .85em; color: var(--gold); margin-right: .2em; }
-.stage-rating { margin: 1.1em 0 0; font-size: .85em; opacity: .9; }
+.stage-info__card.is-open { height: auto; z-index: 20; background: #0d0d14f0; }
+.stage-info__body { flex: 1; min-height: 0; padding: .9em 1em .7em; }
+.stage-info__card.is-clipped .stage-info__body { -webkit-mask-image: linear-gradient(#000 calc(100% - 2.2em), transparent); mask-image: linear-gradient(#000 calc(100% - 2.2em), transparent); }
+.stage-info__more { flex: none; align-self: flex-start; font: inherit; font-size: .85em; color: var(--gold); background: none; border: 0;
+  padding: .1em 1.15em .65em; cursor: pointer; }
+.stage-info__more:hover { text-decoration: underline; }
+.stage-info__more:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; border-radius: 4px; }
 .stage-flags { margin: 0 0 .6em; }
-.stage-screen { display: grid; gap: .7em; min-width: 0; }
-.stage-strip { display: flex; flex-wrap: wrap; align-items: center; gap: .5em; padding: .55em .8em; border-radius: 10px;
-  background: #2a2a30d9; border: 1px solid #ffffff14; box-shadow: 0 12px 30px #0008; }
+/* strip under the trailer and links box under the info: one row, the same height, the same dark look as the card */
+.stage-strip, .stage-links-box { grid-row: 2; align-self: stretch; padding: .55em .8em; border-radius: 10px;
+  border: 1px solid #ffffff1f; background: #0d0d14c4; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 12px 30px #0008; }
+.stage-strip { grid-column: 2; display: flex; flex-wrap: wrap; align-items: center; gap: .5em; }
+.stage-links-box { grid-column: 3; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5em; }
+.stage-links-box__links { display: flex; flex-wrap: wrap; align-items: center; gap: .4em; }
+.stage-links-box .stage-links-box__label { border: 0; padding: 0; font-size: .8em; color: var(--muted, #a29f99); }
+.stage-links-box__link { font-size: .85em; color: var(--gold); margin-right: .2em; }
+.stage-links-box .stage-links-box__rating { margin-left: auto; border: 0; padding: 0; font-size: .85em; white-space: nowrap; }
 .stage-strip__tags { display: flex; flex-wrap: wrap; align-items: center; gap: .4em; }
 .stage-strip__label { font-size: .8em; color: var(--muted, #a29f99); }
 .stage-strip__tag { font-size: .8em; padding: .25em .7em; border-radius: 999px; border: 1px solid #f3c76b55; color: #f1dca8; }
@@ -376,10 +388,11 @@
   .tile { width: 168px; }
   .tile-row { gap: 8px; }
   .stage { grid-template-columns: 96px minmax(0, 1fr); gap: 12px; }
-  .stage-screen { grid-column: 1 / -1; grid-row: 2; }
-  .stage-info { contain: none; overflow: visible; }
-  .stage-info__body { overflow: visible; }
-  .stage-info { grid-column: 2; grid-row: 1; }
+  .stage-trailer { grid-column: 1 / -1; grid-row: 2; }
+  .stage-strip { grid-column: 1 / -1; grid-row: 3; }
+  .stage-links-box { grid-column: 1 / -1; grid-row: 4; }
+  .stage-info { grid-column: 2; grid-row: 1; contain: none; }
+  .stage-info__card { position: static; height: auto; }
   .side-settings { order: 2; width: 100%; max-height: none; }
   .related-viewport { width: 100%; }
   .cinema-stage { --card-w: 96px; --card-gap: 10px; }
