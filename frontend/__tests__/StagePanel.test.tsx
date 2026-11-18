@@ -47,7 +47,7 @@ it("shows streaming providers, TMDB rating, badge and why text", async () => {
   render(<StagePanel movie={movie} world={world} why="Highly rated" />);
   expect(screen.getByText("📺 Netflix")).toBeInTheDocument();
   expect(screen.getByText("📺 Disney+")).toBeInTheDocument();
-  expect(screen.getByText("⭐ MovieLens 4.1/5 (12,345 ratings)")).toBeInTheDocument();
+  expect(screen.getByText("⭐ MovieLens 4.1/5")).toHaveAttribute("title", "12,345 ratings");
   expect(screen.getByText("Placeholder", { selector: "span" })).toBeInTheDocument();
   expect(screen.getByText("Highly rated")).toBeInTheDocument();
   expect(screen.queryByText("🎬 In cinemas")).toBeNull();
@@ -234,39 +234,16 @@ it("shows the plot once after another film comes on stage", () => {
 
 const film = { ...base, overview: "A lone worker on the Moon nears the end of his contract.", ml_rating: 4.06, ml_rating_count: 12345, directors: ["Duncan Jones"], cast_top: ["Sam Rockwell"], imdb_id: "tt1", wikipedia_title: "Moon (film)", top_tags: ["space", "loneliness"] };
 
-it("shows everything in the box in order: meta, people, why, full plot, rating", () => {
+it("shows everything in the box in order: meta, people, why, full plot", () => {
   render(<StagePanel movie={film} world={world} why="Fits" />);
-  const body = document.querySelector(".stage-info__body") as HTMLElement;
+  const body = document.querySelector(".stage-info__card") as HTMLElement;
   expect(body).not.toBeNull();
-  const order = ["2020 · 2 h 0 min · EN (original)", "Directed by Duncan Jones · with Sam Rockwell", "Fits", "A lone worker on the Moon nears the end of his contract.", "⭐ MovieLens 4.1/5 (12,345 ratings)"];
+  const order = ["2020 · 2 h 0 min · EN (original)", "Directed by Duncan Jones · with Sam Rockwell", "Fits", "A lone worker on the Moon nears the end of his contract."];
   const nodes = order.map((t) => within(body).getByText(t));
   for (let i = 1; i < nodes.length; i++)
     expect(nodes[i - 1].compareDocumentPosition(nodes[i]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   expect(screen.queryByRole("button", { name: "More" })).toBeNull();
   expect(screen.queryByRole("button", { name: /More info/ })).toBeNull();
-});
-
-it("puts IMDb, Wikipedia and where to watch in the box footer after Links:", () => {
-  render(<StagePanel movie={{ ...film, availability: { in_cinema_de: false, streaming_de: null, subscription_services: [] } }} world={world} why="x" />);
-  const foot = document.querySelector(".stage-info__foot") as HTMLElement;
-  expect(foot).not.toBeNull();
-  expect(within(foot).getByText("Links:")).toBeInTheDocument();
-  expect(within(foot).getByRole("link", { name: "IMDb ↗" })).toBeInTheDocument();
-  expect(within(foot).getByRole("link", { name: "Wikipedia ↗" })).toBeInTheDocument();
-  expect(within(foot).getByText("Streaming not checked yet")).toBeInTheDocument();
-  expect(within(foot).getByText("Find where to watch ↗")).toBeInTheDocument();
-});
-
-it("shows mood tags and the four actions in a strip under the trailer", () => {
-  render(<StagePanel movie={film} world={world} why="x" />);
-  const screenCol = document.querySelector(".stage-screen") as HTMLElement;
-  expect(screenCol).not.toBeNull();
-  expect(screenCol.querySelector(".stage-trailer")).not.toBeNull();
-  const strip = within(screenCol).getByText("Mood tags:").closest(".stage-strip") as HTMLElement;
-  expect(within(strip).getByText("space")).toBeInTheDocument();
-  expect(within(strip).getByText("loneliness")).toBeInTheDocument();
-  for (const name of ["👍 More like this", "👎 Not for me", "⚡ More action", "😂 Funnier"])
-    expect(within(strip).getByRole("button", { name })).toBeInTheDocument();
 });
 
 it("leaves the Mood tags label out when a film has none", () => {
@@ -275,16 +252,62 @@ it("leaves the Mood tags label out when a film has none", () => {
   expect(document.querySelector(".stage-strip")!.querySelectorAll("button")).toHaveLength(4);
 });
 
-it("starts the box at the top when another film comes on stage", () => {
-  const { rerender } = render(<StagePanel movie={film} world={world} why="x" />);
-  const before = document.querySelector(".stage-info__body");
-  rerender(<StagePanel movie={{ ...film, id: "other" }} world={world} why="x" />);
-  expect(document.querySelector(".stage-info__body")).not.toBe(before);
+it("puts links, where to watch and the MovieLens rating in the links box", () => {
+  render(<StagePanel movie={{ ...film, availability: { in_cinema_de: false, streaming_de: null, subscription_services: [] } }} world={world} why="x" />);
+  const box = document.querySelector(".stage-links-box") as HTMLElement;
+  expect(box).not.toBeNull();
+  expect(within(box).getByText("Links:")).toBeInTheDocument();
+  expect(within(box).getByRole("link", { name: "IMDb ↗" })).toBeInTheDocument();
+  expect(within(box).getByRole("link", { name: "Wikipedia ↗" })).toBeInTheDocument();
+  expect(within(box).getByText("Streaming not checked yet")).toBeInTheDocument();
+  expect(within(box).getByText("Find where to watch ↗")).toBeInTheDocument();
+  const r = within(box).getByText("⭐ MovieLens 4.1/5");
+  expect(r).toHaveAttribute("title", "12,345 ratings");
+  expect(box.lastElementChild).toBe(r);
 });
 
-it("lets keyboard users focus and scroll the box text", () => {
+it("puts the strip and the links box straight into the stage grid", () => {
   render(<StagePanel movie={film} world={world} why="x" />);
-  const region = screen.getByRole("region", { name: `About ${film.title}` });
-  expect(region).toHaveClass("stage-info__body");
-  expect(region).toHaveAttribute("tabindex", "0");
+  const stage = document.querySelector("section.stage")!;
+  expect([...stage.children].map((c) => c.className.split(" ")[0])).toEqual(["stage-poster", "stage-trailer", "stage-info", "stage-strip", "stage-links-box"]);
+  const strip = document.querySelector(".stage-strip") as HTMLElement;
+  expect(within(strip).getByText("Mood tags:")).toBeInTheDocument();
+  expect(within(strip).getAllByRole("button")).toHaveLength(4);
+});
+
+function overflowing(scroll: number, client: number) {
+  const s = vi.spyOn(Element.prototype, "scrollHeight", "get").mockReturnValue(scroll);
+  const c = vi.spyOn(Element.prototype, "clientHeight", "get").mockReturnValue(client);
+  return () => {
+    s.mockRestore();
+    c.mockRestore();
+  };
+}
+
+it("shows no More button when the text fits", () => {
+  const restore = overflowing(200, 200);
+  render(<StagePanel movie={film} world={world} why="x" />);
+  expect(screen.queryByRole("button", { name: "More" })).toBeNull();
+  restore();
+});
+
+it("shows More when the text overflows and opens the card with it", async () => {
+  const restore = overflowing(520, 260);
+  render(<StagePanel movie={film} world={world} why="x" />);
+  const more = screen.getByRole("button", { name: "More" });
+  expect(more).toHaveAttribute("aria-expanded", "false");
+  expect(document.querySelector(".stage-info__card")).toHaveClass("is-clipped");
+  await userEvent.click(more);
+  expect(screen.getByRole("button", { name: "Less" })).toHaveAttribute("aria-expanded", "true");
+  expect(document.querySelector(".stage-info__card")).toHaveClass("is-open");
+  restore();
+});
+
+it("closes the card when another film comes on stage", async () => {
+  const restore = overflowing(520, 260);
+  const { rerender } = render(<StagePanel movie={film} world={world} why="x" />);
+  await userEvent.click(screen.getByRole("button", { name: "More" }));
+  rerender(<StagePanel movie={{ ...film, id: "other" }} world={world} why="x" />);
+  expect(screen.getByRole("button", { name: "More" })).toHaveAttribute("aria-expanded", "false");
+  restore();
 });
