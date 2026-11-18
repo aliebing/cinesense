@@ -151,6 +151,39 @@ function Overview({ text }: { text: string }) {
   );
 }
 
+/** A round icon button; the full name is its accessible name ("👍 More like this") and its tooltip. */
+function ActionButton({
+  icon,
+  label,
+  hint = "",
+  pressed,
+  className,
+  disabled,
+  onClick,
+}: {
+  icon: string;
+  label: string;
+  hint?: string;
+  pressed?: boolean;
+  className?: string;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={`${icon} ${label}`}
+      title={label + hint}
+      aria-pressed={pressed}
+      className={className || undefined}
+      disabled={disabled}
+      onClick={onClick}
+    >
+      <span aria-hidden="true">{icon}</span>
+    </button>
+  );
+}
+
 /** Cinema stage: poster, trailer, info and feedback (spec §5, layout B). */
 type Props = {
   movie: Movie;
@@ -186,6 +219,40 @@ export default function StagePanel({ movie, world, why, feedback = 0, onFeedback
           <p>{why}</p>
         </section>
         <Overview key={movie.id} text={movie.overview} />
+        <div className="stage-actions">
+          <div className="stage-links">
+            {movie.imdb_id && (
+              <a href={`https://www.imdb.com/title/${movie.imdb_id}/`} target="_blank" rel="noreferrer">
+                IMDb ↗
+              </a>
+            )}
+            {movie.wikipedia_title && (
+              <a href={`https://en.wikipedia.org/wiki/${encodeURIComponent(movie.wikipedia_title.replaceAll(" ", "_")).replace(/%28/g, "(").replace(/%29/g, ")")}`} target="_blank" rel="noreferrer">
+                Wikipedia ↗
+              </a>
+            )}
+          </div>
+          <div className="stage-feedback">
+            <ActionButton
+              icon="👍"
+              label="More like this"
+              pressed={feedback === 1}
+              className={feedback === 1 ? "is-on" : ""}
+              disabled={!onFeedback}
+              onClick={() => onFeedback?.(feedback === 1 ? 0 : 1)}
+            />
+            <ActionButton
+              icon="👎"
+              label="Not for me"
+              pressed={feedback === -1}
+              className={feedback === -1 ? "is-on is-off" : ""}
+              disabled={!onFeedback}
+              onClick={() => onFeedback?.(feedback === -1 ? 0 : -1)}
+            />
+            <ActionButton icon="⚡" label="More action" hint=" (only for this session)" disabled={!onSteer} onClick={() => onSteer?.("action")} />
+            <ActionButton icon="😂" label="Funnier" hint=" (only for this session)" disabled={!onSteer} onClick={() => onSteer?.("funny")} />
+          </div>
+        </div>
         <div className="stage-tags">
           {movie.is_placeholder && <span className="stage-tag--placeholder">Placeholder</span>}
           {movie.availability.in_cinema_de && (
@@ -205,44 +272,6 @@ export default function StagePanel({ movie, world, why, feedback = 0, onFeedback
             ))}
           </div>
         )}
-        <div className="stage-links">
-          {movie.imdb_id && (
-            <a href={`https://www.imdb.com/title/${movie.imdb_id}/`} target="_blank" rel="noreferrer">
-              IMDb
-            </a>
-          )}
-          {movie.wikipedia_title && (
-            <a href={`https://en.wikipedia.org/wiki/${encodeURIComponent(movie.wikipedia_title.replaceAll(" ", "_")).replace(/%28/g, "(").replace(/%29/g, ")")}`} target="_blank" rel="noreferrer">
-              Wikipedia
-            </a>
-          )}
-        </div>
-        <div className="stage-feedback">
-          <button
-            type="button"
-            aria-pressed={feedback === 1}
-            className={feedback === 1 ? "is-on" : ""}
-            disabled={!onFeedback}
-            onClick={() => onFeedback?.(feedback === 1 ? 0 : 1)}
-          >
-            👍 More like this
-          </button>
-          <button type="button" disabled={!onSteer} title="Only for this session" onClick={() => onSteer?.("action")}>
-            ⚡ More action
-          </button>
-          <button type="button" disabled={!onSteer} title="Only for this session" onClick={() => onSteer?.("funny")}>
-            😂 Funnier
-          </button>
-          <button
-            type="button"
-            aria-pressed={feedback === -1}
-            className={feedback === -1 ? "is-on is-off" : ""}
-            disabled={!onFeedback}
-            onClick={() => onFeedback?.(feedback === -1 ? 0 : -1)}
-          >
-            👎 Not for me
-          </button>
-        </div>
       </div>
     </section>
   );

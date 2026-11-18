@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { expect, it, vi } from "vitest";
 const reportTrailer = vi.fn();
@@ -55,8 +55,25 @@ it("shows streaming providers, TMDB rating, badge and why text", () => {
 
 it("renders the four feedback buttons disabled", () => {
   render(<StagePanel movie={base} world={world} why="Test" />);
-  const names = ["👍 More like this", "⚡ More action", "😂 Funnier", "👎 Not for me"];
+  const names = ["👍 More like this", "👎 Not for me", "⚡ More action", "😂 Funnier"];
   for (const name of names) expect(screen.getByRole("button", { name })).toBeDisabled();
+});
+
+it("shows the four actions as icon buttons with their full name as label and tooltip", () => {
+  render(<StagePanel movie={base} world={world} why="Test" />);
+  const names = ["👍 More like this", "👎 Not for me", "⚡ More action", "😂 Funnier"];
+  const buttons = names.map((name) => screen.getByRole("button", { name }));
+  expect(buttons.map((b) => b.textContent)).toEqual(["👍", "👎", "⚡", "😂"]);
+  expect(buttons.map((b) => b.getAttribute("title"))).toEqual(["More like this", "Not for me", "More action (only for this session)", "Funnier (only for this session)"]);
+});
+
+it("puts the IMDb and Wikipedia links in one row with the actions", () => {
+  render(<StagePanel movie={{ ...base, imdb_id: "tt1", wikipedia_title: "Moon (film)" }} world={world} why="Test" />);
+  const row = document.querySelector(".stage-actions") as HTMLElement;
+  expect(row).not.toBeNull();
+  expect(within(row).getByRole("link", { name: "IMDb ↗" })).toBeInTheDocument();
+  expect(within(row).getByRole("link", { name: "Wikipedia ↗" })).toBeInTheDocument();
+  expect(within(row).getByRole("button", { name: "👎 Not for me" })).toBeInTheDocument();
 });
 
 
@@ -131,8 +148,8 @@ it("links to IMDb and Wikipedia and shows people, tags and German cinema release
       why="x"
     />,
   );
-  expect(screen.getByRole("link", { name: "IMDb" })).toHaveAttribute("href", "https://www.imdb.com/title/tt0816692/");
-  expect(screen.getByRole("link", { name: "Wikipedia" })).toHaveAttribute("href", "https://en.wikipedia.org/wiki/Interstellar_(film)");
+  expect(screen.getByRole("link", { name: "IMDb ↗" })).toHaveAttribute("href", "https://www.imdb.com/title/tt0816692/");
+  expect(screen.getByRole("link", { name: "Wikipedia ↗" })).toHaveAttribute("href", "https://en.wikipedia.org/wiki/Interstellar_(film)");
   expect(screen.getByText(/Christopher Nolan/)).toBeInTheDocument();
   expect(screen.getByText("space travel")).toBeInTheDocument();
   expect(screen.getByText("🎬 In cinemas (German release 2026-10-01)")).toBeInTheDocument();
