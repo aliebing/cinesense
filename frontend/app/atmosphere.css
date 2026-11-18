@@ -848,17 +848,17 @@
   /* two home rows on phones: room between them for the second row's heading */
   .tile-rows { gap: 18px; }
 
-  /* film page: the stage's parts join the page grid, so the world box sits beside the poster; trailer and
-     button bar follow, then the description card full width */
+  /* film page: the stage's parts join the page grid, so the world box sits beside the poster and the
+     description card runs full width under both, above the trailer */
   .cinema-stage:has(> .stage) { display: grid; grid-template-columns: 96px minmax(0, 1fr); align-content: start; align-items: start; }
   .cinema-stage:has(> .stage) > .stage { display: contents; }
   .cinema-stage:has(> .stage) > .stage > * { position: relative; z-index: 15; }
   .cinema-stage:has(> .stage) > .genre-top { grid-column: 1 / -1; grid-row: 1; }
   .cinema-stage:has(> .stage) .stage-poster { grid-column: 1; grid-row: 2; }
   .cinema-stage:has(> .stage) > .side-settings { grid-column: 2; grid-row: 2; }
-  .cinema-stage:has(> .stage) .stage-info { grid-column: 1 / -1; grid-row: 5; }
-  .cinema-stage:has(> .stage) .stage-trailer { grid-column: 1 / -1; grid-row: 3; }
-  .cinema-stage:has(> .stage) .stage-strip { grid-column: 1 / -1; grid-row: 4; }
+  .cinema-stage:has(> .stage) .stage-info { grid-column: 1 / -1; grid-row: 3; }
+  .cinema-stage:has(> .stage) .stage-trailer { grid-column: 1 / -1; grid-row: 4; }
+  .cinema-stage:has(> .stage) .stage-strip { grid-column: 1 / -1; grid-row: 5; }
   .cinema-stage:has(> .stage) .stage-links-box { grid-column: 1 / -1; grid-row: 6; }
   .cinema-stage:has(> .stage) > .related { grid-column: 1 / -1; grid-row: 7; }
 }
