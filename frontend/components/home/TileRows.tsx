@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useActiveTrailer } from "@/lib/useActiveTrailer";
 import { isTyping } from "@/lib/typingPause";
 import { useReducedMotion } from "@/lib/useReducedMotion";
+import { attachTouchDrag, glideDistance } from "@/lib/touchDrag";
 import type { HomeTile, MoodWorld, TileRow } from "@/lib/types";
 
 type Props = {
@@ -25,6 +26,18 @@ export function targetFactor(pointing: boolean, trailer: boolean): number {
 }
 const EASE_MS = 600; // time constant for speed changes
 const FEATURED_AT = 0.45; // new chat picks start here (share of the row's width), clear of the fade on the left
+
+/** Loop length of a row (it holds its films twice), measured once and cached until the row resizes. */
+function periodOf(cache: Map<string, number>, id: string, el: HTMLElement): number {
+  const known = cache.get(id) ?? 0;
+  if (known > 0) return known;
+  const first = el.children[0] as HTMLElement | undefined;
+  const second = el.children[el.children.length / 2] as HTMLElement | undefined;
+  // distance from the first tile to the first tile of the duplicate set = exact loop length
+  const period = first && second ? second.offsetLeft - first.offsetLeft : 0;
+  if (period > 0) cache.set(id, period);
+  return period;
+}
 
 /** Moves an offset and wraps it into (-period, 0] — exactly one loop period, so the seam never jumps. */
 export function advance(offset: number, delta: number, period: number): number {
@@ -120,6 +133,9 @@ export default function TileRows({ rows, onSelect, worldOrder = [], onLap, lapFi
   // loop length per row, measured once and again only when the row resizes: reading layout on every frame
   // forced a full page layout each frame and made typing in the chat lag
   const periods = useRef(new Map<string, number>());
+  const container = useRef<HTMLDivElement | null>(null);
+  const dragging = useRef<string | null>(null); // the row under a swiping finger: it does not run on its own
+  const glides = useRef(new Map<string, number>()); // px a flicked row still glides (eased off over a few frames)
   useEffect(() => {
     slowRef.current = activeId !== null; // a playing trailer must not slide away from under the pointer
   }, [activeId]);
@@ -169,21 +185,16 @@ export default function TileRows({ rows, onSelect, worldOrder = [], onLap, lapFi
       orderRef.current.forEach((id) => {
         const el = rowEls.current.get(id);
         if (!el) return;
-        let period = periods.current.get(id) ?? 0;
-        if (period <= 0) {
-          const n = el.children.length / 2;
-          const first = el.children[0] as HTMLElement | undefined;
-          const second = el.children[n] as HTMLElement | undefined;
-          // distance from the first tile to the first tile of the duplicate set = exact loop length
-          period = first && second ? second.offsetLeft - first.offsetLeft : 0;
-          if (period > 0) periods.current.set(id, period);
-        }
+        const period = periodOf(periods.current, id, el);
         if (toAlign.current.has(id) && period > 0) {
           offsets.current.set(id, featuredStart(el.parentElement?.clientWidth ?? 0, period, FEATURED_AT));
           toAlign.current.delete(id);
         }
-        const delta = (directions.current.get(id) ?? -1) * SPEED * factor * (dt / 1000);
-        const next = advance(offsets.current.get(id) ?? 0, delta, period);
+        const delta = dragging.current === id ? 0 : (directions.current.get(id) ?? -1) * SPEED * factor * (dt / 1000);
+        const glide = glides.current.get(id) ?? 0;
+        const part = Math.abs(glide) < 1 ? glide : glide * Math.min(1, dt / 160);
+        if (glide !== 0) glides.current.set(id, glide - part);
+        const next = advance(offsets.current.get(id) ?? 0, delta + part, period);
         if (id === orderRef.current[0] && period > 0) {
           travelled.current += Math.abs(delta);
           if (travelled.current >= period * lapShare.current) {
@@ -200,8 +211,36 @@ export default function TileRows({ rows, onSelect, worldOrder = [], onLap, lapFi
     return () => cancelAnimationFrame(frame);
   }, [reduced]);
 
+  useEffect(() => {
+    // a finger drags the row it touches; the rows' own run pauses for that row and goes on after a short glide
+    const el = container.current;
+    if (!el) return;
+    return attachTouchDrag(el, {
+      onStart: (target) => {
+        const id = target.closest<HTMLElement>(".tile-row-wrap")?.dataset.world ?? null;
+        dragging.current = id;
+        if (id) glides.current.delete(id);
+      },
+      onDrag: (dx) => {
+        const id = dragging.current;
+        const row = id ? rowEls.current.get(id) : undefined;
+        if (!id || !row) return;
+        const next = advance(offsets.current.get(id) ?? 0, dx, periodOf(periods.current, id, row));
+        offsets.current.set(id, next);
+        row.style.transform = `translate3d(${next}px, 0, 0)`;
+      },
+      onEnd: (velocity) => {
+        const id = dragging.current;
+        dragging.current = null;
+        if (!id) return;
+        if (!reduced) glides.current.set(id, glideDistance(velocity));
+      },
+    });
+  }, [reduced]);
+
   return (
     <div
+      ref={container}
       className="tile-rows"
       onPointerEnter={() => {
         pointingRef.current = true;

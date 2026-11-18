@@ -24,7 +24,7 @@ const TITLES_PER_MOOD = 14; // the drifting titles: the films of both rows, in t
 const LAP_FILMS = 2; // the mood changes once this many films of each row have passed
 
 /** The mood on screen (the hero world) in two rows running against each other: its newest top-rated films above,
- *  its top classics below, each with a heading. One row on a narrow screen. The rows keep their ids when the mood
+ *  its top classics below, each with a heading. The rows keep their ids when the mood
  *  changes, so they run on and only their films change (no new rows, no jump). */
 export function moodRows(world: MoodWorld | undefined, data: HomeData | null, count: number): TileRow[] {
   if (!world || !data) return [];
@@ -111,9 +111,9 @@ export default function HomePage({ initial = null }: { initial?: HomeData | null
   };
   // the film opens in its own main genre (listed first; it may differ from the mood on screen), shown on the left
   const openMovie = (m: HomeTile) => router.push(`/world/${m.world_ids[0] ?? world?.id ?? "suspense"}?film=${m.id}`);
-  // always the mood on screen: its top-rated films in two equal rows (one on a narrow screen); a search is shown on
+  // always the mood on screen: its top-rated films in two equal rows (also on phones); a search is shown on
   // the search page, not here
-  const rows = moodRows(world, data, narrow ? 1 : 2);
+  const rows = moodRows(world, data, 2);
 
   return (
     <CinemaFrame>

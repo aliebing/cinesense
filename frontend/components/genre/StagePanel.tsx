@@ -198,10 +198,19 @@ function InfoCard({ movie, world, why }: { movie: Movie; world: MoodWorld; why: 
         {movie.overview && <p className="stage-overview">{movie.overview}</p>}
         </div>
       </div>
-      {(clipped || open) && (
-        <button type="button" className="stage-info__more" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-          {open ? "Less" : "More"}
-        </button>
+      {(clipped || open || movie.ml_rating !== null) && (
+        <div className="stage-info__foot">
+          {(clipped || open) && (
+            <button type="button" className="stage-info__more" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+              {open ? "Less" : "More"}
+            </button>
+          )}
+          {movie.ml_rating !== null && (
+            <span className="stage-info__rating" title={`${count.format(movie.ml_rating_count)} ratings`}>
+              ⭐ MovieLens {rating.format(movie.ml_rating)}/5
+            </span>
+          )}
+        </div>
       )}
     </div>
   );
@@ -257,6 +266,16 @@ export default function StagePanel({ movie, world, why, feedback = 0, onFeedback
       <div className="stage-poster">
         <ImageOrPlaceholder src={movie.poster_url} alt={`Poster: ${movie.title}`} />
       </div>
+      {movie.top_tags.length > 0 && (
+        <div className="stage-moods">
+          <span className="stage-strip__label">Mood tags:</span>
+          {movie.top_tags.map((t) => (
+            <span key={t} className="stage-strip__tag">
+              {t}
+            </span>
+          ))}
+        </div>
+      )}
       <div className="stage-trailer" key={movie.id}>
         <Trailer movie={movie} />
       </div>
@@ -264,16 +283,6 @@ export default function StagePanel({ movie, world, why, feedback = 0, onFeedback
         <InfoCard key={movie.id} movie={movie} world={world} why={why} />
       </div>
       <div className="stage-strip">
-        {movie.top_tags.length > 0 && (
-          <div className="stage-strip__tags">
-            <span className="stage-strip__label">Mood tags:</span>
-            {movie.top_tags.map((t) => (
-              <span key={t} className="stage-strip__tag">
-                {t}
-              </span>
-            ))}
-          </div>
-        )}
         <div className="stage-feedback">
           <ActionButton
             icon="👍"
@@ -296,30 +305,22 @@ export default function StagePanel({ movie, world, why, feedback = 0, onFeedback
         </div>
       </div>
       <div className="stage-links-box stage-tags">
-        <div className="stage-links-box__links">
-          <span className="stage-links-box__label">Links:</span>
-          {movie.imdb_id && (
-            <a className="stage-links-box__link" href={`https://www.imdb.com/title/${movie.imdb_id}/`} target="_blank" rel="noreferrer">
-              IMDb ↗
-            </a>
-          )}
-          {movie.wikipedia_title && (
-            <a
-              className="stage-links-box__link"
-              href={`https://en.wikipedia.org/wiki/${encodeURIComponent(movie.wikipedia_title.replaceAll(" ", "_")).replace(/%28/g, "(").replace(/%29/g, ")")}`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Wikipedia ↗
-            </a>
-          )}
-          <Streaming movie={movie} />
-        </div>
-        {movie.ml_rating !== null && (
-          <span className="stage-links-box__rating" title={`${count.format(movie.ml_rating_count)} ratings`}>
-            ⭐ MovieLens {rating.format(movie.ml_rating)}/5
-          </span>
+        {movie.imdb_id && (
+          <a className="stage-links-box__link" href={`https://www.imdb.com/title/${movie.imdb_id}/`} target="_blank" rel="noreferrer">
+            IMDb ↗
+          </a>
         )}
+        {movie.wikipedia_title && (
+          <a
+            className="stage-links-box__link"
+            href={`https://en.wikipedia.org/wiki/${encodeURIComponent(movie.wikipedia_title.replaceAll(" ", "_")).replace(/%28/g, "(").replace(/%29/g, ")")}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Wikipedia ↗
+          </a>
+        )}
+        <Streaming movie={movie} />
       </div>
     </section>
   );

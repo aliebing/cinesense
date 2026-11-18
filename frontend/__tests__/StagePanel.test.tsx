@@ -249,29 +249,38 @@ it("shows everything in the box in order: meta, people, why, full plot", () => {
 it("leaves the Mood tags label out when a film has none", () => {
   render(<StagePanel movie={{ ...film, top_tags: [] }} world={world} why="x" />);
   expect(screen.queryByText("Mood tags:")).toBeNull();
+  expect(document.querySelector(".stage-moods")).toBeNull();
   expect(document.querySelector(".stage-strip")!.querySelectorAll("button")).toHaveLength(4);
 });
 
-it("puts links, where to watch and the MovieLens rating in the links box", () => {
+it("puts the links and where to watch in the links box, without a label", () => {
   render(<StagePanel movie={{ ...film, availability: { in_cinema_de: false, streaming_de: null, subscription_services: [] } }} world={world} why="x" />);
   const box = document.querySelector(".stage-links-box") as HTMLElement;
   expect(box).not.toBeNull();
-  expect(within(box).getByText("Links:")).toBeInTheDocument();
+  expect(within(box).queryByText("Links:")).toBeNull();
   expect(within(box).getByRole("link", { name: "IMDb ↗" })).toBeInTheDocument();
   expect(within(box).getByRole("link", { name: "Wikipedia ↗" })).toBeInTheDocument();
   expect(within(box).getByText("Streaming not checked yet")).toBeInTheDocument();
   expect(within(box).getByText("Find where to watch ↗")).toBeInTheDocument();
-  const r = within(box).getByText("⭐ MovieLens 4.1/5");
-  expect(r).toHaveAttribute("title", "12,345 ratings");
-  expect(box.lastElementChild).toBe(r);
+  expect(within(box).queryByText(/MovieLens/)).toBeNull();
 });
 
-it("puts the strip and the links box straight into the stage grid", () => {
+it("shows the MovieLens rating at the foot of the info card", () => {
+  render(<StagePanel movie={film} world={world} why="x" />);
+  const foot = document.querySelector(".stage-info__card .stage-info__foot") as HTMLElement;
+  const r = within(foot).getByText("⭐ MovieLens 4.1/5");
+  expect(r).toHaveAttribute("title", "12,345 ratings");
+  expect(foot.lastElementChild).toBe(r);
+});
+
+it("puts the mood tags, the strip and the links box straight into the stage grid", () => {
   render(<StagePanel movie={film} world={world} why="x" />);
   const stage = document.querySelector("section.stage")!;
-  expect([...stage.children].map((c) => c.className.split(" ")[0])).toEqual(["stage-poster", "stage-trailer", "stage-info", "stage-strip", "stage-links-box"]);
+  expect([...stage.children].map((c) => c.className.split(" ")[0])).toEqual(["stage-poster", "stage-moods", "stage-trailer", "stage-info", "stage-strip", "stage-links-box"]);
+  const moods = document.querySelector(".stage-moods") as HTMLElement;
+  expect(within(moods).getByText("Mood tags:")).toBeInTheDocument();
   const strip = document.querySelector(".stage-strip") as HTMLElement;
-  expect(within(strip).getByText("Mood tags:")).toBeInTheDocument();
+  expect(within(strip).queryByText("Mood tags:")).toBeNull();
   expect(within(strip).getAllByRole("button")).toHaveLength(4);
 });
 

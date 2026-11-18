@@ -7,6 +7,7 @@ import HoverTrailer from "@/components/media/HoverTrailer";
 import ImageOrPlaceholder from "@/components/ui/ImageOrPlaceholder";
 import { useActiveTrailer } from "@/lib/useActiveTrailer";
 import { useReducedMotion } from "@/lib/useReducedMotion";
+import { attachTouchDrag, glideDistance } from "@/lib/touchDrag";
 import type { Movie, RankedMovie } from "@/lib/types";
 
 const IDLE_SPEED = 40; // px per second while the pointer is elsewhere: the row keeps running through
@@ -122,6 +123,9 @@ export default function RelatedRow({
   const anchor = useRef<HTMLElement | null>(null); // the card under the pointer
   const trailerRef = useRef(false);
   const nudge = useRef(0); // px the « » buttons still want the running row to slide (eased off over a few frames)
+  const dragged = useRef(0); // px a swiping finger moved the row since the last frame
+  const dragging = useRef(false);
+  const swipeDir = useRef(0); // the way the last flick went: a looping row runs on that way
   const reduced = useReducedMotion();
   const sweepRef = useRef<Sweep | null>(sweep);
   useLayoutEffect(() => {
@@ -158,6 +162,7 @@ export default function RelatedRow({
     // the pointer steers the row while it is level with it, also beside it: moved out past an end, the row goes on
     // (faster); above or below it, the row stops
     const move = (e: PointerEvent) => {
+      if (e.pointerType !== "mouse") return; // a finger drags the row (below), it does not steer it
       const box = viewport.current?.getBoundingClientRect();
       if (!box || box.width <= 0) return;
       // anywhere level with the row (also over the curtains beside the stage), but not over the chat panel
@@ -175,6 +180,26 @@ export default function RelatedRow({
       document.documentElement.removeEventListener("pointerleave", leave);
     };
   }, []);
+
+  useEffect(() => {
+    // a standing row scrolls natively (overflow-x: auto); a running one moves by transform and is dragged by hand
+    const el = viewport.current;
+    if (!el || still) return;
+    return attachTouchDrag(el, {
+      onStart: () => {
+        dragging.current = true;
+        nudge.current = 0;
+      },
+      onDrag: (dx) => {
+        dragged.current += dx;
+      },
+      onEnd: (velocity) => {
+        dragging.current = false;
+        if (velocity !== 0) swipeDir.current = Math.sign(velocity);
+        nudge.current += glideDistance(velocity);
+      },
+    });
+  }, [still]);
 
   const sweeping = sweep !== null;
   useEffect(() => {
@@ -224,6 +249,7 @@ export default function RelatedRow({
         // the cards repeat every lap: show the run within one lap, and end exactly where the new page starts
         offset = elapsed >= SWEEP_MS ? run.end : run.lap > 0 ? ((raw % run.lap) - run.lap) % run.lap : raw;
         speed = 0;
+        dragged.current = 0; // a page run is not interrupted by a finger
         el.style.transform = `translate3d(${offset}px, 0, 0)`;
         if (elapsed >= SWEEP_MS && !run.done) {
           run.done = true;
@@ -249,10 +275,12 @@ export default function RelatedRow({
           nudge.current -= part;
           offset += part;
         }
+        offset += dragged.current;
+        dragged.current = 0;
         // steering towards an edge always browses (the trailer under the pointer stops when its card slides away);
         // in the calm middle the row stands still anyway, so a trailer there plays in place
         const target = braked(edgeSpeed(pointer.current, dir, false), offset, min);
-        speed = easeTowards(speed, target, dt, EASE_MS);
+        speed = dragging.current ? 0 : easeTowards(speed, target, dt, EASE_MS);
         const next = offset + speed * (dt / 1000);
         if (next <= min || next >= 0) speed = 0; // an end: stop dead there, no easing out
         offset = Math.min(0, Math.max(min, next));
@@ -279,9 +307,15 @@ export default function RelatedRow({
           nudge.current -= part;
           offset = advance(offset, part, period);
         }
+        offset = advance(offset, dragged.current, period);
+        dragged.current = 0;
+        if (swipeDir.current) {
+          dir = swipeDir.current;
+          swipeDir.current = 0;
+        }
         const target = edgeSpeed(pointer.current, dir, drift);
         if (Math.abs(target) > SLOW_SPEED) dir = Math.sign(target);
-        speed = easeTowards(speed, trailerRef.current ? 0 : target, dt, EASE_MS);
+        speed = dragging.current ? 0 : easeTowards(speed, trailerRef.current ? 0 : target, dt, EASE_MS);
         offset = advance(offset, speed * (dt / 1000), period);
         el.style.transform = `translate3d(${offset}px, 0, 0)`;
       }
