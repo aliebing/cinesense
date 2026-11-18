@@ -274,3 +274,17 @@ it("leaves the Mood tags label out when a film has none", () => {
   expect(screen.queryByText("Mood tags:")).toBeNull();
   expect(document.querySelector(".stage-strip")!.querySelectorAll("button")).toHaveLength(4);
 });
+
+it("starts the box at the top when another film comes on stage", () => {
+  const { rerender } = render(<StagePanel movie={film} world={world} why="x" />);
+  const before = document.querySelector(".stage-info__body");
+  rerender(<StagePanel movie={{ ...film, id: "other" }} world={world} why="x" />);
+  expect(document.querySelector(".stage-info__body")).not.toBe(before);
+});
+
+it("lets keyboard users focus and scroll the box text", () => {
+  render(<StagePanel movie={film} world={world} why="x" />);
+  const region = screen.getByRole("region", { name: `About ${film.title}` });
+  expect(region).toHaveClass("stage-info__body");
+  expect(region).toHaveAttribute("tabindex", "0");
+});
