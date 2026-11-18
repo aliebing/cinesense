@@ -230,7 +230,8 @@ export default function StagePanel({ movie, world, why, feedback = 0, onFeedback
         </div>
       </div>
       <div className="stage-info">
-        <div className="stage-info__body">
+        {/* keyed by film: a new film starts at the top; focusable so keyboards can scroll it in every browser */}
+        <div className="stage-info__body" key={movie.id} tabIndex={0} role="region" aria-label={`About ${movie.title}`}>
           <div className="stage-kicker">{movie.genres.join(" · ") || world.title}</div>
           <h2>{movie.title}</h2>
           {movie.title_de && movie.title_de !== movie.title && <p className="stage-title-de">{movie.title_de}</p>}
