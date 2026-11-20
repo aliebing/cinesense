@@ -46,6 +46,18 @@ export function moodRows(world: MoodWorld | undefined, data: HomeData | null, co
   return rows.slice(0, count).filter((row) => row.movies.length > 0);
 }
 
+/** Phones: both rows as one strip of small tiles, newest and classics in turn, so the home page fits one screen. */
+export function phoneRow(world: MoodWorld | undefined, data: HomeData | null): TileRow[] {
+  const [upper = [], lower = []] = moodRows(world, data, 2).map((r) => r.movies);
+  const movies: HomeTile[] = [];
+  for (let i = 0; i < Math.max(upper.length, lower.length); i++) {
+    if (upper[i]) movies.push(upper[i]);
+    if (lower[i]) movies.push(lower[i]);
+  }
+  if (!world || movies.length === 0) return [];
+  return [{ world: { ...world, id: "mood-0" }, movies, label: "Top-rated · newest & classics" }];
+}
+
 /** The homepage. `initial`: the rows the server already fetched (app/page.tsx); without them the browser asks. */
 export default function HomePage({ initial = null }: { initial?: HomeData | null }) {
   const router = useRouter();
@@ -114,9 +126,10 @@ export default function HomePage({ initial = null }: { initial?: HomeData | null
   // the film opens in its own main genre (listed first; it may differ from the mood on screen), shown on the left
   const openMovie = (m: HomeTile) => router.push(`/world/${m.world_ids[0] ?? world?.id ?? "suspense"}?film=${m.id}`);
   // always the mood on screen: its top-rated films in two equal rows; a search is shown on the search page, not
-  // here. On a phone a started search (chat or mood settings) takes the rows' place: the chat box gets the room
+  // here. On a phone both rows are one strip of small tiles, and a started search (chat or mood settings) takes
+  // its place: the chat box gets the room
   const searching = chat.length > 0 || hasAnyCriteria(criteria);
-  const rows = narrow && searching ? [] : moodRows(world, data, 2);
+  const rows = narrow ? (searching ? [] : phoneRow(world, data)) : moodRows(world, data, 2);
 
   return (
     <CinemaFrame>

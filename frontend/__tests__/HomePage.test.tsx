@@ -66,12 +66,19 @@ it("keeps claim and chat when the backend is unreachable", async () => {
   expect(screen.getByRole("textbox", { name: "Message CineSense" })).toBeInTheDocument();
 });
 
-it("shows both tile strips but no film titles on narrow screens", async () => {
+it("on narrow screens one tile strip holds both lists in turn (newest, classic, …), no film titles", async () => {
   mockMatchMedia((q) => q.includes("max-width: 759px"));
   getHome.mockResolvedValue({ ok: true, data: sampleHome });
   render(<HomePage />);
   await screen.findAllByTestId("tile-row");
-  expect(screen.getAllByTestId("tile-row")).toHaveLength(2);
+  expect(screen.getAllByTestId("tile-row")).toHaveLength(1);
+  expect(screen.getByText("Top-rated · newest & classics")).toBeInTheDocument();
+  const newest = new Set(sampleHome.newest?.suspense ?? []);
+  const films = sampleHome.rows.suspense;
+  const shown = [...document.querySelectorAll(".tile-row .tile:not([aria-hidden])")].map((b) => b.getAttribute("aria-label"));
+  expect(shown).toHaveLength(films.length);
+  expect(shown[0]).toBe(films.find((m) => newest.has(m.id))?.title);
+  expect(shown[1]).toBe(films.find((m) => !newest.has(m.id))?.title);
   expect(screen.queryByTestId("film-titles")).toBeNull();
 });
 

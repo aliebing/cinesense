@@ -388,7 +388,7 @@
   .home-center { order: 2; width: 100%; }
   .home-rows { order: 3; left: auto; right: auto; bottom: auto; -webkit-mask-image: none; mask-image: none; }
   .world-label { order: 4; }
-  .tile { width: 168px; }
+  .tile { width: 124px; } /* one strip of small thumbnails on the home page (both rows in one, see HomePage) */
   .tile-row { gap: 8px; }
   /* phones: poster + info side by side, then trailer, buttons and links, each full width */
   .stage { grid-template-columns: 96px minmax(0, 1fr); grid-template-rows: none; gap: 12px; left: auto; right: auto; top: auto; width: 100%; }
@@ -857,8 +857,6 @@
   .home-center .chat-input button { width: 2.9em; }
   /* with a chat going the box grows downwards (the film rows are left out then, see HomePage) */
   .home-center .chat-log { max-height: min(55vh, 460px); }
-  /* two home rows on phones: room between them for the second row's heading */
-  .tile-rows { gap: 18px; }
 
   /* film page: the stage's parts join the page grid, so the world box sits beside the poster and the
      description card runs full width under both, above the trailer */
