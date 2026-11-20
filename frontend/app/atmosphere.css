@@ -386,7 +386,8 @@
   .genre-top, .stage, .related { position: relative; inset: auto; transform: none; z-index: 15; }
   .home-top { order: 0; flex-wrap: wrap; gap: 8px 16px; }
   .home-center { order: 2; width: 100%; }
-  .home-rows { order: 3; left: auto; right: auto; bottom: auto; -webkit-mask-image: none; mask-image: none; }
+  .home-rows { order: 3; left: auto; right: auto; bottom: auto; -webkit-mask-image: none; mask-image: none;
+    margin-top: 14px; } /* clear room between the mood settings' + Tag and the strip's heading */
   .world-label { order: 4; }
   .tile { width: 124px; } /* one strip of small thumbnails on the home page (both rows in one, see HomePage) */
   .tile-row { gap: 8px; }
