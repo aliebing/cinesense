@@ -872,6 +872,19 @@
   .cinema-stage:has(> .stage) .stage-strip { grid-column: 1 / -1; grid-row: 5; }
   .cinema-stage:has(> .stage) .stage-links-box { grid-column: 1 / -1; grid-row: 6; }
   .cinema-stage:has(> .stage) > .related { grid-column: 1 / -1; grid-row: 7; }
+
+  /* search page: each further match shows its title and why under its thumbnail, not over the picture */
+  .results-more-row .related-card { height: auto; overflow: visible; display: flex; flex-direction: column;
+    background: none; outline: 0; box-shadow: none; }
+  .results-more-row .related-card :is(.img-cover, .img-placeholder) { position: relative; inset: auto; flex: none;
+    height: calc(var(--card-w) * 1.5); border-radius: 8px; outline: 1px solid #ffffff25; }
+  .results-more-row .related-card span { position: static; margin-top: .4em; line-height: 1.25; overflow-wrap: anywhere; }
+  /* "How these results came about" goes to the very bottom, under the films, opening downwards in the flow */
+  .results-info { display: contents; }
+  .results-explain-btn, .results-explain { order: 9; position: static; flex-shrink: 0; }
+  .results-explain-btn { align-self: center; margin-top: 12px; }
+  .results-explain { width: auto; }
+  .results-page > *, .results-films > * { flex-shrink: 0; } /* the page scrolls; nothing is squeezed and cut off */
 }
 
 /* finger swiping (lib/touchDrag.ts): sideways belongs to the running rows, upright still scrolls the page */
