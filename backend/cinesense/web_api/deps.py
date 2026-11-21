@@ -139,14 +139,24 @@ def get_agent():
     from langgraph.checkpoint.memory import MemorySaver
 
     from cinesense.chat_agent.graph import build_graph, run_turn
+    from cinesense.chat_agent.identify import make_plot_judge
     from cinesense.chat_agent.tools import ToolKit, make_tools
+    from cinesense.data_sources.film_lookup import FilmLookup
 
     provider, streaming = get_provider(), get_streaming()
     service = agent_search_service()
     graph = build_graph(
         llm,
         make_llm(s, max_tokens=1500),  # reasoning tokens count against the limit
-        make_tools(ToolKit(service, provider, streaming)),
+        make_tools(
+            ToolKit(
+                service,
+                provider,
+                streaming,
+                FilmLookup(),
+                make_plot_judge(make_llm(s, max_tokens=1500)),  # reasoning tokens count against the limit
+            )
+        ),
         service,
         provider,
         MemorySaver(),  # one process-wide memory; the client keeps the thread id

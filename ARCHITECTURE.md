@@ -43,11 +43,11 @@ Each folder is one role. Read them top to bottom: each builds only on the ones a
 | Role | Responsibility | Key files | May import |
 |---|---|---|---|
 | `core/` | Shared vocabulary, no I/O: films, search criteria, the seven mood worlds, tag relevance, settings | `criteria.py`, `models.py`, `worlds.py`, `tag_relevance.py` | — |
-| `data_sources/` | Adapters to everything outside: the Postgres catalogue (and an offline JSON fixture), streaming availability, live title search, Wikidata, Wikipedia, embeddings, YouTube | `postgres.py`, `streaming.py`, `live_search.py` | core |
+| `data_sources/` | Adapters to everything outside: the Postgres catalogue (and an offline JSON fixture), streaming availability, live title search, a named film checked against Wikidata and its Wikipedia plot, Wikidata, Wikipedia, embeddings, YouTube | `postgres.py`, `streaming.py`, `live_search.py` | core |
 | `search/` | Turns `SearchCriteria` into ranked, explained results; widens a search that finds too little | `service.py`, `ranking.py`, `widening.py` | core |
 | `taste/` | Anonymous 👍/👎 and the taste profile derived from them | `profile.py`, `feedback.py` | core |
 | `catalog_import/` | Offline jobs that build the catalogue: MovieLens + Tag Genome, plots, embeddings, posters, billing, languages | `pipeline.py` | core, data_sources |
-| `chat_agent/` | The LangGraph agent: injection guard, tool loop, deterministic search run, widening, mood coverage of the picks, grounded explanation | `graph.py`, `tools.py`, `grounding.py`, `guard.py`, `prompts.py` | core, search, taste |
+| `chat_agent/` | The LangGraph agent: injection guard, tool loop, film identification ("which film is it?"), deterministic search run, widening, mood coverage of the picks, grounded explanation | `graph.py`, `tools.py`, `grounding.py`, `guard.py`, `prompts.py` | core, search, taste |
 | `evaluation/` | Scenarios against the real agent, automatic checks, LLM judge, two baseline rankers; one run (`session.py`) shared by `make eval` and the admin page | `session.py`, `runner.py`, `checks.py`, `baselines.py` | core, data_sources, search, taste, chat_agent |
 | `web_api/` | The HTTP layer: catalogue and search endpoints, chat as Server-Sent Events, `/api/inspect`, the visitor log (`chat_log.py`, `/api/admin/visitors`), the eval runs (`/api/eval/*`: saved runs, starting one, its live state), taste, the per-visitor and daily turn limits | `app.py`, `home.py` (homepage rows, built once and cached), `admin_session.py` (the `/admin` sign-in: bcrypt hash, session cookie, 5 tries per 15 min), `chat.py`, `chat_log.py`, `eval_view.py`, `limits.py`, `deps.py` (wiring) | everything above |
 

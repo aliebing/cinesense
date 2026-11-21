@@ -114,7 +114,7 @@ class SearchService:
         # (must / not). The catalogue-wide tag search would keep just its top 500 and lose e.g. "Speed" for action +
         # funny, or every Berlin film for "a heist in Berlin". Without embeddings the story finds nothing: tags search.
         plot_vec = self._embed(c.plot_query) if c.plot_query else None
-        tags_on_identity = c.has_tags() and bool(c.person or c.title or plot_vec is not None)
+        tags_on_identity = c.has_tags() and bool(c.person or c.title or c.film_ids or plot_vec is not None)
         tags_filter_hits = exclusions_only or tags_on_identity
 
         for q in c.exclude_people:  # "without Stallone": in any role, a misspelt name found like a wanted one
@@ -131,6 +131,9 @@ class SearchService:
         if c.title:
             sig.title = p.search_title(c.title)
             restrict = set(sig.title) if restrict is None else restrict & set(sig.title)
+        if c.film_ids:  # films the chat identified by their plot, in the order it found them
+            sig.title = {**(sig.title or {}), **{f: 1.0 - 0.05 * i for i, f in enumerate(c.film_ids)}}
+            restrict = set(c.film_ids) if restrict is None else restrict & set(c.film_ids)
         if (vec := plot_vec) is not None:
             # few cinema films would rarely reach the catalogue-wide top 150: rank plots among them only
             only = (
@@ -162,10 +165,7 @@ class SearchService:
                 known = {m.id for m in movies}
                 imdb_known = {m.imdb_id for m in p.list_movies() if m.imdb_id}
                 fresh = [m for m in live_hits if m.id not in known and m.imdb_id not in imdb_known]
-                if fresh and hasattr(p, "upsert_live"):
-                    p.upsert_live(fresh)  # lazy import; German title, plots and embeddings follow in the background
-                    if self.on_import is not None:
-                        self.on_import([m.id for m in fresh])
+                self._store(fresh)
                 movies += fresh
         if c.title and sig.title:
             sig.title = _without_sound_alikes(sig.title)
@@ -175,6 +175,26 @@ class SearchService:
         result = combined_rank(movies, c, sig, hidden_by_tags=hidden, offset=0, limit=len(movies) or 1)
         result.total_capped = capped
         return result, sig, extended_used
+
+    def import_film(self, film):
+        """A film found outside the catalogue: the catalogue's own copy (same id, IMDb or Wikidata id) if there is
+        one, else the film itself, imported."""
+        for m in self.provider.list_movies():
+            if (
+                m.id == film.id
+                or (film.imdb_id and m.imdb_id == film.imdb_id)
+                or (film.wikidata_id and m.wikidata_id == film.wikidata_id)
+            ):
+                return m
+        self._store([film])
+        return film
+
+    def _store(self, fresh: list) -> None:
+        """Lazy import; German title, plots and embeddings follow in the background."""
+        if fresh and hasattr(self.provider, "upsert_live"):
+            self.provider.upsert_live(fresh)
+            if self.on_import is not None:
+                self.on_import([m.id for m in fresh])
 
     def _live(self, c: SearchCriteria, sig: Signals) -> list:
         hits = []

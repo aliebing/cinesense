@@ -75,6 +75,7 @@ The model decides **what** to look for; everything that must be reproducible is 
 | `set_filters` — cinema/streaming, runtime, kind, years, language, genres, minimum rating ("highly rated") | hard filters and the "→ n films hidden" count |
 | `search_plot` — RAG over Wikipedia plots | the final search run (`present`) and its top 8 |
 | `find` (a title or a person), `similar_to`; people to exclude are a `set_filters` field | API budgets (streaming 900/month, max 3 streaming checks per turn) |
+| `identify_film` — "which film is it?": the description and up to 5 guessed titles | each guess is shown only if Wikidata knows the film and its Wikipedia plot (never the model's memory) is judged to match the description (`chat_agent/identify.py`, `data_sources/film_lookup.py`) |
 | `film_info` (facts, and with `streaming` where it streams) | grounding: the reply may only name returned films, else a template answer |
 | `propose_exclusions` — suggested, never applied silently | "No horror" also excludes the Horror genre |
 | `show_on_stage` — hand-off to the genre page | thread memory (one conversation per browser tab) |

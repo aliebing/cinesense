@@ -32,6 +32,8 @@ export function filterChips(criteria: Criteria): FilterChip[] {
   const others: FilterChip[] = [];
   if (criteria.person) others.push({ key: "person", label: `👤 ${criteria.person}`, clear: { person: null }, aria: `Remove person ${criteria.person}` });
   if (criteria.title) others.push({ key: "title", label: `🔤 “${criteria.title}”`, clear: { title: null }, aria: `Remove title ${criteria.title}` });
+  const identified = criteria.film_ids?.length ?? 0;
+  if (identified) others.push({ key: "identified", label: `🎯 ${identified === 1 ? "Identified film" : `${identified} identified films`}`, clear: { film_ids: [] }, aria: "Remove identified films" });
   if (criteria.plot_query) others.push({ key: "plot", label: `📖 “${criteria.plot_query}”`, clear: { plot_query: null }, aria: "Remove plot search" });
   if (criteria.availability === "stream") {
     const services = criteria.streaming_services ?? [];

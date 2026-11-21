@@ -18,6 +18,7 @@ class SearchCriteria(BaseModel):
     tags: list[TagCriterion] = Field(default_factory=list, max_length=12)
     plot_query: str | None = None
     title: str | None = None
+    film_ids: list[str] = Field(default_factory=list, max_length=5)  # "what's the film where …": confirmed films
     person: str | None = None
     person_role: Literal["cast", "director", "any"] = "any"
     exclude_genres: list[str] = Field(default_factory=list)
@@ -48,7 +49,7 @@ class SearchCriteria(BaseModel):
         return bool(self.tags)
 
     def has_text_signal(self) -> bool:
-        return bool(self.plot_query or self.title or self.person)
+        return bool(self.plot_query or self.title or self.person or self.film_ids)
 
     def with_no_horror(self, horror_idx: int, weight: int = 5) -> "SearchCriteria":
         genres = self.exclude_genres if "Horror" in self.exclude_genres else [*self.exclude_genres, "Horror"]

@@ -78,7 +78,7 @@ One chat turn runs through a LangGraph graph (`backend/cinesense/chat_agent/grap
 
 **The model decides what to look for. Everything that must be reproducible is code.** Filters keep or drop a film; only the ranking signals are weighted (mood tags 0.40, plot 0.30, title 0.20, taste 0.15, rating 0.10, popularity 0.08, recency 0.04). The full tool table and the personalisation formula are in [docs/details.md](docs/details.md#the-agent-in-detail), the weighting with an example and the widening rules in [How the search decides](docs/details.md#how-the-search-decides). The repository map and a 15-minute reading order are in [ARCHITECTURE.md](ARCHITECTURE.md).
 
-### The 10 tools
+### The 11 tools
 
 | Tool | What it does | Example |
 |---|---|---|
@@ -87,6 +87,7 @@ One chat turn runs through a LangGraph graph (`backend/cinesense/chat_agent/grap
 | `set_filters` | streaming or cinema, services, runtime, years, language, excluded genres and people | "on Netflix, under 2 hours, without Stallone" |
 | `search_plot` | semantic search (RAG) over the Wikipedia plots | "an astronaut stranded on Mars" |
 | `find` | a title or a person, typo-tolerant, live outside the catalogue | "films with keanu reevs" |
+| `identify_film` | "which film is it?": the model may only guess titles; a guess is shown only when Wikidata confirms the film and an LLM check finds its real Wikipedia plot matches the description | "the film where a wife cheats on a lonely island" |
 | `similar_to` | takes over the mood tags of a known film | "something like Interstellar" |
 | `film_info` | facts about one film; where it streams if asked (at most 3 lookups per turn) | "where can I stream Heat?" |
 | `propose_exclusions` | suggests exclusions for vague dislikes; the user decides | "nothing too scary" |

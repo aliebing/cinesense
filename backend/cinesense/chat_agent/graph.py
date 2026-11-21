@@ -59,6 +59,8 @@ def criteria_summary(criteria: dict, tags: list[str]) -> str:
         out.append(f"exclude genres: {', '.join(c.exclude_genres)}")
     if c.exclude_people:
         out.append(f"without: {', '.join(c.exclude_people)}")
+    if c.film_ids:
+        out.append(f"identified films: {len(c.film_ids)}")
     return "; ".join(out) or "(empty)"
 
 
@@ -312,6 +314,7 @@ TOOL_STATUS = {
     "set_filters": "Applying filters…",
     "search_plot": "Searching plots…",
     "find": "Looking it up…",
+    "identify_film": "Checking which film it is…",
     "similar_to": "Finding similar moods…",
     "new_search": "Starting a new search…",
     "film_info": "Reading film facts…",
