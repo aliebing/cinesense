@@ -879,16 +879,16 @@
   .related .related-card :is(.img-cover, .img-placeholder) { position: relative; inset: auto; flex: none;
     height: calc(var(--card-w) * 1.5); border-radius: 8px; outline: 1px solid #ffffff25; }
   .related .related-card span { position: static; margin-top: .4em; line-height: 1.25; overflow-wrap: anywhere; }
-  /* film rows run edge to edge with five films across the screen: the running rows (search and film page) and
+  /* film rows keep the page's side margins and show five films across: the running rows (search and film page) and
      the best matches, which become a swipeable row too (up to 6, squeezed to ~56px in one fixed line before) */
-  .cinema-stage { --phone-card: calc((100vw - 16px - 4 * 8px) / 5); }
-  .related.has-arrows { --card-w: var(--phone-card); --card-gap: 8px; margin-inline: -16px; }
+  .cinema-stage { --phone-card: calc((100vw - 32px - 4 * 8px) / 5); }
+  .related.has-arrows { --card-w: var(--phone-card); --card-gap: 8px; }
   .related.has-arrows .related-viewport { width: 100%; }
-  .has-ends .related-track { padding-inline: 8px; }
-  .best-list { justify-content: flex-start; gap: 8px; margin-inline: -16px; padding: 0 8px 4px; overflow-x: auto;
+  .has-ends .related-track { padding-inline: 0; }
+  .best-list { justify-content: flex-start; gap: 8px; padding: 0 0 4px; overflow-x: auto;
     scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain; }
   .best-list::-webkit-scrollbar { display: none; }
-  .best-item { flex: 0 0 var(--phone-card); max-width: none; scroll-snap-align: start; scroll-margin-inline: 8px; }
+  .best-item { flex: 0 0 var(--phone-card); max-width: none; scroll-snap-align: start; }
   /* "How these results came about" goes to the very bottom, under the films, opening downwards in the flow */
   .results-info { display: contents; }
   .results-explain-btn, .results-explain { order: 9; position: static; flex-shrink: 0; }
