@@ -149,7 +149,7 @@ def combined_rank(
     rated = [m.ml_rating for m in kept if m.ml_rating is not None]
     prior = sum(rated) / len(rated) if rated else DEFAULT_PRIOR_MEAN
     # a film asked for by name: no bonus for newer films (that is for browsing moods), the closer title decides
-    recency_w = 0.0 if criteria.title else WEIGHTS["recency"]
+    recency_w = 0.0 if criteria.title or criteria.film_ids else WEIGHTS["recency"]
     total_w = sum(WEIGHTS[k] for k in active) + WEIGHTS["rating"] + WEIGHTS["popularity"] + recency_w
 
     ranked = []
@@ -206,7 +206,9 @@ def _reasons(m: Movie, c: SearchCriteria, s: Signals, taste: dict[str, float]) -
         out.append(f"plot: {chunk[:80]}{'…' if len(chunk) > 80 else ''}")
     if s.person and m.id in s.person and m.id in s.person_names:
         out.append(f"with {s.person_names[m.id]}")
-    if s.title and m.id in s.title:
+    if m.id in c.film_ids:
+        out.append("its Wikipedia plot matches your description")
+    elif s.title and m.id in s.title:
         out.append("title match")
     if taste.get(m.id, 0.0) >= TASTE_REASON:
         out.append("fits your taste")

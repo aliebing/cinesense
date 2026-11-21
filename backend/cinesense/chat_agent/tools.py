@@ -9,6 +9,7 @@ from langgraph.prebuilt import InjectedState
 from langgraph.types import Command
 from pydantic import BaseModel, Field
 
+from cinesense.chat_agent.identify import check_candidates
 from cinesense.chat_agent.tag_matching import resolve_tags
 from cinesense.core.criteria import SearchCriteria
 from cinesense.core.models import Movie, canonical_service
@@ -36,11 +37,18 @@ class TagSpec(BaseModel):
     )
 
 
+class Candidate(BaseModel):
+    title: str = Field(description="English title of a real film")
+    year: int | None = Field(default=None, description="Release year, if you know it")
+
+
 class ToolKit:
-    def __init__(self, service, provider, streaming) -> None:
+    def __init__(self, service, provider, streaming, lookup=None, judge=None) -> None:
         self.service = service
         self.provider = provider
         self.streaming = streaming
+        self.lookup = lookup  # film_lookup.FilmLookup: a named film and its plot from Wikidata/Wikipedia
+        self.judge = judge  # identify.make_plot_judge: does a real plot tell the story described?
 
     # --- helpers ----------------------------------------------------------
     @staticmethod
@@ -176,6 +184,26 @@ class ToolKit:
             lines
         )
 
+    def identify_film(self, state: dict, description: str, candidates: list[dict]) -> tuple[dict, str]:
+        """'What's the film where …': the model's guesses only count once a source confirms the film exists and its
+        real plot matches the description; every confirmed film is shown, the model's most likely one first."""
+        if self.lookup is None or self.judge is None:
+            return {}, "Film identification is not available; use search_plot with the story."
+        cands = [(c["title"], c.get("year")) for c in candidates if c.get("title")]
+        films: dict[str, tuple[Movie, str]] = {}
+        for _, _, film, plot, verdict in check_candidates(description, cands, self.lookup, self.judge):
+            if verdict == "match":
+                film = self.service.import_film(film)
+                films.setdefault(film.id, (film, plot))
+        if not films:
+            return {}, "None of the guesses could be confirmed by its real plot; use search_plot with the story."
+        c = SearchCriteria(film_ids=list(films))
+        found = "\n".join(f"- {f.title} ({f.year or '?'}): {plot[:300]}" for f, plot in films.values())
+        return {"criteria": c.model_dump(), "criteria_changed": True}, (
+            "Confirmed by Wikidata and their Wikipedia plots, shown now (ask the user whether one of them is the film "
+            f"they mean):\n{found}"
+        )
+
     def similar_to(self, state: dict, title: str) -> tuple[dict, str]:
         film = self._find_film(title)
         if film is None:
@@ -260,7 +288,7 @@ class ToolKit:
 
 
 def make_tools(kit: ToolKit) -> list:
-    """The ten tools the model can call each turn (finding titles and people, filters and excluded people, facts and
+    """The eleven tools the model can call each turn (finding titles and people, filters and excluded people, facts and
     streaming are one tool each: fewer, clearer choices)."""
 
     def wrap(update: dict, msg: str, call_id: str) -> Command:
@@ -331,6 +359,20 @@ def make_tools(kit: ToolKit) -> list:
         return wrap(*kit.find(state, kind, name, role), tool_call_id)
 
     @tool
+    def identify_film(
+        description: str,
+        candidates: list[Candidate],
+        state: Annotated[dict, InjectedState],
+        tool_call_id: Annotated[str, InjectedToolCallId],
+    ) -> Command:
+        """The user asks which film it is and describes one particular film. description: only what the user said,
+        in English, nothing added.
+        candidates: up to 5 real films it could be, most likely first. Each is checked against Wikidata and its
+        Wikipedia plot; every film that matches is shown."""
+        cands = [c.model_dump() if isinstance(c, BaseModel) else c for c in candidates]
+        return wrap(*kit.identify_film(state, description, cands), tool_call_id)
+
+    @tool
     def similar_to(
         title: str, state: Annotated[dict, InjectedState], tool_call_id: Annotated[str, InjectedToolCallId]
     ) -> Command:
@@ -378,6 +420,7 @@ def make_tools(kit: ToolKit) -> list:
         set_filters,
         search_plot,
         find,
+        identify_film,
         similar_to,
         film_info,
         propose_exclusions,

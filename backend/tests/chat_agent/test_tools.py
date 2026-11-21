@@ -119,11 +119,11 @@ def test_find_title_without_matches_says_so(kit):
     assert upd == {} and "no film" in msg.lower()
 
 
-def test_the_agent_gets_ten_tools(kit):
+def test_the_agent_gets_eleven_tools(kit):
     from cinesense.chat_agent.tools import make_tools
 
     names = [t.name for t in make_tools(kit)]
-    assert len(names) == 10 and "find" in names
+    assert len(names) == 11 and "find" in names and "identify_film" in names
     for gone in ("find_title", "find_person", "exclude_people", "check_streaming", "film_facts"):
         assert gone not in names  # merged into find, set_filters and film_info
 

@@ -51,6 +51,7 @@ export function explainLines(
   const also = [
     criteria.person ? `with ${criteria.person}` : null,
     criteria.title ? `titled “${criteria.title}”` : null,
+    criteria.film_ids?.length ? "the films the chat identified (Wikidata confirms them, their Wikipedia plots match your description)" : null,
     criteria.year_from || criteria.year_to ? `from ${criteria.year_from ?? "…"} to ${criteria.year_to ?? "…"}` : null,
     not.length ? `without ${not.join(", ")}` : null,
   ].filter(Boolean);

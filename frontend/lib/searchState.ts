@@ -10,6 +10,7 @@ export type Criteria = {
   tags: TagCriterion[];
   plot_query: string | null;
   title: string | null;
+  film_ids: string[]; // "what's the film where …": films the chat confirmed by their plot (at most 5)
   person: string | null;
   person_role: "cast" | "director" | "any";
   exclude_genres: string[];
@@ -32,6 +33,7 @@ export function emptyCriteria(): Criteria {
     tags: [],
     plot_query: null,
     title: null,
+    film_ids: [],
     person: null,
     person_role: "any",
     exclude_genres: [],
