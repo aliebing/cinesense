@@ -879,6 +879,11 @@
   .related .related-card :is(.img-cover, .img-placeholder) { position: relative; inset: auto; flex: none;
     height: calc(var(--card-w) * 1.5); border-radius: 8px; outline: 1px solid #ffffff25; }
   .related .related-card span { position: static; margin-top: .4em; line-height: 1.25; overflow-wrap: anywhere; }
+  /* a little larger thumbnails: the running rows 52 → 68px; the best matches (up to 6, squeezed to ~56px in
+     one line) take three per line instead */
+  .related.has-arrows { --card-w: 68px; }
+  .best-list { flex-wrap: wrap; gap: 14px 12px; }
+  .best-item { flex: 0 0 calc((100% - 24px) / 3); max-width: 96px; }
   /* "How these results came about" goes to the very bottom, under the films, opening downwards in the flow */
   .results-info { display: contents; }
   .results-explain-btn, .results-explain { order: 9; position: static; flex-shrink: 0; }
