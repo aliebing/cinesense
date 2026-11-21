@@ -29,7 +29,7 @@ export default function BestMatches({ items, onSelect, label, streamCheck = fals
             <HoverTrailer movie={r.movie} className="related-wrap best-wrap">
               <button type="button" className="related-card best-card" aria-label={`${r.movie.title}, ${r.match_percent}% match`} onClick={() => onSelect(r.movie)}>
                 <ImageOrPlaceholder src={r.movie.poster_url} alt="" />
-                <i title={MATCH_HINT}>{r.match_percent}% match</i>
+                <i title={MATCH_HINT} data-pct={`${r.match_percent}%`}>{r.match_percent}% match</i>
               </button>
             </HoverTrailer>
             <p className="best-title">

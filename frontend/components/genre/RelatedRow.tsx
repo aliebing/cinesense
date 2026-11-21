@@ -368,7 +368,7 @@ export default function RelatedRow({
                 onClick={() => onSelect(r.movie)}
               >
                 <ImageOrPlaceholder src={r.movie.poster_url} alt="" />
-                <i title={MATCH_HINT}>{r.match_percent}% match</i>
+                <i title={MATCH_HINT} data-pct={`${r.match_percent}%`}>{r.match_percent}% match</i>
                 <span>
                   {r.movie.title}
                   {showReasons && r.reasons.length > 0 && <small className="related-why">{r.reasons.slice(0, 2).join(" · ")}</small>}

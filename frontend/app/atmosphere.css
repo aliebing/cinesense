@@ -885,6 +885,12 @@
   .results-explain-btn { align-self: center; margin-top: 12px; }
   .results-explain { width: auto; }
   .results-page > *, .results-films > * { flex-shrink: 0; } /* the page scrolls; nothing is squeezed and cut off */
+  /* the match on a thumbnail: only the number, on one line, crisp on a solid pill in the corner (the full
+     "81% match" wrapped over the poster's own lettering on a see-through oval and could not be read) */
+  .related-card i[data-pct] { top: 4px; right: 4px; font-size: 0; padding: 0; line-height: 1; border-radius: 6px;
+    background: #07080cf2; border: 1px solid #f3c76b66; text-shadow: none; }
+  .related-card i[data-pct]::before { content: attr(data-pct); display: block; padding: 3px 5px; font-size: 11px;
+    font-weight: 600; letter-spacing: .02em; font-variant-numeric: tabular-nums; }
 }
 
 /* finger swiping (lib/touchDrag.ts): sideways belongs to the running rows, upright still scrolls the page */
