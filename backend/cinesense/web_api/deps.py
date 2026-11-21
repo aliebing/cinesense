@@ -133,7 +133,7 @@ def get_agent():
     s = get_settings()
     from cinesense.chat_agent.llm import make_llm
 
-    llm = make_llm(s)
+    llm = make_llm(s, max_tokens=2500)  # reasoning tokens count against the limit: 700 left none for a reply
     if llm is None:
         return None
     from langgraph.checkpoint.memory import MemorySaver

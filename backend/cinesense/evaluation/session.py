@@ -132,7 +132,7 @@ def run_evaluation(
             service = SearchService(provider, st, emb)
             tools = make_tools(ToolKit(service, provider, st))
             graphs[failure] = build_graph(
-                make_llm(s), make_llm(s, max_tokens=1500), tools, service, provider, MemorySaver()
+                make_llm(s, max_tokens=2500), make_llm(s, max_tokens=1500), tools, service, provider, MemorySaver()
             )
         graph = graphs[failure]
         return lambda thread, msg, crit, on_status=None, profile=None: run_turn(graph, thread, msg, crit)
